@@ -149,3 +149,64 @@ function base64Encode(str: string): string {
   }
   return output;
       }
+export async function getFileText(
+  repoFullName: string,
+  path: string,
+  branch: string = "main"
+): Promise<string | null> {
+  const token = await getToken();
+  const res = await fetch(
+    `${GITHUB_API}/repos/${repoFullName}/contents/${path}?ref=${branch}&t=${Date.now()}`,
+    { headers: { ...authHeaders(token), Accept: "application/vnd.github.raw+json" } }
+  );
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Read failed (${res.status}): ${await res.text()}`);
+  return res.text();
+}
+
+export async function listDir(
+  repoFullName: string,
+  path: string,
+  branch: string = "main"
+): Promise<string[]> {
+  const token = await getToken();
+  const res = await fetch(
+    `${GITHUB_API}/repos/${repoFullName}/contents/${path}?ref=${branch}&t=${Date.now()}`,
+    { headers: authHeaders(token) }
+  );
+  if (res.status === 404) return [];
+  if (!res.ok) throw new Error(`List failed (${res.status}): ${await res.text()}`);
+  const data = await res.json();
+  return Array.isArray(data)
+    ? data.filter((x: any) => x.type === "dir").map((x: any) => x.name)
+    : [];
+}
+
+export async function latestRunId(repoFullName: string, workflowFile: string): Promise<number> {
+  try {
+    const runs = await listWorkflowRuns(repoFullName, workflowFile);
+    return runs.length ? Math.max(...runs.map((r: any) => r.id)) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export async function getFailureLog(repoFullName: string, runId: number): Promise<string> {
+  try {
+    const token = await getToken();
+    const jr = await fetch(`${GITHUB_API}/repos/${repoFullName}/actions/runs/${runId}/jobs`, {
+      headers: authHeaders(token),
+    });
+    if (!jr.ok) return "";
+    const jobs = (await jr.json()).jobs || [];
+    const job = jobs.find((j: any) => j.conclusion === "failure") || jobs[0];
+    if (!job) return "";
+    const lr = await fetch(`${GITHUB_API}/repos/${repoFullName}/actions/jobs/${job.id}/logs`, {
+      headers: authHeaders(token),
+    });
+    if (!lr.ok) return "";
+    return (await lr.text()).split("\n").slice(-12).join("\n");
+  } catch {
+    return "";
+  }
+}

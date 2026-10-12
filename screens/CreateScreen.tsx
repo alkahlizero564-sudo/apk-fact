@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { View, TextInput, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import * as SecureStore from "expo-secure-store";
-import { pushFile } from "../services/github";
+import { pushFile, listWorkflowRuns, latestRunId, getFileText, getFailureLog } from "../services/github";
 
 type Slot = "1" | "2";
 type Mode = "new" | "edit";
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export default function CreateScreen() {
   const [appSlot, setAppSlot] = useState<Slot>("1");
@@ -16,6 +18,17 @@ export default function CreateScreen() {
 
   function addLog(line: string) {
     setLog((prev) => [...prev, line]);
+  }
+
+  async function waitForRun(repo: string, prevId: number) {
+    const started = Date.now();
+    while (Date.now() - started < 4 * 60 * 1000) {
+      await sleep(5000);
+      const runs = await listWorkflowRuns(repo, "generate.yml");
+      const run = runs.find((r: any) => r.id > prevId);
+      if (run && run.status === "completed") return run;
+    }
+    return null;
   }
 
   async function handleSend() {
@@ -35,21 +48,38 @@ export default function CreateScreen() {
     try {
       const repo = await SecureStore.getItemAsync(appSlot === "1" ? "GITHUB_REPO_1" : "GITHUB_REPO_2");
       if (!repo) {
-        addLog("❌ مفيش مستودع GitHub محفوظ. حطه في تبويب المفاتيح.");
+        addLog("❌ مفيش مستودع محفوظ. حطه في تبويب المفاتيح.");
         return;
       }
 
-      addLog("⏳ بيتم إرسال الطلب إلى GitHub...");
+      const prevId = await latestRunId(repo, "generate.yml");
+
+      addLog("⏳ بيتم إرسال الطلب...");
       const content = `${cleanName}\n${description.trim()}\n\n(request id: ${Date.now()})\n`;
-      await pushFile(
-        repo,
-        "request.txt",
-        content,
-        `${mode === "edit" ? "Edit" : "Create"}: ${cleanName}`
-      );
+      await pushFile(repo, "request.txt", content, `${mode === "edit" ? "Edit" : "Create"}: ${cleanName}`);
       addLog("✅ تم إرسال الطلب.");
-      addLog(`⏳ GitHub بيولّد التطبيق دلوقتي. بعد حوالي دقيقة بيظهر في: apps/${cleanName}/index.html`);
-      addLog("لمتابعة التقدم: افتح تبويب Actions في المستودع.");
+      addLog("⏳ بيتولّد الكود... (من نصف دقيقة لدقيقتين)");
+
+      const run = await waitForRun(repo, prevId);
+      if (!run) {
+        addLog("⚠️ التوليد أخذ وقت طويل. جرّب تبويب المعاينة بعد شوية.");
+        return;
+      }
+
+      if (run.conclusion !== "success") {
+        addLog("❌ فشل التوليد.");
+        const tail = await getFailureLog(repo, run.id);
+        if (tail) addLog(tail);
+        return;
+      }
+
+      const html = await getFileText(repo, `apps/${cleanName}/index.html`);
+      if (!html) {
+        addLog("⚠️ التوليد نجح لكن الملف ما ظهر. حدّث المعاينة بعد شوية.");
+        return;
+      }
+      addLog(`✅ اتولّد وارتفع: apps/${cleanName}/index.html`);
+      addLog("🎉 روح لتبويب المعاينة تشوفه.");
     } catch (e: any) {
       addLog(`❌ ${e.message}`);
     } finally {
@@ -61,32 +91,20 @@ export default function CreateScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.label}>المستودع</Text>
       <View style={styles.row}>
-        <TouchableOpacity
-          style={[styles.pill, appSlot === "1" && styles.pillActive]}
-          onPress={() => setAppSlot("1")}
-        >
+        <TouchableOpacity style={[styles.pill, appSlot === "1" && styles.pillActive]} onPress={() => setAppSlot("1")}>
           <Text style={appSlot === "1" ? styles.pillTextActive : styles.pillText}>التطبيق الأول</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.pill, appSlot === "2" && styles.pillActive]}
-          onPress={() => setAppSlot("2")}
-        >
+        <TouchableOpacity style={[styles.pill, appSlot === "2" && styles.pillActive]} onPress={() => setAppSlot("2")}>
           <Text style={appSlot === "2" ? styles.pillTextActive : styles.pillText}>التطبيق الثاني</Text>
         </TouchableOpacity>
       </View>
 
       <Text style={styles.label}>الوضع</Text>
       <View style={styles.row}>
-        <TouchableOpacity
-          style={[styles.pill, mode === "new" && styles.pillActive]}
-          onPress={() => setMode("new")}
-        >
+        <TouchableOpacity style={[styles.pill, mode === "new" && styles.pillActive]} onPress={() => setMode("new")}>
           <Text style={mode === "new" ? styles.pillTextActive : styles.pillText}>إنشاء جديد</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.pill, mode === "edit" && styles.pillActive]}
-          onPress={() => setMode("edit")}
-        >
+        <TouchableOpacity style={[styles.pill, mode === "edit" && styles.pillActive]} onPress={() => setMode("edit")}>
           <Text style={mode === "edit" ? styles.pillTextActive : styles.pillText}>تعديل الموجود</Text>
         </TouchableOpacity>
       </View>
@@ -149,4 +167,4 @@ const styles = StyleSheet.create({
   createBtnText: { color: "#fff", fontWeight: "700" },
   logBox: { marginTop: 20, backgroundColor: "#f3f3f3", borderRadius: 10, padding: 12 },
   logLine: { marginBottom: 4, fontFamily: "monospace", fontSize: 13 },
-});
+}); 

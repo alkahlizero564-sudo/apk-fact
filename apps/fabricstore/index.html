@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دار القرمصيص | متجر الأقمشة والثياب السودانية النسائية</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Amiri:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #8b1538; /* Sudanese deep carmine/burgundy */
+            --primary-dark: #5c0d23;
+            --primary-light: #b82d54;
+            --gold: #d4af37;
+            --gold-light: #f3e5ab;
+            --gold-dark: #aa820a;
+            --sand: #faf6f0;
+            --surface: #ffffff;
+            --text-main: #2b2523;
+            --text-muted: #6e6460;
+            --border: #ebdcd3;
+            --shadow: 0 10px 30px rgba(139, 21, 56, 0.08);
+            --radius-md: 16px;
+            --radius-sm: 8px;
+            --radius-lg: 24px;
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--sand);
+            color: var(--text-main);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Top Announcement Bar */
+        .top-bar {
+            background: linear-gradient(90deg, var(--primary-dark), var(--primary), var(--primary-dark));
+            color: var(--gold-light);
+            text-align: center;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .top-bar .social-mini a {
+            color: var(--gold-light);
+            margin-right: 12px;
+            transition: var(--transition);
+        }
+        .top-bar .social-mini a:hover {
+            color: #fff;
+        }
+
+        /* Header & Navigation */
+        header {
+            background: var(--surface);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 99;
+        }
+        .navbar {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .logo-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--primary);
+        }
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: radial-gradient(circle, var(--gold) 0%, var(--gold-dark) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 22px;
+            box-shadow: 0 4px 10px rgba(212, 175, 55, 0.4);
+            border: 2px solid #fff;
+        }
+        .logo-text h1 {
+            font-family: 'Amiri', serif;
+            font-size: 1.7rem;
+            font-weight: 700;
+            line-height: 1.1;
+            color: var(--primary);
+        }
+        .logo-text span {
+            font-size: 0.75rem;
+            color: var(--gold-dark);
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        /* Search Bar */
+        .search-container {
+            flex: 1;
+            max-width: 450px;
+            position: relative;
+        }
+        .search-input {
+            width: 100%;
+            padding: 10px 42px 10px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: 30px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: var(--transition);
+            background: #fdfbf8;
+        }
+        .search-input:focus {
+            border-color: var(--primary);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(139, 21, 56, 0.1);
+        }
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        /* Action Buttons */
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .btn-currency {
+            background: #f5ebe6;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--primary);
+        }
+        .btn-icon {
+            position: relative;
+            background: #f8f4f2;
+            border: none;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .btn-icon:hover {
+            background: var(--primary);
+            color: #fff;
+        }
+        .badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background: var(--gold-dark);
+            color: white;
+            font-size: 0.7rem;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border: 2px solid white;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(rgba(92, 13, 35, 0.82), rgba(139, 21, 56, 0.88)), 
+                        url('https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=1600&auto=format&fit=crop') center/cover;
+            color: white;
+            padding: 60px 24px;
+            text-align: center;
+            position: relative;
+        }
+        .hero-pattern {
+            position: absolute;
+            inset: 0;
+            opacity: 0.05;
+            background-image: radial-gradient(#d4af37 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .hero-content {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .hero-content h2 {
+            font-family: 'Amiri', serif;
+            font-size: 2.8rem;
+            margin-bottom: 12px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            color: #fff;
+        }
+        .hero-content p {
+            font-size: 1.15rem;
+            color: var(--gold-light);
+            margin-bottom: 24px;
+            font-weight: 400;
+        }
+        .hero-badges {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .hero-pill {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            color: #fff;
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 1300px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        /* Fabric Quick Guide (Pills) */
+        .fabric-types-bar {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 12px;
+            margin-bottom: 30px;
+            scrollbar-width: thin;
+        }
+        .fabric-types-bar::-webkit-scrollbar {
+            height: 5px;
+        }
+        .fabric-types-bar::-webkit-scrollbar-thumb {
+            background: var(--gold);
+            border-radius: 10px;
+        }
+        .fabric-pill {
+            white-space: nowrap;
+            padding: 10px 22px;
+            border-radius: 30px;
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+        .fabric-pill:hover, .fabric-pill.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(139, 21, 56, 0.25);
+        }
+        .fabric-pill i {
+            color: var(--gold);
+        }
+        .fabric-pill.active i {
+            color: #fff;
+        }
+
+        /* Filter Controls */
+        .filter-section {
+            background: var(--surface);
+            padding: 18px 24px;
+            border-radius: var(--radius-md);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .filter-label {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--primary-dark);
+        }
+        .filter-select {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+            transition: var(--transition);
+        }
+        .filter-select:focus {
+            border-color: var(--primary);
+        }
+        .items-count {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        /* Product Grid */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 26px;
+            margin-bottom: 50px;
+        }
+
+        /* Product Card */
+        .product-card {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .product-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 36px rgba(139, 21, 56, 0.15);
+            border-color: var(--gold);
+        }
+
+        .card-img-container {
+            position: relative;
+            width: 100%;
+            height: 310px;
+            overflow: hidden;
+            background: #eee;
+            cursor: pointer;
+        }
+        .card-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        .product-card:hover .card-img {
+            transform: scale(1.08);
+        }
+
+        .fabric-badge {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: rgba(92, 13, 35, 0.9);
+            color: var(--gold-light);
+            padding: 4px 12px;
+            border-radius: 14px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .btn-wishlist {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            background: rgba(255, 255, 255, 0.85);
+            color: var(--text-muted);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            backdrop-filter: blur(4px);
+        }
+        .btn-wishlist:hover, .btn-wishlist.active {
+            background: #fff;
+            color: #e63946;
+            transform: scale(1.1);
+        }
+
+        .origin-tag {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.65);
+            color: #fff;
+            font-size: 0.72rem;
+            padding: 2px 10px;
+            border-radius: 10px;
+        }
+
+        .card-body {
+            padding: 18px 20px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+        .fabric-category {
+            font-size: 0.78rem;
+            color: var(--gold-dark);
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .product-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 6px;
+            line-height: 1.35;
+        }
+        .product-desc {
+            font-size: 0.83rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .product-specs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: #fcf9f6;
+            padding: 8px 10px;
+            border-radius: var(--radius-sm);
+        }
+        .spec-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .spec-item i {
+            color: var(--primary);
+        }
+
+        .card-footer {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 12px;
+            border-top: 1px dashed var(--border);
+        }
+        .price-box {
+            display: flex;
+            flex-direction: column;
+        }
+        .price-curr {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .price-old {
+            font-size: 0.8rem;
+            color: #a09794;
+            text-decoration: line-through;
+        }
+
+        .btn-add-cart {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-add-cart:hover {
+            background: var(--primary-dark);
+            box-shadow: 0 4px 12px rgba(139, 21, 56, 0.35);
+        }
+
+        /* Sudanese Fabric Guide Section */
+        .fabric-education {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            margin: 40px 0;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        .section-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section-header h3 {
+            font-family: 'Amiri', serif;
+            font-size: 2rem;
+            color: var(--primary);
+            position: relative;
+            display: inline-block;
+        }
+        .section-header h3::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            right: 25%;
+            width: 50%;
+            height: 3px;
+            background: var(--gold);
+            border-radius: 2px;
+        }
+        .section-header p {
+            color: var(--text-muted);
+            margin-top: 10px;
+            font-size: 0.95rem;
+        }
+
+        .guide-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 24px;
+        }
+        .guide-card {
+            background: var(--sand);
+            padding: 24px;
+            border-radius: var(--radius-md);
+            border-right: 4px solid var(--primary);
+        }
+        .guide-card h4 {
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .guide-card p {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Custom Order Banner */
+        .custom-banner {
+            background: linear-gradient(135deg, #420816 0%, #8b1538 100%);
+            color: #fff;
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+            margin-bottom: 50px;
+            position: relative;
+            overflow: hidden;
+        }
+        .custom-banner::before {
+            content: '🇸🇩';
+            position: absolute;
+            left: 20px;
+            bottom: -20px;
+            font-size: 140px;
+            opacity: 0.08;
+            pointer-events: none;
+        }
+        .banner-info h3 {
+            font-family: 'Amiri', serif;
+            font-size: 1.8rem;
+            color: var(--gold-light);
+            margin-bottom: 8px;
+        }
+        .banner-info p {
+            font-size: 0.95rem;
+            max-width: 650px;
+            color: #faede8;
+        }
+        .btn-whatsapp-custom {
+            background: #25D366;
+            color: #fff;
+            padding: 12px 28px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+            transition: var(--transition);
+            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+        }
+        .btn-whatsapp-custom:hover {
+            transform: scale(1.05);
+            background: #1eb857;
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            padding: 16px;
+        }
+        .modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-content {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 850px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+        }
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            background: #f1eae6;
+            border: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.1rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: var(--transition);
+        }
+        .modal-close:hover {
+            background: var(--primary);
+            color: #fff;
+        }
+        .modal-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+        .modal-gallery img {
+            width: 100%;
+            height: 380px;
+            object-fit: cover;
+            border-radius: var(--radius-md);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        .modal-details {
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-details h3 {
+            font-size: 1.6rem;
+            color: var(--primary);
+            margin-bottom: 6px;
+            font-family: 'Amiri', serif;
+        }
+        .detail-badge {
+            display: inline-block;
+            background: var(--gold-light);
+            color: var(--primary-dark);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            align-self: flex-start;
+            margin-bottom: 12px;
+        }
+        .modal-desc {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+            line-height: 1.6;
+        }
+        .spec-list {
+            margin-bottom: 20px;
+            border-top: 1px solid var(--border);
+            padding-top: 14px;
+        }
+        .spec-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 0.9rem;
+            border-bottom: 1px dashed #eee;
+        }
+        .spec-row span:first-child {
+            color: var(--text-muted);
+        }
+        .spec-row span:last-child {
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .modal-price {
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: var(--primary);
+            margin-bottom: 18px;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: auto;
+        }
+        .btn-modal-add {
+            flex: 1;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .btn-modal-add:hover {
+            background: var(--primary-dark);
+        }
+        .btn-modal-wa {
+            background: #25D366;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        /* Cart Drawer */
+        .drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1001;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .drawer-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .cart-drawer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 380px;
+            max-width: 90%;
+            height: 100%;
+            background: var(--surface);
+            box-shadow: 10px 0 30px rgba(0,0,0,0.2);
+            z-index: 1002;
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            display: flex;
+            flex-direction: column;
+        }
+        .cart-drawer.active {
+            transform: translateX(0);
+        }
+        .drawer-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .drawer-header h3 {
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+        .drawer-close {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+        .drawer-items {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .cart-item {
+            display: flex;
+            gap: 12px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #f1f1f1;
+            align-items: center;
+        }
+        .cart-item-img {
+            width: 65px;
+            height: 65px;
+            object-fit: cover;
+            border-radius: var(--radius-sm);
+        }
+        .cart-item-info {
+            flex: 1;
+        }
+        .cart-item-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+        .cart-item-price {
+            font-size: 0.85rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+        .cart-item-remove {
+            color: #d90429;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+        }
+        .empty-cart-msg {
+            text-align: center;
+            color: var(--text-muted);
+            margin: auto;
+            font-size: 0.95rem;
+        }
+        .drawer-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            background: #faf7f5;
+        }
+        .cart-subtotal {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+        .btn-checkout {
+            width: 100%;
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+            transition: var(--transition);
+        }
+        .btn-checkout:hover {
+            background: #1eb857;
+        }
+
+        /* Toast Alert */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--primary-dark);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: var(--transition);
+            z-index: 2000;
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Footer */
+        footer {
+            background: #24050e;
+            color: #fff;
+            padding: 50px 20px 20px;
+            margin-top: 60px;
+            border-top: 4px solid var(--gold);
+        }
+        .footer-grid {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 36px;
+            margin-bottom: 40px;
+        }
+        .footer-col h4 {
+            font-family: 'Amiri', serif;
+            font-size: 1.4rem;
+            color: var(--gold);
+            margin-bottom: 16px;
+        }
+        .footer-col p {
+            color: #d1c0b8;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .footer-links {
+            list-style: none;
+        }
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+        .footer-links a {
+            color: #d1c0b8;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+        .footer-links a:hover {
+            color: var(--gold);
+            padding-right: 6px;
+        }
+        .footer-bottom {
+            max-width: 1300px;
+            margin: 0 auto;
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #8c7870;
+            font-size: 0.85rem;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 900px) {
+            .navbar {
+                flex-wrap: wrap;
+            }
+            .search-container {
+                order: 3;
+                max-width: 100%;
+                width: 100%;
+            }
+            .modal-body {
+                grid-template-columns: 1fr;
+            }
+            .modal-gallery img {
+                height: 250px;
+            }
+            .custom-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .hero-content h2 {
+                font-size: 2rem;
+            }
+            .filter-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .filter-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .filter-select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Announcement Bar -->
+    <div class="top-bar">
+        <span>✨ التوصيل متوفر لجميع ولايات السودان ودول الخليج ومصر وأوروبا | أقمشة وثياب أصلية 100%</span>
+        <div class="social-mini">
+            <a href="#"><i class="fab fa-whatsapp"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-facebook"></i></a>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="navbar">
+            <a href="#" class="logo-box">
+                <div class="logo-icon">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>دار القرمصيص</h1>
+                    <span>فخامة الثوب السوداني والأقمشة</span>
+                </div>
+            </a>
+
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="searchInput" class="search-input" placeholder="ابحثي عن ثوب، نوع قماش (توتال، قرمصيص، شيفون)...">
+            </div>
+
+            <div class="nav-actions">
+                <select id="currencySelector" class="btn-currency" onchange="changeCurrency(this.value)">
+                    <option value="SDG">ج.س (SDG)</option>
+                    <option value="SAR" selected>ريال (SAR)</option>
+                    <option value="USD">دولار (USD)</option>
+                    <option value="AED">درهم (AED)</option>
+                </select>
+
+                <button class="btn-icon" id="wishlistBtn" title="المفضلة" onclick="filterFavorites()">
+                    <i class="far fa-heart"></i>
+                    <span class="badge" id="favCount">0</span>
+                </button>
+
+                <button class="btn-icon" id="cartBtn" title="سلة المشتريات" onclick="toggleCartDrawer()">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="badge" id="cartCount">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Banner -->
+    <section class="hero">
+        <div class="hero-pattern"></div>
+        <div class="hero-content">
+            <h2>أصالة المرأة السودانية ورمز عزّتها</h2>
+            <p>أرقى تشكيلة من الثياب السودانية الفاخرة، التوتال السويسري الأصلي، حرير القرمصيص، والشيفون اللامع للمناسبات والعرائس</p>
+            <div class="hero-badges">
+                <div class="hero-pill"><i class="fas fa-gem"></i> توتال سويسري 100%</div>
+                <div class="hero-pill"><i class="fas fa-sparkles"></i> حرير قرمصيص عرايسي</div>
+                <div class="hero-pill"><i class="fas fa-feather-alt"></i> شيفون ولمسة إيطالي</div>
+                <div class="hero-pill"><i class="fas fa-certificate"></i> ثياب ربط وجكارد أصلية</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Container -->
+    <main class="main-container">
+
+        <!-- Fabric Category Filter Pills -->
+        <div class="fabric-types-bar" id="categoryBar">
+            <button class="fabric-pill active" onclick="filterByCategory('all')">
+                <i class="fas fa-border-all"></i> جميع الأقمشة
+            </button>
+            <button class="fabric-pill" onclick="filterByCategory('توتال سويسري')">
+                <i class="fas fa-certificate"></i> توتال سويسري
+            </button>
+            <button class="fabric-pill" onclick="filterByCategory('حرير قرمصيص')">
+                <i class="fas fa-sparkles"></i> ثياب حرير وقرمصيص
+            </button>
+            <button class="fabric-pill" onclick="filterByCategory('شيفون ولمسة')">
+                <i class="fas fa-wind"></i> شيفون ولمسة كريب
+            </button>
+            <button class="fabric-pill" onclick="filterByCategory('أقطان باردة')">
+                <i class="fas fa-sun"></i> أقطان باردة وتترون
+            </button>
+            <button class="fabric-pill" onclick="filterByCategory('جكارد وربط')">
+                <i class="fas fa-palette"></i> ثياب ربط وجكارد هندي
+            </button>
+            <button class="fabric-pill" onclick="filterByCategory('سهرات وعرائس')">
+                <i class="fas fa-gem"></i> ثياب أعراس ومناسبات
+            </button>
+        </div>
+
+        <!-- Filter & Sorting Tools -->
+        <div class="filter-section">
+            <div class="filter-group">
+                <span class="filter-label"><i class="fas fa-filter"></i> تصفية حسب:</span>
+                
+                <select id="occasionFilter" class="filter-select" onchange="applyFilters()">
+                    <option value="all">كل المناسبات</option>
+                    <option value="عرائس وسيرة">أعراس وسيرة</option>
+                    <option value="يومي واستقبال">يومي واستقبال</option>
+                    <option value="رسمي وأعياد">رسمي وأعياد</option>
+                </select>
+
+                <select id="colorFilter" class="filter-select" onchange="applyFilters()">
+                    <option value="all">كل الألوان</option>
+                    <option value="أحمر/عنابي">أحمر وعنابي (قرمصيص)</option>
+                    <option value="أزرق/نيلي">أزرق ونيلي</option>
+                    <option value="أخضر/زمردي">أخضر ملكي</option>
+                    <option value="أصفر/ذهبي">أصفر وذهبي</option>
+                    <option value="وردي/بنفسجي">وردي وبنفسجي</option>
+                    <option value="أبيض/أوف وايت">أبيض وسكري</option>
+                    <option value="مشكل/متعدد">متعدد الألوان/ربط</option>
+                </select>
+
+                <select id="sortFilter" class="filter-select" onchange="applyFilters()">
+                    <option value="featured">المميز أولاً</option>
+                    <option value="price-low">السعر: من الأقل للأعلى</option>
+                    <option value="price-high">السعر: من الأعلى للأقل</option>
+                </select>
+            </div>
+
+            <div class="items-count" id="productCount">عرض الأقمشة المتاحة</div>
+        </div>
+
+        <!-- Product Grid -->
+        <div class="products-grid" id="productsGrid">
+            <!-- Rendered by JS -->
+        </div>
+
+        <!-- Sudanese Fabric Knowledge Guide -->
+        <section class="fabric-education">
+            <div class="section-header">
+                <h3>دليل الأقمشة والثياب السودانية</h3>
+                <p>تعرفي على أسرار وأنواع خامات الثياب السودانية وكيفية اختيار الأنسب لمناسبتك</p>
+            </div>
+            <div class="guide-grid">
+                <div class="guide-card">
+                    <h4><i class="fas fa-crown"></i> قماش التوتال السويسري (Swiss Voile)</h4>
+                    <p>أجود وأعرق خامات الثياب السودانية اليومية والفاخرة. قطن 100% بارد وخفيف بنسج سويسري دقيق ومقاوم للتجعد، مشهور بوقاره وثباته على الرأس.</p>
+                </div>
+                <div class="guide-card">
+                    <h4><i class="fas fa-heart"></i> حرير القرمصيص العرايسي</h4>
+                    <p>رمز عرس الجرتق السوداني العريق، يتميز بتمازج خيوط الحرير الذهبية والحمراء بتدرجات مبهجة، خامة انسيابية لامعة تعكس فرحة المناسبات السودانية.</p>
+                </div>
+                <div class="guide-card">
+                    <h4><i class="fas fa-magic"></i> الشيفون ولمسة السهرة</h4>
+                    <p>أقمشة مفعمة بالأنوثة والانسيابية، مزدانة بتطريزات الكريستال، اللاميه، والخيوط الذهبية أو الفضية، مثالية للأعراس والسهرات الكبرى.</p>
+                </div>
+                <div class="guide-card">
+                    <h4><i class="fas fa-paint-brush"></i> ثياب الربط والتطريز اليدوي</h4>
+                    <p>فنون الصباغة السودانية التقليدية (Tie-Dye) بأيدي أمهر الفنانات والحرفيات، تمنح كل ثوب بصمة فريدة لا تتكرر بألوان مبهجة وعصرية.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Custom Order Banner -->
+        <section class="custom-banner">
+            <div class="banner-info">
+                <h3>تبحثين عن ثوب خاص أو تصميم مميز لحفل زفافك؟</h3>
+                <p>نوفر خدمة تجهيز شيلة العروس بالكامل، اختيار أقمشة وتطريزات خاصة حسب الطلب، والتوصيل السريع لكافة أنحاء العالم مع تغليف ملكي فاخر.</p>
+            </div>
+            <a href="https://wa.me/249912345678?text=السلام%20عليكم،%20أود%20الاستفسار%20عن%20تفصيل%20وتجهيز%20ثياب%20سودانية" target="_blank" class="btn-whatsapp-custom">
+                <i class="fab fa-whatsapp"></i> تواصلي مع خبيرة الأقمشة
+            </a>
+        </section>
+
+    </main>
+
+    <!-- Product Detail Modal -->
+    <div class="modal" id="productModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            <div class="modal-body" id="modalBody">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Drawer -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="toggleCartDrawer()"></div>
+    <div class="cart-drawer" id="cartDrawer">
+        <div class="drawer-header">
+            <h3><i class="fas fa-shopping-bag"></i> سلة مشترياتك</h3>
+            <button class="drawer-close" onclick="toggleCartDrawer()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="drawer-items" id="cartItemsContainer">
+            <!-- Injected via JS -->
+        </div>
+        <div class="drawer-footer">
+            <div class="cart-subtotal">
+                <span>الإجمالي التقريبي:</span>
+                <span id="cartTotalPrice">0</span>
+            </div>
+            <button class="btn-checkout" onclick="checkoutViaWhatsApp()">
+                <i class="fab fa-whatsapp"></i> إتمام الطلب عبر واتساب
+            </button>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast" id="toastAlert">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMsg">تمت الإضافة بنجاح</span>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h4>دار القرمصيص</h4>
+                <p>وجهتك الأولى لأفخم الأقمشة والثياب النسائية السودانية. نجمع بين عراقة الهوية السودانية وحداثة الموضة لنلبي أذواق كل الأجيال بأعلى معايير الجودة.</p>
+            </div>
+            <div class="footer-col">
+                <h4>روابط سريعة</h4>
+                <ul class="footer-links">
+                    <li><a href="#" onclick="filterByCategory('توتال سويسري')">ثياب توتال سويسري</a></li>
+                    <li><a href="#" onclick="filterByCategory('حرير قرمصيص')">ثياب قرمصيص الجرتق</a></li>
+                    <li><a href="#" onclick="filterByCategory('سهرات وعرائس')">ثياب المناسبات والسهرات</a></li>
+                    <li><a href="#" onclick="filterByCategory('أقطان باردة')">أقمشة الأقطان اليومية</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>خدمة العملاء</h4>
+                <p><i class="fas fa-phone-alt"></i> هاتف / واتساب: 249912345678+</p>
+                <p><i class="fas fa-envelope"></i> info@al-qarmasis.sd</p>
+                <p><i class="fas fa-map-marker-alt"></i> الخرطوم / الرياض / دبي / القاهرة</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            جميع الحقوق محفوظة &copy; <span id="year"></span> متجر دار القرمصيص للأقمشة السودانية النسائية.
+        </div>
+    </footer>
+
+    <!-- Script Application Logic -->
+    <script>
+        // Database of authentic Sudanese Women's Fabrics and Toubs
+        const productsData = [
+            {
+                id: 1,
+                name: "ثوب قرمصيص حرير ملكي أصلي (طقم جرتق)",
+                category: "حرير قرمصيص",
+                fabricType: "حرير طبيعي هندي فاخر مع خيوط القصب الذهبي",
+                priceSAR: 1250,
+                oldPriceSAR: 1450,
+                occasion: "عرائس وسيرة",
+                colorCategory: "أحمر/عنابي",
+                colorDesc: "عنابي داكن ممزوج بشرائط ذهبية وحمراء زاهية",
+                origin: "حرير ممتاز درجة أولى",
+                length: "4.5 متر كامل (العرض الدبل)",
+                weight: "انسيابي متوسط الفخامة",
+                image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=800&auto=format&fit=crop",
+                description: "رمز زينة العروس السودانية لليلة الجرتق العظيمة. ثوب قرمصيص أصلي مشبوك بخيوط ذهبية تضفي لمعاناً وهيبة لا مثيل لها."
+            },
+            {
+                id: 2,
+                name: "ثوب توتال سويسري زبدة مشجر لندني",
+                category: "توتال سويسري",
+                fabricType: "قطن سويسري 100% (توتال أصلي بارد)",
+                priceSAR: 890,
+                oldPriceSAR: 1050,
+                occasion: "رسمي وأعياد",
+                colorCategory: "أزرق/نيلي",
+                colorDesc: "أرضية كحلية مزخرفة بزهور نيلية وسماوية راقية",
+                origin: "سويسرا (Original Swiss Voile)",
+                length: "4.5 متر (كامل الثوب)",
+                weight: "بارد، خفيف وثابت على الرأس",
+                image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=800&auto=format&fit=crop",
+                description: "قماش التوتال السويسري المعروف بملمسه الناعم كالزبدة وبرودته الفائقة، ممتاز جداً للموظفات والزيارات الرسمية والأعياد."
+            },
+            {
+                id: 3,
+                name: "ثوب شيفون لمسة دبي مشغول كريستال",
+                category: "شيفون ولمسة",
+                fabricType: "شيفون حريري لامع مع تطريز يدوي",
+                priceSAR: 980,
+                oldPriceSAR: 1150,
+                occasion: "عرائس وسيرة",
+                colorCategory: "وردي/بنفسجي",
+                colorDesc: "وردي داكن مع حبيبات كريستال عاكسة للضوء",
+                origin: "الإمارات / دبي فخامة",
+                length: "4.5 متر مريح",
+                weight: "خفيف وانسيابي جذاب",
+                image: "https://images.unsplash.com/photo-1579298245158-33e8f568f7d3?q=80&w=800&auto=format&fit=crop",
+                description: "خامة شيفون لمسة ناعمة وأنيقة مطرزة بحبات الكريستال والخرز الدقيق، يمنحك إطلالة ملكية في حفلات الزفاف والسيرة."
+            },
+            {
+                id: 4,
+                name: "ثوب ربط يدوي أصلي (عصارة أم درمان)",
+                category: "جكارد وربط",
+                fabricType: "قطن تترون ناعم مع صباغة يدوية مفرغة",
+                priceSAR: 620,
+                oldPriceSAR: 750,
+                occasion: "يومي واستقبال",
+                colorCategory: "مشكل/متعدد",
+                colorDesc: "تدرجات البنفسجي، الأصفر الدافئ والبرتقالي المحروق",
+                origin: "صناعة يدوية سودانية عريقة",
+                length: "4.5 متر",
+                weight: "متوسط، ألوان ثابتة مقاومة للغسيل",
+                image: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?q=80&w=800&auto=format&fit=crop",
+                description: "قطعة فنية نادرة مصبوغة بطريقة الربط التقليدية بواسطة أمهر نساء أم درمان. ألوان مشرقة تعبر عن البهجة وحيوية التراث السوداني."
+            },
+            {
+                id: 5,
+                name: "ثوب توتال أبيض سويسري فاخر (ثوب أستاذات)",
+                category: "توتال سويسري",
+                fabricType: "توتال جكارد سويسري ناصع البياض",
+                priceSAR: 780,
+                oldPriceSAR: 900,
+                occasion: "رسمي وأعياد",
+                colorCategory: "أبيض/أوف وايت",
+                colorDesc: "أبيض ناصع بتموجات جكارد هندسية خفيفة",
+                origin: "سويسرا فاخر",
+                length: "4.5 متر العرض الكامل",
+                weight: "خفيف، غير شفاف ومثالي للرأس",
+                image: "https://images.unsplash.com/photo-1528459801416-a9e53bbf4e17?q=80&w=800&auto=format&fit=crop",
+                description: "الثوب الأبيض السوداني الكلاسيكي، عنوان الوقار والشياكة للأستاذات والمهنيات، مريح في اللف وثابت لا ينزلق طوال اليوم."
+            },
+            {
+                id: 6,
+                name: "ثوب حرير جكارد هندي مطفي راقي",
+                category: "حرير قرمصيص",
+                fabricType: "حرير خام مخلوط بجكارد حريري",
+                priceSAR: 1100,
+                oldPriceSAR: 1300,
+                occasion: "عرائس وسيرة",
+                colorCategory: "أخضر/زمردي",
+                colorDesc: "أخضر ملكي داكن مع لمعة حرير زمرّدية",
+                origin: "كشمير / الهند",
+                length: "4.5 متر مع الطرحة المشغولة",
+                weight: "متوسط الفخامة، راكد ومريح",
+                image: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?q=80&w=800&auto=format&fit=crop",
+                description: "خامة حرير جكارد ملكية تتميز بركودها وثباتها مع لمعة خافتة تعكس الفخامة الهادئة لأمهات العرائس وكبار الضيوف."
+            },
+            {
+                id: 7,
+                name: "ثوب قطن بارد مشجر صيفي (ألوان النيل)",
+                category: "أقطان باردة",
+                fabricType: "قطن كول 100% عالي النعومة",
+                priceSAR: 380,
+                oldPriceSAR: 480,
+                occasion: "يومي واستقبال",
+                colorCategory: "أزرق/نيلي",
+                colorDesc: "أزرق فيروزي مع لمسات زرقاء سماوية هادئة",
+                origin: "أقطان ممتازة",
+                length: "4.5 متر",
+                weight: "فائق البرودة وخفيف جداً",
+                image: "https://images.unsplash.com/photo-1563245372-f21724e3856d?q=80&w=800&auto=format&fit=crop",
+                description: "الخيار الأفضل للطقس الحار في السودان والخليج. ناعم كالحرير على البشرة، سريع الجفاف، وسهل الكي والغسيل."
+            },
+            {
+                id: 8,
+                name: "ثوب بدرة ذهبي مشغول زري وسيرما",
+                category: "سهرات وعرائس",
+                fabricType: "قماش بدرة فاخر مطرز بخيوط القصب الذهبية",
+                priceSAR: 1450,
+                oldPriceSAR: 1680,
+                occasion: "عرائس وسيرة",
+                colorCategory: "أصفر/ذهبي",
+                colorDesc: "أرضية شمسية ذهبية مع خيوط زري براقة",
+                origin: "تطريز هندي خاص بطلبنا",
+                length: "4.5 متر",
+                weight: "ثقيل وفخم للمناسبات الكبرى",
+                image: "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=800&auto=format&fit=crop",
+                description: "ثوب بدرة تقليدي محاك بذوق عصري، تطريزات الزري تغطي أطراف الثوب والرأس لتتألقي كأميرة في كل خطوة."
+            },
+            {
+                id: 9,
+                name: "ثوب كريب لمسة مطرز خرز لول",
+                category: "شيفون ولمسة",
+                fabricType: "كريب حريري انسيابي غير شفاف",
+                priceSAR: 750,
+                oldPriceSAR: 880,
+                occasion: "رسمي وأعياد",
+                colorCategory: "وردي/بنفسجي",
+                colorDesc: "موف ليلكي ناعم مع نثرات لؤلؤ صغيرة",
+                origin: "كوريا درجة أولى",
+                length: "4.5 متر",
+                weight: "متوسط الوزن وسهل الارتداء",
+                image: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?q=80&w=800&auto=format&fit=crop",
+                description: "كريب لمسة راقي جداً لا يحتاج لبطانة كثيفة، يتميز بمسكة مريحة على الكتف وثنيات متناسقة تزين الجسم."
+            }
+        ];
+
+        // Currency Rates (Base: SAR)
+        const currencyRates = {
+            SAR: { symbol: "ر.س", rate: 1 },
+            SDG: { symbol: "ج.س", rate: 420 }, // approximate market reference
+            USD: { symbol: "$", rate: 0.27 },
+            AED: { symbol: "د.إ", rate: 0.98 }
+        };
+
+        let currentCurrency = 'SAR';
+        let currentCategory = 'all';
+        let wishlist = JSON.parse(localStorage.getItem('al_qarmasis_wishlist') || '[]');
+        let cart = JSON.parse(localStorage.getItem('al_qarmasis_cart') || '[]');
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            renderProducts();
+            updateWishlistBadge();
+            updateCartUI();
+            document.getElementById('year').textContent = new Date().getFullYear();
+
+            // Search Live input
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                applyFilters();
+            });
+        });
+
+        // Price Formatter
+        function formatPrice(amountInSAR) {
+            const info = currencyRates[currentCurrency];
+            const converted = Math.round(amountInSAR * info.rate);
+            return `${converted.toLocaleString()} ${info.symbol}`;
+        }
+
+        function changeCurrency(newCurr) {
+            currentCurrency = newCurr;
+            renderProducts();
+            updateCartUI();
+        }
+
+        // Category Selection
+        function filterByCategory(cat) {
+            currentCategory = cat;
+            const pills = document.querySelectorAll('.fabric-pill');
+            pills.forEach(pill => pill.classList.remove('active'));
+            
+            // match active pill
+            event?.currentTarget?.classList.add('active');
+            applyFilters();
+        }
+
+        // Apply filters combined
+        function applyFilters() {
+            const searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+            const occasionVal = document.getElementById('occasionFilter').value;
+            const colorVal = document.getElementById('colorFilter').value;
+            const sortVal = document.getElementById('sortFilter').value;
+
+            let filtered = productsData.filter(prod => {
+                // Category
+                const matchCategory = (currentCategory === 'all') || (prod.category === currentCategory);
+                // Search
+                const matchSearch = prod.name.toLowerCase().includes(searchQuery) || 
+                                    prod.fabricType.toLowerCase().includes(searchQuery) ||
+                                    prod.description.toLowerCase().includes(searchQuery);
+                // Occasion
+                const matchOccasion = (occasionVal === 'all') || (prod.occasion === occasionVal);
+                // Color
+                const matchColor = (colorVal === 'all') || (prod.colorCategory === colorVal);
+
+                return matchCategory && matchSearch && matchOccasion && matchColor;
+            });
+
+            // Sorting
+            if (sortVal === 'price-low') {
+                filtered.sort((a, b) => a.priceSAR - b.priceSAR);
+            } else if (sortVal === 'price-high') {
+                filtered.sort((a, b) => b.priceSAR - a.priceSAR);
+            }
+
+            renderProductsList(filtered);
+        }
+
+        // Filter Favorites
+        let showingFavoritesOnly = false;
+        function filterFavorites() {
+            showingFavoritesOnly = !showingFavoritesOnly;
+            const btn = document.getElementById('wishlistBtn');
+            if (showingFavoritesOnly) {
+                btn.style.background = '#8b1538';
+                btn.style.color = '#fff';
+                const favProducts = productsData.filter(p => wishlist.includes(p.id));
+                renderProductsList(favProducts);
+                showToast("عرض قائمة أقمشتك المفضلة فقط");
+            } else {
+                btn.style.background = '#f8f4f2';
+                btn.style.color = 'var(--primary)';
+                applyFilters();
+            }
+        }
+
+        // Render Grid
+        function renderProductsList(products) {
+            const grid = document.getElementById('productsGrid');
+            const countLabel = document.getElementById('productCount');
+            countLabel.textContent = `عرض ${products.length} من أصل ${productsData.length} قطعة قماش`;
+
+            if (products.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; background: white; border-radius: 16px;">
+                        <i class="fas fa-search" style="font-size: 3rem; color: #d4af37; margin-bottom: 15px;"></i>
+                        <h3 style="color: var(--primary);">عذراً، لم نعثر على نتائج مطابقة!</h3>
+                        <p style="color: var(--text-muted); margin-top: 8px;">جربي تغيير خيارات البحث أو التصفية لاكتشاف أقمشة أخرى.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = products.map(prod => {
+                const isFav = wishlist.includes(prod.id);
+                return `
+                    <div class="product-card">
+                        <div class="card-img-container" onclick="openProductModal(${prod.id})">
+                            <img src="${prod.image}" alt="${prod.name}" class="card-img" loading="lazy">
+                            <span class="fabric-badge">${prod.category}</span>
+                            <span class="origin-tag"><i class="fas fa-map-marker-alt"></i> ${prod.origin}</span>
+                            <button class="btn-wishlist ${isFav ? 'active' : ''}" onclick="toggleWishlist(event, ${prod.id})" title="حفظ بالمفضلة">
+                                <i class="${isFav ? 'fas' : 'far'} fa-heart"></i>
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <span class="fabric-category">${prod.fabricType}</span>
+                            <h3 class="product-title" onclick="openProductModal(${prod.id})" style="cursor: pointer;">${prod.name}</h3>
+                            <p class="product-desc">${prod.description}</p>
+                            
+                            <div class="product-specs">
+                                <div class="spec-item"><i class="fas fa-ruler-combined"></i> ${prod.length}</div>
+                                <div class="spec-item"><i class="fas fa-palette"></i> ${prod.colorCategory}</div>
+                            </div>
+
+                            <div class="card-footer">
+                                <div class="price-box">
+                                    <span class="price-curr">${formatPrice(prod.priceSAR)}</span>
+                                    <span class="price-old">${formatPrice(prod.oldPriceSAR)}</span>
+                                </div>
+                                <button class="btn-add-cart" onclick="addToCart(${prod.id})">
+                                    <i class="fas fa-shopping-basket"></i> أضيفي للسلة
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderProducts() {
+            applyFilters();
+        }
+
+        // Modal Logic
+        function openProductModal(id) {
+            const prod = productsData.find(p => p.id === id);
+            if (!prod) return;
+
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <div class="modal-gallery">
+                    <img src="${prod.image}" alt="${prod.name}">
+                </div>
+                <div class="modal-details">
+                    <span class="detail-badge">${prod.category}</span>
+                    <h3>${prod.name}</h3>
+                    <p class="modal-desc">${prod.description}</p>
+                    
+                    <div class="spec-list">
+                        <div class="spec-row">
+                            <span>نوع القماش والخامة:</span>
+                            <span>${prod.fabricType}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span>بلد المنشأ / الجودة:</span>
+                            <span>${prod.origin}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span>المقاس والأبعاد:</span>
+                            <span>${prod.length}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span>اللون والتدرج:</span>
+                            <span>${prod.colorDesc}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span>الوزن والملمس:</span>
+                            <span>${prod.weight}</span>
+                        </div>
+                        <div class="spec-row">
+                            <span>المناسبة المقترحة:</span>
+                            <span>${prod.occasion}</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-price">${formatPrice(prod.priceSAR)}</div>
+
+                    <div class="modal-actions">
+                        <button class="btn-modal-add" onclick="addToCart(${prod.id}); closeModal();">
+                            <i class="fas fa-shopping-bag"></i> إضافة لسلة الشراء
+                        </button>
+                        <a href="https://wa.me/249912345678?text=${encodeURIComponent('السلام عليكم، أود الاستفسار وطلب ثوب: ' + prod.name + ' - بسعر ' + formatPrice(prod.priceSAR))}" target="_blank" class="btn-modal-wa">
+                            <i class="fab fa-whatsapp"></i> طلب فوري
+                        </a>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('productModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('productModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Wishlist
+        function toggleWishlist(e, id) {
+            e.stopPropagation();
+            if (wishlist.includes(id)) {
+                wishlist = wishlist.filter(item => item !== id);
+                showToast("تم الحذف من المفضلة");
+            } else {
+                wishlist.push(id);
+                showToast("تم الحفظ في قائمة المفضلة ❤️");
+            }
+            localStorage.setItem('al_qarmasis_wishlist', JSON.stringify(wishlist));
+            updateWishlistBadge();
+            renderProducts();
+        }
+
+        function updateWishlistBadge() {
+            document.getElementById('favCount').textContent = wishlist.length;
+        }
+
+        // Cart Drawer and Methods
+        function toggleCartDrawer() {
+            const drawer = document.getElementById('cartDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+            drawer.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        function addToCart(id) {
+            const prod = productsData.find(p => p.id === id);
+            if (!prod) return;
+
+            const existing = cart.find(item => item.id === id);
+            if (existing) {
+                existing.qty += 1;
+            } else {
+                cart.push({ ...prod, qty: 1 });
+            }
+
+            localStorage.setItem('al_qarmasis_cart', JSON.stringify(cart));
+            updateCartUI();
+            showToast(`تمت إضافة "${prod.name}" إلى السلة ✨`);
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(item => item.id !== id);
+            localStorage.setItem('al_qarmasis_cart', JSON.stringify(cart));
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const countBadge = document.getElementById('cartCount');
+            const itemsContainer = document.getElementById('cartItemsContainer');
+            const totalLabel = document.getElementById('cartTotalPrice');
+
+            const totalItemsCount = cart.reduce((sum, item) => sum + item.qty, 0);
+            countBadge.textContent = totalItemsCount;
+
+            if (cart.length === 0) {
+                itemsContainer.innerHTML = `
+                    <div class="empty-cart-msg">
+                        <i class="fas fa-shopping-basket" style="font-size: 2.5rem; color: #d4af37; margin-bottom: 10px; display:block;"></i>
+                        سلتك فارغة حالياً.<br>تصفحي أجمل الأقمشة السودانية وأضيفيها هنا.
+                    </div>
+                `;
+                totalLabel.textContent = formatPrice(0);
+                return;
+            }
+
+            let totalSAR = 0;
+            itemsContainer.innerHTML = cart.map(item => {
+                totalSAR += item.priceSAR * item.qty;
+                return `
+                    <div class="cart-item">
+                        <img src="${item.image}" class="cart-item-img" alt="${item.name}">
+                        <div class="cart-item-info">
+                            <div class="cart-item-title">${item.name}</div>
+                            <div class="cart-item-price">${formatPrice(item.priceSAR)} × ${item.qty}</div>
+                        </div>
+                        <button class="cart-item-remove" onclick="removeFromCart(${item.id})" title="حذف">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+
+            totalLabel.textContent = formatPrice(totalSAR);
+        }
+
+        // WhatsApp Checkout
+        function checkoutViaWhatsApp() {
+            if (cart.length === 0) {
+                showToast("السلة فارغة، اختاري بعض الأقمشة أولاً");
+                return;
+            }
+
+            let message = "مرحباً دار القرمصيص، أود إتمام طلب الأقمشة التالية:\n\n";
+            let totalSAR = 0;
+
+            cart.forEach((item, index) => {
+                message += `${index + 1}) *${item.name}*\n`;
+                message += `   - النوع: ${item.category}\n`;
+                message += `   - الكمية: ${item.qty} ثوب\n`;
+                message += `   - السعر: ${formatPrice(item.priceSAR * item.qty)}\n\n`;
+                totalSAR += item.priceSAR * item.qty;
+            });
+
+            message += `💰 *الإجمالي الكلي:* ${formatPrice(totalSAR)}\n`;
+            message += `📍 *الرجاء تأكيد توافر الطلب وخيارات التوصيل.*`;
+
+            const phone = "249912345678"; // Representative Sudanese Store Contact
+            const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank');
+        }
+
+        // Toast Helper
+        function showToast(text) {
+            const toast = document.getElementById('toastAlert');
+            document.getElementById('toastMsg').textContent = text;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Close modal on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                const drawer = document.getElementById('cartDrawer');
+                if (drawer.classList.contains('active')) toggleCartDrawer();
+            }
+        });
+    </script>
+</body>
+</html>

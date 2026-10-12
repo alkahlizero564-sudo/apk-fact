@@ -1,0 +1,48 @@
+name: EAS Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Platform to build"
+        required: true
+        default: "android"
+        type: choice
+        options:
+          - android
+          - ios
+          - all
+
+jobs:
+  build:
+    name: Build app
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          packager: npm
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build (push to main → Android only, non-interactive)
+        if: github.event_name == 'push'
+        run: eas build --platform android --non-interactive --no-wait
+
+      - name: Build (manual dispatch → chosen platform)
+        if: github.event_name == 'workflow_dispatch'
+        run: eas build --platform ${{ github.event.inputs.platform }} --non-interactive --no-wait

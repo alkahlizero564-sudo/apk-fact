@@ -2,6 +2,7 @@
   "expo": {
     "name": "APK Fact",
     "slug": "apk-fact",
+    "owner": "aqadas-team",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",

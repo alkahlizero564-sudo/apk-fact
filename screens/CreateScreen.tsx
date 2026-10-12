@@ -1,21 +1,16 @@
 import React, { useState } from "react";
 import { View, TextInput, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import * as SecureStore from "expo-secure-store";
-import { generateCode, editCode } from "../services/generate";
-import { pushFiles } from "../services/github";
-import { runSql } from "../services/supabase";
-import { saveGeneration, loadGeneration, AppSlot } from "../services/store";
+import { pushFile } from "../services/github";
 
-type Kind = "app" | "website";
-type Provider = "claude" | "gemini";
+type Slot = "1" | "2";
 type Mode = "new" | "edit";
 
-export default function CreateScreen({ navigation }: any) {
-  const [appSlot, setAppSlot] = useState<AppSlot>("1");
+export default function CreateScreen() {
+  const [appSlot, setAppSlot] = useState<Slot>("1");
   const [mode, setMode] = useState<Mode>("new");
+  const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [kind, setKind] = useState<Kind>("website");
-  const [provider, setProvider] = useState<Provider>("claude");
   const [loading, setLoading] = useState(false);
   const [log, setLog] = useState<string[]>([]);
 
@@ -23,51 +18,38 @@ export default function CreateScreen({ navigation }: any) {
     setLog((prev) => [...prev, line]);
   }
 
-  async function handleCreate() {
-    if (!description.trim() || loading) return;
+  async function handleSend() {
+    if (loading) return;
+    const cleanName = name.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+    if (!cleanName) {
+      setLog(["❌ اكتب اسم التطبيق بالإنجليزي (حروف وأرقام بدون مسافات)."]);
+      return;
+    }
+    if (!description.trim()) {
+      setLog(["❌ اكتب الوصف."]);
+      return;
+    }
+
     setLog([]);
     setLoading(true);
     try {
-      let result;
-      if (mode === "edit") {
-        const current = await loadGeneration(appSlot);
-        if (!current) {
-          addLog("❌ مفيش كود موجود للتعديل عليه. اعمل إنشاء جديد الأول.");
-          setLoading(false);
-          return;
-        }
-        addLog("⏳ بيتعدّل الكود...");
-        result = await editCode(current.files, description.trim(), provider);
-      } else {
-        addLog("⏳ بيتولّد الكود...");
-        result = await generateCode(description.trim(), kind, provider);
-      }
-      addLog(`✅ ${mode === "edit" ? "اتعدّل" : "اتولّد"}: ${result.summary} (${result.files.length} ملف)`);
-
-      await saveGeneration(appSlot, result);
-      addLog(`✅ اتحفظ محليًا للمعاينة (التطبيق ${appSlot === "1" ? "الأول" : "الثاني"})`);
-
       const repo = await SecureStore.getItemAsync(appSlot === "1" ? "GITHUB_REPO_1" : "GITHUB_REPO_2");
-      if (repo) {
-        addLog("⏳ بيترفع على GitHub...");
-        await pushFiles(repo, result.files, `Generate: ${description.slice(0, 60)}`);
-        addLog(`✅ اترفع على ${repo}`);
-      } else {
-        addLog("⚠️ مفيش مستودع GitHub محفوظ — اتخطى الرفع (حطه في تبويب المفاتيح)");
+      if (!repo) {
+        addLog("❌ مفيش مستودع GitHub محفوظ. حطه في تبويب المفاتيح.");
+        return;
       }
 
-      if (result.sql) {
-        const ref = await SecureStore.getItemAsync("SUPABASE_PROJECT_REF");
-        if (ref) {
-          addLog("⏳ بينفّذ SQL على Supabase...");
-          await runSql(result.sql);
-          addLog("✅ اتنفّذ SQL بنجاح");
-        } else {
-          addLog("⚠️ مفيش Supabase Project Ref محفوظ — اتخطى تنفيذ SQL");
-        }
-      }
-
-      addLog("🎉 خلصنا! روح لتبويب المعاينة تشوف الناتج.");
+      addLog("⏳ بيتم إرسال الطلب إلى GitHub...");
+      const content = `${cleanName}\n${description.trim()}\n\n(request id: ${Date.now()})\n`;
+      await pushFile(
+        repo,
+        "request.txt",
+        content,
+        `${mode === "edit" ? "Edit" : "Create"}: ${cleanName}`
+      );
+      addLog("✅ تم إرسال الطلب.");
+      addLog(`⏳ GitHub بيولّد التطبيق دلوقتي. بعد حوالي دقيقة بيظهر في: apps/${cleanName}/index.html`);
+      addLog("لمتابعة التقدم: افتح تبويب Actions في المستودع.");
     } catch (e: any) {
       addLog(`❌ ${e.message}`);
     } finally {
@@ -77,7 +59,7 @@ export default function CreateScreen({ navigation }: any) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.label}>التطبيق</Text>
+      <Text style={styles.label}>المستودع</Text>
       <View style={styles.row}>
         <TouchableOpacity
           style={[styles.pill, appSlot === "1" && styles.pillActive]}
@@ -109,41 +91,17 @@ export default function CreateScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      {mode === "new" && (
-        <>
-          <Text style={styles.label}>النوع</Text>
-          <View style={styles.row}>
-            <TouchableOpacity
-              style={[styles.pill, kind === "website" && styles.pillActive]}
-              onPress={() => setKind("website")}
-            >
-              <Text style={kind === "website" ? styles.pillTextActive : styles.pillText}>موقع</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.pill, kind === "app" && styles.pillActive]}
-              onPress={() => setKind("app")}
-            >
-              <Text style={kind === "app" ? styles.pillTextActive : styles.pillText}>تطبيق</Text>
-            </TouchableOpacity>
-          </View>
-        </>
-      )}
-
-      <Text style={styles.label}>الذكاء الاصطناعي</Text>
-      <View style={styles.row}>
-        <TouchableOpacity
-          style={[styles.pill, provider === "claude" && styles.pillActive]}
-          onPress={() => setProvider("claude")}
-        >
-          <Text style={provider === "claude" ? styles.pillTextActive : styles.pillText}>Claude</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.pill, provider === "gemini" && styles.pillActive]}
-          onPress={() => setProvider("gemini")}
-        >
-          <Text style={provider === "gemini" ? styles.pillTextActive : styles.pillText}>Gemini</Text>
-        </TouchableOpacity>
-      </View>
+      <Text style={styles.label}>
+        {mode === "edit" ? "اسم التطبيق اللي تبغى تعدّله" : "اسم التطبيق (إنجليزي)"}
+      </Text>
+      <TextInput
+        style={styles.input}
+        value={name}
+        onChangeText={setName}
+        placeholder="مثال: shop"
+        autoCapitalize="none"
+        autoCorrect={false}
+      />
 
       <Text style={styles.label}>{mode === "edit" ? "وصف التعديل" : "الوصف"}</Text>
       <TextInput
@@ -152,13 +110,13 @@ export default function CreateScreen({ navigation }: any) {
         onChangeText={setDescription}
         placeholder={
           mode === "edit"
-            ? "مثال: غيّر لون الخلفية للأزرق وزوّد زرار تواصل واتساب"
-            : "مثال: صفحة هبوط لمقهى فيها قائمة أسعار وفورم تواصل"
+            ? "مثال: غيّر الألوان للأخضر وأضف زر واتساب"
+            : "مثال: متجر ملابس فيه سلة مشتريات وقائمة أسعار"
         }
         multiline
       />
 
-      <TouchableOpacity style={styles.createBtn} onPress={handleCreate} disabled={loading}>
+      <TouchableOpacity style={styles.createBtn} onPress={handleSend} disabled={loading}>
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
@@ -185,6 +143,7 @@ const styles = StyleSheet.create({
   pillActive: { backgroundColor: "#111", borderColor: "#111" },
   pillText: { color: "#111" },
   pillTextActive: { color: "#fff" },
+  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 12, padding: 12, marginTop: 4 },
   textarea: { borderWidth: 1, borderColor: "#ccc", borderRadius: 12, padding: 12, minHeight: 100, marginTop: 4 },
   createBtn: { backgroundColor: "#111", borderRadius: 12, padding: 14, alignItems: "center", marginTop: 20 },
   createBtnText: { color: "#fff", fontWeight: "700" },

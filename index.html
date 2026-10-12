@@ -3,400 +3,272 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مقهى الألعاب | Gaming Cafe</title>
+    <title>آلة حاسبة</title>
     <style>
         :root {
-            --primary: #8338ec;
-            --secondary: #3a86ff;
-            --accent: #ff006e;
-            --bg: #0f0c29;
-            --surface: #1e1b4b;
-            --text: #ffffff;
-            --text-dim: #94a3b8;
+            --bg-color: #000000;
+            --display-bg: #000000;
+            --btn-gray: #333333;
+            --btn-light-gray: #a5a5a5;
+            --btn-orange: #ff9f0a;
+            --text-white: #ffffff;
+            --text-black: #000000;
         }
 
         * {
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
         }
 
         body {
             margin: 0;
-            background: var(--bg);
-            color: var(--text);
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-white);
             height: 100vh;
-            overflow: hidden;
             display: flex;
             flex-direction: column;
-        }
-
-        /* App Layout */
-        header {
-            padding: 20px;
-            background: linear-gradient(to bottom, var(--surface), transparent);
-            text-align: center;
-        }
-
-        main {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-            padding-bottom: 80px;
-        }
-
-        /* Navigation */
-        nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--surface);
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 0;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
-            z-index: 100;
-        }
-
-        .nav-item {
-            color: var(--text-dim);
-            text-decoration: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-size: 12px;
-            cursor: pointer;
-        }
-
-        .nav-item.active {
-            color: var(--secondary);
-        }
-
-        .nav-icon {
-            font-size: 20px;
-            margin-bottom: 4px;
-        }
-
-        /* Components */
-        .card {
-            background: var(--surface);
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 15px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .hero-banner {
-            height: 150px;
-            background: linear-gradient(45deg, var(--primary), var(--secondary));
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            position: relative;
+            justify-content: flex-end;
             overflow: hidden;
         }
 
-        .hero-banner::after {
-            content: '';
-            position: absolute;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
-            animation: pulse 4s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: translate(-25%, -25%); }
-            50% { transform: translate(0%, 0%); }
-            100% { transform: translate(-25%, -25%); }
-        }
-
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .device-item {
-            background: #2a2a4a;
-            padding: 12px;
-            border-radius: 12px;
-            text-align: center;
-            transition: 0.3s;
-        }
-
-        .device-item.available {
-            border-left: 4px solid #4ade80;
-        }
-
-        .device-item.occupied {
-            border-left: 4px solid #f87171;
-            opacity: 0.7;
-        }
-
-        .btn {
-            background: var(--secondary);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
+        #calculator {
             width: 100%;
-            font-weight: bold;
-            margin-top: 10px;
-            cursor: pointer;
+            padding: 20px;
+            padding-bottom: 40px;
         }
 
-        .status-badge {
-            font-size: 10px;
-            padding: 2px 8px;
-            border-radius: 20px;
-            background: rgba(255,255,255,0.1);
-        }
-
-        .menu-item {
+        #display-container {
+            padding: 20px;
+            text-align: left; /* Calculations usually flow LTR even in RTL contexts for math */
+            direction: ltr;
             display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            flex-direction: column;
+            justify-content: flex-end;
+            min-height: 150px;
         }
 
-        .menu-img {
-            width: 60px;
-            height: 60px;
-            background: #333;
-            border-radius: 10px;
+        #prev-calc {
+            font-size: 1.5rem;
+            color: #888;
+            min-height: 1.5rem;
+            margin-bottom: 10px;
+            word-wrap: break-word;
+        }
+
+        #current-calc {
+            font-size: 5rem;
+            font-weight: 300;
+            margin: 0;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none;
+        }
+
+        #current-calc::-webkit-scrollbar {
+            display: none;
+        }
+
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        button {
+            border: none;
+            border-radius: 50%;
+            height: 80px;
+            width: 80px;
+            font-size: 2rem;
+            font-weight: 500;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            transition: filter 0.1s;
         }
 
-        .hidden {
-            display: none !important;
+        button:active {
+            filter: brightness(1.5);
         }
 
-        /* Profile stats */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-            text-align: center;
+        .btn-number {
+            background-color: var(--btn-gray);
+            color: var(--text-white);
         }
 
-        .stat-box {
-            background: rgba(255,255,255,0.05);
-            padding: 10px;
-            border-radius: 10px;
+        .btn-function {
+            background-color: var(--btn-light-gray);
+            color: var(--text-black);
         }
 
-        .stat-val {
-            display: block;
-            font-weight: bold;
-            font-size: 18px;
-            color: var(--secondary);
+        .btn-operator {
+            background-color: var(--btn-orange);
+            color: var(--text-white);
+            font-size: 2.5rem;
         }
 
-        .stat-label {
-            font-size: 10px;
-            color: var(--text-dim);
+        .btn-zero {
+            grid-column: span 2;
+            width: 100%;
+            border-radius: 40px;
+            justify-content: flex-start;
+            padding-left: 30px;
+        }
+
+        @media (max-width: 400px) {
+            button {
+                height: 70px;
+                width: 70px;
+                font-size: 1.7rem;
+            }
+            #current-calc {
+                font-size: 4rem;
+            }
         }
     </style>
 </head>
 <body>
 
-<header>
-    <h1 style="margin:0; font-size: 22px;">مقهى الأساطير <span style="color:var(--secondary)">HUB</span></h1>
-</header>
-
-<main id="app-content">
-    <!-- Dynamic Content Loaded Here -->
-</main>
-
-<nav>
-    <div class="nav-item active" onclick="showPage('home')">
-        <span class="nav-icon">🏠</span>
-        <span>الرئيسية</span>
+    <div id="display-container">
+        <div id="prev-calc"></div>
+        <div id="current-calc">0</div>
     </div>
-    <div class="nav-item" onclick="showPage('booking')">
-        <span class="nav-icon">🎮</span>
-        <span>حجز جهاز</span>
-    </div>
-    <div class="nav-item" onclick="showPage('menu')">
-        <span class="nav-icon">🍔</span>
-        <span>المنيو</span>
-    </div>
-    <div class="nav-item" onclick="showPage('profile')">
-        <span class="nav-icon">👤</span>
-        <span>حسابي</span>
-    </div>
-</nav>
 
-<script>
-    // State Management
-    const state = {
-        currentPage: 'home',
-        user: {
-            name: "أحمد محمد",
-            points: 450,
-            level: 12,
-            bookings: 28
-        },
-        devices: [
-            { id: 1, name: "PS5 #01", type: "Console", status: "available", price: "25 ريال/ساعة" },
-            { id: 2, name: "PC #05", type: "PC", status: "occupied", price: "15 ريال/ساعة" },
-            { id: 3, name: "PS5 #02", type: "Console", status: "available", price: "25 ريال/ساعة" },
-            { id: 4, name: "PC #09", type: "PC", status: "available", price: "15 ريال/ساعة" },
-            { id: 5, name: "VIP Room", type: "Private", status: "occupied", price: "60 ريال/ساعة" },
-            { id: 6, name: "PC #12", type: "PC", status: "available", price: "15 ريال/ساعة" }
-        ],
-        menu: [
-            { id: 1, name: "برجر اللحم الكلاسيكي", price: 25, icon: "🍔" },
-            { id: 2, name: "بطاطس مقلية مميزة", price: 12, icon: "🍟" },
-            { id: 3, name: "مشروب طاقة بلو", price: 15, icon: "🥤" },
-            { id: 4, name: "بيتزا بيبروني", price: 30, icon: "🍕" },
-            { id: 5, name: "قهوة مختصة", price: 14, icon: "☕" }
-        ]
-    };
+    <div id="calculator">
+        <div class="buttons-grid">
+            <button class="btn-function" onclick="clearDisplay()">AC</button>
+            <button class="btn-function" onclick="toggleSign()">+/-</button>
+            <button class="btn-function" onclick="appendOperator('%')">%</button>
+            <button class="btn-operator" onclick="appendOperator('/')">÷</button>
 
-    function showPage(pageId) {
-        state.currentPage = pageId;
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.classList.remove('active');
-            if(item.innerText.includes(getPageName(pageId))) item.classList.add('active');
+            <button class="btn-number" onclick="appendNumber('7')">7</button>
+            <button class="btn-number" onclick="appendNumber('8')">8</button>
+            <button class="btn-number" onclick="appendNumber('9')">9</button>
+            <button class="btn-operator" onclick="appendOperator('*')">×</button>
+
+            <button class="btn-number" onclick="appendNumber('4')">4</button>
+            <button class="btn-number" onclick="appendNumber('5')">5</button>
+            <button class="btn-number" onclick="appendNumber('6')">6</button>
+            <button class="btn-operator" onclick="appendOperator('-')">-</button>
+
+            <button class="btn-number" onclick="appendNumber('1')">1</button>
+            <button class="btn-number" onclick="appendNumber('2')">2</button>
+            <button class="btn-number" onclick="appendNumber('3')">3</button>
+            <button class="btn-operator" onclick="appendOperator('+')">+</button>
+
+            <button class="btn-number btn-zero" onclick="appendNumber('0')">0</button>
+            <button class="btn-number" onclick="appendNumber('.')">.</button>
+            <button class="btn-operator" onclick="calculate()">=</button>
+        </div>
+    </div>
+
+    <script>
+        let currentInput = '0';
+        let previousInput = '';
+        let operator = null;
+        let shouldResetScreen = false;
+
+        const currentDisplay = document.getElementById('current-calc');
+        const prevDisplay = document.getElementById('prev-calc');
+
+        function updateDisplay() {
+            currentDisplay.innerText = currentInput;
+            // Auto-scale font size if number gets too long
+            if (currentInput.length > 6) {
+                currentDisplay.style.fontSize = '3rem';
+            } else if (currentInput.length > 9) {
+                currentDisplay.style.fontSize = '2rem';
+            } else {
+                currentDisplay.style.fontSize = '5rem';
+            }
+        }
+
+        function appendNumber(number) {
+            if (currentInput === '0' || shouldResetScreen) {
+                currentInput = number;
+                shouldResetScreen = false;
+            } else {
+                currentInput += number;
+            }
+            updateDisplay();
+        }
+
+        function clearDisplay() {
+            currentInput = '0';
+            previousInput = '';
+            operator = null;
+            prevDisplay.innerText = '';
+            updateDisplay();
+        }
+
+        function toggleSign() {
+            currentInput = (parseFloat(currentInput) * -1).toString();
+            updateDisplay();
+        }
+
+        function appendOperator(op) {
+            if (operator !== null) calculate();
+            previousInput = currentInput;
+            operator = op;
+            prevDisplay.innerText = `${previousInput} ${operator === '*' ? '×' : operator === '/' ? '÷' : operator}`;
+            shouldResetScreen = true;
+        }
+
+        function calculate() {
+            if (operator === null || shouldResetScreen) return;
+            
+            let result;
+            const prev = parseFloat(previousInput);
+            const current = parseFloat(currentInput);
+
+            switch (operator) {
+                case '+':
+                    result = prev + current;
+                    break;
+                case '-':
+                    result = prev - current;
+                    break;
+                case '*':
+                    result = prev * current;
+                    break;
+                case '/':
+                    result = prev / current;
+                    break;
+                case '%':
+                    result = prev % current;
+                    break;
+                default:
+                    return;
+            }
+
+            currentInput = formatResult(result);
+            operator = null;
+            prevDisplay.innerText = '';
+            shouldResetScreen = true;
+            updateDisplay();
+        }
+
+        function formatResult(num) {
+            const stringNum = num.toString();
+            if (stringNum.length > 12) {
+                return num.toPrecision(8);
+            }
+            return stringNum;
+        }
+
+        // Touch feedback shim
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('touchstart', () => {
+                btn.style.filter = 'brightness(1.5)';
+            });
+            btn.addEventListener('touchend', () => {
+                btn.style.filter = 'brightness(1.0)';
+            });
         });
-        render();
-    }
-
-    function getPageName(id) {
-        const map = {home:'الرئيسية', booking:'حجز', menu:'المنيو', profile:'حسابي'};
-        return map[id];
-    }
-
-    function render() {
-        const content = document.getElementById('app-content');
-        
-        if (state.currentPage === 'home') {
-            content.innerHTML = `
-                <div class="hero-banner">
-                    <div style="text-align:center; z-index:1">
-                        <h2 style="margin:0">أهلاً بك، ${state.user.name}</h2>
-                        <p style="margin:5px 0 0">لديك عرض خاص اليوم: خصم 20%</p>
-                    </div>
-                </div>
-                
-                <div class="section-title">
-                    <span>العروض الحصرية</span>
-                    <span style="color:var(--secondary); font-size:12px">عرض الكل</span>
-                </div>
-                
-                <div class="card" style="background: linear-gradient(to right, #6366f1, #a855f7)">
-                    <strong>باقة نهاية الأسبوع</strong>
-                    <p style="font-size:12px">5 ساعات لعب + وجبة خفيفة فقط بـ 80 ريال</p>
-                </div>
-
-                <div class="section-title">الأجهزة المتاحة حالياً</div>
-                <div class="grid">
-                    ${state.devices.filter(d => d.status === 'available').slice(0, 4).map(d => `
-                        <div class="device-item available">
-                            <div style="font-size:24px">${d.type === 'PC' ? '🖥️' : '🎮'}</div>
-                            <div style="font-weight:bold; margin-top:5px">${d.name}</div>
-                            <div style="font-size:10px; color:var(--text-dim)">${d.price}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        } 
-        
-        else if (state.currentPage === 'booking') {
-            content.innerHTML = `
-                <div class="section-title">اختر جهازك للبدء</div>
-                <div class="grid">
-                    ${state.devices.map(d => `
-                        <div class="device-item ${d.status}" onclick="${d.status === 'available' ? 'confirmBooking(\''+d.name+'\')' : ''}">
-                            <div style="font-size:24px">${d.type === 'PC' ? '🖥️' : '🎮'}</div>
-                            <div style="font-weight:bold; margin-top:5px">${d.name}</div>
-                            <div class="status-badge">${d.status === 'available' ? 'متاح' : 'مشغول'}</div>
-                            <div style="font-size:10px; margin-top:5px">${d.price}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-
-        else if (state.currentPage === 'menu') {
-            content.innerHTML = `
-                <div class="section-title">قائمة الطعام والمشروبات</div>
-                ${state.menu.map(item => `
-                    <div class="menu-item">
-                        <div class="menu-img">${item.icon}</div>
-                        <div style="flex:1">
-                            <div style="font-weight:bold">${item.name}</div>
-                            <div style="color:var(--secondary); font-size:14px">${item.price} ريال</div>
-                        </div>
-                        <button onclick="orderItem('${item.name}')" style="background:var(--primary); color:white; border:none; border-radius:50%; width:30px; height:30px">+</button>
-                    </div>
-                `).join('')}
-            `;
-        }
-
-        else if (state.currentPage === 'profile') {
-            content.innerHTML = `
-                <div class="card" style="text-align:center">
-                    <div style="width:80px; height:80px; background:var(--secondary); border-radius:50%; margin:0 auto 15px; display:flex; align-items:center; justify-content:center; font-size:30px">👤</div>
-                    <h2 style="margin:0">${state.user.name}</h2>
-                    <p style="color:var(--text-dim); margin:5px 0">لاعب محترف (VIP)</p>
-                </div>
-
-                <div class="stats-grid">
-                    <div class="stat-box">
-                        <span class="stat-val">${state.user.points}</span>
-                        <span class="stat-label">نقاط</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-val">${state.user.level}</span>
-                        <span class="stat-label">المستوى</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="stat-val">${state.user.bookings}</span>
-                        <span class="stat-label">زيارات</span>
-                    </div>
-                </div>
-
-                <div class="section-title" style="margin-top:20px">الإعدادات</div>
-                <div class="card">
-                    <div style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05)">تعديل الملف الشخصي</div>
-                    <div style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05)">طرق الدفع</div>
-                    <div style="padding:10px 0; color: #f87171">تسجيل الخروج</div>
-                </div>
-            `;
-        }
-    }
-
-    function confirmBooking(name) {
-        alert('تم طلب حجز ' + name + '. يرجى التوجه للموظف لتأكيد الحجز.');
-    }
-
-    function orderItem(name) {
-        alert('تمت إضافة ' + name + ' إلى طلباتك.');
-    }
-
-    // Initial render
-    render();
-</script>
-
+    </script>
 </body>
 </html>

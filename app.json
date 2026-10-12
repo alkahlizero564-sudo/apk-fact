@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "App Factory",
-    "slug": "app-factor",
+    "name": "APK Fact",
+    "slug": "apk-fact",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
@@ -10,16 +10,16 @@
       "resizeMode": "contain"
     },
     "android": {
-      "package": "com.yourname.appfactory",
+      "package": "com.yourname.apkfact",
       "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"]
     },
     "ios": {
-      "bundleIdentifier": "com.yourname.appfactory"
+      "bundleIdentifier": "com.yourname.apkfact"
     },
     "plugins": ["expo-secure-store"],
     "extra": {
       "eas": {
-        "projectId": "2014ad46-c059-40c7-8f21-439f90c4d7d2"
+        "projectId": "10c32177-1c65-4a2b-8e55-1c4bc5cd8d7d"
       }
     }
   }

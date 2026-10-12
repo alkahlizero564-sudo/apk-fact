@@ -1,107 +1,129 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { WebView } from "react-native-webview";
-import { loadGeneration, AppSlot } from "../services/store";
-import { GenerationResult } from "../services/generate";
+import * as SecureStore from "expo-secure-store";
+import { listDir, getFileText } from "../services/github";
+
+type Slot = "1" | "2";
 
 export default function PreviewScreen() {
-  const [appSlot, setAppSlot] = useState<AppSlot>("1");
-  const [result, setResult] = useState<GenerationResult | null>(null);
-  const [activeFile, setActiveFile] = useState<string | null>(null);
+  const [slot, setSlot] = useState<Slot>("1");
+  const [apps, setApps] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [html, setHtml] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function getRepo() {
+    return SecureStore.getItemAsync(slot === "1" ? "GITHUB_REPO_1" : "GITHUB_REPO_2");
+  }
+
+  async function openApp(name: string) {
+    setSelected(name);
+    setHtml(null);
+    setError(null);
+    setLoading(true);
+    try {
+      const repo = await getRepo();
+      if (!repo) throw new Error("حط المستودع في تبويب المفاتيح.");
+      const text = await getFileText(repo, `apps/${name}/index.html`);
+      if (!text) throw new Error("الملف مش موجود.");
+      setHtml(text);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const refresh = useCallback(async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const repo = await SecureStore.getItemAsync(slot === "1" ? "GITHUB_REPO_1" : "GITHUB_REPO_2");
+      if (!repo) {
+        setApps([]);
+        setError("حط المستودع في تبويب المفاتيح.");
+        return;
+      }
+      const list = await listDir(repo, "apps");
+      setApps(list);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [slot]);
 
   useFocusEffect(
     useCallback(() => {
-      loadGeneration(appSlot).then((r) => {
-        setResult(r);
-        if (r) {
-          const html = r.files.find((f) => f.path.endsWith(".html"));
-          setActiveFile(html ? html.path : r.files[0]?.path ?? null);
-        } else {
-          setActiveFile(null);
-        }
-      });
-    }, [appSlot])
+      setSelected(null);
+      setHtml(null);
+      refresh();
+    }, [refresh])
   );
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={styles.appSwitch}>
-        <TouchableOpacity
-          style={[styles.appPill, appSlot === "1" && styles.appPillActive]}
-          onPress={() => setAppSlot("1")}
-        >
-          <Text style={appSlot === "1" ? styles.appPillTextActive : styles.appPillText}>التطبيق الأول</Text>
+      <View style={styles.topRow}>
+        <TouchableOpacity style={[styles.pill, slot === "1" && styles.pillActive]} onPress={() => setSlot("1")}>
+          <Text style={slot === "1" ? styles.pillTextActive : styles.pillText}>التطبيق الأول</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.appPill, appSlot === "2" && styles.appPillActive]}
-          onPress={() => setAppSlot("2")}
-        >
-          <Text style={appSlot === "2" ? styles.appPillTextActive : styles.appPillText}>التطبيق الثاني</Text>
+        <TouchableOpacity style={[styles.pill, slot === "2" && styles.pillActive]} onPress={() => setSlot("2")}>
+          <Text style={slot === "2" ? styles.pillTextActive : styles.pillText}>التطبيق الثاني</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.refreshBtn} onPress={refresh}>
+          <Text style={styles.refreshText}>تحديث ↻</Text>
         </TouchableOpacity>
       </View>
 
-      {!result ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>لسه مفيش حاجة اتعملت لهذا التطبيق. روح لتبويب "الإنشاء" الأول.</Text>
-        </View>
-      ) : (
-        <PreviewBody result={result} activeFile={activeFile} setActiveFile={setActiveFile} />
-      )}
-    </View>
-  );
-}
-
-function PreviewBody({
-  result,
-  activeFile,
-  setActiveFile,
-}: {
-  result: GenerationResult;
-  activeFile: string | null;
-  setActiveFile: (f: string) => void;
-}) {
-  const file = result.files.find((f) => f.path === activeFile);
-  const isHtml = file?.path.endsWith(".html");
-
-  return (
-    <View style={{ flex: 1 }}>
-      <ScrollView horizontal style={styles.tabBar} contentContainerStyle={{ paddingHorizontal: 8 }}>
-        {result.files.map((f) => (
+      <ScrollView horizontal style={styles.appsBar} contentContainerStyle={{ paddingHorizontal: 8 }}>
+        {apps.map((a) => (
           <TouchableOpacity
-            key={f.path}
-            style={[styles.fileTab, activeFile === f.path && styles.fileTabActive]}
-            onPress={() => setActiveFile(f.path)}
+            key={a}
+            style={[styles.appTab, selected === a && styles.appTabActive]}
+            onPress={() => openApp(a)}
           >
-            <Text style={activeFile === f.path ? styles.fileTabTextActive : styles.fileTabText}>{f.path}</Text>
+            <Text style={selected === a ? styles.appTabTextActive : styles.appTabText}>{a}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      {isHtml && file ? (
-        <WebView originWhitelist={["*"]} source={{ html: file.content }} style={{ flex: 1 }} />
-      ) : (
-        <ScrollView style={styles.codeBox}>
-          <Text style={styles.codeText}>{file?.content}</Text>
-        </ScrollView>
+      {loading && <ActivityIndicator style={{ marginTop: 16 }} />}
+      {error && <Text style={styles.error}>❌ {error}</Text>}
+
+      {!loading && !error && apps.length === 0 && (
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>لسه مفيش تطبيقات. روح لتبويب "الإنشاء" واعمل أول تطبيق.</Text>
+        </View>
       )}
+
+      {!loading && !selected && apps.length > 0 && (
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>اختر تطبيق من الأعلى عشان تعاينه.</Text>
+        </View>
+      )}
+
+      {html && <WebView originWhitelist={["*"]} source={{ html }} style={{ flex: 1 }} />}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  appSwitch: { flexDirection: "row", padding: 10, gap: 8, borderBottomWidth: 1, borderColor: "#eee" },
-  appPill: { borderWidth: 1, borderColor: "#ccc", borderRadius: 20, paddingVertical: 6, paddingHorizontal: 14, marginRight: 8 },
-  appPillActive: { backgroundColor: "#111", borderColor: "#111" },
-  appPillText: { color: "#111" },
-  appPillTextActive: { color: "#fff" },
-  empty: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+  topRow: { flexDirection: "row", alignItems: "center", padding: 10, borderBottomWidth: 1, borderColor: "#eee" },
+  pill: { borderWidth: 1, borderColor: "#ccc", borderRadius: 20, paddingVertical: 6, paddingHorizontal: 14, marginRight: 8 },
+  pillActive: { backgroundColor: "#111", borderColor: "#111" },
+  pillText: { color: "#111" },
+  pillTextActive: { color: "#fff" },
+  refreshBtn: { marginLeft: "auto", padding: 6 },
+  refreshText: { color: "#2563eb" },
+  appsBar: { maxHeight: 46, borderBottomWidth: 1, borderColor: "#eee" },
+  appTab: { paddingVertical: 12, paddingHorizontal: 14, marginRight: 4 },
+  appTabActive: { borderBottomWidth: 2, borderColor: "#111" },
+  appTabText: { color: "#888" },
+  appTabTextActive: { color: "#111", fontWeight: "700" },
+  error: { color: "#c0392b", margin: 16 },
+  empty: { alignItems: "center", justifyContent: "center", padding: 24 },
   emptyText: { textAlign: "center", color: "#666", lineHeight: 22 },
-  tabBar: { maxHeight: 44, borderBottomWidth: 1, borderColor: "#eee" },
-  fileTab: { paddingVertical: 10, paddingHorizontal: 14, marginRight: 4 },
-  fileTabActive: { borderBottomWidth: 2, borderColor: "#111" },
-  fileTabText: { color: "#888" },
-  fileTabTextActive: { color: "#111", fontWeight: "700" },
-  codeBox: { flex: 1, backgroundColor: "#0d0d0d", padding: 12 },
-  codeText: { color: "#d4d4d4", fontFamily: "monospace", fontSize: 12 },
 });

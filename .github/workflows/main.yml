@@ -1,9 +1,6 @@
 name: EAS Build
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       platform:
@@ -13,13 +10,15 @@ on:
         type: choice
         options:
           - android
-          - ios
-          - all
+
+permissions:
+  contents: write
 
 jobs:
   build:
-    name: Build app
+    name: Build APK locally
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -28,6 +27,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
 
       - name: Install dependencies
         run: npm install
@@ -39,10 +44,15 @@ jobs:
           packager: npm
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Build (push to main → Android only, non-interactive)
-        if: github.event_name == 'push'
-        run: eas build --platform android --non-interactive --no-wait
+      - name: Build APK on this runner (free)
+        env:
+          CI: "1"
+        run: eas build --platform android --profile preview --local --non-interactive --output ./app.apk
 
-      - name: Build (manual dispatch → chosen platform)
-        if: github.event_name == 'workflow_dispatch'
-        run: eas build --platform ${{ github.event.inputs.platform }} --non-interactive --no-wait
+      - name: Publish APK as a Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "apk-${{ github.run_number }}" app.apk \
+            --title "APK #${{ github.run_number }}" \
+            --notes "Built from ${{ github.sha }}"

@@ -9,10 +9,9 @@ export type GenerationResult = {
 
 // نماذج Gemini مرتبة: الأساسي ثم الاحتياطي
 const GEMINI_MODELS = [
+  "gemini-3.8-flash",
   "gemini-3.5-flash",
   "gemini-3-flash-preview",
-  "gemini-2.5-flash",
-  "gemini-2.5-flash-lite",
 ];
 const CLAUDE_MODEL = "claude-sonnet-4-6";
 const MAX_ATTEMPTS = 2;
@@ -88,9 +87,14 @@ async function runGemini(systemPrompt: string, prompt: string, apiKey: string): 
         break;
       }
 
-      // النموذج غير موجود: انتقل للتالي
-      if (res.status === 404) {
-        errors.push(`${model}: 404 model not found`);
+      const errText = await res.text();
+
+      // النموذج غير موجود أو متوقف: انتقل للتالي
+      if (
+        res.status === 404 ||
+        /no longer available|not found|is not supported/i.test(errText)
+      ) {
+        errors.push(`${model}: unavailable`);
         break;
       }
 
@@ -102,11 +106,11 @@ async function runGemini(systemPrompt: string, prompt: string, apiKey: string): 
       }
 
       // خطأ حقيقي (مفتاح خاطئ مثلا): وقف
-      throw new Error(`Gemini generation failed (${res.status}): ${await res.text()}`);
+      throw new Error(`Gemini generation failed (${res.status}): ${errText}`);
     }
   }
 
-  throw new Error(`Gemini overloaded, all models failed:\n${errors.join("\n")}`);
+  throw new Error(`Gemini failed, all models tried:\n${errors.join("\n")}`);
 }
 
 // ---------- Claude ----------
@@ -208,4 +212,4 @@ export async function generateCode(
     throw new Error("النموذج رجّع رد مش بالصيغة المتوقعة. جرب تاني أو بصياغة مختلفة.");
   }
   return result;
-} 
+}

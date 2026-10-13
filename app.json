@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.yourname.apkfact",
-      "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"]
+      "permissions": ["INTERNET", "ACCESS_NETWORK_STATE", "REQUEST_INSTALL_PACKAGES"]
     },
     "ios": {
       "bundleIdentifier": "com.yourname.apkfact"

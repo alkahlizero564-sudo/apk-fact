@@ -1,60 +1,28 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { WebView } from "react-native-webview";
-import * as SecureStore from "expo-secure-store";
-import { listDir, getFileText } from "../services/github";
-
-type Slot = "1" | "2";
+import { listDir, getFileText, deleteFolder } from "../services/github";
+import { REPO } from "../services/config";
 
 export default function PreviewScreen() {
-  const [slot, setSlot] = useState<Slot>("1");
   const [apps, setApps] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [html, setHtml] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function getRepo() {
-    return SecureStore.getItemAsync(slot === "1" ? "GITHUB_REPO_1" : "GITHUB_REPO_2");
-  }
-
-  async function openApp(name: string) {
-    setSelected(name);
-    setHtml(null);
-    setError(null);
-    setLoading(true);
-    try {
-      const repo = await getRepo();
-      if (!repo) throw new Error("حط المستودع في تبويب المفاتيح.");
-      const text = await getFileText(repo, `apps/${name}/index.html`);
-      if (!text) throw new Error("الملف مش موجود.");
-      setHtml(text);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   const refresh = useCallback(async () => {
     setError(null);
     setLoading(true);
     try {
-      const repo = await SecureStore.getItemAsync(slot === "1" ? "GITHUB_REPO_1" : "GITHUB_REPO_2");
-      if (!repo) {
-        setApps([]);
-        setError("حط المستودع في تبويب المفاتيح.");
-        return;
-      }
-      const list = await listDir(repo, "apps");
-      setApps(list);
+      setApps(await listDir(REPO, "apps"));
     } catch (e: any) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }, [slot]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -64,15 +32,48 @@ export default function PreviewScreen() {
     }, [refresh])
   );
 
+  async function openApp(name: string) {
+    setSelected(name);
+    setHtml(null);
+    setError(null);
+    setLoading(true);
+    try {
+      const text = await getFileText(REPO, `apps/${name}/index.html`);
+      if (!text) throw new Error("الملف مش موجود.");
+      setHtml(text);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function confirmDelete(name: string) {
+    Alert.alert("حذف التطبيق", `متأكد تبغى تحذف "${name}"؟ ما يمكن التراجع.`, [
+      { text: "إلغاء", style: "cancel" },
+      { text: "حذف", style: "destructive", onPress: () => doDelete(name) },
+    ]);
+  }
+
+  async function doDelete(name: string) {
+    setError(null);
+    setLoading(true);
+    try {
+      await deleteFolder(REPO, `apps/${name}`);
+      setSelected(null);
+      setHtml(null);
+      setApps(await listDir(REPO, "apps"));
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <View style={styles.topRow}>
-        <TouchableOpacity style={[styles.pill, slot === "1" && styles.pillActive]} onPress={() => setSlot("1")}>
-          <Text style={slot === "1" ? styles.pillTextActive : styles.pillText}>التطبيق الأول</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.pill, slot === "2" && styles.pillActive]} onPress={() => setSlot("2")}>
-          <Text style={slot === "2" ? styles.pillTextActive : styles.pillText}>التطبيق الثاني</Text>
-        </TouchableOpacity>
+        <Text style={styles.title}>تطبيقاتك</Text>
         <TouchableOpacity style={styles.refreshBtn} onPress={refresh}>
           <Text style={styles.refreshText}>تحديث ↻</Text>
         </TouchableOpacity>
@@ -89,6 +90,15 @@ export default function PreviewScreen() {
           </TouchableOpacity>
         ))}
       </ScrollView>
+
+      {selected && (
+        <View style={styles.actionRow}>
+          <Text style={styles.selectedName}>{selected}</Text>
+          <TouchableOpacity style={styles.deleteBtn} onPress={() => confirmDelete(selected)} disabled={loading}>
+            <Text style={styles.deleteText}>🗑 حذف</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {loading && <ActivityIndicator style={{ marginTop: 16 }} />}
       {error && <Text style={styles.error}>❌ {error}</Text>}
@@ -111,11 +121,8 @@ export default function PreviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  topRow: { flexDirection: "row", alignItems: "center", padding: 10, borderBottomWidth: 1, borderColor: "#eee" },
-  pill: { borderWidth: 1, borderColor: "#ccc", borderRadius: 20, paddingVertical: 6, paddingHorizontal: 14, marginRight: 8 },
-  pillActive: { backgroundColor: "#111", borderColor: "#111" },
-  pillText: { color: "#111" },
-  pillTextActive: { color: "#fff" },
+  topRow: { flexDirection: "row", alignItems: "center", padding: 12, borderBottomWidth: 1, borderColor: "#eee" },
+  title: { fontWeight: "700", fontSize: 16 },
   refreshBtn: { marginLeft: "auto", padding: 6 },
   refreshText: { color: "#2563eb" },
   appsBar: { maxHeight: 46, borderBottomWidth: 1, borderColor: "#eee" },
@@ -123,6 +130,10 @@ const styles = StyleSheet.create({
   appTabActive: { borderBottomWidth: 2, borderColor: "#111" },
   appTabText: { color: "#888" },
   appTabTextActive: { color: "#111", fontWeight: "700" },
+  actionRow: { flexDirection: "row", alignItems: "center", padding: 10, borderBottomWidth: 1, borderColor: "#eee" },
+  selectedName: { flex: 1, fontWeight: "700" },
+  deleteBtn: { borderWidth: 1, borderColor: "#c0392b", borderRadius: 10, paddingVertical: 6, paddingHorizontal: 14 },
+  deleteText: { color: "#c0392b", fontWeight: "700" },
   error: { color: "#c0392b", margin: 16 },
   empty: { alignItems: "center", justifyContent: "center", padding: 24 },
   emptyText: { textAlign: "center", color: "#666", lineHeight: 22 },

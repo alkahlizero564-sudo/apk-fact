@@ -24,6 +24,8 @@ async function waitForRun(prevId: number) {
   return null;
 }
 
+type Kind = "create" | "edit";
+
 type BoxProps = {
   title: string;
   busy: boolean;
@@ -34,63 +36,77 @@ type BoxProps = {
 function AppBox({ title, busy, setBusy, onPreview }: BoxProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editText, setEditText] = useState("");
+  const [loading, setLoading] = useState<Kind | null>(null);
   const [log, setLog] = useState<string[]>([]);
 
   function addLog(line: string) {
     setLog((prev) => [...prev, line]);
   }
 
-  async function handleSend() {
+  async function run(kind: Kind) {
     if (busy) return;
     const n = cleanName(name);
+    const text = (kind === "create" ? description : editText).trim();
     if (!n) {
       setLog(["❌ اكتب اسم التطبيق بالإنجليزي (حروف وأرقام بدون مسافات)."]);
       return;
     }
-    if (!description.trim()) {
-      setLog(["❌ اكتب الوصف."]);
+    if (!text) {
+      setLog([kind === "create" ? "❌ اكتب الوصف." : "❌ اكتب وصف التعديل."]);
       return;
     }
 
     setLog([]);
     setBusy(true);
-    setLoading(true);
+    setLoading(kind);
     try {
+      if (kind === "edit") {
+        const existing = await getFileText(REPO, `apps/${n}/index.html`);
+        if (!existing) {
+          addLog("❌ التطبيق ده مش موجود. اعمل إنشاء الأول.");
+          return;
+        }
+      }
+
       const prevId = await latestRunId(REPO, "generate.yml");
 
       addLog("⏳ بيتم إرسال الطلب...");
-      const content = `${n}\n${description.trim()}\n\n(request id: ${Date.now()})\n`;
-      await pushFile(REPO, "request.txt", content, `Create: ${n}`);
+      const content = `${n}\n${text}\n\n(request id: ${Date.now()})\n`;
+      await pushFile(REPO, "request.txt", content, `${kind === "edit" ? "Edit" : "Create"}: ${n}`);
       addLog("✅ تم إرسال الطلب.");
-      addLog("⏳ بيتولّد الكود... (من نصف دقيقة لدقيقتين)");
+      addLog(kind === "edit" ? "⏳ بيتعدّل الكود... (من نصف دقيقة لدقيقتين)" : "⏳ بيتولّد الكود... (من نصف دقيقة لدقيقتين)");
 
-      const run = await waitForRun(prevId);
-      if (!run) {
-        addLog("⚠️ التوليد أخذ وقت طويل. جرّب المعاينة بعد شوية.");
+      const r = await waitForRun(prevId);
+      if (!r) {
+        addLog("⚠️ أخذ وقت طويل. جرّب المعاينة بعد شوية.");
         return;
       }
-      if (run.conclusion !== "success") {
-        addLog("❌ فشل التوليد.");
-        const tail = await getFailureLog(REPO, run.id);
+      if (r.conclusion !== "success") {
+        addLog("❌ فشل.");
+        const tail = await getFailureLog(REPO, r.id);
         if (tail) addLog(tail);
         return;
       }
 
       const html = await getFileText(REPO, `apps/${n}/index.html`);
       if (!html) {
-        addLog("⚠️ التوليد نجح لكن الملف ما ظهر. جرّب المعاينة بعد شوية.");
+        addLog("⚠️ نجح لكن الملف ما ظهر. جرّب المعاينة بعد شوية.");
         return;
       }
-      addLog(`✅ اتولّد وارتفع: apps/${n}/index.html`);
+      addLog(kind === "edit" ? `✅ اتعدّل وارتفع: apps/${n}/index.html` : `✅ اتولّد وارتفع: apps/${n}/index.html`);
       addLog("🎉 اضغط معاينة تشوفه.");
+      if (kind === "edit") setEditText("");
     } catch (e: any) {
       addLog(`❌ ${e.message}`);
     } finally {
-      setLoading(false);
+      setLoading(null);
       setBusy(false);
     }
   }
+
+  const hasName = !!cleanName(name);
 
   return (
     <View style={styles.box}>
@@ -105,7 +121,7 @@ function AppBox({ title, busy, setBusy, onPreview }: BoxProps) {
         autoCapitalize="none"
         autoCorrect={false}
       />
-      <Text style={styles.hint}>لو الاسم موجود، يعدّل عليه بدل ما ينشئ جديد.</Text>
+      <Text style={styles.hint}>للإنشاء استخدم اسم جديد. للتعديل على تطبيق موجود استخدم زر تعديل الكود.</Text>
 
       <Text style={styles.label}>الوصف</Text>
       <TextInput
@@ -117,20 +133,44 @@ function AppBox({ title, busy, setBusy, onPreview }: BoxProps) {
       />
 
       <TouchableOpacity
-        style={[styles.createBtn, busy && !loading && styles.disabled]}
-        onPress={handleSend}
+        style={[styles.createBtn, busy && loading !== "create" && styles.disabled]}
+        onPress={() => run("create")}
         disabled={busy}
       >
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.createBtnText}>إنشاء ورفع</Text>}
+        {loading === "create" ? <ActivityIndicator color="#fff" /> : <Text style={styles.createBtnText}>إنشاء ورفع</Text>}
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.previewBtn, !cleanName(name) && styles.disabled]}
+        style={[styles.previewBtn, !hasName && styles.disabled]}
         onPress={() => onPreview(cleanName(name))}
-        disabled={!cleanName(name)}
+        disabled={!hasName}
       >
         <Text style={styles.previewBtnText}>معاينة</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity style={styles.editToggle} onPress={() => setEditOpen(!editOpen)}>
+        <Text style={styles.editToggleText}>{editOpen ? "تعديل الكود ▲" : "تعديل الكود ▼"}</Text>
+      </TouchableOpacity>
+
+      {editOpen && (
+        <View style={styles.editBox}>
+          <Text style={styles.label}>وصف التعديل</Text>
+          <TextInput
+            style={styles.textarea}
+            value={editText}
+            onChangeText={setEditText}
+            placeholder="مثال: غيّر الألوان للأخضر وأضف زر واتساب"
+            multiline
+          />
+          <TouchableOpacity
+            style={[styles.createBtn, busy && loading !== "edit" && styles.disabled]}
+            onPress={() => run("edit")}
+            disabled={busy}
+          >
+            {loading === "edit" ? <ActivityIndicator color="#fff" /> : <Text style={styles.createBtnText}>عدّل وارفع</Text>}
+          </TouchableOpacity>
+        </View>
+      )}
 
       {log.length > 0 && (
         <View style={styles.logBox}>
@@ -206,6 +246,9 @@ const styles = StyleSheet.create({
   createBtnText: { color: "#fff", fontWeight: "700" },
   previewBtn: { borderWidth: 1, borderColor: "#111", borderRadius: 12, padding: 12, alignItems: "center", marginTop: 10 },
   previewBtnText: { color: "#111", fontWeight: "700" },
+  editToggle: { borderWidth: 1, borderColor: "#888", borderRadius: 12, padding: 12, alignItems: "center", marginTop: 10, backgroundColor: "#f6f6f6" },
+  editToggleText: { color: "#333", fontWeight: "700" },
+  editBox: { marginTop: 4, borderTopWidth: 1, borderColor: "#eee", paddingTop: 4 },
   disabled: { opacity: 0.4 },
   logBox: { marginTop: 16, backgroundColor: "#f3f3f3", borderRadius: 10, padding: 12 },
   logLine: { marginBottom: 4, fontFamily: "monospace", fontSize: 13 },

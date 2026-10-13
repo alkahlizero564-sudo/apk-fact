@@ -210,3 +210,28 @@ export async function getFailureLog(repoFullName: string, runId: number): Promis
     return "";
   }
 }
+export async function findAppApkAsset(
+  repoFullName: string,
+  app: string
+): Promise<{ id: number; name: string } | null> {
+  const token = await getToken();
+  const res = await fetch(
+    `${GITHUB_API}/repos/${repoFullName}/releases?per_page=30&t=${Date.now()}`,
+    { headers: authHeaders(token) }
+  );
+  if (!res.ok) throw new Error(`Releases failed (${res.status}): ${await res.text()}`);
+  const releases = await res.json();
+  const re = new RegExp(`^app-${app}-\\d+$`);
+  const rel = releases.find((r: any) => re.test(String(r.tag_name)));
+  if (!rel) return null;
+  const asset = (rel.assets || []).find((a: any) => String(a.name).endsWith(".apk"));
+  return asset ? { id: asset.id, name: asset.name } : null;
+}
+
+export async function getAssetDownloadInfo(repoFullName: string, assetId: number) {
+  const token = await getToken();
+  return {
+    url: `${GITHUB_API}/repos/${repoFullName}/releases/assets/${assetId}`,
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/octet-stream" },
+  };
+}

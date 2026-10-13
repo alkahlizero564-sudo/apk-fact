@@ -8,6 +8,8 @@ type Mode = "new" | "edit";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+const SETUP_FILES = [".github/workflows/generate.yml", "generate.js"];
+
 export default function CreateScreen() {
   const [appSlot, setAppSlot] = useState<Slot>("1");
   const [mode, setMode] = useState<Mode>("new");
@@ -18,6 +20,36 @@ export default function CreateScreen() {
 
   function addLog(line: string) {
     setLog((prev) => [...prev, line]);
+  }
+
+  async function safeRead(repo: string, path: string) {
+    try {
+      return await getFileText(repo, path);
+    } catch {
+      return null;
+    }
+  }
+
+  async function ensureSetup(repo: string) {
+    const missing: string[] = [];
+    for (const p of SETUP_FILES) {
+      if (!(await safeRead(repo, p))) missing.push(p);
+    }
+    if (missing.length === 0) return;
+
+    const templateRepo = await SecureStore.getItemAsync("GITHUB_REPO_1");
+    if (!templateRepo || templateRepo === repo) {
+      throw new Error("ملفات التوليد ناقصة، ولا يوجد مستودع أول لنسخها منه.");
+    }
+
+    addLog("⏳ المستودع جديد، بيتجهّز تلقائياً...");
+    for (const p of missing) {
+      const text = await getFileText(templateRepo, p);
+      if (!text) throw new Error(`الملف ${p} مش موجود في المستودع الأول.`);
+      await pushFile(repo, p, text, `Setup: ${p}`);
+    }
+    addLog("✅ اتجهّز المستودع. (لازم يكون عندك ANTHROPIC_API_KEY وGEMINI_API_KEY في أسراره)");
+    await sleep(4000);
   }
 
   async function waitForRun(repo: string, prevId: number) {
@@ -51,6 +83,8 @@ export default function CreateScreen() {
         addLog("❌ مفيش مستودع محفوظ. حطه في تبويب المفاتيح.");
         return;
       }
+
+      await ensureSetup(repo);
 
       const prevId = await latestRunId(repo, "generate.yml");
 
@@ -167,4 +201,4 @@ const styles = StyleSheet.create({
   createBtnText: { color: "#fff", fontWeight: "700" },
   logBox: { marginTop: 20, backgroundColor: "#f3f3f3", borderRadius: 10, padding: 12 },
   logLine: { marginBottom: 4, fontFamily: "monospace", fontSize: 13 },
-}); 
+});

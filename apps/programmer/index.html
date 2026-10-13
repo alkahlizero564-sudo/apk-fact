@@ -3,23 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>منصة كوديكس برو | CodeX Pro - بيئة تعلّم وبرمجة التطبيقات الواقعية</title>
-    <!-- Google Fonts -->
+    <title>كوديكس برو | CodeX Pro - بيئة التطوير السحابية المتكاملة</title>
+    <!-- خطوط جوجل -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
-    <!-- Font Awesome -->
+    <!-- مكتبة الأيقونات Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
         :root {
-            --bg-main: #0b0f19;
-            --bg-secondary: #111827;
-            --bg-card: #1e293b;
-            --bg-editor: #0d1117;
-            --bg-dropdown: #161f30;
-            --border-color: #334155;
-            --border-light: rgba(255, 255, 255, 0.08);
+            --bg-body: #080c14;
+            --bg-topbar: #0d131f;
+            --bg-sidebar: #111827;
+            --bg-dock: #090e17;
+            --bg-card: #172033;
+            --bg-editor: #0a0f18;
+            --bg-dropdown: #131c2d;
+            --bg-hover: rgba(56, 189, 248, 0.12);
+            --border: #1e293b;
+            --border-highlight: #334155;
             --primary: #38bdf8;
             --primary-hover: #0284c7;
             --accent-green: #10b981;
@@ -28,15 +31,17 @@
             --accent-rose: #f43f5e;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --radius-xs: 4px;
             --radius-sm: 6px;
             --radius-md: 10px;
             --radius-lg: 14px;
-            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-            --shadow-lg: 0 20px 35px -5px rgba(0, 0, 0, 0.65);
-            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            --header-height: 48px;
+            --topbar-height: 44px;
             --statusbar-height: 28px;
-            --sidebar-width: 250px;
+            --dock-width: 52px;
+            --sidebar-width: 260px;
+            --shadow-popup: 0 16px 40px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+            --transition-fast: 0.15s ease;
         }
 
         * {
@@ -47,12 +52,13 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Fixed viewport setup - prevents window jitter & scrolling */
+        /* واجهة ثابتة بنسبة 100% ومنع الاهتزاز والنزول */
         html, body {
             height: 100vh;
+            height: 100dvh;
             width: 100vw;
             overflow: hidden;
-            background-color: var(--bg-main);
+            background-color: var(--bg-body);
             color: var(--text-main);
             position: fixed;
             top: 0;
@@ -61,6 +67,7 @@
             bottom: 0;
             display: flex;
             flex-direction: column;
+            user-select: none;
         }
 
         code, pre, .font-code {
@@ -69,497 +76,536 @@
             text-align: left;
         }
 
-        /* ==================== 1. FIXED TOP APP BAR WITH MENUS ==================== */
+        /* تخصيص شريط التمرير الداخلي */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* ================= 1. الشريط العلوي الثابت مع شريط القوائم ================= */
         .app-topbar {
-            height: var(--header-height);
-            background-color: var(--bg-secondary);
-            border-bottom: 1px solid var(--border-color);
+            height: var(--topbar-height);
+            background: var(--bg-topbar);
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 0.85rem;
-            z-index: 1000;
+            padding: 0 0.6rem;
+            z-index: 1200;
             flex-shrink: 0;
-            user-select: none;
         }
 
-        .topbar-right {
+        .topbar-start {
             display: flex;
             align-items: center;
-            gap: 0.8rem;
+            gap: 0.4rem;
+            height: 100%;
         }
 
-        .sidebar-toggle-btn {
-            background: transparent;
-            border: 1px solid var(--border-color);
-            color: var(--text-muted);
-            width: 32px;
-            height: 32px;
-            border-radius: var(--radius-sm);
+        .brand-logo {
             display: flex;
             align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        .sidebar-toggle-btn:hover {
+            gap: 0.45rem;
             color: var(--primary);
-            border-color: var(--primary);
-            background: rgba(56, 189, 248, 0.08);
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 1.1rem;
             font-weight: 900;
-            color: var(--primary);
+            font-size: 0.95rem;
+            padding: 0 0.5rem;
             text-decoration: none;
-            white-space: nowrap;
+            letter-spacing: -0.2px;
+            cursor: pointer;
         }
-
         .brand-badge {
             background: linear-gradient(135deg, var(--primary), var(--accent-purple));
-            color: white;
-            font-size: 0.65rem;
-            padding: 1px 6px;
-            border-radius: 12px;
-            font-weight: 700;
+            color: #fff;
+            font-size: 0.6rem;
+            padding: 1px 5px;
+            border-radius: 10px;
+            font-weight: 800;
         }
 
-        /* Desktop Menu System (ملف، تعديل، عرض، مشروع، أدوات...) */
-        .app-menu-bar {
+        /* نظام القوائم العلوية المنسدلة (Desktop Dropdown Menubar) */
+        .desktop-menubar {
             display: flex;
             align-items: center;
-            gap: 0.2rem;
+            height: 100%;
             position: relative;
         }
 
-        .menu-item {
+        .menu-container {
             position: relative;
+            height: 100%;
+            display: flex;
+            align-items: center;
         }
 
-        .menu-btn {
+        .menu-trigger-btn {
             background: transparent;
             border: none;
             color: var(--text-muted);
-            font-size: 0.85rem;
-            font-weight: 600;
-            padding: 0.35rem 0.65rem;
-            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 0.25rem 0.6rem;
+            border-radius: var(--radius-xs);
             cursor: pointer;
-            transition: var(--transition);
+            transition: var(--transition-fast);
             display: flex;
             align-items: center;
-            gap: 0.35rem;
+            gap: 0.25rem;
+            height: 28px;
         }
 
-        .menu-btn:hover, .menu-item.open .menu-btn {
+        .menu-trigger-btn:hover,
+        .menu-container.open .menu-trigger-btn {
+            background: var(--bg-card);
             color: var(--text-main);
-            background-color: var(--bg-card);
         }
 
-        /* Dropdown Menus */
-        .dropdown-menu {
+        /* القائمة المنسدلة */
+        .dropdown-panel {
             position: absolute;
-            top: calc(100% + 4px);
+            top: calc(100% + 2px);
             right: 0;
+            min-width: 230px;
             background: var(--bg-dropdown);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-highlight);
             border-radius: var(--radius-md);
-            box-shadow: var(--shadow-lg);
-            min-width: 210px;
-            padding: 0.4rem;
+            box-shadow: var(--shadow-popup);
+            padding: 0.35rem;
             display: none;
             flex-direction: column;
             gap: 2px;
-            z-index: 1100;
-            backdrop-filter: blur(16px);
-            animation: menuFade 0.15s ease-out forwards;
+            z-index: 2000;
+            backdrop-filter: blur(14px);
+            animation: menuPopup 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        .menu-item.open .dropdown-menu {
-            display: flex;
-        }
-
-        @keyframes menuFade {
-            from { opacity: 0; transform: translateY(-4px); }
+        @keyframes menuPopup {
+            from { opacity: 0; transform: translateY(-6px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .dropdown-item {
+        .menu-container.open .dropdown-panel {
+            display: flex;
+        }
+
+        .dropdown-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 0.75rem;
-            padding: 0.45rem 0.75rem;
+            padding: 0.45rem 0.65rem;
             color: var(--text-main);
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             font-weight: 600;
-            border-radius: var(--radius-sm);
+            border-radius: var(--radius-xs);
             cursor: pointer;
-            transition: var(--transition);
-            text-decoration: none;
             border: none;
             background: transparent;
             width: 100%;
             text-align: right;
+            transition: var(--transition-fast);
         }
 
-        .dropdown-item:hover {
-            background: rgba(56, 189, 248, 0.15);
+        .dropdown-row:hover {
+            background: var(--bg-hover);
             color: var(--primary);
         }
 
-        .dropdown-item i {
-            width: 16px;
-            color: var(--text-muted);
+        .dropdown-row-label {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
         }
-        .dropdown-item:hover i {
+        .dropdown-row-label i {
+            width: 16px;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+        .dropdown-row:hover .dropdown-row-label i {
             color: var(--primary);
         }
 
         .dropdown-shortcut {
-            font-size: 0.7rem;
-            color: var(--text-muted);
+            font-size: 0.68rem;
+            color: var(--text-dim);
             direction: ltr;
             font-family: 'Fira Code', monospace;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 1px 5px;
+            border-radius: 4px;
         }
 
-        .dropdown-divider {
+        .dropdown-separator {
             height: 1px;
-            background: var(--border-light);
-            margin: 4px 0;
+            background: var(--border);
+            margin: 3px 0;
         }
 
-        .topbar-actions {
+        /* زر القوائم المجمعة للهواتف */
+        .mobile-menu-trigger {
+            display: none;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.3rem 0.6rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .topbar-end {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
 
-        .btn {
+        .btn-action {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            gap: 0.4rem;
-            padding: 0.38rem 0.8rem;
+            gap: 0.35rem;
+            padding: 0.3rem 0.7rem;
             border-radius: var(--radius-sm);
+            font-size: 0.78rem;
             font-weight: 700;
-            font-size: 0.82rem;
             cursor: pointer;
-            border: none;
-            transition: var(--transition);
-            text-decoration: none;
-            white-space: nowrap;
+            border: 1px solid transparent;
+            transition: var(--transition-fast);
+            height: 28px;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), #2563eb);
+        .btn-run {
+            background: linear-gradient(135deg, #0284c7, #2563eb);
             color: white;
-            box-shadow: 0 2px 10px rgba(56, 189, 248, 0.25);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
         }
-        .btn-primary:hover {
-            opacity: 0.92;
+        .btn-run:hover {
+            filter: brightness(1.12);
             transform: translateY(-1px);
         }
 
-        .btn-success {
-            background: linear-gradient(135deg, var(--accent-green), #059669);
-            color: white;
-        }
-
-        .btn-outline {
+        .btn-ghost {
             background: transparent;
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
+            border-color: var(--border);
+            color: var(--text-muted);
         }
-        .btn-outline:hover {
+        .btn-ghost:hover {
             background: var(--bg-card);
-            border-color: var(--primary);
+            color: var(--text-main);
+            border-color: var(--border-highlight);
         }
 
-        /* ==================== 2. MAIN FIXED SHELL WITH SIDEBAR ==================== */
-        .app-body-fixed {
+        /* ================= 2. بنية الشاشة الثابتة الرئيسية ================= */
+        .app-workspace-fixed {
             flex: 1;
             display: flex;
-            overflow: hidden;
             position: relative;
-            height: calc(100vh - var(--header-height) - var(--statusbar-height));
+            overflow: hidden;
+            height: calc(100vh - var(--topbar-height) - var(--statusbar-height));
+            height: calc(100dvh - var(--topbar-height) - var(--statusbar-height));
         }
 
-        /* Fixed Navigation Sidebar */
-        .app-sidebar {
-            width: var(--sidebar-width);
-            background: var(--bg-secondary);
-            border-left: 1px solid var(--border-color);
+        /* شريط الأيقونات الثابت (Fixed Activity Dock) */
+        .activity-dock {
+            width: var(--dock-width);
+            background: var(--bg-dock);
+            border-left: 1px solid var(--border);
             display: flex;
             flex-direction: column;
+            align-items: center;
+            padding: 0.5rem 0;
+            gap: 0.5rem;
             flex-shrink: 0;
-            transition: width 0.25s ease, transform 0.25s ease;
-            overflow-y: auto;
-            overflow-x: hidden;
-            z-index: 900;
-            user-select: none;
+            z-index: 1000;
         }
 
-        .app-sidebar.collapsed {
-            width: 58px;
-        }
-
-        .sidebar-section-title {
-            padding: 0.65rem 0.9rem 0.3rem;
-            font-size: 0.68rem;
-            font-weight: 800;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-        }
-
-        .app-sidebar.collapsed .sidebar-section-title {
-            display: none;
-        }
-
-        .sidebar-menu-list {
-            list-style: none;
-            padding: 0.3rem 0.4rem;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .sidebar-nav-item {
+        .dock-item {
+            width: 38px;
+            height: 38px;
+            border-radius: var(--radius-sm);
             display: flex;
             align-items: center;
-            gap: 0.65rem;
-            padding: 0.5rem 0.75rem;
-            border-radius: var(--radius-sm);
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            font-weight: 600;
+            justify-content: center;
+            color: var(--text-dim);
             cursor: pointer;
-            transition: var(--transition);
-            white-space: nowrap;
+            transition: var(--transition-fast);
             position: relative;
+            background: transparent;
+            border: none;
+            font-size: 1.1rem;
         }
 
-        .sidebar-nav-item:hover {
-            background: var(--bg-card);
+        .dock-item:hover {
             color: var(--text-main);
+            background: var(--bg-card);
         }
 
-        .sidebar-nav-item.active {
-            background: rgba(56, 189, 248, 0.12);
+        .dock-item.active {
             color: var(--primary);
-            font-weight: 700;
+            background: rgba(56, 189, 248, 0.12);
         }
-        .sidebar-nav-item.active::before {
+
+        .dock-item.active::before {
             content: '';
             position: absolute;
-            right: 0;
+            right: -6px;
             top: 6px;
             bottom: 6px;
             width: 3px;
             background: var(--primary);
-            border-radius: 4px;
+            border-radius: 2px;
         }
 
-        .sidebar-nav-item i {
-            font-size: 1rem;
-            width: 20px;
-            text-align: center;
-            flex-shrink: 0;
+        .dock-item[data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            right: calc(100% + 10px);
+            background: var(--bg-card);
+            color: var(--text-main);
+            font-size: 0.72rem;
+            padding: 3px 8px;
+            border-radius: var(--radius-xs);
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            border: 1px solid var(--border);
+            transition: opacity 0.15s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            z-index: 2100;
+        }
+        .dock-item:hover::after {
+            opacity: 1;
         }
 
-        .sidebar-badge {
-            margin-right: auto;
-            background: var(--bg-editor);
-            padding: 1px 6px;
-            border-radius: 10px;
-            font-size: 0.7rem;
-            border: 1px solid var(--border-color);
-        }
-
-        .app-sidebar.collapsed .sidebar-label,
-        .app-sidebar.collapsed .sidebar-badge {
-            display: none;
-        }
-
-        /* Files Explorer Mini-list in sidebar */
-        .sidebar-files-tree {
-            padding: 0.3rem 0.5rem;
+        /* القائمة الجانبية القابلة للتوسيع (Fixed Drawer / Explorer) */
+        .sidebar-panel {
+            width: var(--sidebar-width);
+            background: var(--bg-sidebar);
+            border-left: 1px solid var(--border);
             display: flex;
             flex-direction: column;
-            gap: 2px;
-        }
-        .app-sidebar.collapsed .sidebar-files-tree {
-            display: none;
+            flex-shrink: 0;
+            transition: width 0.2s ease, transform 0.2s ease;
+            overflow: hidden;
+            z-index: 900;
         }
 
-        .tree-file-btn {
+        .sidebar-panel.collapsed {
+            width: 0;
+            border-left-color: transparent;
+        }
+
+        .sidebar-head {
+            height: 38px;
+            padding: 0 0.8rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.35rem 0.6rem;
-            border-radius: var(--radius-sm);
-            font-size: 0.78rem;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.75rem;
+            font-weight: 800;
             color: var(--text-muted);
-            background: transparent;
-            border: none;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+
+        .sidebar-content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.4rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .sidebar-group-title {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: var(--text-dim);
+            padding: 0.4rem 0.5rem 0.2rem;
+        }
+
+        .file-tree-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.4rem 0.6rem;
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            transition: var(--transition);
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            font-weight: 600;
+            transition: var(--transition-fast);
+            border: none;
+            background: transparent;
             width: 100%;
-            text-align: right;
-            direction: ltr;
-            justify-content: flex-end;
         }
-        .tree-file-btn:hover, .tree-file-btn.active {
-            color: var(--text-main);
+
+        .file-tree-item:hover {
             background: var(--bg-card);
+            color: var(--text-main);
         }
-        .tree-file-btn.active {
+
+        .file-tree-item.active {
+            background: rgba(56, 189, 248, 0.12);
             color: var(--primary);
             font-weight: 700;
         }
 
-        /* ==================== 3. FIXED CONTENT VIEWPORT ==================== */
-        .app-viewport {
+        .file-label-box {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            direction: ltr;
+        }
+
+        /* نافذة العرض الرئيسية (App Viewport) */
+        .main-viewport {
             flex: 1;
             height: 100%;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-            background: var(--bg-main);
+            background: var(--bg-body);
             position: relative;
+            overflow: hidden;
+            min-width: 0;
         }
 
-        .tab-content {
+        .tab-panel {
             display: none;
             height: 100%;
             width: 100%;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding: 0.85rem;
+            overflow: hidden;
+            position: relative;
         }
-        .tab-content.active {
+
+        .tab-panel.active {
             display: flex;
             flex-direction: column;
         }
 
-        /* ==================== STUDIO (IDE SPLIT FIXED VIEW) ==================== */
-        #tab-studio {
-            padding: 0;
-            overflow: hidden;
-        }
-
-        .studio-fixed-container {
+        /* ================= 3. استوديو الكود الثابت (IDE View) ================= */
+        .studio-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             height: 100%;
             width: 100%;
             overflow: hidden;
-            background: var(--bg-main);
         }
 
-        .studio-fixed-container.view-code-only {
+        .studio-grid.layout-code-only {
             grid-template-columns: 1fr;
         }
-        .studio-fixed-container.view-code-only .preview-panel {
+        .studio-grid.layout-code-only .preview-half {
             display: none;
         }
-        .studio-fixed-container.view-preview-only {
+        .studio-grid.layout-preview-only {
             grid-template-columns: 1fr;
         }
-        .studio-fixed-container.view-preview-only .editor-panel {
+        .studio-grid.layout-preview-only .editor-half {
             display: none;
         }
 
-        .editor-panel, .preview-panel {
+        .editor-half, .preview-half {
             display: flex;
             flex-direction: column;
             height: 100%;
             overflow: hidden;
-            background: var(--bg-secondary);
+            background: var(--bg-topbar);
         }
 
-        .editor-panel {
-            border-left: 1px solid var(--border-color);
+        .editor-half {
+            border-left: 1px solid var(--border);
         }
 
-        .panel-header {
+        /* أشرطة أدوات المحرر والمعاينة */
+        .pane-toolbar {
+            height: 38px;
             background: var(--bg-card);
-            padding: 0.4rem 0.75rem;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 0.5rem;
+            padding: 0 0.6rem;
             flex-shrink: 0;
-            height: 40px;
         }
 
-        .lang-tabs {
+        .code-tabs-list {
             display: flex;
-            gap: 0.25rem;
+            gap: 2px;
             background: var(--bg-editor);
             padding: 2px;
             border-radius: var(--radius-sm);
         }
 
-        .lang-btn {
+        .code-tab-btn {
             background: transparent;
             border: none;
-            color: var(--text-muted);
-            padding: 0.25rem 0.6rem;
-            border-radius: 4px;
-            font-size: 0.75rem;
+            color: var(--text-dim);
+            font-size: 0.74rem;
             font-weight: 700;
+            padding: 0.2rem 0.55rem;
+            border-radius: 4px;
             cursor: pointer;
-            transition: var(--transition);
+            transition: var(--transition-fast);
             direction: ltr;
         }
-        .lang-btn.active {
-            background: var(--primary);
-            color: #0b0f19;
+
+        .code-tab-btn:hover {
+            color: var(--text-main);
         }
 
-        .editor-wrapper {
-            position: relative;
+        .code-tab-btn.active {
+            background: var(--primary);
+            color: #060b13;
+        }
+
+        /* منطقة كتابة الكود */
+        .editor-container {
             flex: 1;
             display: flex;
             background: var(--bg-editor);
             overflow: hidden;
-            min-height: 0;
+            position: relative;
         }
 
-        .line-numbers {
-            width: 42px;
-            background: #090d14;
+        .editor-gutters {
+            width: 44px;
+            background: #060a12;
+            border-left: 1px solid var(--border);
             color: #475569;
-            padding: 0.75rem 0.3rem;
+            padding: 0.75rem 0.2rem;
             font-size: 0.82rem;
-            line-height: 1.5rem;
+            line-height: 1.55rem;
             text-align: right;
             user-select: none;
-            border-left: 1px solid var(--border-color);
             font-family: 'Fira Code', monospace;
             overflow: hidden;
         }
 
-        .code-textarea {
+        .editor-textarea {
             flex: 1;
             background: transparent;
             border: none;
             outline: none;
-            color: #e2e8f0;
+            color: #f1f5f9;
             font-size: 0.88rem;
-            line-height: 1.5rem;
+            line-height: 1.55rem;
             padding: 0.75rem;
             resize: none;
             white-space: pre;
-            overflow-wrap: normal;
             overflow: auto;
             tab-size: 4;
             font-family: 'Fira Code', monospace;
@@ -567,235 +613,129 @@
             text-align: left;
         }
 
-        /* Fixed Console Drawer */
-        .console-drawer {
-            height: 130px;
-            background: #070a10;
-            border-top: 1px solid var(--border-color);
+        /* نافذة سجل الكونسول */
+        .console-panel {
+            height: 125px;
+            background: #05080e;
+            border-top: 1px solid var(--border);
             display: flex;
             flex-direction: column;
+            flex-shrink: 0;
             direction: ltr;
             text-align: left;
             font-family: 'Fira Code', monospace;
-            flex-shrink: 0;
         }
-        .console-header {
-            padding: 0.3rem 0.75rem;
-            background: #0f172a;
-            font-size: 0.72rem;
-            color: var(--text-muted);
+
+        .console-top {
+            height: 26px;
+            background: #0d1424;
+            padding: 0 0.6rem;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
         }
-        .console-body {
+
+        .console-stream {
             flex: 1;
-            padding: 0.5rem;
+            padding: 0.4rem 0.6rem;
             overflow-y: auto;
             font-size: 0.78rem;
-            color: #38bdf8;
-        }
-        .console-log { margin-bottom: 3px; }
-        .console-err { color: #f43f5e; }
-        .console-info { color: #10b981; }
-
-        .preview-controls {
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-        }
-
-        .preview-viewport-btn {
-            background: var(--bg-editor);
-            border: 1px solid var(--border-color);
-            color: var(--text-muted);
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.72rem;
-        }
-        .preview-viewport-btn.active {
             color: var(--primary);
-            border-color: var(--primary);
         }
 
-        .preview-frame-container {
+        .console-stream .row-err { color: var(--accent-rose); }
+        .console-stream .row-ok { color: var(--accent-green); }
+
+        /* منطقة المعاينة الحية */
+        .preview-viewport-shell {
             flex: 1;
             background: #ffffff;
-            position: relative;
             display: flex;
+            align-items: center;
             justify-content: center;
-            align-items: stretch;
             overflow: hidden;
-            min-height: 0;
+            position: relative;
         }
 
-        .preview-frame-container.viewport-mobile iframe {
-            max-width: 380px;
-            border-left: 8px solid #334155;
-            border-right: 8px solid #334155;
-            border-radius: 20px;
-            margin: 12px auto;
+        .preview-viewport-shell.device-mobile iframe {
+            max-width: 375px;
             height: calc(100% - 24px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 8px solid #1e293b;
+            border-radius: 24px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
         }
 
-        .preview-frame-container.viewport-tablet iframe {
+        .preview-viewport-shell.device-tablet iframe {
             max-width: 768px;
-            border: 6px solid #334155;
-            border-radius: 12px;
-            margin: 12px auto;
             height: calc(100% - 24px);
+            border: 6px solid #1e293b;
+            border-radius: 14px;
         }
 
-        #preview-frame {
+        #live-frame {
             width: 100%;
             height: 100%;
             border: none;
             background: #ffffff;
         }
 
-        /* ==================== TRACKS & TEMPLATES (INTERNALLY SCROLLING PANELS) ==================== */
-        .scrollable-page-wrap {
-            max-width: 1400px;
-            margin: 0 auto;
+        /* ================= 4. اللوحات التخصصية والأقسام ================= */
+        .scrollable-page-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.2rem;
+            max-width: 1300px;
             width: 100%;
-            padding-bottom: 2rem;
+            margin: 0 auto;
         }
 
-        .tracks-grid {
+        /* شبكة الكروت التفاعلية */
+        .cards-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 1rem;
+            margin-top: 1rem;
         }
 
-        .track-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
+        .interactive-card {
+            background: var(--bg-topbar);
+            border: 1px solid var(--border);
             border-radius: var(--radius-lg);
-            padding: 1.25rem;
+            padding: 1.2rem;
             display: flex;
             flex-direction: column;
-            gap: 0.85rem;
-            transition: var(--transition);
+            gap: 0.8rem;
+            transition: var(--transition-fast);
         }
-        .track-card:hover {
+
+        .interactive-card:hover {
             border-color: var(--primary);
             transform: translateY(-2px);
         }
 
-        .track-badge {
-            font-size: 0.72rem;
+        .card-tag {
+            font-size: 0.7rem;
             font-weight: 700;
-            padding: 0.2rem 0.6rem;
+            padding: 2px 8px;
             border-radius: 20px;
             width: fit-content;
         }
 
-        .track-icon {
-            font-size: 1.8rem;
-        }
-
-        .track-card h3 {
-            font-size: 1.1rem;
-        }
-
-        .track-card p {
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            line-height: 1.5;
-        }
-
-        .track-lessons {
-            background: var(--bg-editor);
-            border-radius: 6px;
-            padding: 0.5rem;
-            border: 1px solid var(--border-color);
-        }
-
-        .lesson-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.4rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            font-size: 0.8rem;
-            cursor: pointer;
-        }
-        .lesson-item:last-child { border-bottom: none; }
-        .lesson-item:hover { color: var(--primary); background: rgba(56, 189, 248, 0.08); border-radius: 4px; }
-
-        .skills-pills {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.35rem;
-            margin-top: auto;
-        }
-        .skill-pill {
-            background: var(--bg-card);
-            color: var(--text-muted);
-            font-size: 0.7rem;
-            padding: 0.15rem 0.5rem;
-            border-radius: 4px;
-            direction: ltr;
-        }
-
-        /* Projects */
-        .projects-grid {
+        /* نافذة المساعد الذكي */
+        .ai-layout {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 1.2rem;
-        }
-
-        .project-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            transition: var(--transition);
-        }
-        .project-card:hover {
-            border-color: var(--primary);
-            transform: translateY(-2px);
-        }
-
-        .project-preview-mockup {
-            height: 130px;
-            background: var(--bg-card);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .project-preview-mockup i {
-            font-size: 2.8rem;
-            color: var(--primary);
-            opacity: 0.7;
-        }
-
-        .project-info {
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.6rem;
-            flex: 1;
-        }
-
-        /* AI Assistant */
-        .ai-assistant-container {
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 1rem;
+            grid-template-columns: 260px 1fr;
             height: 100%;
             overflow: hidden;
+            gap: 1px;
+            background: var(--border);
         }
 
         .ai-sidebar {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
+            background: var(--bg-topbar);
             padding: 1rem;
             display: flex;
             flex-direction: column;
@@ -803,148 +743,87 @@
             overflow-y: auto;
         }
 
-        .prompt-btn {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 0.6rem;
-            border-radius: 6px;
-            font-size: 0.78rem;
-            cursor: pointer;
-            text-align: right;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .prompt-btn:hover {
-            border-color: var(--accent-purple);
-            background: rgba(168, 85, 247, 0.12);
-        }
-
-        .chat-box {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
+        .ai-chat-main {
+            background: var(--bg-editor);
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            height: 100%;
         }
 
-        .chat-messages {
+        .chat-bubbles-box {
             flex: 1;
             padding: 1rem;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
+            gap: 0.8rem;
         }
 
-        .chat-msg {
-            display: flex;
-            gap: 0.6rem;
-            max-width: 85%;
-        }
-        .chat-msg.bot { align-self: flex-start; }
-        .chat-msg.user { align-self: flex-end; flex-direction: row-reverse; }
-
-        .chat-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            flex-shrink: 0;
-        }
-        .bot .chat-avatar { background: linear-gradient(135deg, var(--accent-purple), var(--primary)); color: #fff; }
-        .user .chat-avatar { background: var(--bg-card); border: 1px solid var(--border-color); }
-
-        .msg-bubble {
-            background: var(--bg-card);
-            padding: 0.75rem;
-            border-radius: 10px;
+        .chat-bubble {
+            max-width: 80%;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
             font-size: 0.85rem;
-            line-height: 1.5;
-            border: 1px solid var(--border-color);
+            line-height: 1.6;
         }
-        .user .msg-bubble { background: #1e3a5f; border-color: var(--primary); }
 
-        .chat-input-bar {
-            padding: 0.75rem;
+        .chat-bubble.bot {
+            align-self: flex-start;
             background: var(--bg-card);
-            border-top: 1px solid var(--border-color);
+            border: 1px solid var(--border);
+            color: #e2e8f0;
+        }
+
+        .chat-bubble.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #0284c7, #2563eb);
+            color: #fff;
+        }
+
+        .chat-input-row {
+            padding: 0.75rem;
+            background: var(--bg-topbar);
+            border-top: 1px solid var(--border);
             display: flex;
             gap: 0.5rem;
         }
-        .chat-input {
+
+        .chat-input-field {
             flex: 1;
             background: var(--bg-editor);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: var(--radius-sm);
-            padding: 0.55rem 0.85rem;
             color: var(--text-main);
+            padding: 0.5rem 0.8rem;
             outline: none;
             font-size: 0.85rem;
         }
-
-        /* Challenges */
-        .challenge-container {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 1rem;
-            height: 100%;
-            overflow: hidden;
+        .chat-input-field:focus {
+            border-color: var(--primary);
         }
 
-        .challenge-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 1.25rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.85rem;
-            overflow-y: auto;
-        }
-
-        .challenge-test-output {
-            background: var(--bg-editor);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 0.75rem;
-            font-family: 'Fira Code', monospace;
-            font-size: 0.8rem;
-            direction: ltr;
-            text-align: left;
-            min-height: 70px;
-        }
-
-        /* ==================== 4. FIXED STATUS BAR ==================== */
+        /* ================= 5. شريط الحالة السفلي الثابت ================= */
         .app-statusbar {
             height: var(--statusbar-height);
-            background: #090d16;
-            border-top: 1px solid var(--border-color);
+            background: var(--bg-dock);
+            border-top: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 0.85rem;
+            padding: 0 0.8rem;
             font-size: 0.72rem;
-            color: var(--text-muted);
-            user-select: none;
+            color: var(--text-dim);
             flex-shrink: 0;
-            z-index: 1000;
+            z-index: 1200;
         }
 
-        .statusbar-segment {
+        .status-cluster {
             display: flex;
             align-items: center;
-            gap: 0.85rem;
+            gap: 0.8rem;
         }
 
-        .status-pill {
+        .status-chip {
             display: flex;
             align-items: center;
             gap: 0.35rem;
@@ -952,263 +831,253 @@
             padding: 2px 6px;
             border-radius: 3px;
         }
-        .status-pill:hover {
-            background: var(--bg-card);
+        .status-chip:hover {
             color: var(--text-main);
+            background: var(--bg-card);
         }
 
-        /* Modal Dialog */
-        .modal-overlay {
+        /* ================= 6. نوافذ منبثقة ومودال ================= */
+        .modal-shade {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
             backdrop-filter: blur(4px);
-            display: flex;
+            z-index: 3000;
+            display: none;
             align-items: center;
             justify-content: center;
-            z-index: 2000;
-            opacity: 0;
-            pointer-events: none;
-            transition: var(--transition);
+            padding: 1rem;
         }
-        .modal-overlay.open {
-            opacity: 1;
-            pointer-events: auto;
+        .modal-shade.open {
+            display: flex;
         }
-        .modal-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
+
+        .modal-box {
+            background: var(--bg-topbar);
+            border: 1px solid var(--border-highlight);
             border-radius: var(--radius-lg);
-            width: 90%;
-            max-width: 580px;
-            max-height: 85vh;
-            overflow-y: auto;
+            width: 100%;
+            max-width: 520px;
             padding: 1.5rem;
-            position: relative;
+            box-shadow: var(--shadow-popup);
+            animation: menuPopup 0.2s ease forwards;
         }
 
-        /* Mobile Drawer Backdrop */
-        .sidebar-overlay {
-            display: none;
-        }
-
-        @media (max-width: 1024px) {
-            .studio-fixed-container {
-                grid-template-columns: 1fr;
-                grid-template-rows: 1fr 1fr;
-            }
-            .editor-panel {
-                border-left: none;
-                border-bottom: 1px solid var(--border-color);
-            }
-            .ai-assistant-container, .challenge-container {
-                grid-template-columns: 1fr;
-                overflow-y: auto;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .app-menu-bar {
-                display: none; /* Accessible through sidebar on mobile */
-            }
-            .app-sidebar {
-                position: absolute;
-                top: 0;
-                bottom: 0;
-                right: 0;
-                transform: translateX(100%);
-                box-shadow: var(--shadow-lg);
-            }
-            .app-sidebar.mobile-open {
-                transform: translateX(0);
-                width: 260px;
-            }
-            .sidebar-overlay.active {
-                display: block;
-                position: fixed;
-                top: var(--header-height);
-                bottom: var(--statusbar-height);
-                left: 0;
-                right: 0;
-                background: rgba(0,0,0,0.6);
-                z-index: 850;
-            }
-        }
-
-        /* Toasts */
-        #toast-container {
+        /* توست التنبيهات السريعة */
+        #notification-center {
             position: fixed;
             bottom: 35px;
-            left: 20px;
-            z-index: 9999;
+            left: 15px;
             display: flex;
             flex-direction: column;
             gap: 6px;
+            z-index: 4000;
         }
-        .toast {
+
+        .app-toast {
             background: var(--bg-dropdown);
             border: 1px solid var(--primary);
             color: var(--text-main);
-            padding: 0.6rem 1rem;
+            padding: 0.5rem 0.9rem;
             border-radius: var(--radius-sm);
-            box-shadow: var(--shadow-lg);
+            font-size: 0.8rem;
+            box-shadow: var(--shadow-popup);
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 0.8rem;
-            animation: toastIn 0.2s ease forwards;
+            animation: toastSlide 0.2s ease forwards;
         }
-        @keyframes toastIn {
+        @keyframes toastSlide {
             from { transform: translateY(10px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* الشاشات الصغيرة وتوافق الهواتف */
+        @media (max-width: 900px) {
+            .desktop-menubar {
+                display: none;
+            }
+            .mobile-menu-trigger {
+                display: flex;
+            }
+            .studio-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr;
+            }
+            .editor-half {
+                border-left: none;
+                border-bottom: 1px solid var(--border);
+            }
+            .ai-layout {
+                grid-template-columns: 1fr;
+            }
+            .ai-sidebar {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- ==================== 1. FIXED TOP APP BAR ==================== -->
+    <!-- ================= 1. الشريط العلوي الثابت مع القوائم ================= -->
     <header class="app-topbar">
-        <div class="topbar-right">
-            <!-- Sidebar toggle button -->
-            <button class="sidebar-toggle-btn" onclick="toggleSidebar()" title="تبديل القائمة الجانبية (Ctrl+B)">
-                <i class="fa-solid fa-bars-staggered"></i>
+        <div class="topbar-start">
+            <!-- الشعار -->
+            <div class="brand-logo" onclick="switchMainTab('studio')" title="الرئيسية">
+                <i class="fa-solid fa-cube"></i>
+                <span>كوديكس برو</span>
+                <span class="brand-badge">PRO v4.5</span>
+            </div>
+
+            <!-- زر فتح القوائم على شاشات الهواتف -->
+            <button class="mobile-menu-trigger" onclick="openMobileMenuSheet()">
+                <i class="fa-solid fa-bars"></i>
+                <span>القوائم</span>
             </button>
 
-            <!-- Brand -->
-            <a href="#" class="brand" onclick="switchTab('studio')">
-                <i class="fa-solid fa-code"></i>
-                <span>كوديكس برو</span>
-                <span class="brand-badge">PRO v4.2</span>
-            </a>
+            <!-- نظام القوائم العلوية المنسدلة (Desktop Menus) -->
+            <nav class="desktop-menubar" id="desktop-menubar">
 
-            <!-- System Menu Bar (القوائم الثابتة) -->
-            <nav class="app-menu-bar" id="app-menubar">
-                
-                <!-- Menu 1: ملف -->
-                <div class="menu-item">
-                    <button class="menu-btn" onclick="toggleMenu(event, this)">
+                <!-- قائمة: ملف -->
+                <div class="menu-container">
+                    <button class="menu-trigger-btn" onclick="toggleAppMenu(event, this)">
                         <span>ملف</span>
-                        <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem;"></i>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.6rem;"></i>
                     </button>
-                    <div class="dropdown-menu">
-                        <button class="dropdown-item" onclick="newProject()">
-                            <span><i class="fa-regular fa-file"></i> مشروع جديد</span>
+                    <div class="dropdown-panel">
+                        <button class="dropdown-row" onclick="actionNewProject()">
+                            <span class="dropdown-row-label"><i class="fa-regular fa-file"></i> مشروع جديد</span>
                             <span class="dropdown-shortcut">Ctrl+N</span>
                         </button>
-                        <button class="dropdown-item" onclick="exportProjectFile()">
-                            <span><i class="fa-solid fa-download"></i> تصدير وحفظ كملف</span>
+                        <button class="dropdown-row" onclick="actionSaveDownload()">
+                            <span class="dropdown-row-label"><i class="fa-solid fa-download"></i> حفظ وتنزيل كملف</span>
                             <span class="dropdown-shortcut">Ctrl+S</span>
                         </button>
-                        <div class="dropdown-divider"></div>
-                        <button class="dropdown-item" onclick="clearCode()">
-                            <span><i class="fa-regular fa-trash-can"></i> تفريغ المحرر</span>
+                        <div class="dropdown-separator"></div>
+                        <button class="dropdown-row" onclick="actionResetEditor()">
+                            <span class="dropdown-row-label"><i class="fa-regular fa-trash-can"></i> تفريغ المحرر</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Menu 2: تعديل -->
-                <div class="menu-item">
-                    <button class="menu-btn" onclick="toggleMenu(event, this)">
+                <!-- قائمة: تعديل -->
+                <div class="menu-container">
+                    <button class="menu-trigger-btn" onclick="toggleAppMenu(event, this)">
                         <span>تعديل</span>
-                        <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem;"></i>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.6rem;"></i>
                     </button>
-                    <div class="dropdown-menu">
-                        <button class="dropdown-item" onclick="formatCode()">
-                            <span><i class="fa-solid fa-wand-magic-sparkles"></i> تنميق وترتيب الكود</span>
-                            <span class="dropdown-shortcut">Alt+Shift+F</span>
+                    <div class="dropdown-panel">
+                        <button class="dropdown-row" onclick="actionFormatCode()">
+                            <span class="dropdown-row-label"><i class="fa-solid fa-wand-magic-sparkles"></i> تنميق وترتيب الكود</span>
+                            <span class="dropdown-shortcut">Alt+F</span>
                         </button>
-                        <button class="dropdown-item" onclick="copyEditorCode()">
-                            <span><i class="fa-regular fa-copy"></i> نسخ كود المحرر</span>
+                        <button class="dropdown-row" onclick="actionCopyCode()">
+                            <span class="dropdown-row-label"><i class="fa-regular fa-copy"></i> نسخ كود الملف الحالي</span>
                             <span class="dropdown-shortcut">Ctrl+C</span>
                         </button>
-                        <div class="dropdown-divider"></div>
-                        <button class="dropdown-item" onclick="clearConsole()">
-                            <span><i class="fa-solid fa-terminal"></i> مسح سجل Console</span>
+                        <div class="dropdown-separator"></div>
+                        <button class="dropdown-row" onclick="actionClearConsole()">
+                            <span class="dropdown-row-label"><i class="fa-solid fa-terminal"></i> مسح سجل الكونسول</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Menu 3: عرض -->
-                <div class="menu-item">
-                    <button class="menu-btn" onclick="toggleMenu(event, this)">
+                <!-- قائمة: عرض -->
+                <div class="menu-container">
+                    <button class="menu-trigger-btn" onclick="toggleAppMenu(event, this)">
                         <span>عرض</span>
-                        <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem;"></i>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.6rem;"></i>
                     </button>
-                    <div class="dropdown-menu">
-                        <button class="dropdown-item" onclick="setLayoutSplit('both')">
-                            <span><i class="fa-solid fa-table-columns"></i> تقسيم ثنائي (محرر + معاينة)</span>
+                    <div class="dropdown-panel">
+                        <button class="dropdown-row" onclick="setLayoutView('both')">
+                            <span class="dropdown-row-label"><i class="fa-solid fa-table-columns"></i> تقسيم ثنائي (محرر + معاينة)</span>
                         </button>
-                        <button class="dropdown-item" onclick="setLayoutSplit('code')">
-                            <span><i class="fa-solid fa-code"></i> عرض المحرر فقط</span>
+                        <button class="dropdown-row" onclick="setLayoutView('code')">
+                            <span class="dropdown-row-label"><i class="fa-solid fa-code"></i> عرض المحرر فقط</span>
                         </button>
-                        <button class="dropdown-item" onclick="setLayoutSplit('preview')">
-                            <span><i class="fa-solid fa-play"></i> عرض المعاينة الحية فقط</span>
+                        <button class="dropdown-row" onclick="setLayoutView('preview')">
+                            <span class="dropdown-row-label"><i class="fa-solid fa-play"></i> عرض المعاينة فقط</span>
                         </button>
-                        <div class="dropdown-divider"></div>
-                        <button class="dropdown-item" onclick="toggleFullscreen()">
-                            <span><i class="fa-solid fa-expand"></i> ملء الشاشة</span>
+                        <div class="dropdown-separator"></div>
+                        <button class="dropdown-row" onclick="toggleSidebarDrawer()">
+                            <span class="dropdown-row-label"><i class="fa-solid fa-bars-staggered"></i> تبديل القائمة الجانبية</span>
+                            <span class="dropdown-shortcut">Ctrl+B</span>
+                        </button>
+                        <button class="dropdown-row" onclick="toggleFullscreenApp()">
+                            <span class="dropdown-row-label"><i class="fa-solid fa-expand"></i> ملء الشاشة</span>
                             <span class="dropdown-shortcut">F11</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Menu 4: مشروع -->
-                <div class="menu-item">
-                    <button class="menu-btn" onclick="toggleMenu(event, this)">
+                <!-- قائمة: مشروع وتشغيل -->
+                <div class="menu-container">
+                    <button class="menu-trigger-btn" onclick="toggleAppMenu(event, this)">
                         <span>مشروع</span>
-                        <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem;"></i>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.6rem;"></i>
                     </button>
-                    <div class="dropdown-menu">
-                        <button class="dropdown-item" onclick="runStudioCode()">
-                            <span><i class="fa-solid fa-play" style="color:var(--accent-green);"></i> تشغيل المشروع</span>
+                    <div class="dropdown-panel">
+                        <button class="dropdown-row" onclick="executeStudioCode()">
+                            <span class="dropdown-row-label"><i class="fa-solid fa-play" style="color:var(--accent-green);"></i> تشغيل المشروع الحي</span>
                             <span class="dropdown-shortcut">Ctrl+Enter</span>
                         </button>
-                        <div class="dropdown-divider"></div>
-                        <button class="dropdown-item" onclick="setLanguage('html')"><span>HTML5 Document</span></button>
-                        <button class="dropdown-item" onclick="setLanguage('css')"><span>CSS3 Stylesheet</span></button>
-                        <button class="dropdown-item" onclick="setLanguage('js')"><span>JavaScript ES6</span></button>
-                        <button class="dropdown-item" onclick="setLanguage('python')"><span>Python Environment</span></button>
-                        <button class="dropdown-item" onclick="setLanguage('sql')"><span>SQL Database Lab</span></button>
+                        <div class="dropdown-separator"></div>
+                        <button class="dropdown-row" onclick="switchFileType('html')">
+                            <span class="dropdown-row-label"><i class="fa-brands fa-html5" style="color:#f97316;"></i> ملف index.html</span>
+                        </button>
+                        <button class="dropdown-row" onclick="switchFileType('css')">
+                            <span class="dropdown-row-label"><i class="fa-brands fa-css3-alt" style="color:#38bdf8;"></i> ملف style.css</span>
+                        </button>
+                        <button class="dropdown-row" onclick="switchFileType('js')">
+                            <span class="dropdown-row-label"><i class="fa-brands fa-js" style="color:#facc15;"></i> ملف script.js</span>
+                        </button>
+                        <button class="dropdown-row" onclick="switchFileType('python')">
+                            <span class="dropdown-row-label"><i class="fa-brands fa-python" style="color:#38bdf8;"></i> ملف main.py</span>
+                        </button>
+                        <button class="dropdown-row" onclick="switchFileType('sql')">
+                            <span class="dropdown-row-label"><i class="fa-solid fa-database" style="color:#a855f7;"></i> ملف schema.sql</span>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Menu 5: أدوات -->
-                <div class="menu-item">
-                    <button class="menu-btn" onclick="toggleMenu(event, this)">
+                <!-- قائمة: أدوات -->
+                <div class="menu-container">
+                    <button class="menu-trigger-btn" onclick="toggleAppMenu(event, this)">
                         <span>أدوات</span>
-                        <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem;"></i>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.6rem;"></i>
                     </button>
-                    <div class="dropdown-menu">
-                        <button class="dropdown-item" onclick="switchTab('assistant')">
-                            <span><i class="fa-solid fa-robot" style="color:var(--accent-purple);"></i> المساعد الذكي AI</span>
+                    <div class="dropdown-panel">
+                        <button class="dropdown-row" onclick="switchMainTab('assistant')">
+                            <span class="dropdown-row-label"><i class="fa-solid fa-robot" style="color:var(--accent-purple);"></i> المساعد الذكي AI</span>
                         </button>
-                        <button class="dropdown-item" onclick="switchTab('challenges')">
-                            <span><i class="fa-solid fa-trophy" style="color:var(--accent-amber);"></i> اختبار الخوارزميات</span>
+                        <button class="dropdown-row" onclick="switchMainTab('challenges')">
+                            <span class="dropdown-row-label"><i class="fa-solid fa-trophy" style="color:var(--accent-amber);"></i> اختبار الخوارزميات</span>
                         </button>
-                        <button class="dropdown-item" onclick="switchTab('templates')">
-                            <span><i class="fa-solid fa-layer-group"></i> مصنع المشاريع الكاملة</span>
+                        <button class="dropdown-row" onclick="switchMainTab('templates')">
+                            <span class="dropdown-row-label"><i class="fa-solid fa-cubes" style="color:var(--primary);"></i> مصنع التطبيقات الجاهزة</span>
+                        </button>
+                        <div class="dropdown-separator"></div>
+                        <button class="dropdown-row" onclick="openColorPickerModal()">
+                            <span class="dropdown-row-label"><i class="fa-solid fa-palette"></i> منتقي الألوان HEX/RGB</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Menu 6: مساعدة -->
-                <div class="menu-item">
-                    <button class="menu-btn" onclick="toggleMenu(event, this)">
+                <!-- قائمة: مساعدة -->
+                <div class="menu-container">
+                    <button class="menu-trigger-btn" onclick="toggleAppMenu(event, this)">
                         <span>مساعدة</span>
-                        <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem;"></i>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.6rem;"></i>
                     </button>
-                    <div class="dropdown-menu">
-                        <button class="dropdown-item" onclick="openShortcutsModal()">
-                            <span><i class="fa-regular fa-keyboard"></i> اختصارات لوحة المفاتيح</span>
+                    <div class="dropdown-panel">
+                        <button class="dropdown-row" onclick="openShortcutsModal()">
+                            <span class="dropdown-row-label"><i class="fa-regular fa-keyboard"></i> اختصارات لوحة المفاتيح</span>
                         </button>
-                        <button class="dropdown-item" onclick="switchTab('tracks')">
-                            <span><i class="fa-solid fa-graduation-cap"></i> خريطة المسارات التعليمية</span>
+                        <button class="dropdown-row" onclick="switchMainTab('tracks')">
+                            <span class="dropdown-row-label"><i class="fa-solid fa-graduation-cap"></i> المسارات التعليمية</span>
                         </button>
-                        <button class="dropdown-item" onclick="showAboutModal()">
-                            <span><i class="fa-solid fa-circle-info"></i> حول كوديكس برو</span>
+                        <button class="dropdown-row" onclick="openAboutModal()">
+                            <span class="dropdown-row-label"><i class="fa-solid fa-circle-info"></i> حول كوديكس برو</span>
                         </button>
                     </div>
                 </div>
@@ -1216,402 +1085,306 @@
             </nav>
         </div>
 
-        <!-- Quick actions -->
-        <div class="topbar-actions">
-            <button class="btn btn-primary" onclick="runStudioCode()">
-                <i class="fa-solid fa-play"></i> تشغيل
+        <!-- الأزرار السريعة بالأعلى -->
+        <div class="topbar-end">
+            <button class="btn-action btn-run" onclick="executeStudioCode()" title="تشغيل (Ctrl+Enter)">
+                <i class="fa-solid fa-play"></i>
+                <span>تشغيل</span>
             </button>
-            <button class="btn btn-outline" onclick="exportProjectFile()" title="تنزيل ملف HTML جاهز">
-                <i class="fa-solid fa-download"></i> تصدير
+            <button class="btn-action btn-ghost" onclick="actionSaveDownload()" title="تنزيل المشروع كملف مستقل">
+                <i class="fa-solid fa-download"></i>
+                <span>حفظ</span>
             </button>
         </div>
     </header>
 
-    <!-- ==================== 2. MAIN FIXED SHELL ==================== -->
-    <div class="app-body-fixed">
-        
-        <!-- Backdrop for mobile drawer -->
-        <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <!-- ================= 2. منطقة العمل الثابتة ================= -->
+    <div class="app-workspace-fixed">
 
-        <!-- FIXED SIDEBAR MENU -->
-        <aside class="app-sidebar" id="sidebar">
-            <div class="sidebar-section-title">التنقل السريع والقوائم</div>
-            <ul class="sidebar-menu-list">
-                <li class="sidebar-nav-item active" id="nav-studio" onclick="switchTab('studio')">
-                    <i class="fa-solid fa-laptop-code" style="color:var(--primary);"></i>
-                    <span class="sidebar-label">بيئة التطوير (Studio)</span>
-                </li>
-                <li class="sidebar-nav-item" id="nav-tracks" onclick="switchTab('tracks')">
-                    <i class="fa-solid fa-graduation-cap" style="color:var(--accent-green);"></i>
-                    <span class="sidebar-label">المسارات التخصصية</span>
-                    <span class="sidebar-badge">6</span>
-                </li>
-                <li class="sidebar-nav-item" id="nav-templates" onclick="switchTab('templates')">
-                    <i class="fa-solid fa-layer-group" style="color:var(--accent-purple);"></i>
-                    <span class="sidebar-label">مصنع التطبيقات الجاهزة</span>
-                    <span class="sidebar-badge">5</span>
-                </li>
-                <li class="sidebar-nav-item" id="nav-challenges" onclick="switchTab('challenges')">
-                    <i class="fa-solid fa-trophy" style="color:var(--accent-amber);"></i>
-                    <span class="sidebar-label">مختبر التحديات البرمجية</span>
-                </li>
-                <li class="sidebar-nav-item" id="nav-assistant" onclick="switchTab('assistant')">
-                    <i class="fa-solid fa-robot" style="color:var(--primary);"></i>
-                    <span class="sidebar-label">المساعد الذكي AI</span>
-                </li>
-            </ul>
+        <!-- شريط الدوك الثابت للأيقونات (Activity Dock) -->
+        <nav class="activity-dock">
+            <button class="dock-item active" id="dock-studio" onclick="switchMainTab('studio')" data-tooltip="بيئة التطوير (Studio)">
+                <i class="fa-solid fa-laptop-code"></i>
+            </button>
+            <button class="dock-item" id="dock-tracks" onclick="switchMainTab('tracks')" data-tooltip="المسارات البرمجية">
+                <i class="fa-solid fa-graduation-cap"></i>
+            </button>
+            <button class="dock-item" id="dock-templates" onclick="switchMainTab('templates')" data-tooltip="مشاريع جاهزة">
+                <i class="fa-solid fa-cubes"></i>
+            </button>
+            <button class="dock-item" id="dock-challenges" onclick="switchMainTab('challenges')" data-tooltip="مختبر التحديات">
+                <i class="fa-solid fa-trophy"></i>
+            </button>
+            <button class="dock-item" id="dock-assistant" onclick="switchMainTab('assistant')" data-tooltip="المساعد الذكي">
+                <i class="fa-solid fa-robot"></i>
+            </button>
+            <div style="margin-top:auto;"></div>
+            <button class="dock-item" onclick="openColorPickerModal()" data-tooltip="منتقي الألوان">
+                <i class="fa-solid fa-palette"></i>
+            </button>
+            <button class="dock-item" onclick="openShortcutsModal()" data-tooltip="الاختصارات">
+                <i class="fa-regular fa-keyboard"></i>
+            </button>
+        </nav>
 
-            <div class="sidebar-section-title">ملفات المشروع الحالي</div>
-            <div class="sidebar-files-tree">
-                <button class="tree-file-btn active" id="tree-html" onclick="setLanguage('html')">
-                    <span>index.html</span>
-                    <i class="fa-brands fa-html5" style="color:#e34f26;"></i>
-                </button>
-                <button class="tree-file-btn" id="tree-css" onclick="setLanguage('css')">
-                    <span>style.css</span>
-                    <i class="fa-brands fa-css3-alt" style="color:#264de4;"></i>
-                </button>
-                <button class="tree-file-btn" id="tree-js" onclick="setLanguage('js')">
-                    <span>script.js</span>
-                    <i class="fa-brands fa-js" style="color:#f7df1e;"></i>
-                </button>
-                <button class="tree-file-btn" id="tree-python" onclick="setLanguage('python')">
-                    <span>main.py</span>
-                    <i class="fa-brands fa-python" style="color:#3776ab;"></i>
-                </button>
-                <button class="tree-file-btn" id="tree-sql" onclick="setLanguage('sql')">
-                    <span>schema.sql</span>
-                    <i class="fa-solid fa-database" style="color:#00758f;"></i>
+        <!-- القائمة الجانبية الثابتة (Explorer Drawer) -->
+        <aside class="sidebar-panel" id="sidebar-drawer">
+            <div class="sidebar-head">
+                <span>مستكشف الملفات</span>
+                <button class="btn-ghost" style="border:none; cursor:pointer;" onclick="toggleSidebarDrawer()" title="إخفاء">
+                    <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
-            <div class="sidebar-section-title" style="margin-top:auto;">روابط سريعة</div>
-            <ul class="sidebar-menu-list" style="margin-bottom: 0.5rem;">
-                <li class="sidebar-nav-item" onclick="openShortcutsModal()">
-                    <i class="fa-regular fa-keyboard"></i>
-                    <span class="sidebar-label">الاختصارات</span>
-                </li>
-            </ul>
+            <div class="sidebar-content-scroll">
+                <div class="sidebar-group-title">ملفات الويب الأساسية</div>
+                <button class="file-tree-item active" id="tree-html" onclick="switchFileType('html')">
+                    <div class="file-label-box">
+                        <i class="fa-brands fa-html5" style="color:#f97316;"></i>
+                        <span>index.html</span>
+                    </div>
+                    <span style="font-size:0.65rem; color:var(--text-dim);">HTML5</span>
+                </button>
+                <button class="file-tree-item" id="tree-css" onclick="switchFileType('css')">
+                    <div class="file-label-box">
+                        <i class="fa-brands fa-css3-alt" style="color:#38bdf8;"></i>
+                        <span>style.css</span>
+                    </div>
+                    <span style="font-size:0.65rem; color:var(--text-dim);">CSS3</span>
+                </button>
+                <button class="file-tree-item" id="tree-js" onclick="switchFileType('js')">
+                    <div class="file-label-box">
+                        <i class="fa-brands fa-js" style="color:#facc15;"></i>
+                        <span>script.js</span>
+                    </div>
+                    <span style="font-size:0.65rem; color:var(--text-dim);">JS ES6</span>
+                </button>
+
+                <div class="sidebar-group-title">بيئات ومختبرات إضافية</div>
+                <button class="file-tree-item" id="tree-python" onclick="switchFileType('python')">
+                    <div class="file-label-box">
+                        <i class="fa-brands fa-python" style="color:#38bdf8;"></i>
+                        <span>main.py</span>
+                    </div>
+                    <span style="font-size:0.65rem; color:var(--text-dim);">Python 3</span>
+                </button>
+                <button class="file-tree-item" id="tree-sql" onclick="switchFileType('sql')">
+                    <div class="file-label-box">
+                        <i class="fa-solid fa-database" style="color:#a855f7;"></i>
+                        <span>schema.sql</span>
+                    </div>
+                    <span style="font-size:0.65rem; color:var(--text-dim);">SQLite</span>
+                </button>
+            </div>
         </aside>
 
-        <!-- FIXED VIEWPORT WORKSPACE -->
-        <main class="app-viewport">
+        <!-- الشاشات واللوحات الرئيسية (Main Viewports) -->
+        <main class="main-viewport">
 
-            <!-- TAB 1: STUDIO (FIXED SPLIT IDE) -->
-            <section id="tab-studio" class="tab-content active">
-                <div class="studio-fixed-container" id="studio-container">
-                    
-                    <!-- Editor Panel -->
-                    <div class="editor-panel">
-                        <div class="panel-header">
-                            <div class="lang-tabs">
-                                <button class="lang-btn active" id="btn-lang-html" onclick="setLanguage('html')">HTML5</button>
-                                <button class="lang-btn" id="btn-lang-css" onclick="setLanguage('css')">CSS3</button>
-                                <button class="lang-btn" id="btn-lang-js" onclick="setLanguage('js')">JS</button>
-                                <button class="lang-btn" id="btn-lang-python" onclick="setLanguage('python')">Python</button>
-                                <button class="lang-btn" id="btn-lang-sql" onclick="setLanguage('sql')">SQL</button>
+            <!-- اللوحة 1: استوديو البرمجة الثابت (Studio) -->
+            <section id="tab-studio" class="tab-panel active">
+                <div class="studio-grid" id="studio-grid-wrap">
+
+                    <!-- نصف المحرر البرمجي -->
+                    <div class="editor-half">
+                        <div class="pane-toolbar">
+                            <div class="code-tabs-list">
+                                <button class="code-tab-btn active" id="btn-file-html" onclick="switchFileType('html')">index.html</button>
+                                <button class="code-tab-btn" id="btn-file-css" onclick="switchFileType('css')">style.css</button>
+                                <button class="code-tab-btn" id="btn-file-js" onclick="switchFileType('js')">script.js</button>
+                                <button class="code-tab-btn" id="btn-file-python" onclick="switchFileType('python')">main.py</button>
+                                <button class="code-tab-btn" id="btn-file-sql" onclick="switchFileType('sql')">schema.sql</button>
                             </div>
-                            <div style="display:flex; gap:0.35rem;">
-                                <button class="btn btn-outline" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="formatCode()" title="تنميق">
+                            <div style="display:flex; gap:0.25rem;">
+                                <button class="btn-action btn-ghost" onclick="actionFormatCode()" title="تنميق">
                                     <i class="fa-solid fa-wand-magic-sparkles"></i>
                                 </button>
-                                <button class="btn btn-outline" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="clearCode()" title="تفريغ">
-                                    <i class="fa-solid fa-trash-can"></i>
+                                <button class="btn-action btn-ghost" onclick="actionResetEditor()" title="مسح">
+                                    <i class="fa-regular fa-trash-can"></i>
                                 </button>
                             </div>
                         </div>
 
-                        <div class="editor-wrapper">
-                            <div class="line-numbers" id="line-numbers">1<br>2<br>3<br>4</div>
-                            <textarea id="code-editor" class="code-textarea" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+                        <div class="editor-container">
+                            <div class="editor-gutters" id="editor-lines">1<br>2<br>3<br>4</div>
+                            <textarea id="code-box" class="editor-textarea" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
                         </div>
 
-                        <!-- Integrated Console -->
-                        <div class="console-drawer">
-                            <div class="console-header">
-                                <span><i class="fa-solid fa-terminal"></i> سجل المخرجات التفاعلية (Console)</span>
-                                <button style="background:none; border:none; color:var(--text-muted); cursor:pointer;" onclick="clearConsole()">مسح</button>
+                        <!-- كونسول المخرجات التفاعلي -->
+                        <div class="console-panel">
+                            <div class="console-top">
+                                <span><i class="fa-solid fa-terminal"></i> سجل المخرجات والأخطاء (Console)</span>
+                                <button style="background:none; border:none; color:var(--text-dim); cursor:pointer;" onclick="actionClearConsole()">مسح</button>
                             </div>
-                            <div class="console-body" id="console-body">
-                                <div class="console-log console-info">[النظام]: واجهة CodeX Pro الثابتة جاهزة للاستخدام الفوري.</div>
+                            <div class="console-stream" id="console-stream">
+                                <div class="row-ok">> [نظام كوديكس]: الواجهة الثابتة مهيأة وجاهزة لتنفيذ الكود فورياً.</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Live Preview Panel -->
-                    <div class="preview-panel">
-                        <div class="panel-header">
-                            <div style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 700;">
-                                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green);"></span>
-                                المعاينة المباشرة
+                    <!-- نصف المعاينة المباشرة -->
+                    <div class="preview-half">
+                        <div class="pane-toolbar">
+                            <div style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; font-weight: 700;">
+                                <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-green);"></span>
+                                المعاينة المباشرة (Live Run)
                             </div>
-                            <div class="preview-controls">
-                                <button class="preview-viewport-btn active" id="view-desktop" onclick="setViewport('desktop')" title="حاسوب"><i class="fa-solid fa-desktop"></i></button>
-                                <button class="preview-viewport-btn" id="view-tablet" onclick="setViewport('tablet')" title="جهاز لوحي"><i class="fa-solid fa-tablet-screen-button"></i></button>
-                                <button class="preview-viewport-btn" id="view-mobile" onclick="setViewport('mobile')" title="هاتف ذكي"><i class="fa-solid fa-mobile-screen"></i></button>
-                                <button class="preview-viewport-btn" onclick="openPreviewInNewTab()" title="نافذة خارجية"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+                            <div style="display: flex; gap: 0.25rem;">
+                                <button class="btn-action btn-ghost" id="dev-desktop" onclick="setDeviceMode('desktop')" title="شاشة حاسوب"><i class="fa-solid fa-desktop"></i></button>
+                                <button class="btn-action btn-ghost" id="dev-tablet" onclick="setDeviceMode('tablet')" title="جهاز لوحي"><i class="fa-solid fa-tablet-screen-button"></i></button>
+                                <button class="btn-action btn-ghost" id="dev-mobile" onclick="setDeviceMode('mobile')" title="هاتف ذكي"><i class="fa-solid fa-mobile-screen"></i></button>
+                                <button class="btn-action btn-ghost" onclick="openPreviewPopup()" title="فتح بنافذة خارجية"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
                             </div>
                         </div>
 
-                        <div class="preview-frame-container" id="frame-container">
-                            <iframe id="preview-frame" sandbox="allow-scripts allow-modals allow-same-origin allow-forms"></iframe>
+                        <div class="preview-viewport-shell" id="preview-shell">
+                            <iframe id="live-frame" sandbox="allow-scripts allow-modals allow-same-origin allow-forms"></iframe>
                         </div>
                     </div>
 
                 </div>
             </section>
 
-            <!-- TAB 2: SPECIALIZATION TRACKS -->
-            <section id="tab-tracks" class="tab-content">
-                <div class="scrollable-page-wrap">
-                    <div style="text-align: center; margin: 1rem 0 2rem;">
-                        <h2 style="font-size: 1.7rem; margin-bottom: 0.4rem;">المسارات التخصصية لاحتراف البرمجة</h2>
-                        <p style="color: var(--text-muted); font-size: 0.9rem;">اختر تخصصاً وانقر على أي درس لتحميل الكود فوراً داخل بيئة التطوير الثابتة</p>
+            <!-- اللوحة 2: المسارات التخصصية (Tracks) -->
+            <section id="tab-tracks" class="tab-panel">
+                <div class="scrollable-page-container">
+                    <div style="text-align: center; margin-bottom: 1.5rem;">
+                        <h2 style="font-size: 1.6rem; font-weight: 900; margin-bottom: 0.3rem;">المسارات التعليمية الاحترافية</h2>
+                        <p style="color: var(--text-muted); font-size: 0.88rem;">اختر تخصصاً وانقر على أي مشروع لتحميله مباشرة داخل محرر الاستوديو</p>
                     </div>
 
-                    <div class="tracks-grid">
-                        <!-- Track 1 -->
-                        <div class="track-card">
-                            <div class="track-badge" style="background: rgba(56, 189, 248, 0.15); color: var(--primary);">🌐 تطوير الواجهات</div>
-                            <div class="track-icon">💻</div>
-                            <h3>هندسة الويب والواجهات الأمامية</h3>
-                            <p>إتقان صناعة واجهات الويب التفاعلية الحديثة المتوافقة مع جميع مقاسات الشاشات.</p>
-                            <div class="track-lessons">
-                                <div class="lesson-item" onclick="loadTrackSnippet('frontend_dom')">
-                                    <span><i class="fa-solid fa-play"></i> تطبيق تفاعلي مع عناصر DOM</span>
-                                    <i class="fa-solid fa-arrow-left"></i>
-                                </div>
-                            </div>
-                            <div class="skills-pills">
-                                <span class="skill-pill">HTML5</span>
-                                <span class="skill-pill">CSS3</span>
-                                <span class="skill-pill">JavaScript</span>
-                            </div>
-                        </div>
-
-                        <!-- Track 2 -->
-                        <div class="track-card">
-                            <div class="track-badge" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-green);">⚙️ الأنظمة الخلفية</div>
-                            <div class="track-icon">🗄️</div>
-                            <h3>الخوادم وواجهات الـ APIs</h3>
-                            <p>بناء قواعد البيانات وإدارة الخوادم وحماية الأنظمة وقواعد البيانات السحابية.</p>
-                            <div class="track-lessons">
-                                <div class="lesson-item" onclick="loadTrackSnippet('backend_crud')">
-                                    <span><i class="fa-solid fa-play"></i> محاكاة خادم RESTful API</span>
-                                    <i class="fa-solid fa-arrow-left"></i>
-                                </div>
-                            </div>
-                            <div class="skills-pills">
-                                <span class="skill-pill">Node.js</span>
-                                <span class="skill-pill">SQL</span>
-                                <span class="skill-pill">REST API</span>
-                            </div>
-                        </div>
-
-                        <!-- Track 3 -->
-                        <div class="track-card">
-                            <div class="track-badge" style="background: rgba(168, 85, 247, 0.15); color: var(--accent-purple);">📱 الهواتف</div>
-                            <div class="track-icon">📱</div>
-                            <h3>برمجة تطبيقات الأجهزة الذكية</h3>
-                            <p>تطبيقات الهواتف السريعة مع إيماءات اللمس وتخزين البيانات المحلي.</p>
-                            <div class="track-lessons">
-                                <div class="lesson-item" onclick="loadProductionProject('ecommerce')">
-                                    <span><i class="fa-solid fa-play"></i> متجر إلكتروني متجاوب مع الهاتف</span>
-                                    <i class="fa-solid fa-arrow-left"></i>
-                                </div>
-                            </div>
-                            <div class="skills-pills">
-                                <span class="skill-pill">Touch UX</span>
-                                <span class="skill-pill">Responsive</span>
-                            </div>
-                        </div>
-
-                        <!-- Track 4 -->
-                        <div class="track-card">
-                            <div class="track-badge" style="background: rgba(245, 158, 11, 0.15); color: var(--accent-amber);">🧠 ذكاء اصطناعي</div>
-                            <div class="track-icon">🤖</div>
-                            <h3>علم البيانات والذكاء الاصطناعي</h3>
-                            <p>خوارزميات تحليل النصوص والتنبؤات الذكية ونماذج التعلم الآلي.</p>
-                            <div class="track-lessons">
-                                <div class="lesson-item" onclick="loadTrackSnippet('ai_classifier')">
-                                    <span><i class="fa-solid fa-play"></i> خوارزمية تحليل المشاعر والنصوص</span>
-                                    <i class="fa-solid fa-arrow-left"></i>
-                                </div>
-                            </div>
-                            <div class="skills-pills">
-                                <span class="skill-pill">NLP</span>
-                                <span class="skill-pill">Algorithms</span>
-                            </div>
-                        </div>
-
-                        <!-- Track 5 -->
-                        <div class="track-card">
-                            <div class="track-badge" style="background: rgba(244, 63, 94, 0.15); color: var(--accent-rose);">🎮 الألعاب</div>
-                            <div class="track-icon">👾</div>
-                            <h3>تطوير الألعاب التفاعلية ثنائية الأبعاد</h3>
-                            <p>فيزياء الكانفاس واكتشاف التصادم وتصميم حلقات الألعاب (Game Loops).</p>
-                            <div class="track-lessons">
-                                <div class="lesson-item" onclick="loadProductionProject('spacegame')">
-                                    <span><i class="fa-solid fa-play"></i> لعبة الفضاء الكلاسيكية 2D</span>
-                                    <i class="fa-solid fa-arrow-left"></i>
-                                </div>
-                            </div>
-                            <div class="skills-pills">
-                                <span class="skill-pill">Canvas 2D</span>
-                                <span class="skill-pill">Physics</span>
-                            </div>
-                        </div>
-
-                        <!-- Track 6 -->
-                        <div class="track-card">
-                            <div class="track-badge" style="background: rgba(56, 189, 248, 0.15); color: var(--primary);">🛡️ الأمن السيبراني</div>
-                            <div class="track-icon">🔐</div>
-                            <h3>أمن البرمجيات والتشفير</h3>
-                            <p>تشفير البيانات وحماية المدخلات من الثغرات الأمنية.</p>
-                            <div class="track-lessons">
-                                <div class="lesson-item" onclick="loadTrackSnippet('security_crypto')">
-                                    <span><i class="fa-solid fa-play"></i> خوارزمية التشفير وفك التشفير</span>
-                                    <i class="fa-solid fa-arrow-left"></i>
-                                </div>
-                            </div>
-                            <div class="skills-pills">
-                                <span class="skill-pill">Cryptography</span>
-                                <span class="skill-pill">Sanitization</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- TAB 3: APP PRODUCTION TEMPLATES -->
-            <section id="tab-templates" class="tab-content">
-                <div class="scrollable-page-wrap">
-                    <div style="background: linear-gradient(135deg, rgba(56,189,248,0.1), rgba(168,85,247,0.1)); border:1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem;">
-                        <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;"><i class="fa-solid fa-cubes"></i> مصنع التطبيقات المتكاملة</h2>
-                        <p style="color: var(--text-muted); font-size: 0.9rem;">قوالب برمجية كاملة مكتوبة ومجهزة للنشر الفوري. اضغط فتح في المحرر أو حمل الملف مباشرة.</p>
-                    </div>
-
-                    <div class="projects-grid">
-                        <div class="project-card">
-                            <div class="project-preview-mockup"><i class="fa-solid fa-cart-shopping"></i></div>
-                            <div class="project-info">
-                                <h3 style="font-size: 1.1rem;">متجر إلكتروني احترافي</h3>
-                                <p style="font-size: 0.85rem; color: var(--text-muted);">سلة تسوق ديناميكية، حساب الفاتورة، وحذف وإضافة العناصر فورياً.</p>
-                                <div style="display:flex; gap:0.5rem; margin-top:auto; padding-top: 0.8rem;">
-                                    <button class="btn btn-primary" style="flex:1;" onclick="loadProductionProject('ecommerce')"><i class="fa-solid fa-code"></i> فتح في المحرر</button>
-                                    <button class="btn btn-outline" onclick="downloadTemplateFile('ecommerce')" title="تنزيل"><i class="fa-solid fa-file-arrow-down"></i></button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="project-card">
-                            <div class="project-preview-mockup"><i class="fa-solid fa-rocket"></i></div>
-                            <div class="project-info">
-                                <h3 style="font-size: 1.1rem;">لعبة الدفاع الفضائي 2D</h3>
-                                <p style="font-size: 0.85rem; color: var(--text-muted);">محرك كانفاس، طلقات ليزر وتفادي كويكبات مع احتساب النقاط بالوقت الفعلي.</p>
-                                <div style="display:flex; gap:0.5rem; margin-top:auto; padding-top: 0.8rem;">
-                                    <button class="btn btn-primary" style="flex:1;" onclick="loadProductionProject('spacegame')"><i class="fa-solid fa-code"></i> فتح في المحرر</button>
-                                    <button class="btn btn-outline" onclick="downloadTemplateFile('spacegame')" title="تنزيل"><i class="fa-solid fa-file-arrow-down"></i></button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="project-card">
-                            <div class="project-preview-mockup"><i class="fa-solid fa-table-columns"></i></div>
-                            <div class="project-info">
-                                <h3 style="font-size: 1.1rem;">لوحة كانبان الذكية (Kanban)</h3>
-                                <p style="font-size: 0.85rem; color: var(--text-muted);">إدارة المهام وتحديث حالتها بين (قيد الانتظار، التنفيذ، ومكتمل).</p>
-                                <div style="display:flex; gap:0.5rem; margin-top:auto; padding-top: 0.8rem;">
-                                    <button class="btn btn-primary" style="flex:1;" onclick="loadProductionProject('kanban')"><i class="fa-solid fa-code"></i> فتح في المحرر</button>
-                                    <button class="btn btn-outline" onclick="downloadTemplateFile('kanban')" title="تنزيل"><i class="fa-solid fa-file-arrow-down"></i></button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="project-card">
-                            <div class="project-preview-mockup"><i class="fa-solid fa-comments"></i></div>
-                            <div class="project-info">
-                                <h3 style="font-size: 1.1rem;">تطبيق شات ذكاء اصطناعي</h3>
-                                <p style="font-size: 0.85rem; color: var(--text-muted);">واجهة محادثة ذكية تشبه ChatGPT مع ردود سريعة ومحاكية.</p>
-                                <div style="display:flex; gap:0.5rem; margin-top:auto; padding-top: 0.8rem;">
-                                    <button class="btn btn-primary" style="flex:1;" onclick="loadProductionProject('aichat')"><i class="fa-solid fa-code"></i> فتح في المحرر</button>
-                                    <button class="btn btn-outline" onclick="downloadTemplateFile('aichat')" title="تنزيل"><i class="fa-solid fa-file-arrow-down"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- TAB 4: CHALLENGES -->
-            <section id="tab-challenges" class="tab-content">
-                <div class="challenge-container">
-                    <div class="challenge-card">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); padding: 0.2rem 0.6rem; border-radius: 4px; font-weight: 700; font-size: 0.75rem;">تحدي خوارزميات</span>
-                            <span style="font-size: 0.8rem; color: var(--text-muted);"><i class="fa-solid fa-stopwatch"></i> 15 دقيقة</span>
-                        </div>
-                        <h2 id="challenge-title" style="font-size: 1.3rem;">تحدي: كاشف الكلمات المتناظرة (Palindrome)</h2>
-                        <p id="challenge-desc" style="color:var(--text-muted); font-size:0.9rem; line-height:1.6;">
-                            اكتب دالة <code class="font-code">isPalindrome(str)</code> للتحقق مما إذا كانت الكلمة تُقرأ من الأمام والخلف بنفس الصورة مع تجاهل المسافات وحالة الأحرف.
-                        </p>
-                        <div style="margin-top:auto; display:flex; gap:0.4rem; flex-wrap:wrap;">
-                            <button class="btn btn-outline" style="font-size:0.75rem;" onclick="switchChallenge('palindrome')">1. Palindrome</button>
-                            <button class="btn btn-outline" style="font-size:0.75rem;" onclick="switchChallenge('reverse')">2. عكس المصفوفات</button>
-                            <button class="btn btn-outline" style="font-size:0.75rem;" onclick="switchChallenge('fizzbuzz')">3. FizzBuzz</button>
-                        </div>
-                    </div>
-
-                    <div class="challenge-card" style="background:var(--bg-editor);">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="color:var(--primary); font-weight:700; font-size:0.85rem;"><i class="fa-solid fa-terminal"></i> محرر كود الحل</span>
-                            <button class="btn btn-success" style="padding:0.3rem 0.8rem;" onclick="runChallengeTests()">
-                                <i class="fa-solid fa-circle-check"></i> اختبار الحل
+                    <div class="cards-grid">
+                        <div class="interactive-card">
+                            <span class="card-tag" style="background: rgba(56, 189, 248, 0.15); color: var(--primary);">🌐 تطوير الواجهات</span>
+                            <h3 style="font-size: 1.1rem;">هندسة الويب التفاعلية الحديثة</h3>
+                            <p style="color: var(--text-muted); font-size: 0.82rem; line-height: 1.5;">بناء صفحات فائقة السرعة ومتجاوبة مع تفاعل الأحداث وتطبيقات الويب الحديثة.</p>
+                            <button class="btn-action btn-ghost" style="margin-top:auto;" onclick="loadSpecialTrack('frontend')">
+                                <i class="fa-solid fa-code"></i> فتح مشروع المسار في المحرر
                             </button>
                         </div>
-                        <textarea id="challenge-code" class="code-textarea" style="flex:1; background:#070b12; border:1px solid var(--border-color); border-radius:6px; min-height: 180px;">function isPalindrome(str) {
+
+                        <div class="interactive-card">
+                            <span class="card-tag" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-green);">⚙️ هندسة الخوادم</span>
+                            <h3 style="font-size: 1.1rem;">الأنظمة الخلفية وقواعد البيانات</h3>
+                            <p style="color: var(--text-muted); font-size: 0.82rem; line-height: 1.5;">هندسة الـ APIs، جداول SQL، تشفير البيانات، ومحاكاة خوادم سريعة الاستجابة.</p>
+                            <button class="btn-action btn-ghost" style="margin-top:auto;" onclick="loadSpecialTrack('backend')">
+                                <i class="fa-solid fa-database"></i> فتح مشروع المسار في المحرر
+                            </button>
+                        </div>
+
+                        <div class="interactive-card">
+                            <span class="card-tag" style="background: rgba(168, 85, 247, 0.15); color: var(--accent-purple);">🤖 الذكاء الاصطناعي</span>
+                            <h3 style="font-size: 1.1rem;">علم البيانات والنماذج الذكية</h3>
+                            <p style="color: var(--text-muted); font-size: 0.82rem; line-height: 1.5;">خوارزميات تصنيف النصوص، تحليل المشاعر، ونماذج التنبؤ البرمجية.</p>
+                            <button class="btn-action btn-ghost" style="margin-top:auto;" onclick="loadSpecialTrack('ai')">
+                                <i class="fa-solid fa-brain"></i> فتح مشروع المسار في المحرر
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- اللوحة 3: مصنع التطبيقات الجاهزة (Templates) -->
+            <section id="tab-templates" class="tab-panel">
+                <div class="scrollable-page-container">
+                    <div style="background: linear-gradient(135deg, rgba(56,189,248,0.08), rgba(168,85,247,0.08)); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.2rem; margin-bottom: 1.2rem;">
+                        <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 0.3rem;"><i class="fa-solid fa-cubes"></i> مصنع التطبيقات المتكاملة</h2>
+                        <p style="color: var(--text-muted); font-size: 0.85rem;">تطبيقات جاهزة كوداً وتصميماً، يمكنك استخدامها، تعديلها، أو تحميلها كملفات كاملة فوراً.</p>
+                    </div>
+
+                    <div class="cards-grid">
+                        <div class="interactive-card">
+                            <h3 style="font-size: 1.05rem;">🛍️ متجر تسوق إلكتروني متكامل</h3>
+                            <p style="color: var(--text-muted); font-size: 0.82rem;">سلة مشتريات ديناميكية، حساب الضريبة والمجموع، وإشعارات الشراء الفورية.</p>
+                            <div style="display:flex; gap:0.4rem; margin-top:auto;">
+                                <button class="btn-action btn-run" style="flex:1;" onclick="loadReadyTemplate('ecommerce')">فتح في المحرر</button>
+                                <button class="btn-action btn-ghost" onclick="downloadTemplateDirectly('ecommerce')" title="تنزيل"><i class="fa-solid fa-download"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="interactive-card">
+                            <h3 style="font-size: 1.05rem;">🚀 لعبة معركة الفضاء (2D Canvas)</h3>
+                            <p style="color: var(--text-muted); font-size: 0.82rem;">محرك ألعاب بالكانفاس، إطلاق ليزر، تصادم كويكبات واحتساب النتائج مباشرة.</p>
+                            <div style="display:flex; gap:0.4rem; margin-top:auto;">
+                                <button class="btn-action btn-run" style="flex:1;" onclick="loadReadyTemplate('spacegame')">فتح في المحرر</button>
+                                <button class="btn-action btn-ghost" onclick="downloadTemplateDirectly('spacegame')" title="تنزيل"><i class="fa-solid fa-download"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="interactive-card">
+                            <h3 style="font-size: 1.05rem;">📌 لوحة كانبان الذكية (Kanban)</h3>
+                            <p style="color: var(--text-muted); font-size: 0.82rem;">إدارة المهام وتحديث حالتها مع عداد فوري للمهام المنجزة.</p>
+                            <div style="display:flex; gap:0.4rem; margin-top:auto;">
+                                <button class="btn-action btn-run" style="flex:1;" onclick="loadReadyTemplate('kanban')">فتح في المحرر</button>
+                                <button class="btn-action btn-ghost" onclick="downloadTemplateDirectly('kanban')" title="تنزيل"><i class="fa-solid fa-download"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- اللوحة 4: مختبر التحديات البرمجية (Challenges) -->
+            <section id="tab-challenges" class="tab-panel">
+                <div class="scrollable-page-container">
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem;">
+                        <div class="interactive-card">
+                            <span class="card-tag" style="background: rgba(245, 158, 11, 0.15); color: var(--accent-amber);">تحدي الخوارزميات #1</span>
+                            <h2 style="font-size: 1.25rem;">فاحص الكلمات المتناظرة (Palindrome)</h2>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.6;">
+                                اكتب دالة <code class="font-code">isPalindrome(str)</code> للتحقق من أن الكلمة تُقرأ من البداية والنهاية بنفس الترتيب وتجاهل المسافات وحالة الأحرف.
+                            </p>
+                            <button class="btn-action btn-run" style="margin-top:auto;" onclick="testChallengeCode()">
+                                <i class="fa-solid fa-vial-circle-check"></i> اختبار الحل فوراً
+                            </button>
+                        </div>
+
+                        <div class="interactive-card" style="background: var(--bg-editor);">
+                            <div style="font-size:0.75rem; font-weight:700; color:var(--text-dim); margin-bottom: 0.3rem;">محرر كود التحدي:</div>
+                            <textarea id="challenge-editor" class="editor-textarea" style="background: #060910; border:1px solid var(--border); border-radius:6px; min-height:160px; font-size:0.82rem;">function isPalindrome(str) {
     const clean = str.toLowerCase().replace(/[^a-z0-9]/g, '');
     return clean === clean.split('').reverse().join('');
 }</textarea>
-                        <div class="challenge-test-output" id="test-results">اضغط "اختبار الحل" لتشغيل حالات الفحص البرمجي...</div>
+                            <div id="challenge-feedback" style="font-family:'Fira Code',monospace; font-size:0.8rem; padding: 0.5rem; background:#090d16; border-radius:4px; color:var(--text-dim); direction:ltr; text-align:left;">
+                                Press "اختبار الحل" to execute automated test cases...
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <!-- TAB 5: AI COPILOT -->
-            <section id="tab-assistant" class="tab-content">
-                <div class="ai-assistant-container">
+            <!-- اللوحة 5: المساعد الذكي AI (AI Copilot) -->
+            <section id="tab-assistant" class="tab-panel">
+                <div class="ai-layout">
                     <div class="ai-sidebar">
-                        <div style="display:flex; align-items:center; gap:0.5rem; color:var(--accent-purple);">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i>
-                            <strong style="font-size: 0.95rem; color:var(--text-main);">مساعد كوديكس الذكي</strong>
+                        <div style="font-weight: 800; font-size: 0.95rem; color: var(--accent-purple); display:flex; align-items:center; gap:0.4rem;">
+                            <i class="fa-solid fa-robot"></i>
+                            <span>كوديكس كوبايلوت</span>
                         </div>
-                        <p style="font-size:0.8rem; color:var(--text-muted);">ذكاء اصطناعي مدمج لمساعدتك في بناء وفحص الأكواد وشرح المفاهيم المعقدة.</p>
-                        
-                        <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-top:0.3rem;">أوامر سريعة:</div>
-                        <button class="prompt-btn" onclick="sendAiPrompt('اشرح لي الكود المكتوب في المحرر حالياً بالتفصيل.')">
-                            <i class="fa-solid fa-chalkboard-user"></i> شرح كود المحرر الحالي
+                        <p style="font-size: 0.78rem; color: var(--text-muted);">المساعد البرمجي الذكي لمراجعة الكود، اكتشاف الأخطاء، وتقديم تحسينات فورية.</p>
+
+                        <div style="font-size: 0.7rem; font-weight:800; color:var(--text-dim); margin-top:0.5rem;">أوامر سريعة:</div>
+                        <button class="btn-action btn-ghost" style="justify-content:flex-start; text-align:right;" onclick="sendAiPromptText('اشرح لي منطق الكود المكتوب في المحرر حالياً بالتفصيل.')">
+                            <i class="fa-solid fa-chalkboard-user"></i> شرح كود المحرر
                         </button>
-                        <button class="prompt-btn" onclick="sendAiPrompt('افحص الكود البرمجي واكتشف أي أخطاء أو تحسينات ممكنة.')">
+                        <button class="btn-action btn-ghost" style="justify-content:flex-start; text-align:right;" onclick="sendAiPromptText('افحص كود المحرر واكتشف أي أخطاء أو ثغرات.')">
                             <i class="fa-solid fa-bug"></i> فحص الأخطاء والتحسين
                         </button>
-                        <button class="prompt-btn" onclick="sendAiPrompt('كيف أربط هذا الكود بقاعدة بيانات أو سيرفر API؟')">
-                            <i class="fa-solid fa-network-wired"></i> ربط الكود بالخادم
+                        <button class="btn-action btn-ghost" style="justify-content:flex-start; text-align:right;" onclick="sendAiPromptText('كيف أربط هذا الكود بقاعدة بيانات سحابية؟')">
+                            <i class="fa-solid fa-network-wired"></i> ربط الكود بقاعدة بيانات
                         </button>
                     </div>
 
-                    <div class="chat-box">
-                        <div class="chat-messages" id="chat-messages">
-                            <div class="chat-msg bot">
-                                <div class="chat-avatar"><i class="fa-solid fa-robot"></i></div>
-                                <div class="msg-bubble">
-                                    أهلاً بك في بيئة كوديكس برو الثابتة! 👋 أنا المساعد البرمجي، يمكنك سؤالي عن أي تقنية أو طلب فحص وتطوير الكود المفتوح في المحرر حالياً.
-                                </div>
+                    <div class="ai-chat-main">
+                        <div class="chat-bubbles-box" id="ai-chat-history">
+                            <div class="chat-bubble bot">
+                                مرحباً بك! 👋 أنا مساعدك الذكي في بيئة كوديكس برو. اسألني عن أي استفسار أو اطلب فحص وتعديل الكود في المحرر وسأقوم بالرد فوراً.
                             </div>
                         </div>
-                        <div class="chat-input-bar">
-                            <input type="text" id="ai-user-input" class="chat-input" placeholder="اكتب سؤالك البرمجي هنا..." onkeydown="if(event.key==='Enter') submitAiMessage()">
-                            <button class="btn btn-primary" onclick="submitAiMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+                        <div class="chat-input-row">
+                            <input type="text" id="ai-input" class="chat-input-field" placeholder="اكتب سؤالك البرمجي هنا..." onkeydown="if(event.key==='Enter') sendAiMessageFromInput()">
+                            <button class="btn-action btn-run" onclick="sendAiMessageFromInput()">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1620,88 +1393,134 @@
         </main>
     </div>
 
-    <!-- ==================== 3. FIXED STATUS BAR ==================== -->
+    <!-- ================= 3. شريط الحالة السفلي الثابت ================= -->
     <footer class="app-statusbar">
-        <div class="statusbar-segment">
-            <span class="status-pill" onclick="switchTab('studio')">
-                <i class="fa-solid fa-circle" style="color:var(--accent-green); font-size:0.5rem;"></i>
+        <div class="status-cluster">
+            <span class="status-chip" onclick="switchMainTab('studio')">
+                <i class="fa-solid fa-circle" style="color:var(--accent-green); font-size:0.45rem;"></i>
                 <span>جاهز للعمل</span>
             </span>
-            <span class="status-pill" id="status-lang-display" onclick="toggleMenu(event, document.querySelector('.menu-btn:nth-child(1)'))">
+            <span class="status-chip" onclick="toggleSidebarDrawer()">
                 <i class="fa-solid fa-code"></i>
-                <span id="stat-lang">HTML5</span>
+                <span id="stat-lang-label">HTML5</span>
             </span>
         </div>
 
-        <div class="statusbar-segment">
-            <span class="status-pill" title="موقع المؤشر">
-                <span id="stat-lines">الأسطر: 24</span>
-            </span>
-            <span class="status-pill">
-                <span>UTF-8</span>
-            </span>
-            <span class="status-pill" onclick="toggleFullscreen()" title="ملء الشاشة">
+        <div class="status-cluster">
+            <span class="status-chip" id="stat-lines-count">الأسطر: 24</span>
+            <span class="status-chip">UTF-8</span>
+            <span class="status-chip" onclick="toggleFullscreenApp()" title="ملء الشاشة">
                 <i class="fa-solid fa-expand"></i>
             </span>
         </div>
     </footer>
 
-    <!-- Shortcuts Modal -->
-    <div class="modal-overlay" id="shortcuts-modal" onclick="closeModal(event, 'shortcuts-modal')">
-        <div class="modal-card">
-            <h3 style="margin-bottom:1rem; font-size:1.2rem; color:var(--primary);"><i class="fa-regular fa-keyboard"></i> اختصارات لوحة المفاتيح</h3>
-            <div style="display:flex; flex-direction:column; gap:0.6rem; font-size:0.85rem;">
-                <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color); padding-bottom:0.4rem;">
-                    <span>تشغيل الكود مباشرة</span>
+    <!-- قائمة القوائم المتكاملة للهواتف المحمولة (Mobile Drawer Modal) -->
+    <div class="modal-shade" id="mobile-menu-modal" onclick="closeModalOnShade(event, 'mobile-menu-modal')">
+        <div class="modal-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid var(--border); pb:0.5rem;">
+                <h3 style="font-size:1.1rem; color:var(--primary); font-weight:800;"><i class="fa-solid fa-bars-staggered"></i> قائمة كوديكس الشاملة</h3>
+                <button class="btn-ghost" style="border:none; cursor:pointer;" onclick="closeModal('mobile-menu-modal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:0.4rem;">
+                <button class="dropdown-row" onclick="actionNewProject(); closeModal('mobile-menu-modal');">
+                    <span class="dropdown-row-label"><i class="fa-regular fa-file"></i> مشروع جديد</span>
+                </button>
+                <button class="dropdown-row" onclick="actionSaveDownload(); closeModal('mobile-menu-modal');">
+                    <span class="dropdown-row-label"><i class="fa-solid fa-download"></i> حفظ وتصدير الملف</span>
+                </button>
+                <button class="dropdown-row" onclick="actionFormatCode(); closeModal('mobile-menu-modal');">
+                    <span class="dropdown-row-label"><i class="fa-solid fa-wand-magic-sparkles"></i> تنميق وترتيب الكود</span>
+                </button>
+                <div class="dropdown-separator"></div>
+                <button class="dropdown-row" onclick="switchMainTab('tracks'); closeModal('mobile-menu-modal');">
+                    <span class="dropdown-row-label"><i class="fa-solid fa-graduation-cap"></i> المسارات التعليمية</span>
+                </button>
+                <button class="dropdown-row" onclick="switchMainTab('templates'); closeModal('mobile-menu-modal');">
+                    <span class="dropdown-row-label"><i class="fa-solid fa-cubes"></i> التطبيقات الجاهزة</span>
+                </button>
+                <button class="dropdown-row" onclick="switchMainTab('challenges'); closeModal('mobile-menu-modal');">
+                    <span class="dropdown-row-label"><i class="fa-solid fa-trophy"></i> اختبار الخوارزميات</span>
+                </button>
+                <button class="dropdown-row" onclick="switchMainTab('assistant'); closeModal('mobile-menu-modal');">
+                    <span class="dropdown-row-label"><i class="fa-solid fa-robot"></i> المساعد الذكي AI</span>
+                </button>
+                <div class="dropdown-separator"></div>
+                <button class="dropdown-row" onclick="openShortcutsModal(); closeModal('mobile-menu-modal');">
+                    <span class="dropdown-row-label"><i class="fa-regular fa-keyboard"></i> اختصارات لوحة المفاتيح</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال اختصارات الكيبورد -->
+    <div class="modal-shade" id="shortcuts-modal" onclick="closeModalOnShade(event, 'shortcuts-modal')">
+        <div class="modal-box">
+            <h3 style="margin-bottom:1rem; font-size:1.15rem; color:var(--primary); font-weight:800;"><i class="fa-regular fa-keyboard"></i> اختصارات لوحة المفاتيح</h3>
+            <div style="display:flex; flex-direction:column; gap:0.6rem; font-size:0.84rem;">
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:0.4rem;">
+                    <span>تشغيل المشروع في المعاينة</span>
                     <code class="font-code" style="color:var(--primary);">Ctrl + Enter</code>
                 </div>
-                <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color); padding-bottom:0.4rem;">
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:0.4rem;">
+                    <span>حفظ وتنزيل المشروع</span>
+                    <code class="font-code" style="color:var(--primary);">Ctrl + S</code>
+                </div>
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:0.4rem;">
                     <span>إظهار / إخفاء القائمة الجانبية</span>
                     <code class="font-code" style="color:var(--primary);">Ctrl + B</code>
                 </div>
-                <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color); padding-bottom:0.4rem;">
-                    <span>حفظ وتصدير المشروع</span>
-                    <code class="font-code" style="color:var(--primary);">Ctrl + S</code>
-                </div>
-                <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border-color); padding-bottom:0.4rem;">
-                    <span>إدراج مسافة برمجية (Tab)</span>
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:0.4rem;">
+                    <span>إدراج مسافة برمجية</span>
                     <code class="font-code" style="color:var(--primary);">Tab (4 مسافات)</code>
                 </div>
             </div>
-            <button class="btn btn-outline" style="margin-top:1.5rem; width:100%;" onclick="document.getElementById('shortcuts-modal').classList.remove('open')">إغلاق</button>
+            <button class="btn-action btn-ghost" style="margin-top:1.2rem; width:100%; justify-content:center;" onclick="closeModal('shortcuts-modal')">إغلاق</button>
         </div>
     </div>
 
-    <!-- About Modal -->
-    <div class="modal-overlay" id="about-modal" onclick="closeModal(event, 'about-modal')">
-        <div class="modal-card" style="text-align:center;">
-            <div style="font-size:2.5rem; color:var(--primary); margin-bottom:0.5rem;"><i class="fa-solid fa-code"></i></div>
-            <h3 style="font-size:1.4rem; margin-bottom:0.5rem;">منصة كوديكس برو (CodeX Pro)</h3>
-            <p style="color:var(--text-muted); font-size:0.9rem; line-height:1.6; margin-bottom:1rem;">
-                بيئة تطوير عربية متكاملة ذات واجهة ثابتة وقوائم احترافية ومحرك تشغيل آني لدعم المطورين والمبتدئين في بناء تطبيقات حقيقية.
+    <!-- مودال منتقي الألوان البرمجي -->
+    <div class="modal-shade" id="colorpicker-modal" onclick="closeModalOnShade(event, 'colorpicker-modal')">
+        <div class="modal-box" style="text-align:center;">
+            <h3 style="font-size:1.15rem; color:var(--primary); font-weight:800; margin-bottom:0.8rem;"><i class="fa-solid fa-palette"></i> منتقي الألوان ومولد التدرجات</h3>
+            <input type="color" id="quick-color" value="#38bdf8" style="width:100%; height:45px; border:none; border-radius:6px; cursor:pointer;" oninput="updateColorPick(this.value)">
+            <div style="margin-top:1rem; display:flex; justify-content:center; gap:0.6rem;">
+                <input type="text" id="color-hex-val" readonly value="#38bdf8" class="font-code" style="background:var(--bg-editor); border:1px solid var(--border); color:#fff; padding:0.4rem 0.8rem; border-radius:4px; text-align:center; width:120px;">
+                <button class="btn-action btn-run" onclick="copyPickedColor()"><i class="fa-regular fa-copy"></i> نسخ HEX</button>
+            </div>
+            <button class="btn-action btn-ghost" style="margin-top:1.2rem; width:100%; justify-content:center;" onclick="closeModal('colorpicker-modal')">إغلاق</button>
+        </div>
+    </div>
+
+    <!-- مودال حول المنصة -->
+    <div class="modal-shade" id="about-modal" onclick="closeModalOnShade(event, 'about-modal')">
+        <div class="modal-box" style="text-align:center;">
+            <div style="font-size:2.4rem; color:var(--primary); margin-bottom:0.5rem;"><i class="fa-solid fa-cube"></i></div>
+            <h3 style="font-size:1.3rem; margin-bottom:0.4rem; font-weight:800;">منصة كوديكس برو (CodeX Pro)</h3>
+            <p style="color:var(--text-muted); font-size:0.88rem; line-height:1.6; margin-bottom:1rem;">
+                بيئة تطوير عربية متكاملة ذات واجهة ثابتة بدون تمرير خارجي، توفر قوائم كاملة ومحرك تشغيل حياً لدعم المطورين والمبتدئين.
             </p>
-            <div style="font-size:0.8rem; color:var(--text-muted);">الإصدار 4.2 الثابت | مبني بأحدث معايير الويب</div>
-            <button class="btn btn-primary" style="margin-top:1.2rem; width:100%;" onclick="document.getElementById('about-modal').classList.remove('open')">حسناً، فهمت</button>
+            <button class="btn-action btn-run" style="width:100%; justify-content:center;" onclick="closeModal('about-modal')">حسناً، فهمت</button>
         </div>
     </div>
 
-    <!-- Toast Notifications Root -->
-    <div id="toast-container"></div>
+    <!-- مركز التنبيهات -->
+    <div id="notification-center"></div>
 
-    <!-- JAVASCRIPT ENGINE -->
+    <!-- ================= 4. الجافاسكربت البرمجي الكامل ================= -->
     <script>
-        /* ==================== APPLICATION STATE ==================== */
-        const state = {
-            currentLang: 'html',
-            viewport: 'desktop',
+        /* حالة التطبيق المركزية */
+        const appState = {
+            activeFileType: 'html',
             activeTab: 'studio',
-            layoutSplit: 'both',
+            layoutMode: 'both',
+            deviceMode: 'desktop',
             codes: {
                 html: `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>تطبيق المهام الذكي</title>
+    <title>تطبيق المهام اليومية</title>
     <script src="https://cdn.tailwindcss.com"><\/script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex items-center justify-center p-4">
@@ -1716,12 +1535,12 @@
         </div>
 
         <ul id="taskList" class="space-y-2">
-            <!-- ستظهر المهام ديناميكياً -->
+            <!-- تظهر المهام هنا ديناميكياً -->
         </ul>
     </div>
 </body>
 </html>`,
-                css: `/* تنسيقات إضافية وتأثيرات حركية */
+                css: `/* تأثيرات مخصصة */
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
 
 * {
@@ -1729,14 +1548,14 @@
 }
 
 li {
-    animation: fadeIn 0.3s ease;
+    animation: fadeIn 0.25s ease;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-6px); }
+    from { opacity: 0; transform: translateY(-4px); }
     to { opacity: 1; transform: translateY(0); }
 }`,
-                js: `let tasks = ['تعلم تطوير الويب في منصة كوديكس', 'بناء واجهات متجاوبة وثابتة'];
+                js: `let tasks = ['تعلم تطوير الويب في منصة كوديكس', 'بناء واجهات متجاوبة وقوائم احترافية'];
 
 function renderTasks() {
     const list = document.getElementById('taskList');
@@ -1772,75 +1591,76 @@ function deleteTask(index) {
 }
 
 renderTasks();`,
-                python: `# محاكي بايثون التعليمي الذكي
-class UserAccount:
-    def __init__(self, username, balance):
-        self.username = username
-        self.balance = balance
+                python: `# محاكي بايثون 3 السحابي
+class Developer:
+    def __init__(self, name, skills):
+        self.name = name
+        self.skills = skills
 
-    def deposit(self, amount):
-        self.balance += amount
-        return f"تم إيداع {amount} ريال. الرصيد: {self.balance}"
+    def introduce(self):
+        return f"مرحباً! أنا {self.name}، وأتقن: {', '.join(self.skills)}"
 
-u = UserAccount("عمر", 2500)
-print(f"المستخدم: {u.username} | الرصيد المتاح: {u.balance}")
-print(u.deposit(500))`,
-                sql: `-- معمل استعلامات قواعد البيانات SQL
-CREATE TABLE students (
-    id INT PRIMARY KEY,
-    name VARCHAR(50),
-    major VARCHAR(50),
-    gpa DECIMAL(3, 2)
+dev = Developer("أحمد", ["JavaScript", "Python", "SQL"])
+print(dev.introduce())
+print("جاهز لبناء تطبيقات واقعية وسريعة!")`,
+                sql: `-- مخطط قاعدة البيانات واستعلاماتها
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY,
+    username TEXT NOT NULL,
+    score INTEGER DEFAULT 0
 );
 
-INSERT INTO students VALUES 
-(1, 'سعد القحطاني', 'هندسة برمجيات', 3.85),
-(2, 'نورة العتيبي', 'ذكاء اصطناعي', 3.95);
+INSERT INTO users VALUES (1, 'خالد الشمري', 98);
+INSERT INTO users VALUES (2, 'سارة العتيبي', 100);
 
-SELECT * FROM students WHERE gpa >= 3.50 ORDER BY gpa DESC;`
+SELECT * FROM users ORDER BY score DESC;`
             }
         };
 
-        const editorTextarea = document.getElementById('code-editor');
-        const lineNumbers = document.getElementById('line-numbers');
+        const codeBox = document.getElementById('code-box');
+        const editorLines = document.getElementById('editor-lines');
+        const statLinesCount = document.getElementById('stat-lines-count');
 
-        /* ==================== INITIALIZATION ==================== */
+        /* التهيئة عند التحميل */
         window.addEventListener('DOMContentLoaded', () => {
-            updateEditorContent();
-            updateLineNumbers();
-            runStudioCode();
+            refreshEditorBox();
+            executeStudioCode();
 
-            editorTextarea.addEventListener('input', () => {
-                state.codes[state.currentLang] = editorTextarea.value;
-                updateLineNumbers();
+            codeBox.addEventListener('input', () => {
+                appState.codes[appState.activeFileType] = codeBox.value;
+                refreshLineCounters();
             });
 
-            editorTextarea.addEventListener('keydown', handleEditorShortcuts);
+            codeBox.addEventListener('keydown', handleEditorKeys);
 
-            // Global click to close dropdown menus
+            // إغلاق القوائم عند النقر خارجها
             document.addEventListener('click', (e) => {
-                if (!e.target.closest('.menu-item')) {
+                if (!e.target.closest('.menu-container')) {
                     closeAllMenus();
                 }
             });
 
-            // Global shortcut listeners
+            // اختصارات الكيبورد العامة
             window.addEventListener('keydown', (e) => {
                 if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
                     e.preventDefault();
-                    toggleSidebar();
+                    toggleSidebarDrawer();
                 }
                 if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
                     e.preventDefault();
-                    exportProjectFile();
+                    actionSaveDownload();
+                }
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    executeStudioCode();
                 }
             });
         });
 
-        /* ==================== MENU SYSTEM (القوائم) ==================== */
-        function toggleMenu(e, btn) {
-            e.stopPropagation();
-            const parent = btn.closest('.menu-item');
+        /* ================= نظام القوائم العلوية ================= */
+        function toggleAppMenu(event, triggerBtn) {
+            event.stopPropagation();
+            const parent = triggerBtn.closest('.menu-container');
             const isOpen = parent.classList.contains('open');
             closeAllMenus();
             if (!isOpen) {
@@ -1849,224 +1669,201 @@ SELECT * FROM students WHERE gpa >= 3.50 ORDER BY gpa DESC;`
         }
 
         function closeAllMenus() {
-            document.querySelectorAll('.menu-item.open').forEach(el => el.classList.remove('open'));
+            document.querySelectorAll('.menu-container.open').forEach(el => el.classList.remove('open'));
         }
 
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.querySelector('.sidebar-overlay');
-            if (window.innerWidth <= 768) {
-                sidebar.classList.toggle('mobile-open');
-                overlay.classList.toggle('active');
-            } else {
-                sidebar.classList.toggle('collapsed');
-            }
-        }
-
-        /* ==================== NAVIGATION TABS ==================== */
-        function switchTab(tabId) {
+        function toggleSidebarDrawer() {
             closeAllMenus();
-            state.activeTab = tabId;
+            const sidebar = document.getElementById('sidebar-drawer');
+            sidebar.classList.toggle('collapsed');
+        }
 
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.sidebar-nav-item').forEach(el => el.classList.remove('active'));
+        function openMobileMenuSheet() {
+            document.getElementById('mobile-menu-modal').classList.add('open');
+        }
 
-            const target = document.getElementById(`tab-${tabId}`);
-            if (target) target.classList.add('active');
+        /* ================= التبديل بين اللوحات الرئيسية ================= */
+        function switchMainTab(tabId) {
+            closeAllMenus();
+            appState.activeTab = tabId;
 
-            const navTarget = document.getElementById(`nav-${tabId}`);
-            if (navTarget) navTarget.classList.add('active');
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.dock-item').forEach(d => d.classList.remove('active'));
 
-            // Close mobile sidebar on navigation
-            if (window.innerWidth <= 768) {
-                document.getElementById('sidebar').classList.remove('mobile-open');
-                document.querySelector('.sidebar-overlay').classList.remove('active');
-            }
+            const targetPanel = document.getElementById(`tab-${tabId}`);
+            if (targetPanel) targetPanel.classList.add('active');
+
+            const targetDock = document.getElementById(`dock-${tabId}`);
+            if (targetDock) targetDock.classList.add('active');
 
             if (tabId === 'studio') {
-                setTimeout(runStudioCode, 50);
+                setTimeout(executeStudioCode, 40);
             }
         }
 
-        function setLanguage(lang) {
+        /* ================= تبديل الملفات داخل المحرر ================= */
+        function switchFileType(type) {
             closeAllMenus();
-            state.currentLang = lang;
+            appState.activeFileType = type;
 
-            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-            const activeBtn = document.getElementById(`btn-lang-${lang}`);
-            if (activeBtn) activeBtn.classList.add('active');
+            document.querySelectorAll('.code-tab-btn').forEach(b => b.classList.remove('active'));
+            const activeTabBtn = document.getElementById(`btn-file-${type}`);
+            if (activeTabBtn) activeTabBtn.classList.add('active');
 
-            document.querySelectorAll('.tree-file-btn').forEach(b => b.classList.remove('active'));
-            const activeTree = document.getElementById(`tree-${lang}`);
-            if (activeTree) activeTree.classList.add('active');
+            document.querySelectorAll('.file-tree-item').forEach(b => b.classList.remove('active'));
+            const activeTreeItem = document.getElementById(`tree-${type}`);
+            if (activeTreeItem) activeTreeItem.classList.add('active');
 
-            document.getElementById('stat-lang').innerText = lang.toUpperCase();
+            document.getElementById('stat-lang-label').innerText = type.toUpperCase();
 
-            updateEditorContent();
-            showToast(`تم التبديل إلى ملف: ${lang.toUpperCase()}`);
+            refreshEditorBox();
+            pushToast(`تم الانتقال لملف: ${type.toUpperCase()}`);
         }
 
-        function updateEditorContent() {
-            editorTextarea.value = state.codes[state.currentLang] || '';
-            updateLineNumbers();
+        function refreshEditorBox() {
+            codeBox.value = appState.codes[appState.activeFileType] || '';
+            refreshLineCounters();
         }
 
-        function updateLineNumbers() {
-            const lines = editorTextarea.value.split('\n').length;
-            let lineStr = '';
-            for (let i = 1; i <= Math.max(lines, 1); i++) {
-                lineStr += i + '<br>';
+        function refreshLineCounters() {
+            const count = codeBox.value.split('\n').length;
+            let str = '';
+            for (let i = 1; i <= Math.max(count, 1); i++) {
+                str += i + '<br>';
             }
-            lineNumbers.innerHTML = lineStr;
-            document.getElementById('stat-lines').innerText = `الأسطر: ${lines}`;
+            editorLines.innerHTML = str;
+            statLinesCount.innerText = `الأسطر: ${count}`;
         }
 
-        function handleEditorShortcuts(e) {
+        function handleEditorKeys(e) {
             if (e.key === 'Tab') {
                 e.preventDefault();
                 const start = this.selectionStart;
                 const end = this.selectionEnd;
                 this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
                 this.selectionStart = this.selectionEnd = start + 4;
-                state.codes[state.currentLang] = this.value;
-                updateLineNumbers();
-            }
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault();
-                runStudioCode();
+                appState.codes[appState.activeFileType] = this.value;
+                refreshLineCounters();
             }
         }
 
-        /* ==================== CODE EXECUTION ENGINE ==================== */
-        function runStudioCode() {
+        /* ================= محرك تشغيل الكود المباشر ================= */
+        function executeStudioCode() {
             closeAllMenus();
-            if (state.currentLang === 'python') {
-                runPythonSim(state.codes.python);
+
+            if (appState.activeFileType === 'python') {
+                runPythonSimulator(appState.codes.python);
                 return;
             }
-            if (state.currentLang === 'sql') {
-                runSqlSim(state.codes.sql);
+            if (appState.activeFileType === 'sql') {
+                runSqlSimulator(appState.codes.sql);
                 return;
             }
 
-            const iframe = document.getElementById('preview-frame');
+            const frame = document.getElementById('live-frame');
             const captureScript = `
                 <script>
                     (function() {
                         const originalLog = console.log;
                         const originalError = console.error;
                         console.log = function(...args) {
-                            window.parent.postMessage({ type: 'CONSOLE_LOG', level: 'log', data: args.join(' ') }, '*');
+                            window.parent.postMessage({ type: 'LOG', data: args.join(' ') }, '*');
                             originalLog.apply(console, args);
                         };
                         console.error = function(...args) {
-                            window.parent.postMessage({ type: 'CONSOLE_LOG', level: 'error', data: args.join(' ') }, '*');
+                            window.parent.postMessage({ type: 'ERR', data: args.join(' ') }, '*');
                             originalError.apply(console, args);
                         };
                     })();
                 <\/script>
             `;
 
-            let doc = state.codes.html;
-            if (state.codes.css.trim()) {
-                doc = doc.replace('</head>', `<style>${state.codes.css}</style></head>`);
+            let pageCode = appState.codes.html;
+            if (appState.codes.css.trim()) {
+                pageCode = pageCode.replace('</head>', `<style>${appState.codes.css}</style></head>`);
             }
-            const scriptTag = `${captureScript}<script>${state.codes.js}<\/script>`;
-            if (doc.includes('</body>')) {
-                doc = doc.replace('</body>', `${scriptTag}</body>`);
+            const scriptTag = `${captureScript}<script>${appState.codes.js}<\/script>`;
+            if (pageCode.includes('</body>')) {
+                pageCode = pageCode.replace('</body>', `${scriptTag}</body>`);
             } else {
-                doc += scriptTag;
+                pageCode += scriptTag;
             }
 
-            iframe.srcdoc = doc;
-            appendConsole('[النظام]: تم تشغيل وتحديث المعاينة بنجاح 100%.', 'info');
+            frame.srcdoc = pageCode;
+            logConsoleRow('تم تحديث وتشغيل المشروع الحي بنجاح.', 'ok');
         }
 
-        window.addEventListener('message', (event) => {
-            if (event.data && event.data.type === 'CONSOLE_LOG') {
-                appendConsole(event.data.data, event.data.level);
-            }
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'LOG') logConsoleRow(e.data.data, 'log');
+            if (e.data && e.data.type === 'ERR') logConsoleRow(e.data.data, 'err');
         });
 
-        function appendConsole(message, type = 'log') {
-            const body = document.getElementById('console-body');
-            const div = document.createElement('div');
-            div.className = `console-log ${type === 'error' ? 'console-err' : (type === 'info' ? 'console-info' : '')}`;
-            div.textContent = `> ${message}`;
-            body.appendChild(div);
-            body.scrollTop = body.scrollHeight;
+        function logConsoleRow(msg, type = 'log') {
+            const stream = document.getElementById('console-stream');
+            const row = document.createElement('div');
+            row.className = type === 'err' ? 'row-err' : (type === 'ok' ? 'row-ok' : '');
+            row.textContent = `> ${msg}`;
+            stream.appendChild(row);
+            stream.scrollTop = stream.scrollHeight;
         }
 
-        function clearConsole() {
+        function actionClearConsole() {
             closeAllMenus();
-            document.getElementById('console-body').innerHTML = '';
+            document.getElementById('console-stream').innerHTML = '';
         }
 
-        function runPythonSim(code) {
-            clearConsole();
-            appendConsole('[محاكي Python 3.11]: جاري تنفيذ السكربت...', 'info');
+        function runPythonSimulator(code) {
+            actionClearConsole();
+            logConsoleRow('[Python 3.11 Environment]: التنفيذ جاري...', 'ok');
             code.split('\n').forEach(line => {
                 line = line.trim();
                 if (line.startsWith('print(') && line.endsWith(')')) {
-                    let str = line.substring(6, line.length - 1);
-                    if (str.startsWith('f"') || str.startsWith("f'")) {
-                        str = str.substring(2, str.length - 1).replace(/\{([^}]+)\}/g, '...');
+                    let out = line.substring(6, line.length - 1);
+                    if (out.startsWith('f"') || out.startsWith("f'")) {
+                        out = out.substring(2, out.length - 1).replace(/\{([^}]+)\}/g, '...');
                     }
-                    appendConsole(str.replace(/['"]/g, ''), 'log');
+                    logConsoleRow(out.replace(/['"]/g, ''), 'log');
                 }
             });
-            appendConsole('[Python]: اكتمل التنفيذ بنجاح دون أخطاء.', 'info');
+            logConsoleRow('[Python]: اكتمل التنفيذ بنجاح.', 'ok');
         }
 
-        function runSqlSim(query) {
-            clearConsole();
-            appendConsole('[محرك SQLite]: جاري معالجة الاستعلامات...', 'info');
-            appendConsole('+----+------------------+-------------------+------+', 'log');
-            appendConsole('| id | name             | major             | gpa  |', 'log');
-            appendConsole('+----+------------------+-------------------+------+', 'log');
-            appendConsole('| 2  | نورة العتيبي     | ذكاء اصطناعي      | 3.95 |', 'log');
-            appendConsole('| 1  | سعد القحطاني     | هندسة برمجيات     | 3.85 |', 'log');
-            appendConsole('+----+------------------+-------------------+------+', 'log');
-            appendConsole('[SQL]: تم تنفيذ الاستعلام وإرجاع صفين.', 'info');
+        function runSqlSimulator() {
+            actionClearConsole();
+            logConsoleRow('[SQLite Lab]: معالجة استعلامات الجدول...', 'ok');
+            logConsoleRow('| id | username        | score |', 'log');
+            logConsoleRow('|----+-----------------+-------|', 'log');
+            logConsoleRow('| 2  | سارة العتيبي    | 100   |', 'log');
+            logConsoleRow('| 1  | خالد الشمري     | 98    |', 'log');
+            logConsoleRow('[SQL]: تم تنفيذ الاستعلام وإرجاع صفين بنجاح.', 'ok');
         }
 
-        /* ==================== VIEWPORT & LAYOUT MODES ==================== */
-        function setViewport(mode) {
-            state.viewport = mode;
-            const container = document.getElementById('frame-container');
-            document.querySelectorAll('.preview-viewport-btn').forEach(b => b.classList.remove('active'));
-            container.classList.remove('viewport-mobile', 'viewport-tablet');
-
-            if (mode === 'mobile') {
-                container.classList.add('viewport-mobile');
-                document.getElementById('view-mobile').classList.add('active');
-            } else if (mode === 'tablet') {
-                container.classList.add('viewport-tablet');
-                document.getElementById('view-tablet').classList.add('active');
-            } else {
-                document.getElementById('view-desktop').classList.add('active');
-            }
-        }
-
-        function setLayoutSplit(mode) {
+        /* ================= أوضاع العرض والأجهزة ================= */
+        function setLayoutView(mode) {
             closeAllMenus();
-            const container = document.getElementById('studio-container');
-            container.classList.remove('view-code-only', 'view-preview-only');
-            if (mode === 'code') {
-                container.classList.add('view-code-only');
-            } else if (mode === 'preview') {
-                container.classList.add('view-preview-only');
-            }
-            showToast(`تم تغيير وضع العرض إلى: ${mode === 'code' ? 'المحرر فقط' : mode === 'preview' ? 'المعاينة فقط' : 'ثنائي'}`);
+            appState.layoutMode = mode;
+            const grid = document.getElementById('studio-grid-wrap');
+            grid.classList.remove('layout-code-only', 'layout-preview-only');
+            if (mode === 'code') grid.classList.add('layout-code-only');
+            if (mode === 'preview') grid.classList.add('layout-preview-only');
+            pushToast(`تم تبديل وضع العرض: ${mode}`);
         }
 
-        function openPreviewInNewTab() {
-            let win = window.open();
-            win.document.write(document.getElementById('preview-frame').srcdoc);
-            win.document.close();
+        function setDeviceMode(device) {
+            appState.deviceMode = device;
+            const shell = document.getElementById('preview-shell');
+            shell.classList.remove('device-mobile', 'device-tablet');
+            if (device === 'mobile') shell.classList.add('device-mobile');
+            if (device === 'tablet') shell.classList.add('device-tablet');
         }
 
-        function toggleFullscreen() {
+        function openPreviewPopup() {
+            const w = window.open();
+            w.document.write(document.getElementById('live-frame').srcdoc);
+            w.document.close();
+        }
+
+        function toggleFullscreenApp() {
             closeAllMenus();
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(() => {});
@@ -2075,62 +1872,57 @@ SELECT * FROM students WHERE gpa >= 3.50 ORDER BY gpa DESC;`
             }
         }
 
-        /* ==================== ACTIONS & FILE MANAGERS ==================== */
-        function formatCode() {
+        /* ================= الإجراءات وحفظ الملفات ================= */
+        function actionNewProject() {
             closeAllMenus();
-            showToast('تم تنميق وترتيب الكود البرمجي بدقة.');
+            if (confirm('هل ترغب بإنشاء مشروع جديد وإعادة تعيين الكود؟')) {
+                appState.codes.html = '<!DOCTYPE html>\n<html lang="ar" dir="rtl">\n<body>\n    <h1 style="text-align:center; padding:40px; font-family:sans-serif;">مشروع كوديكس جديد</h1>\n</body>\n</html>';
+                appState.codes.css = '';
+                appState.codes.js = '';
+                refreshEditorBox();
+                executeStudioCode();
+                pushToast('تم إنشاء مشروع جديد.');
+            }
         }
 
-        function clearCode() {
+        function actionResetEditor() {
             closeAllMenus();
             if (confirm('تفريغ الكود الحالي بالكامل؟')) {
-                state.codes[state.currentLang] = '';
-                updateEditorContent();
+                appState.codes[appState.activeFileType] = '';
+                refreshEditorBox();
             }
         }
 
-        function copyEditorCode() {
+        function actionCopyCode() {
             closeAllMenus();
-            navigator.clipboard.writeText(editorTextarea.value);
-            showToast('تم نسخ الكود للحافظة بنجاح!');
+            navigator.clipboard.writeText(codeBox.value);
+            pushToast('تم نسخ الكود للحافظة بنجاح!');
         }
 
-        function newProject() {
+        function actionFormatCode() {
             closeAllMenus();
-            if (confirm('إنشاء مشروع جديد وإعادة تعيين المحرر؟')) {
-                state.codes.html = '<!DOCTYPE html>\n<html lang="ar" dir="rtl">\n<body>\n    <h1 style="font-family:sans-serif; text-align:center; padding:40px;">مشروع جديد جاهز</h1>\n</body>\n</html>';
-                state.codes.css = '';
-                state.codes.js = '';
-                updateEditorContent();
-                runStudioCode();
-                showToast('تم إنشاء مشروع جديد.');
-            }
+            pushToast('تم تنميق الكود البرمجي وترتيبه.');
         }
 
-        function exportProjectFile() {
+        function actionSaveDownload() {
             closeAllMenus();
-            let fullHtml = state.codes.html;
-            if (state.codes.css.trim()) {
-                fullHtml = fullHtml.replace('</head>', `<style>${state.codes.css}</style></head>`);
+            let finalDoc = appState.codes.html;
+            if (appState.codes.css.trim()) {
+                finalDoc = finalDoc.replace('</head>', `<style>${appState.codes.css}</style></head>`);
             }
-            if (state.codes.js.trim()) {
-                fullHtml = fullHtml.replace('</body>', `<script>${state.codes.js}<\/script></body>`);
+            if (appState.codes.js.trim()) {
+                finalDoc = finalDoc.replace('</body>', `<script>${appState.codes.js}<\/script></body>`);
             }
-
-            const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
+            const blob = new Blob([finalDoc], { type: 'text/html;charset=utf-8' });
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `codex-app-${Date.now()}.html`;
-            document.body.appendChild(a);
+            a.href = URL.createObjectURL(blob);
+            a.download = `codex-project-${Date.now()}.html`;
             a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showToast('تم تصدير ملف المشروع بنجاح!');
+            pushToast('تم تنزيل ملف المشروع المستقل.');
         }
 
-        /* ==================== TEMPLATES & PRODUCTION REPO ==================== */
-        const productionProjects = {
+        /* ================= القوالب والمشاريع الجاهزة ================= */
+        const templatesRepo = {
             ecommerce: {
                 html: `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -2141,68 +1933,68 @@ SELECT * FROM students WHERE gpa >= 3.50 ORDER BY gpa DESC;`
 </head>
 <body class="bg-gray-950 text-white min-h-screen p-6">
     <header class="max-w-4xl mx-auto flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
-        <h1 class="text-xl font-bold text-sky-400">🛍️ متجر التكنولوجيا الحديثة</h1>
-        <div class="bg-sky-500/20 text-sky-400 px-3 py-1 rounded-xl text-sm font-bold">العناصر: <span id="cart-count">0</span></div>
+        <h1 class="text-xl font-bold text-sky-400">🛍️ متجر التكنولوجيا الذكية</h1>
+        <div class="bg-sky-500/20 text-sky-400 px-3 py-1 rounded-xl text-sm font-bold">السلة: <span id="cart-counter">0</span></div>
     </header>
-    <main class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4" id="items"></main>
+    <main class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4" id="items-box"></main>
 </body>
 </html>`,
                 css: ``,
                 js: `const items = [
-    { id: 1, name: 'حاسوب محمول فائق السرعة', price: 4200, icon: '💻' },
-    { id: 2, name: 'سماعات عازلة للضوضاء', price: 650, icon: '🎧' },
-    { id: 3, name: 'شاشة ألعاب 4K منحنية', price: 1750, icon: '🖥️' }
+    { name: 'حاسوب محمول Pro', price: 4500, icon: '💻' },
+    { name: 'سماعة رأس لاسلكية', price: 550, icon: '🎧' },
+    { name: 'ساعة ذكية رياضية', price: 890, icon: '⌚' }
 ];
-let count = 0;
-document.getElementById('items').innerHTML = items.map(i => \`
+let cart = 0;
+document.getElementById('items-box').innerHTML = items.map(item => \`
     <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl flex items-center justify-between">
         <div class="flex items-center gap-3">
-            <span class="text-3xl">\${i.icon}</span>
-            <div><h4 class="font-bold">\${i.name}</h4><span class="text-sky-400">\${i.price} ر.س</span></div>
+            <span class="text-3xl">\${item.icon}</span>
+            <div><h4 class="font-bold">\${item.name}</h4><span class="text-sky-400">\${item.price} ر.س</span></div>
         </div>
-        <button onclick="add()" class="bg-sky-500 hover:bg-sky-600 px-3 py-1 rounded-lg text-sm font-bold">شراء</button>
+        <button onclick="addCart()" class="bg-sky-500 hover:bg-sky-600 px-3 py-1 rounded-lg text-sm font-bold">شراء</button>
     </div>
 \`).join('');
-function add() {
-    count++;
-    document.getElementById('cart-count').innerText = count;
+function addCart() {
+    cart++;
+    document.getElementById('cart-counter').innerText = cart;
 }`
             },
             spacegame: {
                 html: `<!DOCTYPE html>
 <html>
 <head>
-    <title>Space Game</title>
-    <style>body{margin:0;background:#05050f;display:flex;align-items:center;justify-content:center;height:100vh;overflow:hidden;}canvas{border:2px solid #38bdf8;border-radius:12px;}</style>
+    <title>Space Shooter</title>
+    <style>body{margin:0;background:#030712;display:flex;align-items:center;justify-content:center;height:100vh;overflow:hidden;}canvas{border:2px solid #38bdf8;border-radius:12px;}</style>
 </head>
 <body>
-    <canvas id="c" width="360" height="500"></canvas>
+    <canvas id="c" width="360" height="480"></canvas>
 </body>
 </html>`,
                 css: ``,
                 js: `const c = document.getElementById('c'), ctx = c.getContext('2d');
-let p = { x: 160, y: 440 }, bullets = [], enemies = [], score = 0;
-c.addEventListener('mousemove', e => p.x = e.clientX - c.getBoundingClientRect().left - 15);
-function loop() {
-    ctx.clearRect(0,0,360,500);
-    ctx.fillStyle = '#38bdf8'; ctx.fillRect(p.x, p.y, 30, 30);
+let player = { x: 165, y: 430 }, bullets = [], enemies = [], score = 0;
+c.addEventListener('mousemove', e => player.x = e.clientX - c.getBoundingClientRect().left - 15);
+function gameLoop() {
+    ctx.clearRect(0,0,360,480);
+    ctx.fillStyle = '#38bdf8'; ctx.fillRect(player.x, player.y, 30, 24);
     if(Math.random()<0.04) enemies.push({x:Math.random()*330, y:0});
-    if(Math.random()<0.1) bullets.push({x:p.x+12, y:p.y});
+    if(Math.random()<0.1) bullets.push({x:player.x+12, y:player.y});
     ctx.fillStyle = '#f43f5e';
     bullets.forEach((b,bi) => { b.y -= 7; ctx.fillRect(b.x, b.y, 6, 12); if(b.y<0) bullets.splice(bi,1); });
     ctx.fillStyle = '#10b981';
     enemies.forEach((en,ei) => {
-        en.y += 3; ctx.fillRect(en.x, en.y, 25, 25);
+        en.y += 3; ctx.fillRect(en.x, en.y, 24, 24);
         bullets.forEach((b,bi) => {
-            if(b.x > en.x && b.x < en.x+25 && b.y > en.y && b.y < en.y+25) {
+            if(b.x > en.x && b.x < en.x+24 && b.y > en.y && b.y < en.y+24) {
                 enemies.splice(ei,1); bullets.splice(bi,1); score += 10;
             }
         });
     });
     ctx.fillStyle = '#fff'; ctx.font = '14px sans-serif'; ctx.fillText('النقاط: '+score, 15, 25);
-    requestAnimationFrame(loop);
+    requestAnimationFrame(gameLoop);
 }
-loop();`
+gameLoop();`
             },
             kanban: {
                 html: `<!DOCTYPE html>
@@ -2213,13 +2005,13 @@ loop();`
     <script src="https://cdn.tailwindcss.com"><\/script>
 </head>
 <body class="bg-slate-950 text-white min-h-screen p-6">
-    <h1 class="text-xl font-bold mb-4 text-purple-400">📌 لوحة تنظيم المهام</h1>
+    <h1 class="text-xl font-bold mb-4 text-purple-400">📌 لوحة تنظيم المهام السريعة</h1>
     <div class="grid grid-cols-2 gap-4">
         <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
             <h3 class="font-bold text-amber-400 mb-2">قيد التنفيذ</h3>
             <div id="todo" class="space-y-2">
-                <div onclick="move(this)" class="bg-slate-800 p-2 rounded cursor-pointer">بناء واجهة المستخدم</div>
-                <div onclick="move(this)" class="bg-slate-800 p-2 rounded cursor-pointer">إعداد قاعدة البيانات</div>
+                <div onclick="markDone(this)" class="bg-slate-800 p-2.5 rounded cursor-pointer hover:bg-slate-700">بناء واجهة المستخدم</div>
+                <div onclick="markDone(this)" class="bg-slate-800 p-2.5 rounded cursor-pointer hover:bg-slate-700">ربط قواعد البيانات</div>
             </div>
         </div>
         <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
@@ -2230,215 +2022,134 @@ loop();`
 </body>
 </html>`,
                 css: ``,
-                js: `function move(el) {
-    document.getElementById('done').appendChild(el);
-    el.style.opacity = '0.6';
-}`
-            },
-            aichat: {
-                html: `<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>شات ذكي</title>
-    <script src="https://cdn.tailwindcss.com"><\/script>
-</head>
-<body class="bg-gray-950 text-white min-h-screen flex flex-col p-4">
-    <div class="max-w-xl mx-auto w-full flex-1 flex flex-col bg-gray-900 rounded-2xl border border-gray-800 p-4">
-        <div id="box" class="flex-1 space-y-3 overflow-y-auto mb-4">
-            <div class="bg-gray-800 p-3 rounded-xl max-w-xs text-sm">مرحباً! كيف أساعدك اليوم في البرمجة؟</div>
-        </div>
-        <div class="flex gap-2">
-            <input id="q" class="flex-1 bg-gray-800 px-4 py-2 rounded-xl text-sm outline-none" placeholder="اكتب سؤالك...">
-            <button onclick="reply()" class="bg-sky-500 font-bold px-4 py-2 rounded-xl text-sm">إرسال</button>
-        </div>
-    </div>
-</body>
-</html>`,
-                css: ``,
-                js: `function reply() {
-    const q = document.getElementById('q');
-    if(!q.value.trim()) return;
-    const b = document.getElementById('box');
-    b.innerHTML += \`<div class="bg-sky-600 p-3 rounded-xl max-w-xs text-sm mr-auto text-left">\${q.value}</div>\`;
-    const v = q.value;
-    q.value = '';
-    setTimeout(() => {
-        b.innerHTML += \`<div class="bg-gray-800 p-3 rounded-xl max-w-xs text-sm">إجابة ذكية بخصوص "\${v}": يمكنك إنجاز ذلك عبر كتابة كود وظيفي نظيف.</div>\`;
-    }, 400);
+                js: `function markDone(element) {
+    document.getElementById('done').appendChild(element);
+    element.style.opacity = '0.6';
 }`
             }
         };
 
-        function loadProductionProject(key) {
-            const p = productionProjects[key];
-            if (p) {
-                state.codes.html = p.html;
-                state.codes.css = p.css;
-                state.codes.js = p.js;
-                state.currentLang = 'html';
-                switchTab('studio');
-                setLanguage('html');
-                runStudioCode();
-                showToast(`تم تحميل تطبيق [${key}] بنجاح داخل المحرر!`);
+        function loadReadyTemplate(key) {
+            const t = templatesRepo[key];
+            if (t) {
+                appState.codes.html = t.html;
+                appState.codes.css = t.css;
+                appState.codes.js = t.js;
+                switchFileType('html');
+                switchMainTab('studio');
+                executeStudioCode();
+                pushToast(`تم تحميل تطبيق [${key}] داخل المحرر.`);
             }
         }
 
-        function downloadTemplateFile(key) {
-            const p = productionProjects[key];
-            if (!p) return;
-            let fullHtml = p.html;
-            if (p.css) fullHtml = fullHtml.replace('</head>', `<style>${p.css}</style></head>`);
-            if (p.js) fullHtml = fullHtml.replace('</body>', `<script>${p.js}<\/script></body>`);
-            const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
+        function downloadTemplateDirectly(key) {
+            const t = templatesRepo[key];
+            if (!t) return;
+            let doc = t.html;
+            if (t.css) doc = doc.replace('</head>', `<style>${t.css}</style></head>`);
+            if (t.js) doc = doc.replace('</body>', `<script>${t.js}<\/script></body>`);
+            const blob = new Blob([doc], { type: 'text/html;charset=utf-8' });
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `${key}-app.html`;
-            document.body.appendChild(a);
+            a.href = URL.createObjectURL(blob);
+            a.download = `${key}-template.html`;
             a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showToast(`تم تنزيل المشروع [${key}] بنجاح.`);
+            pushToast(`تم تنزيل قالب [${key}] بنجاح.`);
         }
 
-        function loadTrackSnippet(type) {
-            switchTab('studio');
-            setLanguage('js');
-            if (type === 'frontend_dom') {
-                state.codes.js = `document.body.style.background = '#0b132b';\nconst h = document.createElement('h1');\nh.innerText = 'تم التفاعل وتحديث الواجهة بنجاح عبر JavaScript!';\nh.style.color = '#38bdf8';\nh.style.textAlign = 'center';\nh.style.marginTop = '50px';\ndocument.body.appendChild(h);`;
-            } else if (type === 'backend_crud') {
-                state.codes.js = `console.log('1. محاكاة الاتصال بقاعدة البيانات...');\nconsole.log('2. حفظ المستخدم (201 Created)');`;
-            } else if (type === 'ai_classifier') {
-                state.codes.js = `function analyze(t) { return t.includes('رائع') ? 'إيجابي' : 'حيادي'; }\nconsole.log(analyze('تطبيق رائع'));`;
-            } else if (type === 'security_crypto') {
-                state.codes.js = `function enc(t){ return btoa(t); }\nconsole.log('مشفر:', enc('CodeX Secure 2025'));`;
+        function loadSpecialTrack(type) {
+            if (type === 'frontend') {
+                loadReadyTemplate('ecommerce');
+            } else if (type === 'backend') {
+                switchFileType('sql');
+                switchMainTab('studio');
+            } else {
+                switchFileType('python');
+                switchMainTab('studio');
             }
-            updateEditorContent();
-            runStudioCode();
-            showToast('تم تحميل كود الدرس بالاستوديو.');
         }
 
-        /* ==================== CHALLENGES ENGINE ==================== */
-        const challengesData = {
-            palindrome: {
-                title: 'تحدي: كاشف الكلمات المتناظرة (Palindrome Detector)',
-                desc: 'اكتب دالة isPalindrome(str) للتأكد من تناظر الكلمة من اليسار واليمين.',
-                template: `function isPalindrome(str) {\n    const clean = str.toLowerCase().replace(/[^a-z0-9]/g, '');\n    return clean === clean.split('').reverse().join('');\n}`,
-                test: (code) => {
-                    eval(code);
-                    return isPalindrome('racecar') && !isPalindrome('code') && isPalindrome('A man a plan a canal Panama');
-                }
-            },
-            reverse: {
-                title: 'تحدي: عكس عناصر المصفوفة',
-                desc: 'اكتب دالة reverseArray(arr) لعكس المصفوفة دون استخدام reverse() الجاهزة.',
-                template: `function reverseArray(arr) {\n    let res = [];\n    for(let i=arr.length-1; i>=0; i--) res.push(arr[i]);\n    return res;\n}`,
-                test: (code) => {
-                    eval(code);
-                    return JSON.stringify(reverseArray([1,2,3])) === JSON.stringify([3,2,1]);
-                }
-            },
-            fizzbuzz: {
-                title: 'تحدي: فيز باز (FizzBuzz)',
-                desc: 'اكتب دالة fizzBuzz(n) ترجع Fizz لمضاعفات 3 و Buzz لمضاعفات 5 و FizzBuzz لمضاعفات 15.',
-                template: `function fizzBuzz(n) {\n    if(n%15===0) return 'FizzBuzz';\n    if(n%3===0) return 'Fizz';\n    if(n%5===0) return 'Buzz';\n    return n.toString();\n}`,
-                test: (code) => {
-                    eval(code);
-                    return fizzBuzz(15) === 'FizzBuzz' && fizzBuzz(3) === 'Fizz' && fizzBuzz(5) === 'Buzz';
-                }
-            }
-        };
-
-        let currentChallengeKey = 'palindrome';
-        function switchChallenge(key) {
-            currentChallengeKey = key;
-            const data = challengesData[key];
-            document.getElementById('challenge-title').innerText = data.title;
-            document.getElementById('challenge-desc').innerText = data.desc;
-            document.getElementById('challenge-code').value = data.template;
-            document.getElementById('test-results').innerText = 'اضغط "اختبار الحل" للبدء...';
-        }
-
-        function runChallengeTests() {
+        /* ================= فحص التحدي ================= */
+        function testChallengeCode() {
             try {
-                const code = document.getElementById('challenge-code').value;
-                const ok = challengesData[currentChallengeKey].test(code);
-                const out = document.getElementById('test-results');
-                if (ok) {
-                    out.style.color = '#10b981';
-                    out.innerText = '✅ مبروك! اجتاز كودك كافة الاختبارات بنجاح 100%.';
-                    showToast('مبروك! تم حل التحدي بنجاح.');
+                const code = document.getElementById('challenge-editor').value;
+                eval(code);
+                const pass = isPalindrome('racecar') && !isPalindrome('hello') && isPalindrome('A man a plan a canal Panama');
+                const out = document.getElementById('challenge-feedback');
+                if (pass) {
+                    out.style.color = 'var(--accent-green)';
+                    out.innerText = '✅ مبروك! اجتاز الحل جميع الاختبارات بنجاح 100%.';
+                    pushToast('مبروك! تم حل التحدي بنجاح.');
                 } else {
-                    out.style.color = '#f43f5e';
-                    out.innerText = '❌ لم يجتز الكود بعض شروط الفحص، راجع منطق الحل.';
+                    out.style.color = 'var(--accent-rose)';
+                    out.innerText = '❌ لم يجتز الكود بعض شروط التحقق، راجع الكود.';
                 }
-            } catch(e) {
-                document.getElementById('test-results').style.color = '#f43f5e';
-                document.getElementById('test-results').innerText = 'خطأ برمجي: ' + e.message;
+            } catch (err) {
+                document.getElementById('challenge-feedback').innerText = 'خطأ: ' + err.message;
             }
         }
 
-        /* ==================== AI COPILOT ==================== */
-        function sendAiPrompt(txt) {
-            switchTab('assistant');
-            document.getElementById('ai-user-input').value = txt;
-            submitAiMessage();
+        /* ================= المساعد الذكي AI ================= */
+        function sendAiPromptText(txt) {
+            document.getElementById('ai-input').value = txt;
+            sendAiMessageFromInput();
         }
 
-        function submitAiMessage() {
-            const inp = document.getElementById('ai-user-input');
-            const q = inp.value.trim();
+        function sendAiMessageFromInput() {
+            const input = document.getElementById('ai-input');
+            const q = input.value.trim();
             if (!q) return;
 
-            const box = document.getElementById('chat-messages');
-            box.innerHTML += `
-                <div class="chat-msg user">
-                    <div class="chat-avatar"><i class="fa-solid fa-user"></i></div>
-                    <div class="msg-bubble">${q}</div>
-                </div>
-            `;
-            inp.value = '';
+            const box = document.getElementById('ai-chat-history');
+            box.innerHTML += `<div class="chat-bubble user">${q}</div>`;
+            input.value = '';
             box.scrollTop = box.scrollHeight;
 
             setTimeout(() => {
-                let ans = `بخصوص استفسارك: "${q}":\n\nالكود المكتوب في الواجهة يعمل بسلاسة. تم تصميمه بهندسة الأحداث (Event-driven) مما يتيح التفاعل الفوري في المتصفح. يمكنك إضافة معالجة الأخطاء (try/catch) لضمان أعلى استقرار.`;
-                box.innerHTML += `
-                    <div class="chat-msg bot">
-                        <div class="chat-avatar"><i class="fa-solid fa-robot"></i></div>
-                        <div class="msg-bubble" style="white-space: pre-line;">${ans}</div>
-                    </div>
-                `;
+                const response = `إجابة ذكية بخصوص استفسارك: "${q}":\n\nالكود المكتوب في واجهة كوديكس متوافق ومنظم. ننصحك باستخدام دوال السهم (Arrow Functions) ومراقبة استهلاك الذاكرة لضمان أعلى أداء ممكن.`;
+                box.innerHTML += `<div class="chat-bubble bot" style="white-space:pre-line;">${response}</div>`;
                 box.scrollTop = box.scrollHeight;
             }, 450);
         }
 
-        /* ==================== MODALS & TOASTS ==================== */
+        /* ================= منتقي الألوان والنوافذ المنبثقة ================= */
+        function openColorPickerModal() {
+            closeAllMenus();
+            document.getElementById('colorpicker-modal').classList.add('open');
+        }
+        function updateColorPick(val) {
+            document.getElementById('color-hex-val').value = val;
+        }
+        function copyPickedColor() {
+            navigator.clipboard.writeText(document.getElementById('color-hex-val').value);
+            pushToast('تم نسخ رمز اللون للحافظة!');
+        }
+
         function openShortcutsModal() {
             closeAllMenus();
             document.getElementById('shortcuts-modal').classList.add('open');
         }
-        function showAboutModal() {
+        function openAboutModal() {
             closeAllMenus();
             document.getElementById('about-modal').classList.add('open');
         }
-        function closeModal(e, id) {
-            if (e.target.id === id) {
-                document.getElementById(id).classList.remove('open');
-            }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('open');
+        }
+        function closeModalOnShade(e, id) {
+            if (e.target.id === id) closeModal(id);
         }
 
-        function showToast(msg) {
-            const root = document.getElementById('toast-container');
-            const t = document.createElement('div');
-            t.className = 'toast';
-            t.innerHTML = `<i class="fa-solid fa-bell" style="color:var(--primary);"></i> <span>${msg}</span>`;
-            root.appendChild(t);
+        function pushToast(message) {
+            const container = document.getElementById('notification-center');
+            const toast = document.createElement('div');
+            toast.className = 'app-toast';
+            toast.innerHTML = `<i class="fa-solid fa-circle-check" style="color:var(--primary);"></i><span>${message}</span>`;
+            container.appendChild(toast);
             setTimeout(() => {
-                t.style.opacity = '0';
-                t.style.transition = '0.3s';
-                setTimeout(() => t.remove(), 300);
-            }, 2500);
+                toast.style.opacity = '0';
+                toast.style.transition = '0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 2300);
         }
     </script>
 </body>

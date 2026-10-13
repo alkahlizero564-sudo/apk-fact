@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Linking } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import * as SecureStore from "expo-secure-store";
 import * as FileSystem from "expo-file-system";
 import * as IntentLauncher from "expo-intent-launcher";
 import {
@@ -9,15 +8,13 @@ import {
   listWorkflowRuns,
   listDir,
   latestRunId,
-  getFileText,
-  pushFile,
   getFailureLog,
   findAppApkAsset,
   getAssetDownloadInfo,
 } from "../services/github";
+import { REPO } from "../services/config";
 
 type Run = { id: number; status: string; conclusion: string | null; createdAt: string; htmlUrl: string };
-type Slot = "1" | "2";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -29,31 +26,19 @@ function statusLabel(run: Run) {
 }
 
 export default function BuildScreen() {
-  const [slot, setSlot] = useState<Slot>("1");
   const [apps, setApps] = useState<string[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [runs, setRuns] = useState<Run[]>([]);
 
-  async function repoOf(): Promise<string> {
-    const r = await SecureStore.getItemAsync(slot === "1" ? "GITHUB_REPO_1" : "GITHUB_REPO_2");
-    if (!r) throw new Error("حط اسم المستودع في تبويب المفاتيح الأول.");
-    return r;
-  }
-
   const loadApps = useCallback(async () => {
     try {
-      const r = await SecureStore.getItemAsync(slot === "1" ? "GITHUB_REPO_1" : "GITHUB_REPO_2");
-      if (!r) {
-        setApps([]);
-        return;
-      }
-      setApps(await listDir(r, "apps"));
+      setApps(await listDir(REPO, "apps"));
     } catch (e: any) {
       setError(e.message);
     }
-  }, [slot]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -61,21 +46,10 @@ export default function BuildScreen() {
     }, [loadApps])
   );
 
-  async function ensureBuildWorkflow(repo: string) {
-    const path = ".github/workflows/build-app.yml";
-    if (await getFileText(repo, path)) return;
-    const template = await SecureStore.getItemAsync("GITHUB_REPO_1");
-    if (!template || template === repo) throw new Error("ملف build-app.yml ناقص في المستودع.");
-    const text = await getFileText(template, path);
-    if (!text) throw new Error("ملف build-app.yml مش موجود في المستودع الأول.");
-    await pushFile(repo, path, text, "Setup: build-app.yml");
-    await sleep(6000);
-  }
-
-  async function triggerWithRetry(repo: string, name: string) {
+  async function triggerWithRetry(name: string) {
     for (let i = 0; i < 5; i++) {
       try {
-        await triggerWorkflow(repo, "build-app.yml", { app: name });
+        await triggerWorkflow(REPO, "build-app.yml", { app: name });
         return;
       } catch (e) {
         if (i === 4) throw e;
@@ -89,18 +63,16 @@ export default function BuildScreen() {
     setBusy(name);
     setError(null);
     try {
-      const repo = await repoOf();
       setStatus("⏳ تجهيز...");
-      await ensureBuildWorkflow(repo);
-      const prevId = await latestRunId(repo, "build-app.yml");
-      await triggerWithRetry(repo, name);
+      const prevId = await latestRunId(REPO, "build-app.yml");
+      await triggerWithRetry(name);
       setStatus("⏳ بيتبني التطبيق على GitHub... (من 5 إلى 15 دقيقة، خلّي الأداة مفتوحة)");
 
       const started = Date.now();
       let run: any = null;
       while (Date.now() - started < 40 * 60 * 1000) {
         await sleep(15000);
-        const list = await listWorkflowRuns(repo, "build-app.yml");
+        const list = await listWorkflowRuns(REPO, "build-app.yml");
         const r = list.find((x: any) => x.id > prevId);
         if (r && r.status === "completed") {
           run = r;
@@ -109,14 +81,14 @@ export default function BuildScreen() {
       }
       if (!run) throw new Error("البناء أخذ وقت طويل. جرّب تضغط تاني بعد شوية.");
       if (run.conclusion !== "success") {
-        const tail = await getFailureLog(repo, run.id);
+        const tail = await getFailureLog(REPO, run.id);
         throw new Error("فشل البناء." + (tail ? "\n" + tail : ""));
       }
 
       setStatus("⏳ بيتنزّل الملف...");
-      const asset = await findAppApkAsset(repo, name);
+      const asset = await findAppApkAsset(REPO, name);
       if (!asset) throw new Error("ما لقيت ملف APK في الإصدارات.");
-      const info = await getAssetDownloadInfo(repo, asset.id);
+      const info = await getAssetDownloadInfo(REPO, asset.id);
       const dest = FileSystem.cacheDirectory + `${name}.apk`;
       const dl = await FileSystem.downloadAsync(info.url, dest, { headers: info.headers });
       if (dl.status !== 200) throw new Error(`فشل التنزيل (${dl.status})`);
@@ -136,13 +108,20 @@ export default function BuildScreen() {
     }
   }
 
+  async function refreshRuns() {
+    try {
+      setRuns(await listWorkflowRuns(REPO, "main.yml"));
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }
+
   async function buildTool() {
     if (busy) return;
     setBusy("tool");
     setError(null);
     try {
-      const repo = await repoOf();
-      await triggerWorkflow(repo, "main.yml", { platform: "android" });
+      await triggerWorkflow(REPO, "main.yml", { platform: "android" });
       await refreshRuns();
     } catch (e: any) {
       setError(e.message);
@@ -151,37 +130,15 @@ export default function BuildScreen() {
     }
   }
 
-  async function refreshRuns() {
-    try {
-      const repo = await repoOf();
-      setRuns(await listWorkflowRuns(repo, "main.yml"));
-    } catch (e: any) {
-      setError(e.message);
-    }
-  }
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.label}>المستودع</Text>
-      <View style={styles.row}>
-        <TouchableOpacity
-          style={[styles.pill, slot === "1" && styles.pillActive]}
-          onPress={() => { setSlot("1"); setRuns([]); setError(null); }}
-        >
-          <Text style={slot === "1" ? styles.pillTextActive : styles.pillText}>التطبيق الأول</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.pill, slot === "2" && styles.pillActive]}
-          onPress={() => { setSlot("2"); setRuns([]); setError(null); }}
-        >
-          <Text style={slot === "2" ? styles.pillTextActive : styles.pillText}>التطبيق الثاني</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.refreshLink} onPress={loadApps}>
+      <View style={styles.headRow}>
+        <Text style={styles.section}>تطبيقاتك</Text>
+        <TouchableOpacity onPress={loadApps}>
           <Text style={styles.refreshText}>تحديث ↻</Text>
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.section}>تطبيقاتك</Text>
       {apps.length === 0 && <Text style={styles.note}>مفيش تطبيقات لسه. اعمل واحد من تبويب الإنشاء.</Text>}
       {apps.map((a) => (
         <View key={a} style={styles.appRow}>
@@ -223,15 +180,9 @@ export default function BuildScreen() {
 
 const styles = StyleSheet.create({
   container: { padding: 16 },
-  label: { fontWeight: "700", marginTop: 4, marginBottom: 6 },
-  section: { fontWeight: "700", fontSize: 16, marginTop: 20, marginBottom: 8 },
-  row: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
-  pill: { borderWidth: 1, borderColor: "#ccc", borderRadius: 20, paddingVertical: 8, paddingHorizontal: 16, marginRight: 8 },
-  pillActive: { backgroundColor: "#111", borderColor: "#111" },
-  pillText: { color: "#111" },
-  pillTextActive: { color: "#fff" },
-  refreshLink: { marginLeft: "auto", padding: 6 },
-  refreshText: { color: "#2563eb" },
+  headRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+  section: { fontWeight: "700", fontSize: 16, flex: 1 },
+  refreshText: { color: "#2563eb", padding: 6 },
   note: { color: "#666", lineHeight: 20, marginBottom: 12, fontSize: 13 },
   appRow: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#eee", borderRadius: 10, padding: 10, marginBottom: 8 },
   appName: { flex: 1, fontWeight: "700" },

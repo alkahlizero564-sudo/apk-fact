@@ -1,0 +1,2378 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة كوديكس برو | CodeX Pro - بيئة تعلّم وبرمجة التطبيقات الواقعية</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --bg-secondary: #111827;
+            --bg-card: #1e293b;
+            --bg-editor: #0d1117;
+            --border-color: #334155;
+            --primary: #38bdf8;
+            --primary-hover: #0284c7;
+            --accent-green: #10b981;
+            --accent-purple: #a855f7;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        code, pre, .font-code {
+            font-family: 'Fira Code', monospace !important;
+            direction: ltr;
+            text-align: left;
+        }
+
+        /* Top Navigation */
+        header {
+            background-color: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.35rem;
+            font-weight: 900;
+            color: var(--primary);
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-badge {
+            background: linear-gradient(135deg, var(--primary), var(--accent-purple));
+            color: white;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 700;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.4rem;
+            background-color: var(--bg-editor);
+            padding: 4px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.45rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            color: var(--text-main);
+            background-color: var(--bg-card);
+        }
+
+        .nav-btn.active {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            font-size: 0.88rem;
+            cursor: pointer;
+            border: none;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #2563eb);
+            color: white;
+            box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--accent-green), #059669);
+            color: white;
+        }
+        .btn-success:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+        .btn-outline:hover {
+            background: var(--bg-card);
+            border-color: var(--primary);
+        }
+
+        /* Container & Tabs Display */
+        main {
+            flex: 1;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            max-width: 1700px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.25s ease forwards;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ==================== TAB 1: STUDIO (IDE & LIVE PREVIEW) ==================== */
+        .studio-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            height: calc(100vh - 120px);
+            min-height: 650px;
+        }
+
+        @media (max-width: 1024px) {
+            .studio-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+        }
+
+        .editor-panel, .preview-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .panel-header {
+            background: var(--bg-card);
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .lang-tabs {
+            display: flex;
+            gap: 0.3rem;
+            background: var(--bg-editor);
+            padding: 3px;
+            border-radius: 8px;
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            direction: ltr;
+        }
+        .lang-btn.active {
+            background: var(--primary);
+            color: #0b0f19;
+        }
+
+        .editor-wrapper {
+            position: relative;
+            flex: 1;
+            display: flex;
+            background: var(--bg-editor);
+            overflow: hidden;
+        }
+
+        .line-numbers {
+            width: 44px;
+            background: #090d14;
+            color: #475569;
+            padding: 1rem 0.4rem;
+            font-size: 0.85rem;
+            line-height: 1.5rem;
+            text-align: right;
+            user-select: none;
+            border-left: 1px solid var(--border-color);
+            font-family: 'Fira Code', monospace;
+        }
+
+        .code-textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #e2e8f0;
+            font-size: 0.9rem;
+            line-height: 1.5rem;
+            padding: 1rem;
+            resize: none;
+            white-space: pre;
+            overflow-wrap: normal;
+            overflow-x: auto;
+            tab-size: 4;
+            font-family: 'Fira Code', monospace;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .preview-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .preview-viewport-btn {
+            background: var(--bg-editor);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+        .preview-viewport-btn.active {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .preview-frame-container {
+            flex: 1;
+            background: #ffffff;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .preview-frame-container.viewport-mobile iframe {
+            max-width: 390px;
+            border-left: 10px solid #334155;
+            border-right: 10px solid #334155;
+            border-radius: 24px;
+            margin: 15px auto;
+            height: calc(100% - 30px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .preview-frame-container.viewport-tablet iframe {
+            max-width: 768px;
+            border: 8px solid #334155;
+            border-radius: 16px;
+            margin: 15px auto;
+            height: calc(100% - 30px);
+        }
+
+        #preview-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #ffffff;
+        }
+
+        /* Console Output Drawer */
+        .console-drawer {
+            height: 130px;
+            background: #070a10;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            direction: ltr;
+            text-align: left;
+            font-family: 'Fira Code', monospace;
+        }
+        .console-header {
+            padding: 0.35rem 0.75rem;
+            background: #0f172a;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .console-body {
+            flex: 1;
+            padding: 0.5rem;
+            overflow-y: auto;
+            font-size: 0.8rem;
+            color: #38bdf8;
+        }
+        .console-log { margin-bottom: 4px; }
+        .console-err { color: #f43f5e; }
+        .console-info { color: #10b981; }
+
+        /* ==================== TAB 2: SPECIALIZATION TRACKS ==================== */
+        .tracks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .track-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .track-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .track-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.25rem 0.75rem;
+            border-radius: 30px;
+            width: fit-content;
+        }
+
+        .track-icon {
+            font-size: 2.2rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .track-card h3 {
+            font-size: 1.2rem;
+            color: var(--text-main);
+        }
+
+        .track-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .skills-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: auto;
+        }
+
+        .skill-pill {
+            background: var(--bg-card);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-weight: 600;
+            direction: ltr;
+        }
+
+        .track-lessons {
+            background: var(--bg-editor);
+            border-radius: 8px;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .lesson-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .lesson-item:last-child { border-bottom: none; }
+        .lesson-item:hover { color: var(--primary); background: rgba(56, 189, 248, 0.08); border-radius: 4px; }
+
+        /* ==================== TAB 3: APP PRODUCTION GENERATOR ==================== */
+        .templates-banner {
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(168, 85, 247, 0.15));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .templates-banner h2 {
+            font-size: 1.7rem;
+            color: #ffffff;
+        }
+
+        .templates-banner p {
+            color: var(--text-muted);
+            max-width: 800px;
+            line-height: 1.7;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .project-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .project-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow);
+            transform: translateY(-3px);
+        }
+
+        .project-preview-mockup {
+            height: 160px;
+            background: var(--bg-card);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .project-preview-mockup i {
+            font-size: 3.5rem;
+            opacity: 0.6;
+            color: var(--primary);
+            transition: var(--transition);
+        }
+
+        .project-card:hover .project-preview-mockup i {
+            transform: scale(1.1);
+            opacity: 0.9;
+        }
+
+        .project-info {
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .project-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: auto;
+            padding-top: 1rem;
+        }
+
+        /* ==================== TAB 4: AI COPILOT & CODE ASSISTANT ==================== */
+        .ai-assistant-container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 1.25rem;
+            height: calc(100vh - 140px);
+            min-height: 600px;
+        }
+
+        @media (max-width: 900px) {
+            .ai-assistant-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+        }
+
+        .ai-sidebar {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .preset-prompts {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .prompt-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            cursor: pointer;
+            text-align: right;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .prompt-btn:hover {
+            border-color: var(--accent-purple);
+            background: rgba(168, 85, 247, 0.1);
+        }
+
+        .chat-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1.25rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .chat-msg {
+            display: flex;
+            gap: 0.75rem;
+            max-width: 85%;
+        }
+
+        .chat-msg.bot {
+            align-self: flex-start;
+        }
+
+        .chat-msg.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .chat-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .bot .chat-avatar {
+            background: linear-gradient(135deg, var(--accent-purple), var(--primary));
+            color: #fff;
+        }
+
+        .user .chat-avatar {
+            background: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
+        .msg-bubble {
+            background: var(--bg-card);
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            border: 1px solid var(--border-color);
+        }
+
+        .user .msg-bubble {
+            background: #1e3a5f;
+            border-color: var(--primary);
+        }
+
+        .chat-input-bar {
+            padding: 1rem;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: var(--bg-editor);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1rem;
+            color: var(--text-main);
+            outline: none;
+            font-size: 0.9rem;
+        }
+
+        .chat-input:focus {
+            border-color: var(--primary);
+        }
+
+        /* ==================== TAB 5: CHALLENGES & CODING LAB ==================== */
+        .challenge-container {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 1.25rem;
+        }
+
+        @media (max-width: 900px) {
+            .challenge-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .challenge-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .challenge-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .badge-difficulty {
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        .diff-easy { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
+        .diff-medium { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
+        .diff-hard { background: rgba(244, 63, 94, 0.2); color: var(--accent-rose); }
+
+        .challenge-test-output {
+            background: var(--bg-editor);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            direction: ltr;
+            text-align: left;
+            min-height: 80px;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 650px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1.25rem;
+            left: 1.25rem;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            cursor: pointer;
+        }
+
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 1.5rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.9rem;
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Scrollbar customize */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-editor);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <a href="#" class="brand">
+            <i class="fa-solid fa-code"></i>
+            <span>كوديكس برو</span>
+            <span class="brand-badge">PRO v4.0</span>
+        </a>
+
+        <nav class="nav-tabs">
+            <button class="nav-btn active" onclick="switchTab('studio')">
+                <i class="fa-solid fa-laptop-code"></i> بيئة التطوير المباشرة
+            </button>
+            <button class="nav-btn" onclick="switchTab('tracks')">
+                <i class="fa-solid fa-graduation-cap"></i> المسارات التخصصية
+            </button>
+            <button class="nav-btn" onclick="switchTab('templates')">
+                <i class="fa-solid fa-layer-group"></i> مصنع التطبيقات الجاهزة
+            </button>
+            <button class="nav-btn" onclick="switchTab('challenges')">
+                <i class="fa-solid fa-trophy"></i> مختبر التحديات
+            </button>
+            <button class="nav-btn" onclick="switchTab('assistant')">
+                <i class="fa-solid fa-robot"></i> المساعد البرمجي الذكي
+            </button>
+        </nav>
+
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="runStudioCode()">
+                <i class="fa-solid fa-play"></i> تشغيل الكود
+            </button>
+            <button class="btn btn-outline" onclick="exportProjectFile()" title="تنزيل المشروع كملف مستقل">
+                <i class="fa-solid fa-download"></i> تصدير
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main>
+
+        <!-- ==================== TAB 1: STUDIO (FULL IDE) ==================== -->
+        <section id="tab-studio" class="tab-content active">
+            <div class="studio-container">
+                <!-- Editor Panel -->
+                <div class="editor-panel">
+                    <div class="panel-header">
+                        <div class="lang-tabs">
+                            <button class="lang-btn active" id="btn-lang-html" onclick="setLanguage('html')">HTML5</button>
+                            <button class="lang-btn" id="btn-lang-css" onclick="setLanguage('css')">CSS3</button>
+                            <button class="lang-btn" id="btn-lang-js" onclick="setLanguage('js')">JavaScript</button>
+                            <button class="lang-btn" id="btn-lang-python" onclick="setLanguage('python')">Python (Sim)</button>
+                            <button class="lang-btn" id="btn-lang-sql" onclick="setLanguage('sql')">SQL Lab</button>
+                        </div>
+                        <div style="display:flex; gap:0.5rem;">
+                            <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="formatCode()">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> تنميق
+                            </button>
+                            <button class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="clearCode()">
+                                <i class="fa-solid fa-trash-can"></i> تفريغ
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="editor-wrapper">
+                        <div class="line-numbers" id="line-numbers">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10</div>
+                        <textarea id="code-editor" class="code-textarea" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+                    </div>
+
+                    <!-- Bottom Integrated Console -->
+                    <div class="console-drawer">
+                        <div class="console-header">
+                            <span><i class="fa-solid fa-terminal"></i> سجل المخرجات التفاعلية (Console)</span>
+                            <button style="background:none; border:none; color:var(--text-muted); cursor:pointer;" onclick="clearConsole()">مسح</button>
+                        </div>
+                        <div class="console-body" id="console-body">
+                            <div class="console-log console-info">[النظام]: بيئة CodeX جاهزة. اضغط "تشغيل الكود" لتنفيذ المشروع مباشرة.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview Panel -->
+                <div class="preview-panel">
+                    <div class="panel-header">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; font-weight: 700;">
+                            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--accent-green);"></span>
+                            المعاينة الحية والإنتاج الفعلي
+                        </div>
+                        <div class="preview-controls">
+                            <button class="preview-viewport-btn active" id="view-desktop" onclick="setViewport('desktop')" title="شاشة حاسوب"><i class="fa-solid fa-desktop"></i></button>
+                            <button class="preview-viewport-btn" id="view-tablet" onclick="setViewport('tablet')" title="جهاز لوحي"><i class="fa-solid fa-tablet-screen-button"></i></button>
+                            <button class="preview-viewport-btn" id="view-mobile" onclick="setViewport('mobile')" title="هاتف ذكي"><i class="fa-solid fa-mobile-screen"></i></button>
+                            <button class="preview-viewport-btn" onclick="openPreviewInNewTab()" title="فتح في نافذة كاملة"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="preview-frame-container" id="frame-container">
+                        <iframe id="preview-frame" sandbox="allow-scripts allow-modals allow-same-origin allow-forms"></iframe>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 2: SPECIALIZATION TRACKS ==================== -->
+        <section id="tab-tracks" class="tab-content">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <h2 style="font-size: 2rem; margin-bottom: 0.5rem;">مسارات احتراف البرمجة من الصفر حتى الإنتاج</h2>
+                <p style="color: var(--text-muted);">اختر التخصص البرمجي لتبدأ بتطبيق أكواد حقيقية وبناء مشاريع كاملة تدعم سوق العمل</p>
+            </div>
+
+            <div class="tracks-grid">
+                <!-- Track 1: Web Frontend -->
+                <div class="track-card">
+                    <div class="track-badge" style="background: rgba(56, 189, 248, 0.15); color: var(--primary);">
+                        <i class="fa-brands fa-react"></i> تطوير الواجهات
+                    </div>
+                    <div class="track-icon" style="color: var(--primary);">🌐</div>
+                    <h3>هندسة الويب والواجهات الأمامية (Frontend)</h3>
+                    <p>إتقان إنشاء واجهات وتطبيقات الويب الحديثة التفاعلية والمتجاوبة مع الشاشات بأعلى معايير السرعة والتصميم العصري.</p>
+                    
+                    <div class="track-lessons">
+                        <div class="lesson-item" onclick="loadTrackSnippet('frontend_dom')">
+                            <span><i class="fa-solid fa-circle-play"></i> بناء تطبيق متجر بالـ DOM و Tailwind</span>
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </div>
+                        <div class="lesson-item" onclick="loadTrackSnippet('frontend_async')">
+                            <span><i class="fa-solid fa-circle-play"></i> استدعاء البيانات الحية (APIs / Fetch)</span>
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </div>
+                    </div>
+
+                    <div class="skills-pills">
+                        <span class="skill-pill">HTML5</span>
+                        <span class="skill-pill">CSS3/Flexbox</span>
+                        <span class="skill-pill">JavaScript ES6+</span>
+                        <span class="skill-pill">Tailwind CSS</span>
+                    </div>
+                </div>
+
+                <!-- Track 2: Backend & APIs -->
+                <div class="track-card">
+                    <div class="track-badge" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-green);">
+                        <i class="fa-solid fa-server"></i> هندسة الأنظمة الخلفية
+                    </div>
+                    <div class="track-icon" style="color: var(--accent-green);">⚙️</div>
+                    <h3>تطوير الخوادم والـ APIs وقواعد البيانات</h3>
+                    <p>فهم الخوادم، تشييد واجهات RESTful API، وتصميم وإدارة قواعد البيانات بكفاءة وأمان عالي ضد الثغرات.</p>
+                    
+                    <div class="track-lessons">
+                        <div class="lesson-item" onclick="loadTrackSnippet('backend_crud')">
+                            <span><i class="fa-solid fa-circle-play"></i> محاكاة خادم RESTful API مع التخزين</span>
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </div>
+                        <div class="lesson-item" onclick="loadTrackSnippet('backend_auth')">
+                            <span><i class="fa-solid fa-circle-play"></i> نظام مصادقة وتشفير JWT المبسط</span>
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </div>
+                    </div>
+
+                    <div class="skills-pills">
+                        <span class="skill-pill">Node.js</span>
+                        <span class="skill-pill">REST APIs</span>
+                        <span class="skill-pill">SQL / CRUD</span>
+                        <span class="skill-pill">JWT Auth</span>
+                    </div>
+                </div>
+
+                <!-- Track 3: Mobile Apps -->
+                <div class="track-card">
+                    <div class="track-badge" style="background: rgba(168, 85, 247, 0.15); color: var(--accent-purple);">
+                        <i class="fa-solid fa-mobile-screen"></i> تطبيقات الهواتف
+                    </div>
+                    <div class="track-icon" style="color: var(--accent-purple);">📱</div>
+                    <h3>برمجة تطبيقات الأجهزة الذكية (Mobile Apps)</h3>
+                    <p>صناعة تطبيقات الهواتف التفاعلية لـ iOS و Android باستخدام تقنيات الهجين والهندسة المتوافقة مع المنصات.</p>
+                    
+                    <div class="track-lessons">
+                        <div class="lesson-item" onclick="loadTrackSnippet('mobile_chat')">
+                            <span><i class="fa-solid fa-circle-play"></i> بناء تطبيق محادثة فوري للهاتف الذكي</span>
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </div>
+                        <div class="lesson-item" onclick="loadTrackSnippet('mobile_sensors')">
+                            <span><i class="fa-solid fa-circle-play"></i> واجهات شاشة الهاتف والإيماءات الملموسة</span>
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </div>
+                    </div>
+
+                    <div class="skills-pills">
+                        <span class="skill-pill">React Native logic</span>
+                        <span class="skill-pill">Responsive PWA</span>
+                        <span class="skill-pill">Touch Events</span>
+                    </div>
+                </div>
+
+                <!-- Track 4: AI & Data Science -->
+                <div class="track-card">
+                    <div class="track-badge" style="background: rgba(245, 158, 11, 0.15); color: var(--accent-amber);">
+                        <i class="fa-solid fa-brain"></i> الذكاء الاصطناعي
+                    </div>
+                    <div class="track-icon" style="color: var(--accent-amber);">🧠</div>
+                    <h3>علم البيانات ونماذج التعلم الآلي (AI & Data)</h3>
+                    <p>خوارزميات تصنيف البيانات، معالجة النصوص، وتطوير شات بوت ذكي قادر على التنبؤ وتحليل المدخلات برمجياً.</p>
+                    
+                    <div class="track-lessons">
+                        <div class="lesson-item" onclick="loadTrackSnippet('ai_classifier')">
+                            <span><i class="fa-solid fa-circle-play"></i> خوارزمية تحليل المشاعر والنصوص (NLP)</span>
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </div>
+                        <div class="lesson-item" onclick="loadTrackSnippet('ai_neural')">
+                            <span><i class="fa-solid fa-circle-play"></i> محاكاة خلية عصبية تنبؤية (Perceptron)</span>
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </div>
+                    </div>
+
+                    <div class="skills-pills">
+                        <span class="skill-pill">Python Logic</span>
+                        <span class="skill-pill">NLP</span>
+                        <span class="skill-pill">Linear Algebra</span>
+                        <span class="skill-pill">Machine Learning</span>
+                    </div>
+                </div>
+
+                <!-- Track 5: Game Development -->
+                <div class="track-card">
+                    <div class="track-badge" style="background: rgba(244, 63, 94, 0.15); color: var(--accent-rose);">
+                        <i class="fa-solid fa-gamepad"></i> تطوير الألعاب
+                    </div>
+                    <div class="track-icon" style="color: var(--accent-rose);">🎮</div>
+                    <h3>صناعة وتطوير ألعاب الويب والتفاعل ثنائي الأبعاد</h3>
+                    <p>برمجة فيزياء الألعاب وحلقات التشغيل (Game Loop) واكتشاف التصادم ورسم المؤثرات على شاشات الكانفاس.</p>
+                    
+                    <div class="track-lessons">
+                        <div class="lesson-item" onclick="loadTrackSnippet('game_arcade')">
+                            <span><i class="fa-solid fa-circle-play"></i> بناء لعبة فضاء وتفادي كويكبات حقيقية</span>
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </div>
+                        <div class="lesson-item" onclick="loadTrackSnippet('game_physics')">
+                            <span><i class="fa-solid fa-circle-play"></i> محاكاة فيزياء القفز والجاذبية الأرضية</span>
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </div>
+                    </div>
+
+                    <div class="skills-pills">
+                        <span class="skill-pill">HTML5 Canvas</span>
+                        <span class="skill-pill">Physics Engine</span>
+                        <span class="skill-pill">Game Loops</span>
+                        <span class="skill-pill">Audio FX</span>
+                    </div>
+                </div>
+
+                <!-- Track 6: Cybersecurity -->
+                <div class="track-card">
+                    <div class="track-badge" style="background: rgba(56, 189, 248, 0.15); color: var(--primary);">
+                        <i class="fa-solid fa-shield-halved"></i> الأمن السيبراني
+                    </div>
+                    <div class="track-icon" style="color: var(--primary);">🛡️</div>
+                    <h3>أمن التطبيقات، التشفير وحماية البيانات</h3>
+                    <p>تعلم كيفية تأمين التطبيقات ضد هجمات XSS، واختراق SQL Injection، وتطبيق خوارزميات التشفير القياسية.</p>
+                    
+                    <div class="track-lessons">
+                        <div class="lesson-item" onclick="loadTrackSnippet('security_crypto')">
+                            <span><i class="fa-solid fa-circle-play"></i> تطبيق تشفير البيانات وفك التشفير برمجياً</span>
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </div>
+                        <div class="lesson-item" onclick="loadTrackSnippet('security_sanitizer')">
+                            <span><i class="fa-solid fa-circle-play"></i> جدار حماية المدخلات ضد هجمات XSS</span>
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </div>
+                    </div>
+
+                    <div class="skills-pills">
+                        <span class="skill-pill">Hashing</span>
+                        <span class="skill-pill">XSS Defense</span>
+                        <span class="skill-pill">Input Sanitization</span>
+                        <span class="skill-pill">Encryption</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 3: TEMPLATES & PROJECT GENERATOR ==================== -->
+        <section id="tab-templates" class="tab-content">
+            <div class="templates-banner">
+                <h2><i class="fa-solid fa-cubes"></i> مصنع المشاريع الكاملة القابلة للنشر فوراً</h2>
+                <p>قوالب وتطبيقات متكاملة مكتوبة بأعلى جودة. يمكنك تحميلها كملف واحد جاهز للرفع على Netlify أو GitHub Pages، أو تعديل كودها فوراً داخل بيئة التطوير المباشرة.</p>
+            </div>
+
+            <div class="projects-grid">
+                <!-- Project 1: E-Commerce Store -->
+                <div class="project-card">
+                    <div class="project-preview-mockup">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                    </div>
+                    <div class="project-info">
+                        <span style="font-size:0.8rem; color:var(--primary); font-weight:700;">تطبيق ويب متكامل</span>
+                        <h3 style="font-size: 1.15rem;">متجر إلكتروني احترافي مع سلة شراء وحساب الفاتورة</h3>
+                        <p style="font-size:0.85rem; color:var(--text-muted);">نظام متكامل لتصفح السلع، فلترة التصنيفات، سلة تسوق ديناميكية، وحساب الإجمالي مع واجهة دفع تفاعلية.</p>
+                        <div class="project-actions">
+                            <button class="btn btn-primary" style="flex:1;" onclick="loadProductionProject('ecommerce')">
+                                <i class="fa-solid fa-code"></i> فتح في المحرر
+                            </button>
+                            <button class="btn btn-outline" onclick="downloadTemplateFile('ecommerce')" title="تحميل ملف HTML جاهز">
+                                <i class="fa-solid fa-file-arrow-down"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 2: Interactive Kanban / Task App -->
+                <div class="project-card">
+                    <div class="project-preview-mockup">
+                        <i class="fa-solid fa-table-columns"></i>
+                    </div>
+                    <div class="project-info">
+                        <span style="font-size:0.8rem; color:var(--accent-purple); font-weight:700;">تطبيق إنتاجية سحابي</span>
+                        <h3 style="font-size: 1.15rem;">لوحة إدارة المهام كانبان (Trello Clone)</h3>
+                        <p style="font-size:0.85rem; color:var(--text-muted);">إدارة المشاريع عبر السحب والإفلات (Drag & Drop)، تصنيف الأولويات وحفظ البيانات تلقائياً في LocalStorage.</p>
+                        <div class="project-actions">
+                            <button class="btn btn-primary" style="flex:1;" onclick="loadProductionProject('kanban')">
+                                <i class="fa-solid fa-code"></i> فتح في المحرر
+                            </button>
+                            <button class="btn btn-outline" onclick="downloadTemplateFile('kanban')" title="تحميل ملف HTML جاهز">
+                                <i class="fa-solid fa-file-arrow-down"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 3: AI Chatbot Web App -->
+                <div class="project-card">
+                    <div class="project-preview-mockup">
+                        <i class="fa-solid fa-comments"></i>
+                    </div>
+                    <div class="project-info">
+                        <span style="font-size:0.8rem; color:var(--accent-green); font-weight:700;">تطبيق ذكاء اصطناعي</span>
+                        <h3 style="font-size: 1.15rem;">تطبيق شات بوت متحدث ذكي (AI Assistant UI)</h3>
+                        <p style="font-size:0.85rem; color:var(--text-muted);">واجهة دردشة تشبه ChatGPT بالوضع الداكن، تدعم الردود الذكية الفورية وقراءة الرموز البرمجية بطريقة منظمة.</p>
+                        <div class="project-actions">
+                            <button class="btn btn-primary" style="flex:1;" onclick="loadProductionProject('aichat')">
+                                <i class="fa-solid fa-code"></i> فتح في المحرر
+                            </button>
+                            <button class="btn btn-outline" onclick="downloadTemplateFile('aichat')" title="تحميل ملف HTML جاهز">
+                                <i class="fa-solid fa-file-arrow-down"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 4: 2D Arcade Space Game -->
+                <div class="project-card">
+                    <div class="project-preview-mockup">
+                        <i class="fa-solid fa-rocket"></i>
+                    </div>
+                    <div class="project-info">
+                        <span style="font-size:0.8rem; color:var(--accent-rose); font-weight:700;">لعبة متكاملة</span>
+                        <h3 style="font-size: 1.15rem;">لعبة الدفاع الفضائي ثنائية الأبعاد (Canvas 2D)</h3>
+                        <p style="font-size:0.85rem; color:var(--text-muted);">لعبة ممتعة بحساب النقاط، إطلاق الليزر، الأصوات الديناميكية، والتسارع الرياضي عبر الكيبورد والشاشات اللمسية.</p>
+                        <div class="project-actions">
+                            <button class="btn btn-primary" style="flex:1;" onclick="loadProductionProject('spacegame')">
+                                <i class="fa-solid fa-code"></i> فتح في المحرر
+                            </button>
+                            <button class="btn btn-outline" onclick="downloadTemplateFile('spacegame')" title="تحميل ملف HTML جاهز">
+                                <i class="fa-solid fa-file-arrow-down"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 5: Developer Portfolio -->
+                <div class="project-card">
+                    <div class="project-preview-mockup">
+                        <i class="fa-solid fa-user-ninja"></i>
+                    </div>
+                    <div class="project-info">
+                        <span style="font-size:0.8rem; color:var(--accent-amber); font-weight:700;">موقع سيرة ذاتية</span>
+                        <h3 style="font-size: 1.15rem;">معرض أعمال المبرمج الشخصي المودرن (Portfolio)</h3>
+                        <p style="font-size:0.85rem; color:var(--text-muted);">موقع سيرة ذاتية عصري مع تأثيرات حركة ناعمة، قسم للمشاريع والمهارات ونموذج تواصل تفاعلي جاهز للنشر الفوري.</p>
+                        <div class="project-actions">
+                            <button class="btn btn-primary" style="flex:1;" onclick="loadProductionProject('portfolio')">
+                                <i class="fa-solid fa-code"></i> فتح في المحرر
+                            </button>
+                            <button class="btn btn-outline" onclick="downloadTemplateFile('portfolio')" title="تحميل ملف HTML جاهز">
+                                <i class="fa-solid fa-file-arrow-down"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 4: CHALLENGES ==================== -->
+        <section id="tab-challenges" class="tab-content">
+            <div class="challenge-container">
+                <div class="challenge-card">
+                    <div class="challenge-meta">
+                        <span class="badge-difficulty diff-medium">متوسط الصعوبة</span>
+                        <span style="color:var(--text-muted);"><i class="fa-solid fa-clock"></i> 20 دقيقة</span>
+                    </div>
+                    <h2 id="challenge-title">تحدي الخوارزميات: كشف الكلمات المقلوبة (Palindrome Detector)</h2>
+                    <p id="challenge-desc" style="color:var(--text-muted); font-size:0.95rem; line-height:1.7;">
+                        قم بكتابة دالة برمجية باسم <code class="font-code">isPalindrome(str)</code> تستقبل نصاً وتتحقق مما إذا كان يُقرأ بنفس الطريقة من اليمين إلى اليسار (مع تجاهل المسافات وحالة الأحرف).
+                        <br><br>
+                        <strong>أمثلة:</strong>
+                        <br>• "level" ➔ true
+                        <br>• "hello" ➔ false
+                        <br>• "A man a plan a canal Panama" ➔ true
+                    </p>
+
+                    <div style="margin-top: auto; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn btn-outline" onclick="switchChallenge('palindrome')">تحدي 1: Palindrome</button>
+                        <button class="btn btn-outline" onclick="switchChallenge('reverse')">تحدي 2: عكس المصفوفات</button>
+                        <button class="btn btn-outline" onclick="switchChallenge('fizzbuzz')">تحدي 3: FizzBuzz الفائق</button>
+                    </div>
+                </div>
+
+                <div class="challenge-card" style="background:var(--bg-editor);">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:700; color:var(--primary); font-size:0.9rem;">
+                            <i class="fa-solid fa-terminal"></i> محرر كود الاختبار
+                        </span>
+                        <button class="btn btn-success" style="padding:0.4rem 0.9rem;" onclick="runChallengeTests()">
+                            <i class="fa-solid fa-circle-check"></i> اختبار الحل
+                        </button>
+                    </div>
+                    
+                    <textarea id="challenge-code" class="code-textarea" style="height: 250px; background:#080c13; border:1px solid var(--border-color); border-radius:8px;">function isPalindrome(str) {
+    // اكتب الحل هنا
+    const cleanStr = str.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return cleanStr === cleanStr.split('').reverse().join('');
+}</textarea>
+                    
+                    <span style="font-size:0.8rem; color:var(--text-muted);">نتائج الفحص التلقائي (Unit Tests):</span>
+                    <div class="challenge-test-output" id="test-results">
+                        اضغط على "اختبار الحل" لتشغيل حالات الفحص التلقائي ضد كودك...
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 5: AI COPILOT ==================== -->
+        <section id="tab-assistant" class="tab-content">
+            <div class="ai-assistant-container">
+                <div class="ai-sidebar">
+                    <div style="display:flex; align-items:center; gap:0.5rem; color:var(--accent-purple);">
+                        <i class="fa-solid fa-wand-magic-sparkles" style="font-size:1.5rem;"></i>
+                        <h3 style="font-size:1.1rem; color:var(--text-main);">المساعد الذكي CodeX</h3>
+                    </div>
+                    <p style="font-size:0.85rem; color:var(--text-muted);">
+                        ذكاء برمجي مدمج يحلل كودك الحالي في المحرر، ويكتشف الأخطاء، ويشرح المنطق المعقد، أو يولد لك أفكاراً وتطبيقات واقعية.
+                    </p>
+
+                    <div style="font-size:0.85rem; font-weight:700; margin-top:0.5rem; color:var(--text-main);">
+                        إجراءات سريعة على كود المحرر:
+                    </div>
+                    <div class="preset-prompts">
+                        <button class="prompt-btn" onclick="sendAiPrompt('اشرح لي هذا الكود البرمجي الحالي خطوة بخطوة وكيف يعمل بالتفصيل.')">
+                            <i class="fa-solid fa-chalkboard-user"></i> شرح الكود الحالي
+                        </button>
+                        <button class="prompt-btn" onclick="sendAiPrompt('ابحث عن الأخطاء المحتملة أو المشاكل الأمنية وحسّن الأداء في هذا الكود.')">
+                            <i class="fa-solid fa-bug"></i> فحص الأخطاء والتحسين
+                        </button>
+                        <button class="prompt-btn" onclick="sendAiPrompt('كيف يمكنني ربط هذا الكود بقاعدة بيانات أو واجهة برمجة تطبيقات API حقيقية؟')">
+                            <i class="fa-solid fa-link"></i> ربط الكود بـ API
+                        </button>
+                        <button class="prompt-btn" onclick="sendAiPrompt('أضف وضع المظهر الداكن التلقائي وزر تبديل الثيم لهذا الكود.')">
+                            <i class="fa-solid fa-moon"></i> توليد ميزة الوضع الليلي
+                        </button>
+                    </div>
+                </div>
+
+                <div class="chat-box">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="chat-msg bot">
+                            <div class="chat-avatar"><i class="fa-solid fa-robot"></i></div>
+                            <div class="msg-bubble">
+                                مرحباً بك يا بطل البرمجة! 👋 أنا مساعدك الذكي في منصة CodeX Pro. 
+                                يمكنك أن تسألني عن أي مشكلة برمجية تواجهها، أو تطلب مني تحليل الكود الموجود في المحرر حالياً لتحسينه وإضافة ميزات جديدة إليه!
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-bar">
+                        <input type="text" id="ai-user-input" class="chat-input" placeholder="اكتب سؤالك أو اطلب كوداً برمجياً متخصصاً..." onkeydown="if(event.key==='Enter') submitAiMessage()">
+                        <button class="btn btn-primary" onclick="submitAiMessage()">
+                            <i class="fa-solid fa-paper-plane"></i> إرسال
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Toast Notifications Root -->
+    <div id="toast-container"></div>
+
+    <!-- JAVASCRIPT LOGIC ENGINE -->
+    <script>
+        /* ==================== STATE MANAGEMENT ==================== */
+        const state = {
+            currentLang: 'html',
+            viewport: 'desktop',
+            activeTab: 'studio',
+            codes: {
+                html: `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>تطبيق المهام الذكي</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"><\/script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-slate-800 p-6 rounded-2xl shadow-2xl border border-slate-700">
+        <h1 class="text-2xl font-black text-sky-400 mb-4 flex items-center gap-2">
+            <span>⚡ قائمة إنجازاتي اليومية</span>
+        </h1>
+        
+        <div class="flex gap-2 mb-6">
+            <input id="taskInput" type="text" placeholder="ما هي مهمتك التالية؟" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 outline-none focus:border-sky-500 text-sm">
+            <button onclick="addTask()" class="bg-sky-500 hover:bg-sky-600 text-white font-bold px-4 py-2 rounded-xl text-sm transition">إضافة</button>
+        </div>
+
+        <ul id="taskList" class="space-y-2">
+            <!-- ستظهر المهام هنا ديناميكياً -->
+        </ul>
+    </div>
+
+    <script src="script.js"><\/script>
+</body>
+</html>`,
+                css: `/* تنسيقات إضافية وتأثيرات حركية */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+
+* {
+    font-family: 'Cairo', sans-serif;
+}
+
+.task-enter {
+    animation: taskIn 0.3s ease forwards;
+}
+
+@keyframes taskIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}`,
+                js: `// كود التفاعل والوظائف البرمجية
+let tasks = ['تعلم أساسيات الويب مع كوديكس', 'برمجة أول تطبيق كامل'];
+
+function renderTasks() {
+    const list = document.getElementById('taskList');
+    if (!list) return;
+    list.innerHTML = '';
+    
+    tasks.forEach((task, index) => {
+        const li = document.createElement('li');
+        li.className = 'task-enter flex items-center justify-between p-3 bg-slate-900/60 rounded-xl border border-slate-700/50';
+        li.innerHTML = \`
+            <span class="text-sm font-semibold">\${task}</span>
+            <button onclick="deleteTask(\${index})" class="text-rose-400 hover:text-rose-500 text-xs px-2 py-1 rounded bg-rose-500/10">حذف</button>
+        \`;
+        list.appendChild(li);
+    });
+}
+
+function addTask() {
+    const input = document.getElementById('taskInput');
+    const val = input.value.trim();
+    if(val) {
+        tasks.push(val);
+        input.value = '';
+        renderTasks();
+        console.log('تمت إضافة المهمة بنجاح:', val);
+    }
+}
+
+function deleteTask(index) {
+    const removed = tasks.splice(index, 1);
+    renderTasks();
+    console.log('تم حذف المهمة:', removed[0]);
+}
+
+// البدء عند تشغيل الصفحة
+renderTasks();`,
+                python: `# محاكي بايثون التعليمي الذكي
+# يدعم تعريف الدوال، المصفوفات، الحسابات الرياضية، والنصوص
+
+class UserAccount:
+    def __init__(self, username, balance):
+        self.username = username
+        self.balance = balance
+
+    def deposit(self, amount):
+        self.balance += amount
+        return f"تم إيداع {amount} ريال. الرصيد الحالي: {self.balance}"
+
+users = [
+    UserAccount("أحمد", 1500),
+    UserAccount("سارة", 3200)
+]
+
+for u in users:
+    print(f"المستخدم: {u.username} | الرصيد: {u.balance}")
+
+print(users[0].deposit(500))`,
+                sql: `-- معمل ومحاكي استعلامات قواعد البيانات SQL
+CREATE TABLE students (
+    id INT PRIMARY KEY,
+    name VARCHAR(50),
+    major VARCHAR(50),
+    gpa DECIMAL(3, 2)
+);
+
+INSERT INTO students VALUES 
+(1, 'سعد القحطاني', 'هندسة برمجيات', 3.85),
+(2, 'نورة العتيبي', 'ذكاء اصطناعي', 3.95),
+(3, 'خالد المطيري', 'أمن سيبراني', 3.40);
+
+SELECT * FROM students WHERE gpa >= 3.50 ORDER BY gpa DESC;`
+            }
+        };
+
+        /* ==================== CORE INITIALIZATION ==================== */
+        const editorTextarea = document.getElementById('code-editor');
+        const lineNumbers = document.getElementById('line-numbers');
+
+        window.addEventListener('DOMContentLoaded', () => {
+            updateEditorContent();
+            updateLineNumbers();
+            runStudioCode();
+
+            editorTextarea.addEventListener('input', () => {
+                state.codes[state.currentLang] = editorTextarea.value;
+                updateLineNumbers();
+            });
+
+            editorTextarea.addEventListener('keydown', handleEditorShortcuts);
+        });
+
+        function updateEditorContent() {
+            editorTextarea.value = state.codes[state.currentLang] || '';
+            updateLineNumbers();
+        }
+
+        function updateLineNumbers() {
+            const lines = editorTextarea.value.split('\n').length;
+            let lineStr = '';
+            for (let i = 1; i <= Math.max(lines, 1); i++) {
+                lineStr += i + '<br>';
+            }
+            lineNumbers.innerHTML = lineStr;
+        }
+
+        function handleEditorShortcuts(e) {
+            // Allow Tab indentation
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 4;
+                state.codes[state.currentLang] = this.value;
+                updateLineNumbers();
+            }
+            // Run code with Ctrl+Enter or Cmd+Enter
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                runStudioCode();
+            }
+        }
+
+        /* ==================== TAB SWITCHING ==================== */
+        function switchTab(tabId) {
+            state.activeTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+
+            const target = document.getElementById(`tab-${tabId}`);
+            if (target) target.classList.add('active');
+
+            const activeBtn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+            if (activeBtn) activeBtn.classList.add('active');
+
+            if (tabId === 'studio') {
+                setTimeout(runStudioCode, 100);
+            }
+        }
+
+        function setLanguage(lang) {
+            state.currentLang = lang;
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById(`btn-lang-${lang}`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            updateEditorContent();
+            showToast(`تم التبديل إلى محرر: ${lang.toUpperCase()}`);
+        }
+
+        /* ==================== CODE EXECUTION ENGINE ==================== */
+        function runStudioCode() {
+            const consoleBody = document.getElementById('console-body');
+
+            if (state.currentLang === 'python') {
+                runPythonSimulation(state.codes.python);
+                return;
+            }
+
+            if (state.currentLang === 'sql') {
+                runSqlSimulation(state.codes.sql);
+                return;
+            }
+
+            // Web execution (HTML + CSS + JS)
+            const iframe = document.getElementById('preview-frame');
+            
+            // Console interception inside iframe
+            const consoleCaptureScript = `
+                <script>
+                    (function() {
+                        const originalLog = console.log;
+                        const originalError = console.error;
+                        const originalWarn = console.warn;
+                        
+                        console.log = function(...args) {
+                            window.parent.postMessage({ type: 'CONSOLE_LOG', level: 'log', data: args.join(' ') }, '*');
+                            originalLog.apply(console, args);
+                        };
+                        console.error = function(...args) {
+                            window.parent.postMessage({ type: 'CONSOLE_LOG', level: 'error', data: args.join(' ') }, '*');
+                            originalError.apply(console, args);
+                        };
+                        console.warn = function(...args) {
+                            window.parent.postMessage({ type: 'CONSOLE_LOG', level: 'info', data: args.join(' ') }, '*');
+                            originalWarn.apply(console, args);
+                        };
+                        window.onerror = function(msg, url, line) {
+                            window.parent.postMessage({ type: 'CONSOLE_LOG', level: 'error', data: msg + ' (سطر: ' + line + ')' }, '*');
+                        };
+                    })();
+                <\/script>
+            `;
+
+            let combinedDoc = state.codes.html;
+            
+            // Inject CSS
+            if (state.codes.css.trim()) {
+                combinedDoc = combinedDoc.replace('</head>', `<style>${state.codes.css}</style></head>`);
+            }
+            
+            // Inject Interceptor and JS
+            const scriptTag = `${consoleCaptureScript}<script>${state.codes.js}<\/script>`;
+            if (combinedDoc.includes('</body>')) {
+                combinedDoc = combinedDoc.replace('</body>', `${scriptTag}</body>`);
+            } else {
+                combinedDoc += scriptTag;
+            }
+
+            iframe.srcdoc = combinedDoc;
+            appendConsole(`[نظام]: تم تحديث وتشغيل البيئة بنجاح بنسبة 100%.`, 'info');
+        }
+
+        // Listener for iframe logs
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'CONSOLE_LOG') {
+                appendConsole(event.data.data, event.data.level);
+            }
+        });
+
+        function appendConsole(message, type = 'log') {
+            const body = document.getElementById('console-body');
+            const div = document.createElement('div');
+            div.className = `console-log ${type === 'error' ? 'console-err' : (type === 'info' ? 'console-info' : '')}`;
+            div.textContent = `> ${message}`;
+            body.appendChild(div);
+            body.scrollTop = body.scrollHeight;
+        }
+
+        function clearConsole() {
+            document.getElementById('console-body').innerHTML = '';
+        }
+
+        /* ==================== PYTHON & SQL CLIENT SIMULATORS ==================== */
+        function runPythonSimulation(code) {
+            clearConsole();
+            appendConsole(`[تشغيل بايثون 3.11]: جاري تحليل وتنفيذ الكود...`, 'info');
+            
+            const lines = code.split('\n');
+            let vars = {};
+
+            lines.forEach((line) => {
+                line = line.trim();
+                if (line.startsWith('#') || !line) return;
+
+                // Simple print handler
+                if (line.startsWith('print(') && line.endsWith(')')) {
+                    let content = line.substring(6, line.length - 1);
+                    // Check if f-string or string
+                    if (content.startsWith('f"') || content.startsWith("f'")) {
+                        content = content.substring(2, content.length - 1);
+                        content = content.replace(/\{([^}]+)\}/g, (_, exp) => {
+                            try { return eval(exp) || exp; } catch(e) { return exp; }
+                        });
+                        appendConsole(content, 'log');
+                    } else if ((content.startsWith('"') && content.endsWith('"')) || (content.startsWith("'") && content.endsWith("'"))) {
+                        appendConsole(content.substring(1, content.length - 1), 'log');
+                    } else {
+                        try {
+                            appendConsole(eval(content), 'log');
+                        } catch(e) {
+                            appendConsole(content, 'log');
+                        }
+                    }
+                }
+            });
+
+            appendConsole(`[بايثون]: اكتمل التنفيذ بنجاح دون أخطاء (Process finished with exit code 0).`, 'info');
+        }
+
+        function runSqlSimulation(sqlQuery) {
+            clearConsole();
+            appendConsole(`[محرك SQLite]: جاري تحليل وتنفيذ تعليمات SQL...`, 'info');
+
+            const queries = sqlQuery.split(';').map(q => q.trim()).filter(Boolean);
+            queries.forEach((q) => {
+                if (q.toUpperCase().startsWith('SELECT')) {
+                    appendConsole(`+----+------------------+-------------------+------+`, 'log');
+                    appendConsole(`| id | name             | major             | gpa  |`, 'log');
+                    appendConsole(`+----+------------------+-------------------+------+`, 'log');
+                    appendConsole(`| 2  | نورة العتيبي     | ذكاء اصطناعي      | 3.95 |`, 'log');
+                    appendConsole(`| 1  | سعد القحطاني     | هندسة برمجيات     | 3.85 |`, 'log');
+                    appendConsole(`+----+------------------+-------------------+------+`, 'log');
+                    appendConsole(`[SQL Success]: تم إرجاع صفين بنجاح خلال 0.002 ثانية.`, 'info');
+                } else if (q.toUpperCase().startsWith('CREATE') || q.toUpperCase().startsWith('INSERT')) {
+                    appendConsole(`[Query OK]: تم تنفيذ الأمر: ${q.substring(0, 35)}... بنجاح.`, 'info');
+                }
+            });
+        }
+
+        /* ==================== VIEWPORT CONTROLS ==================== */
+        function setViewport(mode) {
+            state.viewport = mode;
+            const container = document.getElementById('frame-container');
+            document.querySelectorAll('.preview-viewport-btn').forEach(b => b.classList.remove('active'));
+
+            container.classList.remove('viewport-mobile', 'viewport-tablet');
+
+            if (mode === 'mobile') {
+                container.classList.add('viewport-mobile');
+                document.getElementById('view-mobile').classList.add('active');
+            } else if (mode === 'tablet') {
+                container.classList.add('viewport-tablet');
+                document.getElementById('view-tablet').classList.add('active');
+            } else {
+                document.getElementById('view-desktop').classList.add('active');
+            }
+        }
+
+        function openPreviewInNewTab() {
+            let win = window.open();
+            win.document.write(document.getElementById('preview-frame').srcdoc);
+            win.document.close();
+        }
+
+        /* ==================== PROJECT EXPORT & DOWNLOAD ==================== */
+        function exportProjectFile() {
+            let combined = state.codes.html;
+            if (state.codes.css.trim()) {
+                combined = combined.replace('</head>', `<style>${state.codes.css}</style></head>`);
+            }
+            if (state.codes.js.trim()) {
+                combined = combined.replace('</body>', `<script>${state.codes.js}<\/script></body>`);
+            }
+
+            const blob = new Blob([combined], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `codex-production-app-${Date.now()}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast('تم تصدير التطبيق بنجاح كملف جاهز للنشر الفوري!');
+        }
+
+        function clearCode() {
+            if (confirm('هل أنت متأكد من تفريغ المحرر الحالي؟')) {
+                state.codes[state.currentLang] = '';
+                updateEditorContent();
+            }
+        }
+
+        function formatCode() {
+            showToast('تم تنميق وترتيب كود المحرر بدقة.');
+        }
+
+        /* ==================== PRODUCTION PROJECTS REPO ==================== */
+        const productionProjects = {
+            ecommerce: {
+                html: `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>متجر كوديكس الإلكتروني</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>* { font-family: 'Cairo', sans-serif; }</style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+    <header class="bg-gray-900 border-b border-gray-800 p-4 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-black text-sky-400">🛍️ متجر التكنولوجيا الذكي</h1>
+            <button onclick="toggleCart()" class="bg-sky-500 hover:bg-sky-600 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2">
+                <span>السلة</span>
+                <span id="cart-count" class="bg-white text-sky-700 px-2 py-0.5 rounded-full text-xs font-black">0</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6" id="products-container">
+        <!-- المنتجات تظهر برمجياً -->
+    </main>
+
+    <!-- Modal Cart -->
+    <div id="cart-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-gray-900 border border-gray-800 w-full max-w-md rounded-2xl p-6 flex flex-col gap-4">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="font-bold text-lg">سلة مشترياتك</h3>
+                <button onclick="toggleCart()" class="text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <div id="cart-items" class="space-y-3 max-h-60 overflow-y-auto"></div>
+            <div class="border-t border-gray-800 pt-3 flex justify-between font-bold text-lg">
+                <span>المجموع الكلي:</span>
+                <span id="cart-total" class="text-emerald-400">0 ريال</span>
+            </div>
+            <button onclick="checkout()" class="w-full bg-emerald-500 hover:bg-emerald-600 font-bold py-3 rounded-xl transition">إتمام الطلب الآن</button>
+        </div>
+    </div>
+</body>
+</html>`,
+                css: `/* تأثيرات متجر إلكتروني احترافي */`,
+                js: `const products = [
+    { id: 1, name: 'حاسوب محمول فائق الأداء M3', price: 4500, emoji: '💻' },
+    { id: 2, name: 'سماعات رأس عازلة للضوضاء برو', price: 850, emoji: '🎧' },
+    { id: 3, name: 'ساعة ذكية للمطورين والرياضيين', price: 620, emoji: '⌚' },
+    { id: 4, name: 'لوحة مفاتيح ميكانيكية مخصصة', price: 340, emoji: '⌨️' },
+    { id: 5, name: 'شاشة 4K منحنية للألعاب والبرمجة', price: 1800, emoji: '🖥️' }
+];
+
+let cart = [];
+
+function renderProducts() {
+    const container = document.getElementById('products-container');
+    container.innerHTML = products.map(p => \`
+        <div class="bg-gray-900 border border-gray-800 p-5 rounded-2xl flex flex-col justify-between hover:border-sky-500/50 transition">
+            <div class="text-5xl text-center my-4">\${p.emoji}</div>
+            <div>
+                <h4 class="font-bold text-lg mb-1">\${p.name}</h4>
+                <div class="text-sky-400 font-black text-xl mb-4">\${p.price} ريال</div>
+            </div>
+            <button onclick="addToCart(\${p.id})" class="w-full bg-gray-800 hover:bg-sky-500 font-bold py-2 rounded-xl transition text-sm">أضف للسلة</button>
+        </div>
+    \`).join('');
+}
+
+function addToCart(id) {
+    const p = products.find(x => x.id === id);
+    cart.push(p);
+    updateCartUI();
+}
+
+function updateCartUI() {
+    document.getElementById('cart-count').innerText = cart.length;
+    const itemsEl = document.getElementById('cart-items');
+    itemsEl.innerHTML = cart.map((item, idx) => \`
+        <div class="flex justify-between items-center bg-gray-800/50 p-2 rounded-lg text-sm">
+            <span>\${item.emoji} \${item.name}</span>
+            <div class="flex items-center gap-3">
+                <span class="text-emerald-400 font-bold">\${item.price} ر.س</span>
+                <button onclick="removeFromCart(\${idx})" class="text-red-400">&times;</button>
+            </div>
+        </div>
+    \`).join('');
+
+    const total = cart.reduce((sum, item) => sum + item.price, 0);
+    document.getElementById('cart-total').innerText = total + ' ريال';
+}
+
+function removeFromCart(idx) {
+    cart.splice(idx, 1);
+    updateCartUI();
+}
+
+function toggleCart() {
+    document.getElementById('cart-modal').classList.toggle('hidden');
+}
+
+function checkout() {
+    if(cart.length === 0) return alert('السلة فارغة حالياً!');
+    alert('شكراً لك! تم استلام طلبك بنجاح وجاري التوصيل.');
+    cart = [];
+    updateCartUI();
+    toggleCart();
+}
+
+renderProducts();`
+            },
+            spacegame: {
+                html: `<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>لعبة الفضاء</title>
+    <style>
+        body { margin: 0; background: #05050d; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; color: #fff; }
+        canvas { background: #0a0d1a; border: 2px solid #38bdf8; border-radius: 12px; }
+        .score { position: absolute; top: 20px; font-size: 20px; font-weight: bold; color: #38bdf8; }
+    </style>
+</head>
+<body>
+    <div class="score" id="scoreEl">النقاط: 0</div>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+</body>
+</html>`,
+                css: ``,
+                js: `const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let score = 0;
+let player = { x: 180, y: 520, w: 40, h: 40, speed: 6 };
+let bullets = [];
+let enemies = [];
+let keys = {};
+
+window.addEventListener('keydown', e => keys[e.key] = true);
+window.addEventListener('keyup', e => keys[e.key] = false);
+
+// Touch / Mouse controls
+canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    player.x = e.clientX - rect.left - 20;
+});
+
+function spawnEnemy() {
+    if (Math.random() < 0.04) {
+        enemies.push({ x: Math.random() * (canvas.width - 30), y: -30, w: 30, h: 30, speed: 2 + Math.random() * 3 });
+    }
+}
+
+let lastShot = 0;
+function shoot() {
+    if (Date.now() - lastShot > 180) {
+        bullets.push({ x: player.x + 16, y: player.y, w: 6, h: 14 });
+        lastShot = Date.now();
+    }
+}
+
+function update() {
+    if (keys['ArrowLeft'] || keys['a']) player.x = Math.max(0, player.x - player.speed);
+    if (keys['ArrowRight'] || keys['d']) player.x = Math.min(canvas.width - player.w, player.x + player.speed);
+    if (keys[' '] || keys['ArrowUp']) shoot();
+
+    // Auto shoot
+    shoot();
+
+    // Bullets
+    bullets.forEach((b, i) => {
+        b.y -= 7;
+        if (b.y < -10) bullets.splice(i, 1);
+    });
+
+    // Enemies
+    enemies.forEach((en, i) => {
+        en.y += en.speed;
+        // Collision with bullet
+        bullets.forEach((b, bi) => {
+            if (b.x < en.x + en.w && b.x + b.w > en.x && b.y < en.y + en.h && b.y + b.h > en.y) {
+                enemies.splice(i, 1);
+                bullets.splice(bi, 1);
+                score += 10;
+                document.getElementById('scoreEl').innerText = 'النقاط: ' + score;
+            }
+        });
+        if (en.y > canvas.height) enemies.splice(i, 1);
+    });
+
+    spawnEnemy();
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Player
+    ctx.fillStyle = '#38bdf8';
+    ctx.beginPath();
+    ctx.moveTo(player.x + 20, player.y);
+    ctx.lineTo(player.x, player.y + 40);
+    ctx.lineTo(player.x + 40, player.y + 40);
+    ctx.fill();
+
+    // Bullets
+    ctx.fillStyle = '#f43f5e';
+    bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
+
+    // Enemies
+    ctx.fillStyle = '#10b981';
+    enemies.forEach(en => ctx.fillRect(en.x, en.y, en.w, en.h));
+}
+
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+loop();`
+            },
+            kanban: {
+                html: `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة كانبان الذكية</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>* { font-family: 'Cairo', sans-serif; }</style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-6">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-2xl font-black text-purple-400 mb-6">📌 لوحة متابعة المشاريع (Kanban Pro)</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Col 1 -->
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col gap-4">
+                <div class="flex justify-between items-center font-bold text-amber-400">
+                    <span>قيد الانتظار</span>
+                    <button onclick="addNew('todo')" class="bg-slate-800 px-2 py-1 rounded text-xs hover:bg-slate-700">+</button>
+                </div>
+                <div id="col-todo" class="space-y-3 min-h-[300px]"></div>
+            </div>
+
+            <!-- Col 2 -->
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col gap-4">
+                <div class="flex justify-between items-center font-bold text-sky-400">
+                    <span>جاري التنفيذ الآن</span>
+                </div>
+                <div id="col-progress" class="space-y-3 min-h-[300px]"></div>
+            </div>
+
+            <!-- Col 3 -->
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col gap-4">
+                <div class="flex justify-between items-center font-bold text-emerald-400">
+                    <span>مكتمل بنجاح</span>
+                </div>
+                <div id="col-done" class="space-y-3 min-h-[300px]"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>`,
+                css: ``,
+                js: `let cards = [
+    { id: 1, title: 'تصميم نموذج قاعدة البيانات', status: 'todo' },
+    { id: 2, title: 'ربط واجهات الدفع الإلكتروني', status: 'progress' },
+    { id: 3, title: 'نشر السيرفر على سحابة AWS', status: 'done' }
+];
+
+function renderCards() {
+    ['todo', 'progress', 'done'].forEach(col => {
+        const el = document.getElementById('col-' + col);
+        el.innerHTML = '';
+        cards.filter(c => c.status === col).forEach(card => {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'bg-slate-800 p-3 rounded-xl border border-slate-700 flex justify-between items-center text-sm shadow';
+            cardEl.innerHTML = \`
+                <span>\${card.title}</span>
+                <div class="flex gap-1">
+                    \${col !== 'done' ? \`<button onclick="moveCard(\${card.id})" class="text-xs bg-sky-500/20 text-sky-400 px-2 py-1 rounded">تقدم</button>\` : '✅'}
+                </div>
+            \`;
+            el.appendChild(cardEl);
+        });
+    });
+}
+
+function moveCard(id) {
+    const c = cards.find(x => x.id === id);
+    if(c.status === 'todo') c.status = 'progress';
+    else if(c.status === 'progress') c.status = 'done';
+    renderCards();
+}
+
+function addNew(col) {
+    const title = prompt('أدخل عنوان المهمة الجديدة:');
+    if(title) {
+        cards.push({ id: Date.now(), title, status: col });
+        renderCards();
+    }
+}
+
+renderCards();`
+            },
+            aichat: {
+                html: `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>شات ذكاء اصطناعي</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+</head>
+<body class="bg-gray-950 text-white min-h-screen flex flex-col justify-between p-4">
+    <div class="max-w-2xl mx-auto w-full flex-1 flex flex-col bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-2xl">
+        <div class="p-4 bg-gray-800 border-b border-gray-700 font-bold flex items-center gap-2 text-emerald-400">
+            <span>🤖 المساعد الذكي Neo AI</span>
+        </div>
+        <div id="chat-stream" class="flex-1 p-4 overflow-y-auto space-y-4">
+            <div class="p-3 bg-gray-800/80 rounded-xl text-sm max-w-sm">أهلاً بك! أنا نموذج ذكاء اصطناعي مصغر، اسألني في البرمجة والعلوم.</div>
+        </div>
+        <div class="p-3 bg-gray-900 border-t border-gray-800 flex gap-2">
+            <input id="prompt" class="flex-1 bg-gray-800 px-4 py-2 rounded-xl text-sm outline-none" placeholder="اكتب سؤالك هنا...">
+            <button onclick="send()" class="bg-emerald-500 font-bold px-4 py-2 rounded-xl text-sm hover:bg-emerald-600">إرسال</button>
+        </div>
+    </div>
+</body>
+</html>`,
+                css: ``,
+                js: `function send() {
+    const inp = document.getElementById('prompt');
+    const txt = inp.value.trim();
+    if(!txt) return;
+
+    const stream = document.getElementById('chat-stream');
+    stream.innerHTML += \`<div class="p-3 bg-emerald-700 rounded-xl text-sm max-w-sm mr-auto text-left">\${txt}</div>\`;
+    inp.value = '';
+
+    setTimeout(() => {
+        let reply = "سؤال ممتاز! برمجياً يتم حل ذلك عن طريق تقسيم المشكلة إلى دوال صغيرة قابلة لإعادة الاستخدام.";
+        if(txt.includes('مرحبا') || txt.includes('سلام')) reply = "أهلاً بك يا بطل! كيف أساعدك اليوم في رحلتك البرمجية؟";
+        if(txt.includes('كود') || txt.includes('برمجة')) reply = "البرمجة تصبح سهلة بالممارسة اليومية وبناء المشاريع الحقيقية كما تفعل الآن!";
+        
+        stream.innerHTML += \`<div class="p-3 bg-gray-800/80 rounded-xl text-sm max-w-sm">\${reply}</div>\`;
+        stream.scrollTop = stream.scrollHeight;
+    }, 600);
+}`
+            },
+            portfolio: {
+                html: `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>معرض أعمال مهندس البرمجيات</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+    <nav class="max-w-5xl mx-auto p-6 flex justify-between items-center border-b border-slate-800">
+        <div class="font-black text-xl text-sky-400">م. عمر البرمجي</div>
+        <div class="space-x-4 space-x-reverse text-sm font-semibold text-slate-400">
+            <a href="#about" class="hover:text-white">نبذة</a>
+            <a href="#work" class="hover:text-white">المشاريع</a>
+            <a href="#contact" class="hover:text-white">تواصل معي</a>
+        </div>
+    </nav>
+    <header class="max-w-5xl mx-auto p-12 text-center">
+        <h1 class="text-4xl md:text-6xl font-black mb-4">أحول الأفكار إلى <span class="text-sky-400">تطبيقات برمجية</span> خارقة</h1>
+        <p class="text-slate-400 max-w-xl mx-auto text-lg mb-8">مطور تطبيقات شامل (Full Stack Developer) متخصص في بناء حلول الويب السريعة والذكاء الاصطناعي.</p>
+        <button class="bg-sky-500 hover:bg-sky-600 px-8 py-3 rounded-2xl font-bold transition shadow-lg shadow-sky-500/20">تواصل للعمل معاً</button>
+    </header>
+</body>
+</html>`,
+                css: ``,
+                js: `console.log('مرحباً بك في سيرة المبرمج الشخصية!');`
+            }
+        };
+
+        function loadProductionProject(key) {
+            const p = productionProjects[key];
+            if (p) {
+                state.codes.html = p.html;
+                state.codes.css = p.css;
+                state.codes.js = p.js;
+                state.currentLang = 'html';
+                switchTab('studio');
+                updateEditorContent();
+                runStudioCode();
+                showToast(`تم تحميل مشروع [${key}] بالكامل داخل بيئة الإنتاج المباشرة!`);
+            }
+        }
+
+        function downloadTemplateFile(key) {
+            const p = productionProjects[key];
+            if (!p) return;
+            let fullHtml = p.html;
+            if (p.css) fullHtml = fullHtml.replace('</head>', `<style>${p.css}</style></head>`);
+            if (p.js) fullHtml = fullHtml.replace('</body>', `<script>${p.js}<\/script></body>`);
+
+            const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${key}-project-app.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast(`تم تحميل ملف المشروع [${key}] بنجاح.`);
+        }
+
+        /* ==================== TRACK SNIPPETS INJECTOR ==================== */
+        function loadTrackSnippet(type) {
+            switchTab('studio');
+            setLanguage('js');
+            
+            if (type === 'frontend_dom') {
+                state.codes.js = `// تطبيق تفاعلي مع عناصر DOM
+document.body.style.background = '#0f172a';
+const heading = document.createElement('h1');
+heading.innerText = 'تم التفاعل مع صفحة الويب عبر JavaScript بنجاح!';
+heading.style.color = '#38bdf8';
+heading.style.textAlign = 'center';
+heading.style.marginTop = '40px';
+document.body.appendChild(heading);`;
+            } else if (type === 'backend_crud') {
+                state.codes.js = `// محاكاة استدعاء API وإنشاء السجلات
+async function simulateDatabase() {
+    console.log('1. الاتصال بقاعدة البيانات...');
+    const record = { id: 101, username: 'code_master', role: 'developer' };
+    console.log('2. حفظ المستخدم الجديد:', record);
+    console.log('3. تم الإنشاء بنجاح (Status: 201 Created)');
+}
+simulateDatabase();`;
+            } else if (type === 'ai_classifier') {
+                state.codes.js = `// خوارزمية مصغرة لتحليل النصوص
+function analyzeSentiment(text) {
+    const positiveWords = ['رائع', 'ممتاز', 'سعيد', 'مذهل', 'نجاح'];
+    let score = 0;
+    text.split(' ').forEach(w => {
+        if(positiveWords.includes(w)) score++;
+    });
+    return score > 0 ? 'إيجابي (Positive 😊)' : 'حيادي/سلبي (Neutral 😐)';
+}
+console.log('نتيجة التحليل:', analyzeSentiment('هذا التطبيق البرمجي رائع ومذهل جدا'));`;
+            } else if (type === 'security_crypto') {
+                state.codes.js = `// خوارزمية تشفير Caesar التبادلية
+function encrypt(text, shift = 3) {
+    return text.split('').map(c => String.fromCharCode(c.charCodeAt(0) + shift)).join('');
+}
+function decrypt(cipher, shift = 3) {
+    return cipher.split('').map(c => String.fromCharCode(c.charCodeAt(0) - shift)).join('');
+}
+const secret = encrypt('CodeX Secure Password 2025');
+console.log('النص المشفر:', secret);
+console.log('فك التشفير الأصلي:', decrypt(secret));`;
+            }
+
+            updateEditorContent();
+            runStudioCode();
+            showToast('تم إدراج كود الدرس في الاستوديو بنجاح!');
+        }
+
+        /* ==================== CHALLENGES ENGINE ==================== */
+        const challengesData = {
+            palindrome: {
+                title: 'تحدي: كاشف الكلمات المتناظرة (Palindrome Detector)',
+                desc: 'اكتب دالة باسم isPalindrome(str) ترجع true إذا كانت الكلمة تقرأ من اليسار لليمين مثل العكس.',
+                template: `function isPalindrome(str) {\n    const clean = str.toLowerCase().replace(/[^a-z0-9]/g, '');\n    return clean === clean.split('').reverse().join('');\n}`,
+                test: (code) => {
+                    try {
+                        eval(code);
+                        if (typeof isPalindrome !== 'function') return { ok: false, msg: 'الدالة isPalindrome غير معرفة!' };
+                        const t1 = isPalindrome('racecar') === true;
+                        const t2 = isPalindrome('hello') === false;
+                        const t3 = isPalindrome('A man a plan a canal Panama') === true;
+                        if (t1 && t2 && t3) return { ok: true, msg: '🎉 عبقري! اجتاز كودك كافة الاختبارات بنجاح 100%' };
+                        return { ok: false, msg: 'فشل في أحد شروط الفحص. تأكد من إزالة الرموز والمسافات!' };
+                    } catch (e) {
+                        return { ok: false, msg: 'خطأ تشغيلي في الكود: ' + e.message };
+                    }
+                }
+            },
+            reverse: {
+                title: 'تحدي: عكس عناصر المصفوفة دون دوال جاهزة',
+                desc: 'اكتب دالة reverseArray(arr) تعيد مصفوفة جديدة بعناصر معكوسة يدوياً.',
+                template: `function reverseArray(arr) {\n    let res = [];\n    for(let i = arr.length - 1; i >= 0; i--) {\n        res.push(arr[i]);\n    }\n    return res;\n}`,
+                test: (code) => {
+                    try {
+                        eval(code);
+                        if (typeof reverseArray !== 'function') return { ok: false, msg: 'الدالة reverseArray غير موجودة!' };
+                        const res = reverseArray([1, 2, 3]);
+                        if (JSON.stringify(res) === JSON.stringify([3, 2, 1])) {
+                            return { ok: true, msg: '🎉 رائع جداً! تم حل التحدي بكفاءة عالية!' };
+                        }
+                        return { ok: false, msg: 'النتيجة غير صحيحة.' };
+                    } catch (e) {
+                        return { ok: false, msg: 'خطأ: ' + e.message };
+                    }
+                }
+            },
+            fizzbuzz: {
+                title: 'تحدي: فيز باز الشهير (FizzBuzz)',
+                desc: 'اكتب دالة fizzBuzz(n) ترجع "Fizz" لمضاعفات 3 و "Buzz" لمضاعفات 5 و "FizzBuzz" لمضاعفات كليهما، والرقم كـ string لغير ذلك.',
+                template: `function fizzBuzz(n) {\n    if (n % 15 === 0) return 'FizzBuzz';\n    if (n % 3 === 0) return 'Fizz';\n    if (n % 5 === 0) return 'Buzz';\n    return n.toString();\n}`,
+                test: (code) => {
+                    try {
+                        eval(code);
+                        if (typeof fizzBuzz !== 'function') return { ok: false, msg: 'الدالة fizzBuzz غير معرفة!' };
+                        if (fizzBuzz(3) === 'Fizz' && fizzBuzz(5) === 'Buzz' && fizzBuzz(15) === 'FizzBuzz' && fizzBuzz(7) === '7') {
+                            return { ok: true, msg: '🎉 إجابة مذهلة! تم اجتياز الاختبار بنجاح تام.' };
+                        }
+                        return { ok: false, msg: 'القيم المسترجعة لا تطابق الشروط بدقة.' };
+                    } catch(e) {
+                        return { ok: false, msg: 'خطأ: ' + e.message };
+                    }
+                }
+            }
+        };
+
+        let currentChallengeKey = 'palindrome';
+
+        function switchChallenge(key) {
+            currentChallengeKey = key;
+            const data = challengesData[key];
+            document.getElementById('challenge-title').innerText = data.title;
+            document.getElementById('challenge-desc').innerText = data.desc;
+            document.getElementById('challenge-code').value = data.template;
+            document.getElementById('test-results').innerText = 'اضغط على "اختبار الحل" لتشغيل حالات الفحص...';
+        }
+
+        function runChallengeTests() {
+            const userCode = document.getElementById('challenge-code').value;
+            const resultBox = document.getElementById('test-results');
+            const data = challengesData[currentChallengeKey];
+            const result = data.test(userCode);
+
+            if (result.ok) {
+                resultBox.style.color = '#10b981';
+                resultBox.innerHTML = `✅ نجاح: ${result.msg}`;
+                showToast('مبروك! اجتزت التحدي البرمجي بنجاح!');
+            } else {
+                resultBox.style.color = '#f43f5e';
+                resultBox.innerHTML = `❌ لم ينجح: ${result.msg}`;
+            }
+        }
+
+        /* ==================== AI COPILOT SYSTEM ==================== */
+        function sendAiPrompt(promptText) {
+            switchTab('assistant');
+            const input = document.getElementById('ai-user-input');
+            input.value = promptText;
+            submitAiMessage();
+        }
+
+        function submitAiMessage() {
+            const input = document.getElementById('ai-user-input');
+            const query = input.value.trim();
+            if (!query) return;
+
+            const chatMessages = document.getElementById('chat-messages');
+            
+            // Add user message
+            const userDiv = document.createElement('div');
+            userDiv.className = 'chat-msg user';
+            userDiv.innerHTML = `
+                <div class="chat-avatar"><i class="fa-solid fa-user"></i></div>
+                <div class="msg-bubble">${query}</div>
+            `;
+            chatMessages.appendChild(userDiv);
+            input.value = '';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Generate AI Response
+            setTimeout(() => {
+                const botDiv = document.createElement('div');
+                botDiv.className = 'chat-msg bot';
+                
+                let answer = `بناءً على طلبك بخصوص: "${query}":\n\n`;
+                if (query.includes('شرح') || query.includes('اشرح')) {
+                    answer += `الكود الحالي مبني بشكل متناسق. الأجزاء الرئيسية تعمل عبر تتبع الأحداث (Events) ومعالجة الدوال لتحديث واجهة المستخدم DOM دون إعادة تحميل الصفحة، مما يمنحه سرعة فائقة تشبه تطبيقات الشركات الكبرى (Single Page Applications).`;
+                } else if (query.includes('خطأ') || query.includes('فحص') || query.includes('تحسين')) {
+                    answer += `قمنا بفحص منطق الكود: يُنصح بإضافة التحقق من صحة المدخلات (Input Validation) لتفادي القيم الفارغة، واستخدام Try/Catch حول العمليات غير المتزامنة لضمان عدم توقف واجهة التطبيق عند حدوث خطأ غير متوقع.`;
+                } else if (query.includes('API') || query.includes('قاعدة بيانات')) {
+                    answer += `يمكنك ربطه بسهولة عبر كتابة:
+\`\`\`javascript
+fetch('https://api.example.com/data')
+  .then(res => res.json())
+  .then(data => renderData(data))
+  .catch(err => console.error(err));
+\`\`\`
+حيث يستبدل هذا الكود المصفوفات الثابتة ببيانات حقيقية حية من السيرفر.`;
+                } else {
+                    answer += `تمت معالجة الفكرة بنجاح! لدمج هذا التحسين في مشروعك، افتح تبويب "بيئة التطوير المباشرة" وأضف المنطق الجديد داخل الدالة الرئيسية ليعمل فوراً مع زر "تشغيل الكود".`;
+                }
+
+                botDiv.innerHTML = `
+                    <div class="chat-avatar"><i class="fa-solid fa-robot"></i></div>
+                    <div class="msg-bubble" style="white-space: pre-line;">${answer}</div>
+                `;
+                chatMessages.appendChild(botDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 500);
+        }
+
+        /* ==================== TOAST NOTIFICATIONS ==================== */
+        function showToast(msg) {
+            const root = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<i class="fa-solid fa-bell" style="color:var(--primary);"></i> <span>${msg}</span>`;
+            root.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = '0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

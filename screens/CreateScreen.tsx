@@ -1,14 +1,37 @@
 import React, { useState } from "react";
-import { View, TextInput, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
+import {
+  View, TextInput, Text, TouchableOpacity, StyleSheet,
+  ScrollView, ActivityIndicator, Modal,
+} from "react-native";
+import { WebView } from "react-native-webview";
 import { pushFile, listWorkflowRuns, latestRunId, getFileText, getFailureLog } from "../services/github";
 import { REPO } from "../services/config";
 
-type Mode = "new" | "edit";
-
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export default function CreateScreen() {
-  const [mode, setMode] = useState<Mode>("new");
+function cleanName(n: string) {
+  return n.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+}
+
+async function waitForRun(prevId: number) {
+  const started = Date.now();
+  while (Date.now() - started < 4 * 60 * 1000) {
+    await sleep(5000);
+    const runs = await listWorkflowRuns(REPO, "generate.yml");
+    const run = runs.find((r: any) => r.id > prevId);
+    if (run && run.status === "completed") return run;
+  }
+  return null;
+}
+
+type BoxProps = {
+  title: string;
+  busy: boolean;
+  setBusy: (b: boolean) => void;
+  onPreview: (name: string) => void;
+};
+
+function AppBox({ title, busy, setBusy, onPreview }: BoxProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,21 +41,10 @@ export default function CreateScreen() {
     setLog((prev) => [...prev, line]);
   }
 
-  async function waitForRun(prevId: number) {
-    const started = Date.now();
-    while (Date.now() - started < 4 * 60 * 1000) {
-      await sleep(5000);
-      const runs = await listWorkflowRuns(REPO, "generate.yml");
-      const run = runs.find((r: any) => r.id > prevId);
-      if (run && run.status === "completed") return run;
-    }
-    return null;
-  }
-
   async function handleSend() {
-    if (loading) return;
-    const cleanName = name.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
-    if (!cleanName) {
+    if (busy) return;
+    const n = cleanName(name);
+    if (!n) {
       setLog(["❌ اكتب اسم التطبيق بالإنجليزي (حروف وأرقام بدون مسافات)."]);
       return;
     }
@@ -42,22 +54,22 @@ export default function CreateScreen() {
     }
 
     setLog([]);
+    setBusy(true);
     setLoading(true);
     try {
       const prevId = await latestRunId(REPO, "generate.yml");
 
       addLog("⏳ بيتم إرسال الطلب...");
-      const content = `${cleanName}\n${description.trim()}\n\n(request id: ${Date.now()})\n`;
-      await pushFile(REPO, "request.txt", content, `${mode === "edit" ? "Edit" : "Create"}: ${cleanName}`);
+      const content = `${n}\n${description.trim()}\n\n(request id: ${Date.now()})\n`;
+      await pushFile(REPO, "request.txt", content, `Create: ${n}`);
       addLog("✅ تم إرسال الطلب.");
       addLog("⏳ بيتولّد الكود... (من نصف دقيقة لدقيقتين)");
 
       const run = await waitForRun(prevId);
       if (!run) {
-        addLog("⚠️ التوليد أخذ وقت طويل. جرّب تبويب المعاينة بعد شوية.");
+        addLog("⚠️ التوليد أخذ وقت طويل. جرّب المعاينة بعد شوية.");
         return;
       }
-
       if (run.conclusion !== "success") {
         addLog("❌ فشل التوليد.");
         const tail = await getFailureLog(REPO, run.id);
@@ -65,35 +77,26 @@ export default function CreateScreen() {
         return;
       }
 
-      const html = await getFileText(REPO, `apps/${cleanName}/index.html`);
+      const html = await getFileText(REPO, `apps/${n}/index.html`);
       if (!html) {
-        addLog("⚠️ التوليد نجح لكن الملف ما ظهر. حدّث المعاينة بعد شوية.");
+        addLog("⚠️ التوليد نجح لكن الملف ما ظهر. جرّب المعاينة بعد شوية.");
         return;
       }
-      addLog(`✅ اتولّد وارتفع: apps/${cleanName}/index.html`);
-      addLog("🎉 روح لتبويب المعاينة تشوفه.");
+      addLog(`✅ اتولّد وارتفع: apps/${n}/index.html`);
+      addLog("🎉 اضغط معاينة تشوفه.");
     } catch (e: any) {
       addLog(`❌ ${e.message}`);
     } finally {
       setLoading(false);
+      setBusy(false);
     }
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.label}>الوضع</Text>
-      <View style={styles.row}>
-        <TouchableOpacity style={[styles.pill, mode === "new" && styles.pillActive]} onPress={() => setMode("new")}>
-          <Text style={mode === "new" ? styles.pillTextActive : styles.pillText}>إنشاء جديد</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.pill, mode === "edit" && styles.pillActive]} onPress={() => setMode("edit")}>
-          <Text style={mode === "edit" ? styles.pillTextActive : styles.pillText}>تعديل الموجود</Text>
-        </TouchableOpacity>
-      </View>
+    <View style={styles.box}>
+      <Text style={styles.boxTitle}>{title}</Text>
 
-      <Text style={styles.label}>
-        {mode === "edit" ? "اسم التطبيق اللي تبغى تعدّله" : "اسم التطبيق (إنجليزي)"}
-      </Text>
+      <Text style={styles.label}>اسم التطبيق (إنجليزي)</Text>
       <TextInput
         style={styles.input}
         value={name}
@@ -102,26 +105,31 @@ export default function CreateScreen() {
         autoCapitalize="none"
         autoCorrect={false}
       />
+      <Text style={styles.hint}>لو الاسم موجود، يعدّل عليه بدل ما ينشئ جديد.</Text>
 
-      <Text style={styles.label}>{mode === "edit" ? "وصف التعديل" : "الوصف"}</Text>
+      <Text style={styles.label}>الوصف</Text>
       <TextInput
         style={styles.textarea}
         value={description}
         onChangeText={setDescription}
-        placeholder={
-          mode === "edit"
-            ? "مثال: غيّر الألوان للأخضر وأضف زر واتساب"
-            : "مثال: متجر ملابس فيه سلة مشتريات وقائمة أسعار"
-        }
+        placeholder="مثال: متجر ملابس فيه سلة مشتريات وقائمة أسعار"
         multiline
       />
 
-      <TouchableOpacity style={styles.createBtn} onPress={handleSend} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.createBtnText}>{mode === "edit" ? "عدّل وارفع" : "إنشاء ورفع"}</Text>
-        )}
+      <TouchableOpacity
+        style={[styles.createBtn, busy && !loading && styles.disabled]}
+        onPress={handleSend}
+        disabled={busy}
+      >
+        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.createBtnText}>إنشاء ورفع</Text>}
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.previewBtn, !cleanName(name) && styles.disabled]}
+        onPress={() => onPreview(cleanName(name))}
+        disabled={!cleanName(name)}
+      >
+        <Text style={styles.previewBtnText}>معاينة</Text>
       </TouchableOpacity>
 
       {log.length > 0 && (
@@ -131,22 +139,78 @@ export default function CreateScreen() {
           ))}
         </View>
       )}
-    </ScrollView>
+    </View>
+  );
+}
+
+export default function CreateScreen() {
+  const [busy, setBusy] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewName, setPreviewName] = useState("");
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  async function openPreview(name: string) {
+    setPreviewName(name);
+    setPreviewHtml(null);
+    setPreviewError(null);
+    setPreviewOpen(true);
+    setPreviewLoading(true);
+    try {
+      const text = await getFileText(REPO, `apps/${name}/index.html`);
+      if (!text) throw new Error("التطبيق ده مش موجود لسه. اعمل إنشاء الأول.");
+      setPreviewHtml(text);
+    } catch (e: any) {
+      setPreviewError(e.message);
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
+
+  return (
+    <View style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <AppBox title="إنشاء التطبيق الأول" busy={busy} setBusy={setBusy} onPreview={openPreview} />
+        <AppBox title="إنشاء التطبيق الثاني" busy={busy} setBusy={setBusy} onPreview={openPreview} />
+      </ScrollView>
+
+      <Modal visible={previewOpen} animationType="slide" onRequestClose={() => setPreviewOpen(false)}>
+        <View style={{ flex: 1, backgroundColor: "#fff" }}>
+          <View style={styles.modalHead}>
+            <Text style={styles.modalTitle}>{previewName}</Text>
+            <TouchableOpacity onPress={() => setPreviewOpen(false)}>
+              <Text style={styles.closeText}>إغلاق ✕</Text>
+            </TouchableOpacity>
+          </View>
+          {previewLoading && <ActivityIndicator style={{ marginTop: 16 }} />}
+          {previewError && <Text style={styles.error}>❌ {previewError}</Text>}
+          {previewHtml && (
+            <WebView originWhitelist={["*"]} source={{ html: previewHtml }} style={{ flex: 1 }} />
+          )}
+        </View>
+      </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16 },
+  container: { padding: 16, paddingBottom: 48 },
+  box: { borderWidth: 1, borderColor: "#ddd", borderRadius: 14, padding: 14, marginBottom: 20, backgroundColor: "#fff" },
+  boxTitle: { fontWeight: "700", fontSize: 17, marginBottom: 4 },
   label: { fontWeight: "700", marginTop: 12, marginBottom: 6 },
-  row: { flexDirection: "row", gap: 8 },
-  pill: { borderWidth: 1, borderColor: "#ccc", borderRadius: 20, paddingVertical: 8, paddingHorizontal: 16, marginRight: 8 },
-  pillActive: { backgroundColor: "#111", borderColor: "#111" },
-  pillText: { color: "#111" },
-  pillTextActive: { color: "#fff" },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 12, padding: 12, marginTop: 4 },
-  textarea: { borderWidth: 1, borderColor: "#ccc", borderRadius: 12, padding: 12, minHeight: 100, marginTop: 4 },
-  createBtn: { backgroundColor: "#111", borderRadius: 12, padding: 14, alignItems: "center", marginTop: 20 },
+  hint: { color: "#888", fontSize: 12, marginTop: 4 },
+  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 12, padding: 12 },
+  textarea: { borderWidth: 1, borderColor: "#ccc", borderRadius: 12, padding: 12, minHeight: 90 },
+  createBtn: { backgroundColor: "#111", borderRadius: 12, padding: 14, alignItems: "center", marginTop: 16 },
   createBtnText: { color: "#fff", fontWeight: "700" },
-  logBox: { marginTop: 20, backgroundColor: "#f3f3f3", borderRadius: 10, padding: 12 },
+  previewBtn: { borderWidth: 1, borderColor: "#111", borderRadius: 12, padding: 12, alignItems: "center", marginTop: 10 },
+  previewBtnText: { color: "#111", fontWeight: "700" },
+  disabled: { opacity: 0.4 },
+  logBox: { marginTop: 16, backgroundColor: "#f3f3f3", borderRadius: 10, padding: 12 },
   logLine: { marginBottom: 4, fontFamily: "monospace", fontSize: 13 },
+  modalHead: { flexDirection: "row", alignItems: "center", paddingTop: 40, paddingBottom: 12, paddingHorizontal: 16, borderBottomWidth: 1, borderColor: "#eee" },
+  modalTitle: { flex: 1, fontWeight: "700", fontSize: 16 },
+  closeText: { color: "#2563eb", fontWeight: "700" },
+  error: { color: "#c0392b", margin: 16 },
 });

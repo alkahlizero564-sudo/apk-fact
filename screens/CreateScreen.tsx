@@ -1,17 +1,13 @@
 import React, { useState } from "react";
 import { View, TextInput, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
-import * as SecureStore from "expo-secure-store";
 import { pushFile, listWorkflowRuns, latestRunId, getFileText, getFailureLog } from "../services/github";
+import { REPO } from "../services/config";
 
-type Slot = "1" | "2";
 type Mode = "new" | "edit";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const SETUP_FILES = [".github/workflows/generate.yml", "generate.js"];
-
 export default function CreateScreen() {
-  const [appSlot, setAppSlot] = useState<Slot>("1");
   const [mode, setMode] = useState<Mode>("new");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -22,41 +18,11 @@ export default function CreateScreen() {
     setLog((prev) => [...prev, line]);
   }
 
-  async function safeRead(repo: string, path: string) {
-    try {
-      return await getFileText(repo, path);
-    } catch {
-      return null;
-    }
-  }
-
-  async function ensureSetup(repo: string) {
-    const missing: string[] = [];
-    for (const p of SETUP_FILES) {
-      if (!(await safeRead(repo, p))) missing.push(p);
-    }
-    if (missing.length === 0) return;
-
-    const templateRepo = await SecureStore.getItemAsync("GITHUB_REPO_1");
-    if (!templateRepo || templateRepo === repo) {
-      throw new Error("ملفات التوليد ناقصة، ولا يوجد مستودع أول لنسخها منه.");
-    }
-
-    addLog("⏳ المستودع جديد، بيتجهّز تلقائياً...");
-    for (const p of missing) {
-      const text = await getFileText(templateRepo, p);
-      if (!text) throw new Error(`الملف ${p} مش موجود في المستودع الأول.`);
-      await pushFile(repo, p, text, `Setup: ${p}`);
-    }
-    addLog("✅ اتجهّز المستودع. (لازم يكون عندك ANTHROPIC_API_KEY وGEMINI_API_KEY في أسراره)");
-    await sleep(4000);
-  }
-
-  async function waitForRun(repo: string, prevId: number) {
+  async function waitForRun(prevId: number) {
     const started = Date.now();
     while (Date.now() - started < 4 * 60 * 1000) {
       await sleep(5000);
-      const runs = await listWorkflowRuns(repo, "generate.yml");
+      const runs = await listWorkflowRuns(REPO, "generate.yml");
       const run = runs.find((r: any) => r.id > prevId);
       if (run && run.status === "completed") return run;
     }
@@ -78,23 +44,15 @@ export default function CreateScreen() {
     setLog([]);
     setLoading(true);
     try {
-      const repo = await SecureStore.getItemAsync(appSlot === "1" ? "GITHUB_REPO_1" : "GITHUB_REPO_2");
-      if (!repo) {
-        addLog("❌ مفيش مستودع محفوظ. حطه في تبويب المفاتيح.");
-        return;
-      }
-
-      await ensureSetup(repo);
-
-      const prevId = await latestRunId(repo, "generate.yml");
+      const prevId = await latestRunId(REPO, "generate.yml");
 
       addLog("⏳ بيتم إرسال الطلب...");
       const content = `${cleanName}\n${description.trim()}\n\n(request id: ${Date.now()})\n`;
-      await pushFile(repo, "request.txt", content, `${mode === "edit" ? "Edit" : "Create"}: ${cleanName}`);
+      await pushFile(REPO, "request.txt", content, `${mode === "edit" ? "Edit" : "Create"}: ${cleanName}`);
       addLog("✅ تم إرسال الطلب.");
       addLog("⏳ بيتولّد الكود... (من نصف دقيقة لدقيقتين)");
 
-      const run = await waitForRun(repo, prevId);
+      const run = await waitForRun(prevId);
       if (!run) {
         addLog("⚠️ التوليد أخذ وقت طويل. جرّب تبويب المعاينة بعد شوية.");
         return;
@@ -102,12 +60,12 @@ export default function CreateScreen() {
 
       if (run.conclusion !== "success") {
         addLog("❌ فشل التوليد.");
-        const tail = await getFailureLog(repo, run.id);
+        const tail = await getFailureLog(REPO, run.id);
         if (tail) addLog(tail);
         return;
       }
 
-      const html = await getFileText(repo, `apps/${cleanName}/index.html`);
+      const html = await getFileText(REPO, `apps/${cleanName}/index.html`);
       if (!html) {
         addLog("⚠️ التوليد نجح لكن الملف ما ظهر. حدّث المعاينة بعد شوية.");
         return;
@@ -123,16 +81,6 @@ export default function CreateScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.label}>المستودع</Text>
-      <View style={styles.row}>
-        <TouchableOpacity style={[styles.pill, appSlot === "1" && styles.pillActive]} onPress={() => setAppSlot("1")}>
-          <Text style={appSlot === "1" ? styles.pillTextActive : styles.pillText}>التطبيق الأول</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.pill, appSlot === "2" && styles.pillActive]} onPress={() => setAppSlot("2")}>
-          <Text style={appSlot === "2" ? styles.pillTextActive : styles.pillText}>التطبيق الثاني</Text>
-        </TouchableOpacity>
-      </View>
-
       <Text style={styles.label}>الوضع</Text>
       <View style={styles.row}>
         <TouchableOpacity style={[styles.pill, mode === "new" && styles.pillActive]} onPress={() => setMode("new")}>

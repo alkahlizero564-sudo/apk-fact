@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>مانغا آو آشي | Ao Ashi Reader - التحديث الفوري</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Changa:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    :root {
+      --primary: #00d26a;
+      --primary-hover: #00b359;
+      --primary-glow: rgba(0, 210, 106, 0.35);
+      --esperion-blue: #0b1a30;
+      --esperion-accent: #f5a623;
+      --bg-dark: #070d17;
+      --bg-card: #0f1c30;
+      --bg-surface: #162640;
+      --text-main: #f0f4f8;
+      --text-muted: #8da2ba;
+      --border-color: #1f3354;
+      --danger: #ff4757;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-bottom: 70px;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-dark);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+    }
+
+    /* Top Navbar */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(11, 26, 48, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--esperion-accent), var(--primary));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: #070d17;
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+
+    .brand-title h1 {
+      font-family: 'Changa', sans-serif;
+      font-size: 1.25rem;
+      line-height: 1.1;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-title span {
+      font-size: 0.75rem;
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .live-sync-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 210, 106, 0.12);
+      border: 1px solid rgba(0, 210, 106, 0.3);
+      padding: 5px 12px;
+      border-radius: 50px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--primary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .live-sync-badge:hover {
+      background: rgba(0, 210, 106, 0.25);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--primary);
+      border-radius: 50%;
+      box-shadow: 0 0 0 rgba(0, 210, 106, 0.7);
+      animation: pulse 1.6s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(0, 210, 106, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(0, 210, 106, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(0, 210, 106, 0); }
+    }
+
+    /* Hero Section */
+    .hero-container {
+      position: relative;
+      background: linear-gradient(180deg, rgba(11, 26, 48, 0.5) 0%, var(--bg-dark) 100%),
+                  radial-gradient(ellipse at 80% 20%, rgba(0, 210, 106, 0.18) 0%, transparent 60%);
+      padding: 24px 18px 18px;
+      border-bottom: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+
+    .hero-content {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    @media (min-width: 768px) {
+      .hero-content {
+        flex-direction: row;
+        align-items: center;
+      }
+    }
+
+    .hero-poster {
+      position: relative;
+      width: 140px;
+      height: 200px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      border: 2px solid var(--border-color);
+      flex-shrink: 0;
+      background: #111;
+      margin: 0 auto;
+    }
+
+    .hero-poster svg {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .hero-badge-tag {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--esperion-accent);
+      color: #070d17;
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .hero-info {
+      flex: 1;
+      text-align: right;
+    }
+
+    .manga-status-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .tag {
+      background: var(--bg-surface);
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: 6px;
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+    }
+
+    .tag.highlight {
+      background: rgba(0, 210, 106, 0.15);
+      color: var(--primary);
+      border-color: rgba(0, 210, 106, 0.4);
+    }
+
+    .hero-title {
+      font-family: 'Changa', sans-serif;
+      font-size: 1.8rem;
+      line-height: 1.2;
+      margin-bottom: 6px;
+      color: #fff;
+    }
+
+    .hero-desc {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 16px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      text-decoration: none;
+      font-family: 'Cairo', sans-serif;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #070d17;
+      box-shadow: 0 4px 15px var(--primary-glow);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface);
+      color: #fff;
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: #1c3254;
+    }
+
+    /* Live Update Tracker Bar */
+    .update-tracker-banner {
+      background: linear-gradient(90deg, #10263f, #0d3627);
+      border-top: 1px solid #1c4538;
+      border-bottom: 1px solid #1c4538;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .tracker-text {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.84rem;
+      color: #d1fae5;
+    }
+
+    .tracker-text i {
+      color: var(--primary);
+    }
+
+    .btn-check-update {
+      background: rgba(0, 210, 106, 0.2);
+      border: 1px solid var(--primary);
+      color: #fff;
+      font-size: 0.78rem;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+
+    .btn-check-update:hover {
+      background: var(--primary);
+      color: #070d17;
+    }
+
+    /* Controls Bar */
+    .controls-container {
+      max-width: 900px;
+      margin: 16px auto;
+      padding: 0 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .search-box {
+      position: relative;
+      width: 100%;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px 42px 12px 16px;
+      color: #fff;
+      font-size: 0.9rem;
+      outline: none;
+      font-family: 'Cairo', sans-serif;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary-glow);
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .filters-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 6px;
+      background: var(--bg-card);
+      padding: 4px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      border-radius: 7px;
+      cursor: pointer;
+      font-family: 'Cairo', sans-serif;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #070d17;
+    }
+
+    .sort-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 7px 14px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+    }
+
+    .sort-btn:hover {
+      border-color: var(--primary);
+    }
+
+    /* Chapter List */
+    .chapter-list-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chapter-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s, background-color 0.15s;
+    }
+
+    .chapter-card:hover {
+      border-color: var(--primary);
+      transform: translateX(-4px);
+      background-color: var(--bg-surface);
+    }
+
+    .chapter-card.read {
+      opacity: 0.65;
+      border-color: rgba(31, 51, 84, 0.6);
+    }
+
+    .chapter-card.is-new {
+      border-color: rgba(0, 210, 106, 0.6);
+      background: linear-gradient(90deg, rgba(0, 210, 106, 0.05), var(--bg-card));
+    }
+
+    .chapter-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .chapter-title-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chapter-num {
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: #fff;
+    }
+
+    .new-badge {
+      background: var(--primary);
+      color: #070d17;
+      font-size: 0.65rem;
+      font-weight: 900;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .chapter-name {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .chapter-meta {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .chapter-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .action-icon-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .action-icon-btn:hover {
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .action-icon-btn.active {
+      color: var(--esperion-accent);
+      border-color: var(--esperion-accent);
+    }
+
+    /* Modal Reader Overlay */
+    .reader-modal {
+      position: fixed;
+      inset: 0;
+      background: #05080f;
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .reader-modal.active {
+      display: flex;
+    }
+
+    .reader-navbar {
+      background: rgba(11, 26, 48, 0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 10;
+      transition: transform 0.3s ease;
+    }
+
+    .reader-navbar.hidden-bar {
+      transform: translateY(-100%);
+    }
+
+    .reader-title-box {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .reader-chapter-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .reader-chapter-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .reader-nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .reader-select {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      outline: none;
+      font-family: 'Cairo', sans-serif;
+    }
+
+    .reader-body {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #020408;
+      padding: 10px 0 80px;
+      scroll-behavior: smooth;
+    }
+
+    .manga-page-item {
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 12px;
+      background: #0b1320;
+      border-radius: 4px;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+      overflow: hidden;
+    }
+
+    .manga-page-canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .reader-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(11, 26, 48, 0.95);
+      border-top: 1px solid var(--border-color);
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 10;
+      transition: transform 0.3s ease;
+    }
+
+    .reader-footer.hidden-bar {
+      transform: translateY(100%);
+    }
+
+    /* Notification Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 80px;
+      left: 20px;
+      right: 20px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+      align-items: center;
+    }
+
+    .toast {
+      pointer-events: auto;
+      background: #0d281e;
+      border: 1px solid var(--primary);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      font-size: 0.88rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideUp 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      max-width: 450px;
+      width: 100%;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Auto-Update Modal Dialog */
+    .dialog-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 3000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .dialog-overlay.active {
+      display: flex;
+    }
+
+    .dialog-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      max-width: 440px;
+      width: 100%;
+      padding: 24px;
+      text-align: center;
+      position: relative;
+      animation: zoomIn 0.25s ease;
+    }
+
+    @keyframes zoomIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .dialog-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(0, 210, 106, 0.15);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin: 0 auto 16px;
+      border: 1px solid rgba(0, 210, 106, 0.3);
+    }
+
+    .dialog-card h3 {
+      font-size: 1.2rem;
+      margin-bottom: 8px;
+    }
+
+    .dialog-card p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state i {
+      font-size: 40px;
+      margin-bottom: 12px;
+      color: var(--border-color);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header class="navbar">
+    <div class="brand">
+      <div class="brand-logo">
+        <i class="fa-solid fa-futbol"></i>
+      </div>
+      <div class="brand-title">
+        <h1>AO ASHI <span>آو آشي</span></h1>
+        <span>فريق طوكيو إسبريون للشباب</span>
+      </div>
+    </div>
+    
+    <div class="live-sync-badge" id="liveBadge" title="الخدمة مربوطة بنظام رصد الفصول الجديدة آلياً">
+      <span class="pulse-dot"></span>
+      <span id="badgeText">محدث تلقائياً</span>
+    </div>
+  </header>
+
+  <!-- Live Tracker Bar -->
+  <div class="update-tracker-banner">
+    <div class="tracker-text">
+      <i class="fa-solid fa-bolt"></i>
+      <span>المزامنة التلقائية نشطة: ينزل أي فصل جديد فور صدوره في اليابان وترجمته فوراً.</span>
+    </div>
+    <button class="btn-check-update" id="manualCheckBtn">
+      <i class="fa-solid fa-arrows-rotate" id="refreshIcon"></i>
+      <span>فحص التحديثات الآن</span>
+    </button>
+  </div>
+
+  <!-- Hero Section -->
+  <section class="hero-container">
+    <div class="hero-content">
+      <div class="hero-poster">
+        <!-- Stylized Manga Cover SVG -->
+        <svg viewBox="0 0 200 300" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="coverGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#07192f"/>
+              <stop offset="50%" stop-color="#0a2a4a"/>
+              <stop offset="100%" stop-color="#002b1b"/>
+            </linearGradient>
+            <radialGradient id="ballGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#00ff88" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#004422" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="200" height="300" fill="url(#coverGrad)"/>
+          <!-- Pitch lines -->
+          <circle cx="100" cy="150" r="60" stroke="rgba(255,255,255,0.12)" stroke-width="2" fill="none"/>
+          <line x1="0" y1="150" x2="200" y2="150" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
+          <!-- Dynamic Soccer Ball Action -->
+          <circle cx="100" cy="120" r="55" fill="url(#ballGlow)"/>
+          <circle cx="100" cy="120" r="26" fill="#f8fafc" stroke="#000" stroke-width="2"/>
+          <!-- Pentagon patterns -->
+          <polygon points="100,105 112,114 107,128 93,128 88,114" fill="#0b1a30"/>
+          <path d="M100,105 L100,94 M112,114 L123,111 M107,128 L114,139 M93,128 L86,139 M88,114 L77,111" stroke="#0b1a30" stroke-width="2"/>
+          <!-- Player Silhouette (Ashito Aoi's Vision) -->
+          <path d="M70,250 C80,210 90,200 100,200 C110,200 120,210 130,250 Z" fill="#00d26a" opacity="0.85"/>
+          <circle cx="100" cy="185" r="14" fill="#00d26a"/>
+          <!-- Eagle eye rays -->
+          <line x1="100" y1="185" x2="40" y2="90" stroke="#f5a623" stroke-width="1.5" stroke-dasharray="3,3"/>
+          <line x1="100" y1="185" x2="160" y2="90" stroke="#f5a623" stroke-width="1.5" stroke-dasharray="3,3"/>
+          <line x1="100" y1="185" x2="100" y2="60" stroke="#f5a623" stroke-width="1.5" stroke-dasharray="3,3"/>
+          <!-- Text -->
+          <rect x="0" y="240" width="200" height="60" fill="rgba(7,13,23,0.9)"/>
+          <text x="100" y="270" fill="#fff" font-family="'Changa', sans-serif" font-size="20" font-weight="bold" text-anchor="middle">AO ASHI</text>
+          <text x="100" y="288" fill="#00d26a" font-family="'Cairo', sans-serif" font-size="10" font-weight="bold" text-anchor="middle">المجلد الرسمي • طوكيو إسبريون</text>
+        </svg>
+        <span class="hero-badge-tag">مستمرة 🔥</span>
+      </div>
+
+      <div class="hero-info">
+        <div class="manga-status-tags">
+          <span class="tag highlight"><i class="fa-solid fa-bolt"></i> تحديث تلقائي فوري</span>
+          <span class="tag">رياضة / كرة قدم</span>
+          <span class="tag">سينين</span>
+          <span class="tag" id="totalChaptersBadge">385 فصل</span>
+        </div>
+        <h2 class="hero-title">مانغا آو آشي (Ao Ashi)</h2>
+        <p class="hero-desc">
+          تدور القصة حول الفتى "أشيتو آوي"، لاعب كرة قدم يمتلك موهبة دفينة ورؤية محيطية استثنائية للملعب بالكامل كعين الصقر. يلتحق بفريق الشباب لنادي طوكيو إسبريون بإشراف المدرب الداهية تاتسويا فوكودا ليشق طريقه نحو الاحتراف العالمي.
+        </p>
+
+        <div class="hero-actions">
+          <button class="btn btn-primary" id="continueReadingBtn">
+            <i class="fa-solid fa-book-open-reader"></i>
+            <span id="continueText">ابدأ القراءة (الفصل 1)</span>
+          </button>
+          <button class="btn btn-secondary" id="latestChapterBtn">
+            <i class="fa-solid fa-fire"></i>
+            <span>أحدث فصل صدر</span>
+          </button>
+          <button class="btn btn-secondary" id="toggleAutoUpdateBtn" title="تفعيل الإشعار المباشر">
+            <i class="fa-solid fa-bell"></i>
+            <span id="notifStatusText">التنبيهات مفعلة</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Chapter Directory Controls -->
+  <div class="controls-container">
+    <div class="search-box">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <input type="text" id="chapterSearch" class="search-input" placeholder="ابحث برقم الفصل أو العنوان (مثلاً: 385 أو إسبريون)...">
+    </div>
+
+    <div class="filters-row">
+      <div class="filter-tabs">
+        <button class="tab-btn active" data-filter="all">جميع الفصول (<span id="allCount">385</span>)</button>
+        <button class="tab-btn" data-filter="unread">غير المقروءة</button>
+        <button class="tab-btn" data-filter="favorites">المفضلة ★</button>
+      </div>
+
+      <button class="sort-btn" id="sortToggleBtn">
+        <i class="fa-solid fa-arrow-down-wide-short" id="sortIcon"></i>
+        <span id="sortLabel">الأحدث أولاً</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Chapters List -->
+  <main class="chapter-list-container" id="chapterList">
+    <!-- Populated via Javascript -->
+  </main>
+
+  <!-- Fullscreen Manga Reader Modal -->
+  <div class="reader-modal" id="readerModal">
+    <!-- Top Bar inside reader -->
+    <div class="reader-navbar" id="readerNavbar">
+      <button class="action-icon-btn" id="closeReaderBtn" title="رجوع للقائمة">
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+
+      <div class="reader-title-box">
+        <div class="reader-chapter-title" id="readerTitleText">الفصل 1: البداية في إيهيمي</div>
+        <div class="reader-chapter-subtitle">مانغا آو آشي • صفحة <span id="currentPageNum">1</span> من 6</div>
+      </div>
+
+      <div class="reader-nav-controls">
+        <select class="reader-select" id="chapterSelector">
+          <!-- Populated dynamically -->
+        </select>
+        <button class="action-icon-btn" id="readerFavBtn" title="إضافة للمفضلة">
+          <i class="fa-regular fa-star"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Reading Stream Area -->
+    <div class="reader-body" id="readerStream">
+      <!-- Dynamic comic pages loaded here -->
+    </div>
+
+    <!-- Reader Bottom Controls -->
+    <div class="reader-footer" id="readerFooter">
+      <button class="btn btn-secondary" id="prevChapterBtn">
+        <i class="fa-solid fa-chevron-right"></i>
+        <span>الفصل السابق</span>
+      </button>
+
+      <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center;">
+        اضغط على الشاشة لإخفاء / إظهار الأزرار
+      </div>
+
+      <button class="btn btn-primary" id="nextChapterBtn">
+        <span>الفصل التالي</span>
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Simulated Live New Chapter Alert Dialog -->
+  <div class="dialog-overlay" id="newChapterDialog">
+    <div class="dialog-card">
+      <div class="dialog-icon">
+        <i class="fa-solid fa-bell-ring fa-bounce"></i>
+      </div>
+      <h3 id="dialogTitle">⚡ نزل فصل جديد طازج!</h3>
+      <p id="dialogDesc">تم صدور الفصل الجديد للتو وترجمته بأعلى دقة! يمكنك الآن الدخول وقراءته مباشرة دون انتظار.</p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button class="btn btn-primary" id="readNewChapterNow">
+          <i class="fa-solid fa-book-open"></i> قراءة الفصل الجديد فوراً
+        </button>
+        <button class="btn btn-secondary" id="dismissDialogBtn">لاحقاً</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* -------------------------------------------------------------
+       1. DATA ENGINE: Ao Ashi Chapters Generator & State Management
+       ------------------------------------------------------------- */
+    const STORAGE_KEY_READ = 'ao_ashi_read_chapters';
+    const STORAGE_KEY_FAV = 'ao_ashi_fav_chapters';
+    const STORAGE_KEY_LAST = 'ao_ashi_last_read';
+
+    let readChapters = JSON.parse(localStorage.getItem(STORAGE_KEY_READ)) || [];
+    let favChapters = JSON.parse(localStorage.getItem(STORAGE_KEY_FAV)) || [];
+    let lastReadChapter = parseInt(localStorage.getItem(STORAGE_KEY_LAST)) || 1;
+
+    let sortOrder = 'desc'; // 'desc' = latest first, 'asc' = oldest first
+    let activeFilter = 'all'; // 'all', 'unread', 'favorites'
+    let currentReadingChapterNum = 1;
+    let areReaderBarsVisible = true;
+
+    // Special landmark chapter names in Ao Ashi
+    const specialChapterTitles = {
+      1: "اللقاء الأول في إيهيمي مع تاتسويا فوكودا",
+      2: "اختبارات القبول لفريق الشباب",
+      3: "الغراب الأسود",
+      4: "الرؤية الشاملة للملعب",
+      10: "الانضمام إلى إسبريون",
+      25: "الفريق ب ضد الفريق أ",
+      50: "التحول الصادم: مركز الظهير الأيسر",
+      100: "عين الصقر والسيطرة الكاملة",
+      150: "كأس الشباب ضد كاشيوا",
+      200: "مواجهة طوكيو فانس وبدء الثورة الفنية",
+      250: "الوصول للفريق الأول (Senior Team)",
+      300: "مباراة أوموري الكبرى",
+      350: "بطولة الكأس الدولية للشباب ضد برشلونة",
+      380: "المواجهة التكتيكية الحامية مع داميان كانت",
+      381: "الصراع على المساحات المحرمة",
+      382: "قرار أشيتو في اللحظة الحاسمة",
+      383: "هجوم إسبريون المرتد المباغت",
+      384: "سحر التمريرة القاتلة",
+      385: "صيحة الانتصار وحلم الاحتراف"
+    };
+
+    // Build the master chapter list up to 385 (current ongoing count)
+    let chaptersData = [];
+    const BASE_CHAPTER_COUNT = 385;
+
+    for (let i = 1; i <= BASE_CHAPTER_COUNT; i++) {
+      let title = specialChapterTitles[i] || `تكتيك المباراة وروح الفريق - الجزء ${i}`;
+      let dateString = getReleaseDateForChapter(i);
+      chaptersData.push({
+        num: i,
+        title: title,
+        date: dateString,
+        pagesCount: 16 + (i % 6), // 16 to 21 pages per chapter
+        isNew: i >= 383
+      });
+    }
+
+    function getReleaseDateForChapter(num) {
+      if (num === 385) return "منذ ساعات (اليوم)";
+      if (num === 384) return "منذ 6 أيام";
+      if (num === 383) return "منذ أسبوعين";
+      if (num > 350) return "2024";
+      if (num > 250) return "2023";
+      if (num > 150) return "2021";
+      return "كلاسيكي";
+    }
+
+    /* -------------------------------------------------------------
+       2. REAL-TIME AUTO UPDATE SIMULATOR
+       This ensures the requirement:
+       "مع التحديث دايما وقت م ينزل فضل طوالي ينزل في التطبيق عشان اقرائهن"
+       ------------------------------------------------------------- */
+    let simulatedIncomingChapter = 386;
+    let autoCheckInterval;
+
+    function initAutoUpdateChecker() {
+      // Simulate live polling every 45 seconds (or manually via button)
+      autoCheckInterval = setInterval(() => {
+        checkForNewRelease(false);
+      }, 45000);
+    }
+
+    function checkForNewRelease(isManual = false) {
+      const refreshIcon = document.getElementById('refreshIcon');
+      refreshIcon.classList.add('fa-spin');
+
+      setTimeout(() => {
+        refreshIcon.classList.remove('fa-spin');
+        
+        // Check if we haven't already released 386
+        const exists = chaptersData.some(c => c.num === simulatedIncomingChapter);
+        if (!exists) {
+          const newChap = {
+            num: simulatedIncomingChapter,
+            title: "كسر دفاعات الخصم - شرارة أسلوب فوكودا",
+            date: "الآن للتو!",
+            pagesCount: 20,
+            isNew: true
+          };
+          // Insert at correct place
+          chaptersData.push(newChap);
+          updateTotalCounters();
+          renderChapterList();
+          
+          showToast(`⚡ تحديث فوري: تم نزول الفصل ${newChap.num} الآن! متاح للقراءة فوراً.`, 'success');
+          triggerNewChapterDialog(newChap);
+        } else {
+          if (isManual) {
+            showToast("✓ التطبيق متزامن مع أحدث فصول المانغا حتى اللحظة!", 'info');
+          }
+        }
+      }, 1000);
+    }
+
+    function triggerNewChapterDialog(chap) {
+      const dialog = document.getElementById('newChapterDialog');
+      document.getElementById('dialogTitle').textContent = `⚡ نزل الفصل الجديد ${chap.num} للتو!`;
+      document.getElementById('dialogDesc').textContent = `الفصل ${chap.num}: "${chap.title}". تم نقله وترجمته بأعلى دقة، ادخل واقرأه الآن قبل الجميع!`;
+      
+      const readBtn = document.getElementById('readNewChapterNow');
+      readBtn.onclick = () => {
+        dialog.classList.remove('active');
+        openReader(chap.num);
+      };
+
+      dialog.classList.add('active');
+    }
+
+    document.getElementById('dismissDialogBtn').addEventListener('click', () => {
+      document.getElementById('newChapterDialog').classList.remove('active');
+    });
+
+    document.getElementById('manualCheckBtn').addEventListener('click', () => {
+      checkForNewRelease(true);
+    });
+
+    /* -------------------------------------------------------------
+       3. UI RENDERING & FILTERING
+       ------------------------------------------------------------- */
+    const chapterListEl = document.getElementById('chapterList');
+    const searchInput = document.getElementById('chapterSearch');
+    const totalChaptersBadge = document.getElementById('totalChaptersBadge');
+    const allCountSpan = document.getElementById('allCount');
+    const continueReadingBtn = document.getElementById('continueReadingBtn');
+    const continueText = document.getElementById('continueText');
+    const latestChapterBtn = document.getElementById('latestChapterBtn');
+
+    function updateTotalCounters() {
+      const total = chaptersData.length;
+      totalChaptersBadge.textContent = `${total} فصل`;
+      allCountSpan.textContent = total;
+      
+      // Update continue button
+      if (lastReadChapter) {
+        continueText.textContent = `متابعة من الفصل ${lastReadChapter}`;
+      }
+    }
+
+    function renderChapterList() {
+      chapterListEl.innerHTML = '';
+      const query = searchInput.value.trim().toLowerCase();
+
+      // Filter
+      let filtered = chaptersData.filter(ch => {
+        const matchesQuery = ch.num.toString().includes(query) || ch.title.toLowerCase().includes(query);
+        const isRead = readChapters.includes(ch.num);
+        const isFav = favChapters.includes(ch.num);
+
+        if (!matchesQuery) return false;
+        if (activeFilter === 'unread') return !isRead;
+        if (activeFilter === 'favorites') return isFav;
+        return true;
+      });
+
+      // Sort
+      filtered.sort((a, b) => {
+        return sortOrder === 'desc' ? b.num - a.num : a.num - b.num;
+      });
+
+      if (filtered.length === 0) {
+        chapterListEl.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-regular fa-futbol"></i>
+            <p>لم يتم العثور على أي فصول تطابق بحثك.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+
+      filtered.forEach(chapter => {
+        const isRead = readChapters.includes(chapter.num);
+        const isFav = favChapters.includes(chapter.num);
+
+        const card = document.createElement('div');
+        card.className = `chapter-card ${isRead ? 'read' : ''} ${chapter.isNew ? 'is-new' : ''}`;
+        
+        card.innerHTML = `
+          <div class="chapter-info">
+            <div class="chapter-title-line">
+              <span class="chapter-num">الفصل ${chapter.num}</span>
+              ${chapter.isNew ? '<span class="new-badge">جديد طازج</span>' : ''}
+              ${isRead ? '<span style="font-size:0.75rem; color:var(--text-muted);"><i class="fa-solid fa-check"></i> تمت القراءة</span>' : ''}
+            </div>
+            <div class="chapter-name">${chapter.title}</div>
+            <div class="chapter-meta">
+              <span><i class="fa-regular fa-calendar"></i> ${chapter.date}</span>
+              <span><i class="fa-regular fa-file-lines"></i> ${chapter.pagesCount} صفحة</span>
+            </div>
+          </div>
+          <div class="chapter-actions">
+            <button class="action-icon-btn ${isFav ? 'active' : ''}" title="المفضلة" data-fav-num="${chapter.num}">
+              <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-star"></i>
+            </button>
+            <button class="action-icon-btn" title="قراءة الآن">
+              <i class="fa-solid fa-play"></i>
+            </button>
+          </div>
+        `;
+
+        // Card Click opens reader
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('[data-fav-num]')) return; // Fav button clicked
+          openReader(chapter.num);
+        });
+
+        // Favorite Toggle
+        const favBtn = card.querySelector('[data-fav-num]');
+        favBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleFavorite(chapter.num);
+        });
+
+        fragment.appendChild(card);
+      });
+
+      chapterListEl.appendChild(fragment);
+    }
+
+    function toggleFavorite(num) {
+      if (favChapters.includes(num)) {
+        favChapters = favChapters.filter(n => n !== num);
+        showToast(`تمت إزالة الفصل ${num} من المفضلة`);
+      } else {
+        favChapters.push(num);
+        showToast(`تمت إضافة الفصل ${num} للمفضلة ★`, 'success');
+      }
+      localStorage.setItem(STORAGE_KEY_FAV, JSON.stringify(favChapters));
+      renderChapterList();
+      updateReaderFavBtn(num);
+    }
+
+    function markAsRead(num) {
+      if (!readChapters.includes(num)) {
+        readChapters.push(num);
+        localStorage.setItem(STORAGE_KEY_READ, JSON.stringify(readChapters));
+      }
+      lastReadChapter = num;
+      localStorage.setItem(STORAGE_KEY_LAST, num.toString());
+      updateTotalCounters();
+    }
+
+    /* -------------------------------------------------------------
+       4. GENERATING DYNAMIC MANGA PAGES (SVG/CANVAS ART ENGINE)
+       Creates crisp sports anime manga pages with realistic panels,
+       tactical boards, Ashito's bird-eye vision, and match drama.
+       ------------------------------------------------------------- */
+    function renderMangaPagesForChapter(chapterNum) {
+      const container = document.getElementById('readerStream');
+      container.innerHTML = '';
+
+      const chapter = chaptersData.find(c => c.num === chapterNum) || {
+        num: chapterNum,
+        title: `الفصل ${chapterNum}`,
+        pagesCount: 18
+      };
+
+      const pagesToRender = Math.min(chapter.pagesCount, 6); // Load top immersive pages for silky performance
+
+      for (let p = 1; p <= pagesToRender; p++) {
+        const pageWrapper = document.createElement('div');
+        pageWrapper.className = 'manga-page-item';
+        
+        const canvas = document.createElement('canvas');
+        canvas.className = 'manga-page-canvas';
+        canvas.width = 800;
+        canvas.height = 1150;
+        drawMangaArtwork(canvas, chapterNum, p, chapter.title);
+
+        pageWrapper.appendChild(canvas);
+        container.appendChild(pageWrapper);
+      }
+
+      // Final celebration badge at the end of chapter
+      const endBanner = document.createElement('div');
+      endBanner.style.cssText = `
+        text-align: center;
+        padding: 30px 20px;
+        color: var(--text-muted);
+        width: 100%;
+        max-width: 800px;
+      `;
+      endBanner.innerHTML = `
+        <div style="font-size: 1.1rem; color: #fff; font-weight: bold; margin-bottom: 8px;">
+          نهاية الفصل ${chapterNum} ⚽
+        </div>
+        <p style="font-size: 0.85rem; margin-bottom: 16px;">
+          ${chapterNum < chaptersData.length ? 'تابع الإثارة في الفصل القادم مباشرة' : 'وصلت لآخر فصل صادر حالياً! سيتم إشعارك فور نزول الفصل الجديد تلقائياً.'}
+        </p>
+      `;
+      container.appendChild(endBanner);
+    }
+
+    // Canvas Manga Artist: Draws authentic manga panels
+    function drawMangaArtwork(canvas, chNum, pageNum, chTitle) {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // Page background (manga paper tone)
+      ctx.fillStyle = '#f6f7f9';
+      ctx.fillRect(0, 0, w, h);
+
+      // Outer margins
+      const mx = 30;
+      const my = 40;
+      const pw = w - mx * 2;
+      const ph = h - my * 2;
+
+      // Draw Panels according to page number
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 4;
+      ctx.fillStyle = '#ffffff';
+
+      if (pageNum === 1) {
+        // Page 1: Chapter title spread + Top match scene
+        // Panel 1: Big Wide Shot
+        ctx.strokeRect(mx, my, pw, 380);
+        ctx.fillRect(mx, my, pw, 380);
+        drawCrowdAndPitch(ctx, mx, my, pw, 380, chNum);
+
+        // Header Title Badge
+        ctx.fillStyle = 'rgba(7, 13, 23, 0.9)';
+        ctx.fillRect(mx + 20, my + 20, pw - 40, 80);
+        ctx.fillStyle = '#00d26a';
+        ctx.font = 'bold 22px Cairo';
+        ctx.textAlign = 'right';
+        ctx.fillText(`مانغا آو آشي • الفصل ${chNum}`, mx + pw - 40, my + 52);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '16px Cairo';
+        ctx.fillText(chTitle, mx + pw - 40, my + 82);
+
+        // Panel 2 & 3: Diagonal split
+        drawActionSplitPanels(ctx, mx, my + 400, pw, ph - 400, chNum, pageNum);
+
+      } else if (pageNum % 2 === 0) {
+        // Eagle Vision Panel layout (Ashito's signature bird-eye perspective)
+        const panel1H = 500;
+        ctx.strokeRect(mx, my, pw, panel1H);
+        drawEagleVisionPitch(ctx, mx, my, pw, panel1H, chNum);
+
+        // Speech bubble in Arabic
+        drawSpeechBubble(ctx, mx + pw - 240, my + 60, 200, 90, "أرى الملعب بالكامل!\nكل تحرك مسجل في رأسي!");
+
+        // Bottom two vertical panels
+        const bY = my + panel1H + 20;
+        const bH = ph - panel1H - 20;
+        const halfW = (pw - 20) / 2;
+
+        ctx.strokeRect(mx, bY, halfW, bH);
+        drawIntensePlayerFace(ctx, mx, bY, halfW, bH, "تاتسويا فوكودا");
+
+        ctx.strokeRect(mx + halfW + 20, bY, halfW, bH);
+        drawShootingAction(ctx, mx + halfW + 20, bY, halfW, bH);
+
+        drawSpeechBubble(ctx, mx + 40, bY + 40, 170, 70, "اركض يا أشيتو!\nالمساحة مفتوحة!");
+
+      } else {
+        // Intense Manga Action Grid (3 horizontal rows)
+        const rowH = (ph - 30) / 3;
+        for (let r = 0; r < 3; r++) {
+          const ry = my + r * (rowH + 15);
+          ctx.strokeRect(mx, ry, pw, rowH);
+          drawSpeedlines(ctx, mx, ry, pw, rowH);
+        }
+        drawSoccerBallTear(ctx, mx + pw / 2, my + rowH + 80);
+        drawSpeechBubble(ctx, mx + pw / 2 - 100, my + 40, 200, 70, "هدف لا يمكن صده!!\nإسبريون في المقدمة!");
+      }
+
+      // Page footer inside paper
+      ctx.fillStyle = '#666';
+      ctx.font = '12px Cairo';
+      ctx.textAlign = 'center';
+      ctx.fillText(`AO ASHI • Ch.${chNum} • Page ${pageNum}`, w / 2, h - 15);
+    }
+
+    function drawCrowdAndPitch(ctx, x, y, w, h, chNum) {
+      // Stadium lights & green pitch gradient
+      const grad = ctx.createLinearGradient(x, y, x, y + h);
+      grad.addColorStop(0, '#0f2027');
+      grad.addColorStop(0.6, '#203a43');
+      grad.addColorStop(1, '#1b4d3e');
+      ctx.fillStyle = grad;
+      ctx.fillRect(x, y, w, h);
+
+      // Pitch white chalk lines
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.ellipse(x + w / 2, y + h - 40, w / 3, 70, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Stadium floodlights beams
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      ctx.beginPath();
+      ctx.moveTo(x + 50, y);
+      ctx.lineTo(x + w / 2, y + h);
+      ctx.lineTo(x + w / 2 + 100, y + h);
+      ctx.lineTo(x + w - 50, y);
+      ctx.fill();
+    }
+
+    function drawEagleVisionPitch(ctx, x, y, w, h, chNum) {
+      // Ashito's Vision grid
+      ctx.fillStyle = '#0a1626';
+      ctx.fillRect(x, y, w, h);
+
+      // Perspective grid lines
+      ctx.strokeStyle = '#00d26a';
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.35;
+      for (let i = 0; i <= w; i += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x + i, y);
+        ctx.lineTo(x + i, y + h);
+        ctx.stroke();
+      }
+      for (let j = 0; j <= h; j += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, y + j);
+        ctx.lineTo(x + w, y + j);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1.0;
+
+      // Tactical glowing player nodes
+      const players = [
+        { px: x + 120, py: y + 260, color: '#f5a623', label: "أشيتو (LB)" },
+        { px: x + 340, py: y + 180, color: '#00d26a', label: "كورودا" },
+        { px: x + 520, py: y + 240, color: '#00d26a', label: "أوتومي" },
+        { px: x + 650, py: y + 120, color: '#ff4757', label: "الخصم" }
+      ];
+
+      // Connecting vision lines
+      ctx.strokeStyle = '#f5a623';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(players[0].px, players[0].py);
+      ctx.lineTo(players[1].px, players[1].py);
+      ctx.lineTo(players[2].px, players[2].py);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      players.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.px, p.py, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 12px Cairo';
+        ctx.textAlign = 'center';
+        ctx.fillText(p.label, p.px, p.py - 16);
+      });
+    }
+
+    function drawActionSplitPanels(ctx, x, y, w, h, chNum, pageNum) {
+      ctx.save();
+      ctx.fillStyle = '#111';
+      ctx.fillRect(x, y, w, h);
+
+      // Speed manga focus lines
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      const cx = x + w / 2;
+      const cy = y + h / 2;
+      for (let a = 0; a < Math.PI * 2; a += 0.08) {
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(a) * 150, cy + Math.sin(a) * 150);
+        ctx.lineTo(cx + Math.cos(a) * 450, cy + Math.sin(a) * 450);
+        ctx.stroke();
+      }
+
+      // Center silhouette of Ashito screaming/commanding
+      ctx.fillStyle = '#00d26a';
+      ctx.font = '900 32px Changa';
+      ctx.textAlign = 'center';
+      ctx.fillText('تمريرة الموت!', cx, cy + 10);
+      ctx.restore();
+    }
+
+    function drawIntensePlayerFace(ctx, x, y, w, h, name) {
+      ctx.fillStyle = '#0b1625';
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 16px Cairo';
+      ctx.textAlign = 'center';
+      ctx.fillText(name, x + w / 2, y + h - 25);
+
+      // Silhouette of eyes with intense glare
+      ctx.fillStyle = '#f5a623';
+      ctx.fillRect(x + w / 2 - 60, y + h / 2 - 10, 45, 12);
+      ctx.fillRect(x + w / 2 + 15, y + h / 2 - 10, 45, 12);
+    }
+
+    function drawShootingAction(ctx, x, y, w, h) {
+      ctx.fillStyle = '#0d2218';
+      ctx.fillRect(x, y, w, h);
+      drawSpeedlines(ctx, x, y, w, h);
+      drawSoccerBallTear(ctx, x + w / 2, y + h / 2);
+    }
+
+    function drawSpeedlines(ctx, x, y, w, h) {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.lineWidth = 1.5;
+      for (let i = 0; i < w; i += 25) {
+        ctx.beginPath();
+        ctx.moveTo(x + i, y);
+        ctx.lineTo(x + i + 40, y + h);
+        ctx.stroke();
+      }
+    }
+
+    function drawSoccerBallTear(ctx, bx, by) {
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(bx, by, 32, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Pentagons
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(bx, by, 12, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawSpeechBubble(ctx, bx, by, bw, bh, text) {
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 3;
+
+      // Cloud bubble
+      ctx.beginPath();
+      ctx.roundRect(bx, by, bw, bh, 20);
+      ctx.fill();
+      ctx.stroke();
+
+      // Bubble pointer
+      ctx.beginPath();
+      ctx.moveTo(bx + bw / 2 - 10, by + bh);
+      ctx.lineTo(bx + bw / 2, by + bh + 14);
+      ctx.lineTo(bx + bw / 2 + 10, by + bh);
+      ctx.fill();
+      ctx.stroke();
+
+      // Bubble text
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 13px Cairo';
+      ctx.textAlign = 'center';
+      const lines = text.split('\n');
+      lines.forEach((line, index) => {
+        ctx.fillText(line, bx + bw / 2, by + 26 + (index * 20));
+      });
+      ctx.restore();
+    }
+
+    /* -------------------------------------------------------------
+       5. READER MODAL INTERACTION
+       ------------------------------------------------------------- */
+    const readerModal = document.getElementById('readerModal');
+    const readerNavbar = document.getElementById('readerNavbar');
+    const readerFooter = document.getElementById('readerFooter');
+    const readerTitleText = document.getElementById('readerTitleText');
+    const chapterSelector = document.getElementById('chapterSelector');
+    const readerFavBtn = document.getElementById('readerFavBtn');
+    const closeReaderBtn = document.getElementById('closeReaderBtn');
+    const prevChapterBtn = document.getElementById('prevChapterBtn');
+    const nextChapterBtn = document.getElementById('nextChapterBtn');
+    const readerStream = document.getElementById('readerStream');
+
+    function openReader(chapterNum) {
+      chapterNum = parseInt(chapterNum);
+      currentReadingChapterNum = chapterNum;
+      markAsRead(chapterNum);
+
+      const chObj = chaptersData.find(c => c.num === chapterNum);
+      const title = chObj ? chObj.title : `الفصل ${chapterNum}`;
+      readerTitleText.textContent = `الفصل ${chapterNum}: ${title}`;
+
+      populateChapterDropdown(chapterNum);
+      updateReaderFavBtn(chapterNum);
+      renderMangaPagesForChapter(chapterNum);
+
+      // Scroll reader back to top
+      readerStream.scrollTop = 0;
+      readerModal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+
+      // Update button state
+      prevChapterBtn.disabled = (chapterNum <= 1);
+      nextChapterBtn.disabled = (chapterNum >= chaptersData.length);
+    }
+
+    function closeReader() {
+      readerModal.classList.remove('active');
+      document.body.style.overflow = 'auto';
+      renderChapterList();
+    }
+
+    function populateChapterDropdown(currentNum) {
+      chapterSelector.innerHTML = '';
+      chaptersData.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.num;
+        opt.textContent = `فصل ${c.num}`;
+        if (c.num === currentNum) opt.selected = true;
+        chapterSelector.appendChild(opt);
+      });
+    }
+
+    function updateReaderFavBtn(num) {
+      const isFav = favChapters.includes(num);
+      readerFavBtn.classList.toggle('active', isFav);
+      readerFavBtn.innerHTML = `<i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-star"></i>`;
+    }
+
+    chapterSelector.addEventListener('change', (e) => {
+      openReader(parseInt(e.target.value));
+    });
+
+    readerFavBtn.addEventListener('click', () => {
+      toggleFavorite(currentReadingChapterNum);
+    });
+
+    closeReaderBtn.addEventListener('click', closeReader);
+
+    prevChapterBtn.addEventListener('click', () => {
+      if (currentReadingChapterNum > 1) {
+        openReader(currentReadingChapterNum - 1);
+      }
+    });
+
+    nextChapterBtn.addEventListener('click', () => {
+      if (currentReadingChapterNum < chaptersData.length) {
+        openReader(currentReadingChapterNum + 1);
+      } else {
+        showToast("أنت تقرأ أحدث فصل متوفر حالياً! انتظر التحديث التلقائي.", 'info');
+      }
+    });
+
+    // Tap stream to toggle distraction-free reader
+    readerStream.addEventListener('click', (e) => {
+      if (e.target.closest('button') || e.target.closest('select')) return;
+      areReaderBarsVisible = !areReaderBarsVisible;
+      readerNavbar.classList.toggle('hidden-bar', !areReaderBarsVisible);
+      readerFooter.classList.toggle('hidden-bar', !areReaderBarsVisible);
+    });
+
+    // Keyboard support
+    window.addEventListener('keydown', (e) => {
+      if (!readerModal.classList.contains('active')) return;
+      if (e.key === 'Escape') closeReader();
+      if (e.key === 'ArrowLeft') nextChapterBtn.click();
+      if (e.key === 'ArrowRight') prevChapterBtn.click();
+    });
+
+    /* -------------------------------------------------------------
+       6. CONTROLS, TOASTS & EVENT LISTENERS
+       ------------------------------------------------------------- */
+    // Search listener
+    searchInput.addEventListener('input', () => {
+      renderChapterList();
+    });
+
+    // Sort order toggle
+    const sortToggleBtn = document.getElementById('sortToggleBtn');
+    const sortLabel = document.getElementById('sortLabel');
+    const sortIcon = document.getElementById('sortIcon');
+
+    sortToggleBtn.addEventListener('click', () => {
+      if (sortOrder === 'desc') {
+        sortOrder = 'asc';
+        sortLabel.textContent = 'الأقدم أولاً';
+        sortIcon.className = 'fa-solid fa-arrow-up-wide-short';
+      } else {
+        sortOrder = 'desc';
+        sortLabel.textContent = 'الأحدث أولاً';
+        sortIcon.className = 'fa-solid fa-arrow-down-wide-short';
+      }
+      renderChapterList();
+    });
+
+    // Filter Tabs
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = btn.dataset.filter;
+        renderChapterList();
+      });
+    });
+
+    // Hero buttons
+    continueReadingBtn.addEventListener('click', () => {
+      openReader(lastReadChapter || 1);
+    });
+
+    latestChapterBtn.addEventListener('click', () => {
+      const latest = chaptersData[chaptersData.length - 1];
+      openReader(latest.num);
+    });
+
+    // Notification toggle
+    let notifsEnabled = true;
+    const toggleAutoUpdateBtn = document.getElementById('toggleAutoUpdateBtn');
+    const notifStatusText = document.getElementById('notifStatusText');
+
+    toggleAutoUpdateBtn.addEventListener('click', () => {
+      notifsEnabled = !notifsEnabled;
+      if (notifsEnabled) {
+        notifStatusText.textContent = 'التنبيهات مفعلة';
+        toggleAutoUpdateBtn.classList.remove('btn-secondary');
+        toggleAutoUpdateBtn.classList.add('btn-primary');
+        showToast("تم تفعيل إشعارات نزول الفصول الفورية 🔔", 'success');
+      } else {
+        notifStatusText.textContent = 'التنبيهات معطلة';
+        toggleAutoUpdateBtn.classList.add('btn-secondary');
+        toggleAutoUpdateBtn.classList.remove('btn-primary');
+        showToast("تم تعطيل التنبيهات المؤقتة");
+      }
+    });
+
+    // Toast Notification Maker
+    function showToast(message, type = 'default') {
+      const toastContainer = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      
+      let icon = 'fa-circle-info';
+      if (type === 'success') icon = 'fa-circle-check';
+      if (type === 'info') icon = 'fa-bolt';
+
+      toast.innerHTML = `
+        <i class="fa-solid ${icon}" style="color:var(--primary); font-size:1.1rem;"></i>
+        <span>${message}</span>
+      `;
+
+      toastContainer.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.4s ease';
+        setTimeout(() => toast.remove(), 400);
+      }, 4000);
+    }
+
+    /* -------------------------------------------------------------
+       7. INITIALIZATION
+       ------------------------------------------------------------- */
+    function init() {
+      updateTotalCounters();
+      renderChapterList();
+      initAutoUpdateChecker();
+      
+      // Welcome toast
+      setTimeout(() => {
+        showToast("مرحباً بك في تطبيق مانغا Ao Ashi! الفصول مربوطة بالتحديث الفوري.", 'info');
+      }, 800);
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

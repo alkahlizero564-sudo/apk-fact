@@ -1,0 +1,58 @@
+name: Build App APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "App folder name inside apps/"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      APP: ${{ github.event.inputs.app }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Wrap HTML as Android app and build
+        run: |
+          set -e
+          if ! [[ "$APP" =~ ^[a-z0-9-]+$ ]]; then echo "bad app name"; exit 1; fi
+          test -f "apps/$APP/index.html"
+          PKG=$(echo "$APP" | tr -cd 'a-z0-9')
+          SRC="$GITHUB_WORKSPACE/apps/$APP"
+          mkdir /tmp/wrap
+          cd /tmp/wrap
+          npm init -y > /dev/null
+          npm i @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          mkdir www
+          cp -r "$SRC"/. www/
+          npx cap init "$APP" "com.generated.a$PKG" --web-dir www
+          npx cap add android
+          npx cap sync android
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/$APP.apk"
+
+      - name: Publish APK as a Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "app-$APP-${{ github.run_number }}" "$APP.apk" \
+            --title "$APP #${{ github.run_number }}" \
+            --notes "APK for $APP"

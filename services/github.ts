@@ -235,3 +235,44 @@ export async function getAssetDownloadInfo(repoFullName: string, assetId: number
     headers: { Authorization: `Bearer ${token}`, Accept: "application/octet-stream" },
   };
 }
+export async function deleteFile(
+  repoFullName: string,
+  path: string,
+  sha: string,
+  message: string,
+  branch: string = "main"
+) {
+  const token = await getToken();
+  const res = await fetch(`${GITHUB_API}/repos/${repoFullName}/contents/${path}`, {
+    method: "DELETE",
+    headers: { ...authHeaders(token), "Content-Type": "application/json" },
+    body: JSON.stringify({ message, sha, branch }),
+  });
+  if (!res.ok) throw new Error(`Delete failed (${res.status}): ${await res.text()}`);
+}
+
+export async function deleteFolder(
+  repoFullName: string,
+  folder: string,
+  branch: string = "main"
+): Promise<void> {
+  if (!folder.startsWith("apps/") || folder.includes("..")) {
+    throw new Error("مسار الحذف غير مسموح.");
+  }
+  const token = await getToken();
+  const res = await fetch(
+    `${GITHUB_API}/repos/${repoFullName}/contents/${folder}?ref=${branch}&t=${Date.now()}`,
+    { headers: authHeaders(token) }
+  );
+  if (res.status === 404) return;
+  if (!res.ok) throw new Error(`List failed (${res.status}): ${await res.text()}`);
+  const items = await res.json();
+  if (!Array.isArray(items)) return;
+  for (const it of items) {
+    if (it.type === "dir") {
+      await deleteFolder(repoFullName, it.path, branch);
+    } else {
+      await deleteFile(repoFullName, it.path, it.sha, `Delete ${it.path}`, branch);
+    }
+  }
+}

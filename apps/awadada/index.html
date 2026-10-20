@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مخبز البركة - إدارة الطلبات والتقارير</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Cairo -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        cairo: ['Cairo', 'sans-serif'],
+                    },
+                    colors: {
+                        bakery: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            200: '#fde68a',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                            800: '#92400e',
+                            900: '#78350f',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #faf7f2;
+        }
+        .custom-scroll::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #d97706;
+            border-radius: 4px;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.15); opacity: 0.4; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .pulse-live {
+            animation: pulse-ring 2s infinite ease-in-out;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            body {
+                background: white !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-bakery-900 via-bakery-800 to-bakery-700 text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center space-x-reverse space-x-3">
+                <div class="w-11 h-11 bg-bakery-500 rounded-2xl flex items-center justify-center text-2xl shadow-inner border border-bakery-200/40">
+                    🔥
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2">
+                        مخبز البركة
+                        <span class="text-xs font-semibold bg-emerald-500 text-white px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-white pulse-live"></span>
+                            مستلم الحجوزات والفرن
+                        </span>
+                    </h1>
+                    <p class="text-xs text-bakery-200">متابعة جاهزية العيش، تحديث الحالات، والتقارير المالية (ج.س)</p>
+                </div>
+            </div>
+
+            <!-- Sync & Quick Actions -->
+            <div class="flex items-center gap-2">
+                <button onclick="syncData(true)" title="تحديث وقراءة الحجوزات الجديدة" class="bg-bakery-800/80 hover:bg-bakery-700 text-bakery-100 font-bold px-3.5 py-2 rounded-xl text-xs border border-amber-300/20 shadow-sm transition flex items-center gap-1.5 active:scale-95">
+                    <svg class="w-4 h-4 text-amber-300 animate-spin-hover" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    <span>مزامنة الطلبات</span>
+                </button>
+                <button onclick="switchMainView('orders')" id="navOrdersBtn" class="bg-white text-bakery-900 font-bold px-3.5 py-2 rounded-xl text-xs shadow-md transition flex items-center gap-1.5">
+                    🥖 الطلبات الحية
+                </button>
+                <button onclick="switchMainView('reports')" id="navReportsBtn" class="bg-bakery-800/80 hover:bg-white hover:text-bakery-900 text-white font-bold px-3.5 py-2 rounded-xl text-xs shadow-md transition flex items-center gap-1.5">
+                    📊 التقارير المالية
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full flex-1">
+
+        <!-- Live Sync Status Banner -->
+        <div class="bg-amber-50 border border-amber-200/80 rounded-2xl p-3 mb-6 flex flex-wrap items-center justify-between text-xs text-amber-900 gap-2">
+            <div class="flex items-center gap-2">
+                <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <span><strong>متصل بنظام الحجز الأول:</strong> يتم استلام طلبات الزبائن مباشرة، وعند تغيير الحالة إلى "جاهز للاستلام" تُحفظ في النظام فوراً.</span>
+            </div>
+            <div class="flex items-center gap-2 font-mono text-[11px] text-amber-800">
+                <span>آخر مزامنة: <span id="lastSyncTime">الآن</span></span>
+            </div>
+        </div>
+
+        <!-- ======================= VIEW 1: ORDERS & FULFILLMENT ======================= -->
+        <section id="ordersView">
+            
+            <!-- Quick Counters Bar -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+                <!-- Pending/New -->
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-amber-100 flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center text-xl shrink-0">
+                        ⏳
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 block">في الانتظار / جديد</span>
+                        <span id="statCountNew" class="text-xl font-bold text-amber-700">0</span>
+                        <span class="text-[11px] text-slate-400 block">يحتاج للتجهيز</span>
+                    </div>
+                </div>
+
+                <!-- In Oven / Baking -->
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-amber-100 flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-orange-100 text-orange-800 flex items-center justify-center text-xl shrink-0">
+                        🔥
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 block">قيد الخَبز والتحضير</span>
+                        <span id="statCountBaking" class="text-xl font-bold text-orange-600">0</span>
+                        <span class="text-[11px] text-slate-400 block">في الفرن الآن</span>
+                    </div>
+                </div>
+
+                <!-- Ready for Pickup -->
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-amber-100 flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl shrink-0">
+                        ✨
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 block">جاهز للاستلام</span>
+                        <span id="statCountReady" class="text-xl font-extrabold text-emerald-700">0</span>
+                        <span class="text-[11px] text-emerald-600 block font-semibold">بانتظار قدوم الزبون</span>
+                    </div>
+                </div>
+
+                <!-- Completed / Delivered -->
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-amber-100 flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center text-xl shrink-0">
+                        ✔️
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 block">تم التسليم اليوم</span>
+                        <span id="statCountDelivered" class="text-xl font-bold text-blue-700">0</span>
+                        <span class="text-[11px] text-blue-600 block">طلبات مستلمة</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Toolbar -->
+            <div class="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-amber-100 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+                <!-- Status Filter Badges -->
+                <div class="flex flex-wrap gap-1.5 w-full md:w-auto text-xs font-bold">
+                    <button onclick="setStatusFilter('all')" id="btnFilterAll" class="px-3 py-2 rounded-xl bg-bakery-900 text-white shadow-sm transition">
+                        الكل (<span id="countAll">0</span>)
+                    </button>
+                    <button onclick="setStatusFilter('جديد')" id="btnFilterNew" class="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                        ⏳ جديد
+                    </button>
+                    <button onclick="setStatusFilter('قيد الخبز')" id="btnFilterBaking" class="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                        🔥 قيد الخبز
+                    </button>
+                    <button onclick="setStatusFilter('جاهز للاستلام')" id="btnFilterReady" class="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                        ✨ جاهز للاستلام
+                    </button>
+                    <button onclick="setStatusFilter('تم التسليم')" id="btnFilterDelivered" class="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition">
+                        ✔️ تم التسليم
+                    </button>
+                </div>
+
+                <!-- Search -->
+                <div class="relative w-full md:w-72">
+                    <input type="text" id="orderSearchInput" oninput="renderOrdersCards()" placeholder="ابحث باسم العميل أو رقمه أو الرمز..." 
+                           class="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-bakery-500 focus:bg-white transition">
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+            </div>
+
+            <!-- Orders Grid -->
+            <div id="cardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Cards render dynamically -->
+            </div>
+
+            <!-- Empty Orders State -->
+            <div id="noOrdersState" class="hidden text-center py-16 bg-white rounded-3xl border border-dashed border-amber-200">
+                <div class="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3">🥖</div>
+                <h3 class="text-base font-bold text-slate-800">لا توجد طلبات مطابقة</h3>
+                <p class="text-xs text-slate-400 mt-1">تأكد من تسجيل طلبات في التطبيق الأول، أو قم بتغيير خيارات التصفية.</p>
+                <button onclick="syncData(true)" class="mt-4 bg-bakery-600 hover:bg-bakery-700 text-white font-bold text-xs px-4 py-2 rounded-xl shadow transition">
+                    🔄 إعادة قراءة الحجوزات الآن
+                </button>
+            </div>
+        </section>
+
+        <!-- ======================= VIEW 2: FINANCIAL & TIME REPORTS ======================= -->
+        <section id="reportsView" class="hidden space-y-6">
+            
+            <!-- Report Controls Card -->
+            <div class="bg-white rounded-3xl p-5 shadow-sm border border-amber-100 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-black text-slate-900 flex items-center gap-2">
+                        📊 التقارير الدورية للمخبز
+                        <span class="text-xs font-bold text-bakery-700 bg-amber-100 px-2.5 py-0.5 rounded-full">بالجنيه السوداني (ج.س)</span>
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-0.5">احصائيات دقيقة لإجمالي الحجوزات، المبالغ النقدية والمبالغ الآجلة (ديون المخبز)</p>
+                </div>
+
+                <!-- Report Time Range Selector -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <div class="flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
+                        <button onclick="setReportPeriod('week')" id="periodWeekBtn" class="px-3.5 py-1.5 rounded-lg bg-bakery-700 text-white shadow-sm transition">
+                            تقرير أسبوعي
+                        </button>
+                        <button onclick="setReportPeriod('month')" id="periodMonthBtn" class="px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-bakery-800 transition">
+                            تقرير شهري
+                        </button>
+                        <button onclick="setReportPeriod('all')" id="periodAllBtn" class="px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-bakery-800 transition">
+                            كافة الفترات
+                        </button>
+                    </div>
+
+                    <!-- Print Report Button -->
+                    <button onclick="window.print()" class="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow transition flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2z"></path></svg>
+                        <span>طباعة التقرير</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Report KPI Summary Cards -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                
+                <!-- Period Total Orders -->
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-amber-100">
+                    <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+                        <span>إجمالي عدد الطلبات</span>
+                        <span class="text-base">📦</span>
+                    </div>
+                    <div class="text-2xl font-black text-slate-900" id="repTotalOrders">0</div>
+                    <div class="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+                        <span id="repPeriodLabel">خلال الأسبوع الحالي</span>
+                        <span class="text-emerald-600 font-bold" id="repCompletedRatio">0% جاهز/مسلم</span>
+                    </div>
+                </div>
+
+                <!-- Total Amount SDG (إجمالي القروش) -->
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-amber-100 bg-gradient-to-br from-white to-emerald-50/40">
+                    <div class="flex items-center justify-between text-slate-500 text-xs mb-1">
+                        <span class="font-bold text-emerald-900">إجمالي القروش المطلوب</span>
+                        <span class="text-base">💰</span>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-2xl font-black text-emerald-700" id="repTotalAmount">0</span>
+                        <span class="text-xs font-bold text-emerald-800">ج.س</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500 mt-1">
+                        المبيعات الإجمالية المحجوزة
+                    </div>
+                </div>
+
+                <!-- Cash Revenue -->
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-amber-100">
+                    <div class="flex items-center justify-between text-slate-500 text-xs mb-1">
+                        <span class="font-bold text-blue-900">إجمالي النقدي (كاش)</span>
+                        <span class="text-base">💵</span>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-2xl font-black text-blue-700" id="repCashAmount">0</span>
+                        <span class="text-xs font-bold text-blue-800">ج.س</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500 mt-1">
+                        <span id="repCashCount">0</span> طلبات نقدية مسددة
+                    </div>
+                </div>
+
+                <!-- Credit Unpaid (آجل) -->
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-amber-100 bg-gradient-to-br from-white to-rose-50/40">
+                    <div class="flex items-center justify-between text-slate-500 text-xs mb-1">
+                        <span class="font-bold text-rose-900">إجمالي الآجل (ديون)</span>
+                        <span class="text-base">⏳</span>
+                    </div>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-2xl font-black text-rose-700" id="repCreditAmount">0</span>
+                        <span class="text-xs font-bold text-rose-800">ج.س</span>
+                    </div>
+                    <div class="text-[11px] text-rose-600 mt-1 font-semibold">
+                        <span id="repCreditCount">0</span> طلبات آجلة متبقية
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Detailed Report Table -->
+            <div class="bg-white rounded-3xl shadow-sm border border-amber-100 overflow-hidden">
+                <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-amber-50/30">
+                    <div>
+                        <h3 class="font-black text-slate-900 text-base flex items-center gap-2">
+                            <span>📋 تفاصيل الطلبات في التقرير</span>
+                            <span id="repTableCountBadge" class="text-xs font-bold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full">0 حجز</span>
+                        </h3>
+                        <p class="text-xs text-slate-500">الاسم، رقم الهاتف، المبلغ بالجنيه، طريقة الدفع (نقدي أو آجل)، وحالة الجاهزية</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <select id="repFilterStatus" onchange="renderReportTable()" class="text-xs bg-white border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-bakery-500 font-bold text-slate-700">
+                            <option value="all">كل الحالات</option>
+                            <option value="جاهز للاستلام">جاهز للاستلام فقط</option>
+                            <option value="قيد الخبز">قيد الخبز</option>
+                            <option value="تم التسليم">تم التسليم</option>
+                            <option value="جديد">جديد</option>
+                        </select>
+                        <select id="repFilterPay" onchange="renderReportTable()" class="text-xs bg-white border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-bakery-500 font-bold text-slate-700">
+                            <option value="all">كل طرق الدفع</option>
+                            <option value="نقدي">نقدي فقط</option>
+                            <option value="آجل">آجل فقط</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-xs">
+                        <thead class="bg-slate-50 text-slate-600 border-b border-slate-100 font-bold uppercase">
+                            <tr>
+                                <th class="py-3 px-4">رقم الحجز</th>
+                                <th class="py-3 px-4">العميل</th>
+                                <th class="py-3 px-4">رقم الهاتف</th>
+                                <th class="py-3 px-4 text-center">طريقة الدفع</th>
+                                <th class="py-3 px-4">المبلغ (ج.س)</th>
+                                <th class="py-3 px-4 text-center">حالة الطلب</th>
+                                <th class="py-3 px-4">تاريخ الحجز</th>
+                                <th class="py-3 px-4 no-print text-center">إجراء سريع</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody" class="divide-y divide-slate-100">
+                            <!-- Rows injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="reportEmptyState" class="hidden text-center py-12 text-slate-400 text-xs">
+                    لا توجد بيانات مطابقة لهذه الفترة وخيارات التصفية.
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Modal: Notify Customer & Order Status Detail -->
+    <div id="statusModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative border border-amber-200">
+            
+            <button onclick="closeStatusModal()" class="absolute left-4 top-4 text-slate-400 hover:text-slate-600 p-1">
+                ✕
+            </button>
+
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-11 h-11 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center text-2xl">
+                    🥖
+                </div>
+                <div>
+                    <h3 class="font-black text-lg text-slate-900" id="modalCustomerName">-</h3>
+                    <p class="text-xs text-slate-500" id="modalOrderId">-</p>
+                </div>
+            </div>
+
+            <div class="bg-amber-50/70 p-3.5 rounded-2xl border border-amber-100 space-y-2 text-xs mb-4">
+                <div class="flex justify-between">
+                    <span class="text-slate-500">المبلغ المطلوب:</span>
+                    <span class="font-extrabold text-bakery-900 text-sm" id="modalOrderAmount">-</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">طريقة الدفع:</span>
+                    <span class="font-bold" id="modalOrderPayment">-</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">الهاتف:</span>
+                    <span class="font-mono text-slate-800" id="modalOrderPhone" dir="ltr">-</span>
+                </div>
+            </div>
+
+            <!-- Set Status Buttons -->
+            <label class="block text-xs font-bold text-slate-700 mb-2">تحديث حالة الطلب وإرسالها للنظام:</label>
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                <button type="button" onclick="updateOrderStatus('جديد')" class="p-2.5 rounded-xl border border-slate-200 hover:border-amber-500 hover:bg-amber-50 font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                    ⏳ جديد / انتظار
+                </button>
+                <button type="button" onclick="updateOrderStatus('قيد الخبز')" class="p-2.5 rounded-xl border border-orange-200 hover:bg-orange-50 text-orange-700 font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                    🔥 قيد الخبز الآن
+                </button>
+                <button type="button" onclick="updateOrderStatus('جاهز للاستلام')" class="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow transition">
+                    ✨ جاهز للاستلام!
+                </button>
+                <button type="button" onclick="updateOrderStatus('تم التسليم')" class="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow transition">
+                    ✔️ تم تسليمه للزبون
+                </button>
+            </div>
+
+            <!-- Quick WhatsApp Notice -->
+            <div class="pt-3 border-t border-slate-100 space-y-2">
+                <button onclick="sendWhatsAppReadyMessage()" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-xl text-xs shadow-md transition flex items-center justify-center gap-2">
+                    <span>📲 إرسال إشعار للزبون على الواتساب: "طلبك جاهز"</span>
+                </button>
+                <button onclick="closeStatusModal()" class="w-full text-slate-500 hover:text-slate-700 text-xs py-1">
+                    إغلاق النافذة
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2">
+        <span id="toastIcon">✅</span>
+        <span id="toastMsg">تم التحديث بنجاح</span>
+    </div>
+
+    <script>
+        // Shared Storage Key with the First App
+        const STORAGE_KEY = 'bakery_reservations_simple_v1';
+        
+        let orders = [];
+        let activeStatusFilter = 'all';
+        let currentReportPeriod = 'week'; // 'week' | 'month' | 'all'
+        let selectedOrderForModal = null;
+
+        // Status definitions
+        const STATUSES = {
+            'جديد': { label: 'جديد / انتظار', badge: 'bg-amber-100 text-amber-800 border-amber-200', icon: '⏳' },
+            'قيد الخبز': { label: 'قيد الخَبز', badge: 'bg-orange-100 text-orange-800 border-orange-200', icon: '🔥' },
+            'جاهز للاستلام': { label: 'جاهز للاستلام', badge: 'bg-emerald-100 text-emerald-800 border-emerald-300 font-black', icon: '✨' },
+            'تم التسليم': { label: 'تم التسليم', badge: 'bg-blue-100 text-blue-800 border-blue-200', icon: '✔️' },
+            'ملغي': { label: 'ملغي', badge: 'bg-slate-100 text-slate-600 border-slate-200', icon: '✖' }
+        };
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            syncData(false);
+
+            // Listen for cross-tab updates from App 1
+            window.addEventListener('storage', (e) => {
+                if (e.key === STORAGE_KEY) {
+                    syncData(false);
+                    showToast('تم استلام تحديث جديد من تطبيق الحجوزات 🔔', '🥖');
+                }
+            });
+        });
+
+        // Sync & Load Reservations
+        function syncData(showFeedback = true) {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                try {
+                    orders = JSON.parse(raw);
+                } catch (e) {
+                    orders = [];
+                }
+            } else {
+                // If App 1 hasn't created data yet, provide defaults matching App 1 schema
+                orders = [
+                    {
+                        id: 'BKR-101',
+                        name: 'عثمان عبد الرحيم',
+                        phone: '0912345678',
+                        amountSDG: 3000,
+                        paymentType: 'نقدي',
+                        isPaid: true,
+                        notes: 'حجز مؤكد ودفع نقداً في المخبز',
+                        status: 'جاهز للاستلام',
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        id: 'BKR-102',
+                        name: 'حاجة فاطمة (أم أحمد)',
+                        phone: '0123987654',
+                        amountSDG: 5000,
+                        paymentType: 'آجل',
+                        isPaid: false,
+                        notes: 'الدفع لاحقاً مع الولد في المساء',
+                        status: 'قيد الخبز',
+                        createdAt: new Date(Date.now() - 3600000).toISOString()
+                    },
+                    {
+                        id: 'BKR-103',
+                        name: 'مطعم النيلين',
+                        phone: '0988776655',
+                        amountSDG: 20000,
+                        paymentType: 'نقدي',
+                        isPaid: true,
+                        notes: 'طلب يومي ثابت للمطعم',
+                        status: 'جديد',
+                        createdAt: new Date(Date.now() - 86400000).toISOString()
+                    }
+                ];
+                saveOrders();
+            }
+
+            // Ensure every order has a status field
+            let modified = false;
+            orders.forEach(o => {
+                if (!o.status) {
+                    o.status = 'جديد';
+                    modified = true;
+                }
+            });
+            if (modified) saveOrders();
+
+            // Update UI
+            document.getElementById('lastSyncTime').innerText = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            renderKitchenStats();
+            renderOrdersCards();
+            renderReportsView();
+
+            if (showFeedback) {
+                showToast('تمت مزامنة الطلبات بنجاح');
+            }
+        }
+
+        function saveOrders() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+        }
+
+        // Switch main view
+        function switchMainView(view) {
+            const ordersView = document.getElementById('ordersView');
+            const reportsView = document.getElementById('reportsView');
+            const navOrdersBtn = document.getElementById('navOrdersBtn');
+            const navReportsBtn = document.getElementById('navReportsBtn');
+
+            if (view === 'orders') {
+                ordersView.classList.remove('hidden');
+                reportsView.classList.add('hidden');
+                navOrdersBtn.className = "bg-white text-bakery-900 font-bold px-3.5 py-2 rounded-xl text-xs shadow-md transition flex items-center gap-1.5";
+                navReportsBtn.className = "bg-bakery-800/80 hover:bg-white hover:text-bakery-900 text-white font-bold px-3.5 py-2 rounded-xl text-xs shadow-md transition flex items-center gap-1.5";
+            } else {
+                ordersView.classList.add('hidden');
+                reportsView.classList.remove('hidden');
+                navReportsBtn.className = "bg-white text-bakery-900 font-bold px-3.5 py-2 rounded-xl text-xs shadow-md transition flex items-center gap-1.5";
+                navOrdersBtn.className = "bg-bakery-800/80 hover:bg-white hover:text-bakery-900 text-white font-bold px-3.5 py-2 rounded-xl text-xs shadow-md transition flex items-center gap-1.5";
+                renderReportsView();
+            }
+        }
+
+        // Render Kitchen Counters
+        function renderKitchenStats() {
+            const countNew = orders.filter(o => o.status === 'جديد').length;
+            const countBaking = orders.filter(o => o.status === 'قيد الخبز').length;
+            const countReady = orders.filter(o => o.status === 'جاهز للاستلام').length;
+            const countDelivered = orders.filter(o => o.status === 'تم التسليم').length;
+
+            document.getElementById('statCountNew').innerText = countNew;
+            document.getElementById('statCountBaking').innerText = countBaking;
+            document.getElementById('statCountReady').innerText = countReady;
+            document.getElementById('statCountDelivered').innerText = countDelivered;
+
+            document.getElementById('countAll').innerText = orders.length;
+        }
+
+        // Filter Orders by status
+        function setStatusFilter(status) {
+            activeStatusFilter = status;
+            const buttons = [
+                { id: 'btnFilterAll', val: 'all' },
+                { id: 'btnFilterNew', val: 'جديد' },
+                { id: 'btnFilterBaking', val: 'قيد الخبز' },
+                { id: 'btnFilterReady', val: 'جاهز للاستلام' },
+                { id: 'btnFilterDelivered', val: 'تم التسليم' }
+            ];
+
+            buttons.forEach(b => {
+                const el = document.getElementById(b.id);
+                if (b.val === status) {
+                    el.className = "px-3 py-2 rounded-xl bg-bakery-900 text-white shadow-sm transition font-bold";
+                } else {
+                    el.className = "px-3 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition font-bold";
+                }
+            });
+
+            renderOrdersCards();
+        }
+
+        // Render Cards in Kitchen View
+        function renderOrdersCards() {
+            const container = document.getElementById('cardsGrid');
+            const noOrdersState = document.getElementById('noOrdersState');
+            const search = (document.getElementById('orderSearchInput').value || '').trim().toLowerCase();
+
+            container.innerHTML = '';
+
+            let list = orders.filter(o => {
+                if (activeStatusFilter !== 'all' && o.status !== activeStatusFilter) {
+                    return false;
+                }
+                if (search) {
+                    const matchName = (o.name || '').toLowerCase().includes(search);
+                    const matchPhone = (o.phone || '').toLowerCase().includes(search);
+                    const matchId = (o.id || '').toLowerCase().includes(search);
+                    if (!matchName && !matchPhone && !matchId) return false;
+                }
+                return true;
+            });
+
+            // Sort: Ready & In progress first, then newest
+            list.sort((a, b) => {
+                const priority = { 'جاهز للاستلام': 1, 'قيد الخبز': 2, 'جديد': 3, 'تم التسليم': 4, 'ملغي': 5 };
+                const pA = priority[a.status] || 9;
+                const pB = priority[b.status] || 9;
+                if (pA !== pB) return pA - pB;
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            });
+
+            if (list.length === 0) {
+                noOrdersState.classList.remove('hidden');
+                container.classList.add('hidden');
+                return;
+            } else {
+                noOrdersState.classList.add('hidden');
+                container.classList.remove('hidden');
+            }
+
+            list.forEach(order => {
+                const card = createFulfillmentCard(order);
+                container.appendChild(card);
+            });
+        }
+
+        // Create Individual Fulfillment Card
+        function createFulfillmentCard(order) {
+            const card = document.createElement('div');
+            const statusMeta = STATUSES[order.status] || STATUSES['جديد'];
+            const isReady = order.status === 'جاهز للاستلام';
+            const isCash = order.paymentType === 'نقدي';
+
+            card.className = `bg-white rounded-3xl p-5 shadow-sm border transition-all flex flex-col justify-between ${
+                isReady ? 'border-emerald-400 ring-2 ring-emerald-300/40 bg-emerald-50/20' : 'border-amber-100 hover:shadow-md'
+            }`;
+
+            const formattedAmount = Number(order.amountSDG || 0).toLocaleString('en-US');
+            const formattedTime = new Date(order.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+
+            card.innerHTML = `
+                <div>
+                    <!-- Header -->
+                    <div class="flex justify-between items-start gap-2 mb-3">
+                        <div>
+                            <div class="flex items-center gap-1.5">
+                                <h3 class="font-black text-slate-900 text-base">${order.name}</h3>
+                                <span class="text-[10px] bg-slate-100 text-slate-600 font-mono px-1.5 py-0.5 rounded font-bold">${order.id}</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                                ${order.phone ? `
+                                    <span dir="ltr" class="font-mono text-slate-700">📞 ${order.phone}</span>
+                                ` : '<span>بدون هاتف</span>'}
+                                <span>• وقت الحجز: ${formattedTime}</span>
+                            </div>
+                        </div>
+
+                        <!-- Status Badge -->
+                        <span class="text-xs px-2.5 py-1 rounded-xl border flex items-center gap-1 ${statusMeta.badge}">
+                            <span>${statusMeta.icon}</span>
+                            <span>${statusMeta.label}</span>
+                        </span>
+                    </div>
+
+                    <!-- Payment and SDG Amount -->
+                    <div class="bg-amber-50/70 rounded-2xl p-3 border border-amber-100 flex items-center justify-between mb-3">
+                        <div>
+                            <span class="text-[11px] text-slate-500 block">المبلغ المطلوب (جنيه سوداني):</span>
+                            <div class="flex items-baseline gap-1">
+                                <span class="text-2xl font-black text-bakery-900">${formattedAmount}</span>
+                                <span class="text-xs font-bold text-bakery-700">ج.س</span>
+                            </div>
+                        </div>
+                        <div class="text-left">
+                            <span class="text-[11px] text-slate-400 block mb-0.5">طريقة الدفع:</span>
+                            ${isCash ? `
+                                <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2 py-0.5 rounded-lg">💵 نقدي (كاش)</span>
+                            ` : `
+                                <span class="${order.isPaid ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800 font-black'} text-xs px-2 py-0.5 rounded-lg">
+                                    ⏳ آجل ${order.isPaid ? '(تم سداده)' : '(مستحق)'}
+                                </span>
+                            `}
+                        </div>
+                    </div>
+
+                    <!-- Order Notes if available -->
+                    ${order.notes ? `
+                        <div class="bg-slate-50 p-2.5 rounded-xl text-slate-700 text-xs mb-3 border border-slate-100">
+                            <strong class="text-slate-500 text-[10px] block">ملاحظات العيش:</strong>
+                            ${order.notes}
+                        </div>
+                    ` : ''}
+                </div>
+
+                <!-- Status Action Bar (Direct actions for the bakery kitchen) -->
+                <div class="pt-3 border-t border-slate-100 space-y-2">
+                    <div class="grid grid-cols-3 gap-1.5 text-xs font-bold">
+                        <button onclick="quickSetStatus('${order.id}', 'قيد الخبز')" class="py-2 px-1 rounded-xl ${order.status === 'قيد الخبز' ? 'bg-orange-600 text-white' : 'bg-orange-50 text-orange-800 hover:bg-orange-100'} transition flex items-center justify-center gap-1">
+                            🔥 قيد الخبز
+                        </button>
+                        <button onclick="quickSetStatus('${order.id}', 'جاهز للاستلام')" class="py-2 px-1 rounded-xl ${order.status === 'جاهز للاستلام' ? 'bg-emerald-700 text-white shadow' : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'} transition flex items-center justify-center gap-1">
+                            ✨ جاهز
+                        </button>
+                        <button onclick="quickSetStatus('${order.id}', 'تم التسليم')" class="py-2 px-1 rounded-xl ${order.status === 'تم التسليم' ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-800 hover:bg-blue-100'} transition flex items-center justify-center gap-1">
+                            ✔️ سُلِّم
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-1">
+                        <button onclick="openStatusModal('${order.id}')" class="text-xs text-bakery-800 hover:text-bakery-900 font-bold flex items-center gap-1">
+                            <span>⚙️ تفاصيل وإرسال إشعار للعميل</span>
+                        </button>
+                        ${order.phone ? `
+                            <button onclick="sendQuickWhatsAppReady('${order.id}')" class="text-xs text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1 bg-emerald-50 px-2 py-1 rounded-lg">
+                                <span>📲 واتساب الجاهزية</span>
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // Quick update status directly from card
+        function quickSetStatus(orderId, newStatus) {
+            const index = orders.findIndex(o => o.id === orderId);
+            if (index === -1) return;
+
+            orders[index].status = newStatus;
+            orders[index].statusUpdatedAt = new Date().toISOString();
+            saveOrders();
+            renderKitchenStats();
+            renderOrdersCards();
+            renderReportsView();
+
+            showToast(`تم تحديث حالة الطلب إلى "${newStatus}" وإرسالها للنظام 🥖`);
+        }
+
+        // Open modal for details and messaging
+        function openStatusModal(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            selectedOrderForModal = order;
+
+            document.getElementById('modalCustomerName').innerText = order.name;
+            document.getElementById('modalOrderId').innerText = `رمز الحجز: ${order.id}`;
+            document.getElementById('modalOrderAmount').innerText = `${Number(order.amountSDG).toLocaleString('en-US')} ج.س`;
+            document.getElementById('modalOrderPayment').innerText = `${order.paymentType} ${order.paymentType === 'آجل' ? (order.isPaid ? '(مسدد)' : '(دين متبقي)') : ''}`;
+            document.getElementById('modalOrderPhone').innerText = order.phone || 'بدون هاتف مسجل';
+
+            document.getElementById('statusModal').classList.remove('hidden');
+        }
+
+        function closeStatusModal() {
+            document.getElementById('statusModal').classList.add('hidden');
+            selectedOrderForModal = null;
+        }
+
+        function updateOrderStatus(newStatus) {
+            if (!selectedOrderForModal) return;
+            quickSetStatus(selectedOrderForModal.id, newStatus);
+            closeStatusModal();
+        }
+
+        // WhatsApp Notification: Ready for pickup
+        function sendWhatsAppReadyMessage() {
+            if (!selectedOrderForModal) return;
+            sendQuickWhatsAppReady(selectedOrderForModal.id);
+        }
+
+        function sendQuickWhatsAppReady(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            if (!order.phone) {
+                alert('لا يوجد رقم هاتف مسجل لهذا الحجز.');
+                return;
+            }
+
+            const paymentStatusText = order.paymentType === 'نقدي' 
+                ? 'مدفوع نقداً' 
+                : (order.isPaid ? 'آجل (مسدد)' : 'المبلغ المطلوب للدفع عند الاستلام: ' + Number(order.amountSDG).toLocaleString('en-US') + ' ج.س');
+
+            const text = 
+`السلام عليكم يا ${order.name} 🥖
+نحيطكم علماً بأن طلب العيش الخاص بكم رقم (${order.id}) من *مخبز البركة* أصبح:
+✨ *جاهز للاستلام الآن من الفرن ساخن وطازج!*
+
+*المبلغ:* ${Number(order.amountSDG).toLocaleString('en-US')} جنيه سوداني
+*حالة الدفع:* ${paymentStatusText}
+
+مرحباً بكم ونسعد بخدمتكم دائماً!`;
+
+            const phone = order.phone.replace(/^0/, '249');
+            const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+
+        // ======================= REPORTS LOGIC =======================
+        function setReportPeriod(period) {
+            currentReportPeriod = period;
+
+            const btnWeek = document.getElementById('periodWeekBtn');
+            const btnMonth = document.getElementById('periodMonthBtn');
+            const btnAll = document.getElementById('periodAllBtn');
+
+            [btnWeek, btnMonth, btnAll].forEach(b => {
+                b.className = "px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-bakery-800 transition font-bold";
+            });
+
+            if (period === 'week') {
+                btnWeek.className = "px-3.5 py-1.5 rounded-lg bg-bakery-700 text-white shadow-sm transition font-bold";
+                document.getElementById('repPeriodLabel').innerText = 'خلال الأسبوع الحالي';
+            } else if (period === 'month') {
+                btnMonth.className = "px-3.5 py-1.5 rounded-lg bg-bakery-700 text-white shadow-sm transition font-bold";
+                document.getElementById('repPeriodLabel').innerText = 'خلال الشهر الحالي';
+            } else {
+                btnAll.className = "px-3.5 py-1.5 rounded-lg bg-bakery-700 text-white shadow-sm transition font-bold";
+                document.getElementById('repPeriodLabel').innerText = 'كافة الحجوزات المسجلة';
+            }
+
+            renderReportsView();
+        }
+
+        function getFilteredReportOrders() {
+            const now = new Date();
+            return orders.filter(o => {
+                const orderDate = new Date(o.createdAt);
+                if (isNaN(orderDate.getTime())) return true;
+
+                if (currentReportPeriod === 'week') {
+                    // Last 7 days
+                    const diffDays = (now - orderDate) / (1000 * 60 * 60 * 24);
+                    return diffDays <= 7;
+                } else if (currentReportPeriod === 'month') {
+                    // Last 30 days
+                    const diffDays = (now - orderDate) / (1000 * 60 * 60 * 24);
+                    return diffDays <= 30;
+                }
+                return true;
+            });
+        }
+
+        function renderReportsView() {
+            const periodOrders = getFilteredReportOrders();
+
+            // Total Orders Count
+            const totalCount = periodOrders.length;
+            document.getElementById('repTotalOrders').innerText = totalCount;
+
+            // Total Amount (SDG)
+            const totalSDG = periodOrders.reduce((sum, o) => sum + (Number(o.amountSDG) || 0), 0);
+            document.getElementById('repTotalAmount').innerText = totalSDG.toLocaleString('en-US');
+
+            // Cash breakdown
+            const cashOrders = periodOrders.filter(o => o.paymentType === 'نقدي');
+            const cashSDG = cashOrders.reduce((sum, o) => sum + (Number(o.amountSDG) || 0), 0);
+            document.getElementById('repCashAmount').innerText = cashSDG.toLocaleString('en-US');
+            document.getElementById('repCashCount').innerText = cashOrders.length;
+
+            // Credit breakdown
+            const creditOrders = periodOrders.filter(o => o.paymentType === 'آجل');
+            const creditUnpaidOrders = creditOrders.filter(o => !o.isPaid);
+            const creditSDG = creditUnpaidOrders.reduce((sum, o) => sum + (Number(o.amountSDG) || 0), 0);
+            document.getElementById('repCreditAmount').innerText = creditSDG.toLocaleString('en-US');
+            document.getElementById('repCreditCount').innerText = creditUnpaidOrders.length;
+
+            // Ratio of Completed / Ready
+            const readyOrDelivered = periodOrders.filter(o => o.status === 'جاهز للاستلام' || o.status === 'تم التسليم').length;
+            const ratio = totalCount > 0 ? Math.round((readyOrDelivered / totalCount) * 100) : 0;
+            document.getElementById('repCompletedRatio').innerText = `${ratio}% مكتمل أو جاهز`;
+
+            renderReportTable();
+        }
+
+        function renderReportTable() {
+            const tbody = document.getElementById('reportTableBody');
+            const emptyEl = document.getElementById('reportEmptyState');
+            const statusFilter = document.getElementById('repFilterStatus').value;
+            const payFilter = document.getElementById('repFilterPay').value;
+
+            tbody.innerHTML = '';
+
+            let list = getFilteredReportOrders().filter(o => {
+                if (statusFilter !== 'all' && o.status !== statusFilter) return false;
+                if (payFilter !== 'all' && o.paymentType !== payFilter) return false;
+                return true;
+            });
+
+            // Newest first
+            list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            document.getElementById('repTableCountBadge').innerText = `${list.length} طلب`;
+
+            if (list.length === 0) {
+                emptyEl.classList.remove('hidden');
+                return;
+            } else {
+                emptyEl.classList.add('hidden');
+            }
+
+            list.forEach(o => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+
+                const statusMeta = STATUSES[o.status] || STATUSES['جديد'];
+                const formattedDate = new Date(o.createdAt).toLocaleDateString('ar-EG', {
+                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+
+                const isCash = o.paymentType === 'نقدي';
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-mono font-bold text-slate-700">${o.id}</td>
+                    <td class="py-3 px-4">
+                        <span class="font-extrabold text-slate-900">${o.name}</span>
+                        ${o.notes ? `<span class="block text-[10px] text-slate-400 truncate max-w-xs">${o.notes}</span>` : ''}
+                    </td>
+                    <td class="py-3 px-4 font-mono" dir="ltr">${o.phone || '-'}</td>
+                    <td class="py-3 px-4 text-center">
+                        ${isCash ? `
+                            <span class="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2 py-0.5 rounded-md">💵 نقدي</span>
+                        ` : `
+                            <span class="${o.isPaid ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'} text-[11px] font-bold px-2 py-0.5 rounded-md">
+                                ⏳ آجل ${o.isPaid ? '(مسدد)' : '(متبقي)'}
+                            </span>
+                        `}
+                    </td>
+                    <td class="py-3 px-4 font-black text-bakery-900">
+                        ${Number(o.amountSDG).toLocaleString('en-US')} <span class="text-[10px] font-normal text-slate-500">ج.س</span>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <span class="text-[11px] px-2 py-0.5 rounded-md border inline-flex items-center gap-1 ${statusMeta.badge}">
+                            ${statusMeta.icon} ${statusMeta.label}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-slate-500 text-[11px]">${formattedDate}</td>
+                    <td class="py-3 px-4 no-print text-center">
+                        <button onclick="quickSetStatus('${o.id}', 'جاهز للاستلام')" title="تعيين كجاهز للاستلام" class="text-xs font-bold bg-amber-100 hover:bg-emerald-600 hover:text-white text-bakery-900 px-2 py-1 rounded-lg transition">
+                            ✨ جاهز
+                        </button>
+                    </td>
+                `;
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Toast feedback helper
+        function showToast(message, icon = '✅') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = message;
+            document.getElementById('toastIcon').innerText = icon;
+
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

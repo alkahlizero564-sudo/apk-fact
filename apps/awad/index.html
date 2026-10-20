@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مخبز البركة - نظام حجز العيش</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Cairo -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        cairo: ['Cairo', 'sans-serif'],
+                    },
+                    colors: {
+                        bakery: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            200: '#fde68a',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                            800: '#92400e',
+                            900: '#78350f',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #faf7f2;
+        }
+        .custom-scroll::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #d97706;
+            border-radius: 4px;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-bakery-900 via-bakery-800 to-bakery-700 text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center space-x-reverse space-x-3">
+                <div class="w-11 h-11 bg-bakery-500 rounded-2xl flex items-center justify-center text-2xl shadow-inner border border-bakery-200/40">
+                    🥖
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2">
+                        مخبز البركة
+                        <span class="text-xs font-semibold bg-bakery-500 text-bakery-900 px-2 py-0.5 rounded-full">نظام الحجوزات</span>
+                    </h1>
+                    <p class="text-xs text-bakery-200">إدارة حجوزات الخبز والمدفوعات (نقدي / آجل)</p>
+                </div>
+            </div>
+
+            <!-- Price Setting & Date -->
+            <div class="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+                <div class="bg-black/25 px-3 py-1.5 rounded-xl border border-white/10 flex items-center gap-2">
+                    <span class="text-bakery-200">سعر الرغيف:</span>
+                    <input type="number" id="unitPriceInput" min="1" value="50" onchange="updateUnitPrice(this.value)" 
+                           class="w-16 bg-white/20 text-white text-center rounded px-1.5 py-0.5 font-bold focus:outline-none focus:bg-white focus:text-slate-900 transition">
+                    <span class="text-xs">ج.س</span>
+                </div>
+                <button onclick="openNewOrderModal()" class="bg-white text-bakery-900 hover:bg-bakery-100 font-bold px-4 py-2 rounded-xl text-sm shadow-md transition flex items-center gap-1.5 active:scale-95">
+                    <svg class="w-5 h-5 text-bakery-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                    حجز جديد
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 w-full flex-1">
+
+        <!-- Top Statistics Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+            <!-- Total Reservations -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-amber-100 flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center text-xl shrink-0">
+                    📋
+                </div>
+                <div>
+                    <span class="text-xs text-slate-500 block">إجمالي الحجوزات</span>
+                    <span id="statTotalOrders" class="text-xl font-bold text-slate-800">0</span>
+                    <span class="text-[11px] text-slate-400 block mt-0.5"><span id="statTotalLoaves">0</span> رغيف تقريباً</span>
+                </div>
+            </div>
+
+            <!-- Total Amount SDG -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-amber-100 flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl shrink-0">
+                    💰
+                </div>
+                <div>
+                    <span class="text-xs text-slate-500 block">إجمالي المبالغ</span>
+                    <span id="statTotalAmount" class="text-xl font-extrabold text-emerald-700">0</span>
+                    <span class="text-[11px] text-emerald-600 block">جنيه سوداني</span>
+                </div>
+            </div>
+
+            <!-- Cash Total -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-amber-100 flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center text-xl shrink-0">
+                    💵
+                </div>
+                <div>
+                    <span class="text-xs text-slate-500 block">مدفوع نقداً (كاش)</span>
+                    <span id="statCashAmount" class="text-xl font-bold text-blue-700">0</span>
+                    <span class="text-[11px] text-blue-600 block">ج.س (<span id="statCashCount">0</span> طلب)</span>
+                </div>
+            </div>
+
+            <!-- Credit Total -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-amber-100 flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-rose-100 text-rose-800 flex items-center justify-center text-xl shrink-0">
+                    ⏳
+                </div>
+                <div>
+                    <span class="text-xs text-slate-500 block">آجل (ديون مستحقة)</span>
+                    <span id="statCreditAmount" class="text-xl font-bold text-rose-700">0</span>
+                    <span class="text-[11px] text-rose-600 block">ج.س (<span id="statCreditCount">0</span> طلب)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs & Search Toolbar -->
+        <div class="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-amber-100 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+            <!-- Tabs -->
+            <div class="flex bg-slate-100 p-1 rounded-xl w-full md:w-auto text-sm font-semibold">
+                <button onclick="switchTab('active')" id="tabActive" class="flex-1 md:flex-none px-4 py-2 rounded-lg transition-all duration-200 text-bakery-900 bg-white shadow-sm flex items-center justify-center gap-1.5">
+                    <span>الحجوزات الحالية</span>
+                    <span id="badgeActiveCount" class="bg-bakery-500 text-white text-xs px-2 py-0.2 rounded-full">0</span>
+                </button>
+                <button onclick="switchTab('history')" id="tabHistory" class="flex-1 md:flex-none px-4 py-2 rounded-lg text-slate-600 hover:text-bakery-800 transition-all duration-200 flex items-center justify-center gap-1.5">
+                    <span>الحجوزات السابقة</span>
+                    <span id="badgeHistoryCount" class="bg-slate-300 text-slate-700 text-xs px-2 py-0.2 rounded-full">0</span>
+                </button>
+                <button onclick="switchTab('debts')" id="tabDebts" class="flex-1 md:flex-none px-4 py-2 rounded-lg text-slate-600 hover:text-bakery-800 transition-all duration-200 flex items-center justify-center gap-1.5">
+                    <span class="text-rose-600">دفتر الآجل</span>
+                    <span id="badgeDebtsCount" class="bg-rose-200 text-rose-800 text-xs px-2 py-0.2 rounded-full">0</span>
+                </button>
+            </div>
+
+            <!-- Search and Filter Bar -->
+            <div class="flex items-center gap-2 w-full md:w-auto">
+                <div class="relative flex-1 md:w-72">
+                    <input type="text" id="searchInput" oninput="filterOrders()" placeholder="بحث بالاسم أو الهاتف..." 
+                           class="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-bakery-500 focus:bg-white transition">
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <button onclick="openNewOrderModal()" class="md:hidden bg-bakery-600 text-white p-2.5 rounded-xl shadow">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Orders Cards Grid / Table View -->
+        <div id="ordersContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Order cards dynamically rendered -->
+        </div>
+
+        <!-- Empty State Message -->
+        <div id="emptyState" class="hidden text-center py-16 bg-white rounded-2xl border border-dashed border-amber-200 mt-2">
+            <div class="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center text-4xl mx-auto mb-3">🧺</div>
+            <h3 class="text-lg font-bold text-slate-700">لا توجد حجوزات في هذا القسم</h3>
+            <p class="text-sm text-slate-400 mt-1 max-w-sm mx-auto">يمكنك البدء بتسجيل حجز جديد للزبائن وتحديد الكمية وطريقة السداد (نقدي / آجل).</p>
+            <button onclick="openNewOrderModal()" class="mt-4 bg-bakery-600 hover:bg-bakery-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl shadow transition">
+                + تسجيل حجز الآن
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Modal: New / Edit Reservation -->
+    <div id="orderModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl relative border border-amber-100 max-h-[92vh] overflow-y-auto custom-scroll animate-scale-up">
+            
+            <!-- Close Button -->
+            <button onclick="closeModal()" class="absolute left-4 top-4 text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <!-- Modal Title -->
+            <div class="mb-5 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-bakery-100 text-bakery-800 flex items-center justify-center text-xl">
+                    🥖
+                </div>
+                <div>
+                    <h2 id="modalTitle" class="text-xl font-black text-slate-900">تسجيل حجز عيش جديد</h2>
+                    <p class="text-xs text-slate-500">أدخل بيانات العميل والمبلغ المطلوب ونوع الدفع</p>
+                </div>
+            </div>
+
+            <!-- Form -->
+            <form id="reservationForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                <input type="hidden" id="editOrderId" value="">
+
+                <!-- Customer Name -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">اسم العميل <span class="text-rose-500">*</span></label>
+                    <input type="text" id="custName" required placeholder="مثال: محمد أحمد علي"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-bakery-500 text-sm">
+                </div>
+
+                <!-- Customer Phone -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">رقم الهاتف <span class="text-slate-400 font-normal">(اختياري للاتصال والواتساب)</span></label>
+                    <input type="tel" id="custPhone" placeholder="09xxxxxxx أو 01xxxxxxx" dir="ltr"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-bakery-500 text-sm text-right">
+                </div>
+
+                <!-- Amount in SDG and Loaf Calculation -->
+                <div class="bg-amber-50/70 p-4 rounded-2xl border border-amber-100 space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900 mb-1">المبلغ المطلوب بالجنيه السوداني (ج.س) <span class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <input type="number" id="orderAmountSDG" required min="1" step="any" oninput="calculateLoavesFromSDG()" placeholder="0.00"
+                                   class="w-full pl-16 pr-3.5 py-2.5 text-lg font-black text-bakery-900 rounded-xl border border-amber-200 focus:outline-none focus:ring-2 focus:ring-bakery-500 bg-white">
+                            <span class="absolute left-3 top-3 text-xs font-bold text-amber-700">ج.س</span>
+                        </div>
+                    </div>
+
+                    <!-- Quick Amount Selectors for Sudan Bakery -->
+                    <div>
+                        <span class="text-[11px] font-semibold text-slate-500 block mb-1">مبالغ شائعة وسريعة:</span>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button type="button" onclick="setQuickAmount(500)" class="text-xs bg-white border border-amber-200 text-slate-700 px-2.5 py-1 rounded-lg hover:bg-bakery-100 transition">500 ج.س</button>
+                            <button type="button" onclick="setQuickAmount(1000)" class="text-xs bg-white border border-amber-200 text-slate-700 px-2.5 py-1 rounded-lg hover:bg-bakery-100 transition">1,000 ج.س</button>
+                            <button type="button" onclick="setQuickAmount(2000)" class="text-xs bg-white border border-amber-200 text-slate-700 px-2.5 py-1 rounded-lg hover:bg-bakery-100 transition">2,000 ج.س</button>
+                            <button type="button" onclick="setQuickAmount(5000)" class="text-xs bg-white border border-amber-200 text-slate-700 px-2.5 py-1 rounded-lg hover:bg-bakery-100 transition">5,000 ج.س</button>
+                            <button type="button" onclick="setQuickAmount(10000)" class="text-xs bg-white border border-amber-200 text-slate-700 px-2.5 py-1 rounded-lg hover:bg-bakery-100 transition">10,000 ج.س</button>
+                        </div>
+                    </div>
+
+                    <!-- Computed Loaves Badge -->
+                    <div class="flex items-center justify-between pt-1 border-t border-amber-200/60 text-xs">
+                        <span class="text-slate-600">العدد التقريبي للرغيف:</span>
+                        <span class="font-bold text-bakery-900 bg-white px-2.5 py-1 rounded-lg border border-amber-200">
+                            <span id="calculatedLoavesCount" class="text-sm font-black text-bakery-700">0</span> رغيفة
+                            <span class="text-[10px] text-slate-400 font-normal">(بحساب <span id="currentLoafPriceBadge">50</span> ج للواحدة)</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Payment Method (نقدي أو آجل) -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-2">طريقة الدفع <span class="text-rose-500">*</span></label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 cursor-pointer hover:border-emerald-500 transition has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/60">
+                            <input type="radio" name="paymentType" value="نقدي" checked class="w-4 h-4 text-emerald-600 focus:ring-emerald-500">
+                            <div>
+                                <span class="font-bold text-sm block text-emerald-900">💵 نقدي (كاش)</span>
+                                <span class="text-[10px] text-slate-500">تم استلام المبلغ نقداً الآن</span>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 cursor-pointer hover:border-rose-500 transition has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50/60">
+                            <input type="radio" name="paymentType" value="آجل" class="w-4 h-4 text-rose-600 focus:ring-rose-500">
+                            <div>
+                                <span class="font-bold text-sm block text-rose-900">⏳ آجل (دين)</span>
+                                <span class="text-[10px] text-slate-500">يُدفع لاحقاً عند الاستلام</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Pickup Time & Status -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">وقت الاستلام المتوقع</label>
+                        <input type="time" id="pickupTime"
+                               class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-bakery-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">حالة الحجز</label>
+                        <select id="orderStatus" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-bakery-500 text-sm">
+                            <option value="قيد الانتظار">قيد الانتظار (جديد)</option>
+                            <option value="جاهز للتسليم">جاهز للتسليم</option>
+                            <option value="مكتمل (تم التسليم)">مكتمل (تم التسليم)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Notes / Special Instructions -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">ملاحظات إضافية (اختياري)</label>
+                    <textarea id="orderNotes" rows="2" placeholder="مثال: عيش محمص، خفيف، بدون ملح، توصيل..." 
+                              class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-bakery-500 text-sm resize-none"></textarea>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-2 pt-3">
+                    <button type="submit" class="flex-1 bg-bakery-700 hover:bg-bakery-800 text-white font-bold py-2.5 rounded-xl shadow-lg transition active:scale-98">
+                        حفظ الحجز
+                    </button>
+                    <button type="button" onclick="closeModal()" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-semibold transition text-sm">
+                        إلغاء
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Receipt / Print View Modal -->
+    <div id="receiptModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative border border-amber-200" id="receiptContent">
+            <button onclick="closeReceiptModal()" class="no-print absolute left-4 top-4 text-slate-400 hover:text-slate-600 p-1">✕</button>
+
+            <div class="text-center pb-4 border-b border-dashed border-slate-300">
+                <span class="text-3xl">🥖</span>
+                <h3 class="text-lg font-black text-slate-900 mt-1">مخبز البركة الآلي</h3>
+                <p class="text-xs text-slate-500">إيصال حجز وتأكيد طلب عيش</p>
+                <p id="receiptDate" class="text-[11px] text-slate-400 mt-0.5"></p>
+            </div>
+
+            <div class="py-4 space-y-2 text-xs">
+                <div class="flex justify-between">
+                    <span class="text-slate-500">رقم الحجز:</span>
+                    <span id="receiptId" class="font-bold text-slate-800 font-mono"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">العميل:</span>
+                    <span id="receiptCustName" class="font-bold text-slate-800"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">الهاتف:</span>
+                    <span id="receiptCustPhone" class="font-bold text-slate-800" dir="ltr"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">وقت الاستلام:</span>
+                    <span id="receiptPickup" class="font-semibold text-slate-700"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">عدد الرغيف التقريبي:</span>
+                    <span id="receiptLoaves" class="font-bold text-bakery-800"></span>
+                </div>
+                
+                <div class="pt-2 border-t border-dashed border-slate-300 flex justify-between items-center text-sm font-extrabold">
+                    <span>المبلغ الإجمالي:</span>
+                    <span id="receiptAmount" class="text-base text-bakery-900"></span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-slate-500">طريقة الدفع:</span>
+                    <span id="receiptPayment" class="px-2 py-0.5 rounded font-bold"></span>
+                </div>
+                <div id="receiptNotesWrapper" class="pt-1 text-[11px] text-slate-500 hidden">
+                    <span>ملاحظات:</span> <span id="receiptNotes"></span>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-200 text-center space-y-2 no-print">
+                <div class="flex gap-2">
+                    <button onclick="window.print()" class="flex-1 bg-slate-900 text-white font-bold py-2 rounded-xl text-xs hover:bg-slate-800 transition">
+                        🖨️ طباعة الإيصال
+                    </button>
+                    <button onclick="shareViaWhatsApp()" class="flex-1 bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs hover:bg-emerald-700 transition">
+                        📲 واتساب
+                    </button>
+                </div>
+                <button onclick="closeReceiptModal()" class="w-full text-slate-500 hover:text-slate-700 text-xs py-1">إغلاق</button>
+            </div>
+            
+            <p class="text-[10px] text-center text-slate-400 mt-2">شكراً لتعاملكم مع مخبز البركة!</p>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2">
+        <span id="toastIcon">✅</span>
+        <span id="toastMsg">تمت العملية بنجاح</span>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // State Management with LocalStorage
+        const STORAGE_KEY = 'sudanese_bakery_reservations_v2';
+        const PRICE_KEY = 'sudanese_bakery_unit_price';
+
+        let reservations = [];
+        let unitPrice = 50; // default 50 SDG per loaf
+        let currentTab = 'active'; // 'active' | 'history' | 'debts'
+        let currentReceiptOrder = null;
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            loadReservations();
+            renderStats();
+            renderOrders();
+
+            // Set default pickup time to current time + 1 hour
+            const now = new Date();
+            now.setHours(now.getHours() + 1);
+            const timeString = now.toTimeString().substring(0, 5);
+            document.getElementById('pickupTime').value = timeString;
+        });
+
+        // Load & Save Settings
+        function loadSettings() {
+            const savedPrice = localStorage.getItem(PRICE_KEY);
+            if (savedPrice) {
+                unitPrice = parseFloat(savedPrice) || 50;
+            }
+            document.getElementById('unitPriceInput').value = unitPrice;
+            document.getElementById('currentLoafPriceBadge').innerText = unitPrice;
+        }
+
+        function updateUnitPrice(val) {
+            const price = parseFloat(val);
+            if (price > 0) {
+                unitPrice = price;
+                localStorage.setItem(PRICE_KEY, unitPrice);
+                document.getElementById('currentLoafPriceBadge').innerText = unitPrice;
+                calculateLoavesFromSDG();
+                renderStats();
+                renderOrders();
+                showToast('تم تحديث سعر الرغيف إلى ' + unitPrice + ' ج.س');
+            }
+        }
+
+        // Load Reservations
+        function loadReservations() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    reservations = JSON.parse(saved);
+                } catch (e) {
+                    reservations = [];
+                }
+            } else {
+                // Initial Sample Sudanese Data
+                reservations = [
+                    {
+                        id: 'BKR-101',
+                        name: 'عثمان عبد الرحيم',
+                        phone: '0912345678',
+                        amountSDG: 3000,
+                        loaves: 60,
+                        paymentType: 'نقدي',
+                        isPaid: true,
+                        pickupTime: '16:30',
+                        status: 'جاهز للتسليم',
+                        notes: 'عيش محمص شوية لو سمحت',
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        id: 'BKR-102',
+                        name: 'حاجة فاطمة (أم أحمد)',
+                        phone: '0123987654',
+                        amountSDG: 5000,
+                        loaves: 100,
+                        paymentType: 'آجل',
+                        isPaid: false,
+                        pickupTime: '17:00',
+                        status: 'قيد الانتظار',
+                        notes: 'الدفع غداً صباحاً مع الولد',
+                        createdAt: new Date(Date.now() - 3600000).toISOString()
+                    },
+                    {
+                        id: 'BKR-103',
+                        name: 'مطعم النيلين (الأستاذ طارق)',
+                        phone: '0988776655',
+                        amountSDG: 20000,
+                        loaves: 400,
+                        paymentType: 'نقدي',
+                        isPaid: true,
+                        pickupTime: '14:00',
+                        status: 'مكتمل (تم التسليم)',
+                        notes: 'طلب يومي ثابت للمطعم',
+                        createdAt: new Date(Date.now() - 86400000).toISOString()
+                    }
+                ];
+                saveReservations();
+            }
+        }
+
+        function saveReservations() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations));
+        }
+
+        // Switch Tabs
+        function switchTab(tab) {
+            currentTab = tab;
+            const tabActive = document.getElementById('tabActive');
+            const tabHistory = document.getElementById('tabHistory');
+            const tabDebts = document.getElementById('tabDebts');
+
+            // Reset styles
+            [tabActive, tabHistory, tabDebts].forEach(btn => {
+                btn.className = "flex-1 md:flex-none px-4 py-2 rounded-lg text-slate-600 hover:text-bakery-800 transition-all duration-200 flex items-center justify-center gap-1.5";
+            });
+
+            if (tab === 'active') {
+                tabActive.className = "flex-1 md:flex-none px-4 py-2 rounded-lg text-bakery-900 bg-white shadow-sm font-bold flex items-center justify-center gap-1.5";
+            } else if (tab === 'history') {
+                tabHistory.className = "flex-1 md:flex-none px-4 py-2 rounded-lg text-bakery-900 bg-white shadow-sm font-bold flex items-center justify-center gap-1.5";
+            } else if (tab === 'debts') {
+                tabDebts.className = "flex-1 md:flex-none px-4 py-2 rounded-lg text-rose-800 bg-rose-50 shadow-sm font-bold flex items-center justify-center gap-1.5";
+            }
+
+            renderOrders();
+        }
+
+        // Loaf calculation
+        function calculateLoavesFromSDG() {
+            const amountInput = document.getElementById('orderAmountSDG');
+            const loavesDisplay = document.getElementById('calculatedLoavesCount');
+            const amount = parseFloat(amountInput.value) || 0;
+            const count = Math.floor(amount / (unitPrice || 1));
+            loavesDisplay.innerText = count.toLocaleString('ar-EG');
+            return count;
+        }
+
+        function setQuickAmount(amount) {
+            document.getElementById('orderAmountSDG').value = amount;
+            calculateLoavesFromSDG();
+        }
+
+        // Render Statistics
+        function renderStats() {
+            const totalOrders = reservations.length;
+            const totalAmount = reservations.reduce((acc, cur) => acc + (cur.amountSDG || 0), 0);
+            const totalLoaves = reservations.reduce((acc, cur) => acc + (cur.loaves || 0), 0);
+
+            const cashOrders = reservations.filter(r => r.paymentType === 'نقدي');
+            const cashAmount = cashOrders.reduce((acc, cur) => acc + cur.amountSDG, 0);
+
+            const creditOrders = reservations.filter(r => r.paymentType === 'آجل' && !r.isPaid);
+            const creditAmount = creditOrders.reduce((acc, cur) => acc + cur.amountSDG, 0);
+
+            const activeOrders = reservations.filter(r => r.status !== 'مكتمل (تم التسليم)');
+            const historyOrders = reservations.filter(r => r.status === 'مكتمل (تم التسليم)');
+
+            document.getElementById('statTotalOrders').innerText = totalOrders;
+            document.getElementById('statTotalLoaves').innerText = totalLoaves.toLocaleString('ar-EG');
+            document.getElementById('statTotalAmount').innerText = totalAmount.toLocaleString('en-US');
+            
+            document.getElementById('statCashAmount').innerText = cashAmount.toLocaleString('en-US');
+            document.getElementById('statCashCount').innerText = cashOrders.length;
+
+            document.getElementById('statCreditAmount').innerText = creditAmount.toLocaleString('en-US');
+            document.getElementById('statCreditCount').innerText = creditOrders.length;
+
+            document.getElementById('badgeActiveCount').innerText = activeOrders.length;
+            document.getElementById('badgeHistoryCount').innerText = historyOrders.length;
+            document.getElementById('badgeDebtsCount').innerText = creditOrders.length;
+        }
+
+        // Render Orders Cards
+        function renderOrders() {
+            const container = document.getElementById('ordersContainer');
+            const emptyState = document.getElementById('emptyState');
+            const searchQuery = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+
+            container.innerHTML = '';
+
+            let filtered = reservations.filter(r => {
+                // Tab filter
+                if (currentTab === 'active') {
+                    if (r.status === 'مكتمل (تم التسليم)') return false;
+                } else if (currentTab === 'history') {
+                    if (r.status !== 'مكتمل (تم التسليم)') return false;
+                } else if (currentTab === 'debts') {
+                    // Only unpaid debts
+                    if (!(r.paymentType === 'آجل' && !r.isPaid)) return false;
+                }
+
+                // Search query filter
+                if (searchQuery) {
+                    const matchName = (r.name || '').toLowerCase().includes(searchQuery);
+                    const matchPhone = (r.phone || '').toLowerCase().includes(searchQuery);
+                    const matchId = (r.id || '').toLowerCase().includes(searchQuery);
+                    if (!matchName && !matchPhone && !matchId) return false;
+                }
+
+                return true;
+            });
+
+            // Sort so most recent is first
+            filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                container.classList.add('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+                container.classList.remove('hidden');
+            }
+
+            filtered.forEach(order => {
+                const card = createOrderCard(order);
+                container.appendChild(card);
+            });
+        }
+
+        function filterOrders() {
+            renderOrders();
+        }
+
+        // Create Individual Card
+        function createOrderCard(order) {
+            const card = document.createElement('div');
+            card.className = "bg-white rounded-2xl p-5 shadow-sm border border-amber-100 hover:shadow-md transition-all flex flex-col justify-between relative group";
+
+            const isCompleted = order.status === 'مكتمل (تم التسليم)';
+            const isCash = order.paymentType === 'نقدي';
+            const isCreditUnpaid = order.paymentType === 'آجل' && !order.isPaid;
+
+            // Status Styling
+            let statusBadge = '';
+            if (order.status === 'مكتمل (تم التسليم)') {
+                statusBadge = '<span class="bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded-full font-bold">✔️ مكتمل</span>';
+            } else if (order.status === 'جاهز للتسليم') {
+                statusBadge = '<span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-bold animate-pulse">🔥 جاهز للتسليم</span>';
+            } else {
+                statusBadge = '<span class="bg-blue-50 text-blue-700 text-xs px-2.5 py-1 rounded-full font-bold">⏳ قيد الانتظار</span>';
+            }
+
+            // Payment badge
+            let paymentBadge = '';
+            if (isCash) {
+                paymentBadge = `<span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-lg">💵 نقدي (مدفوع)</span>`;
+            } else {
+                if (order.isPaid) {
+                    paymentBadge = `<span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-lg">✔️ آجل (تم سداده)</span>`;
+                } else {
+                    paymentBadge = `<span class="bg-rose-100 text-rose-800 text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">⚠️ آجل (مستحق)</span>`;
+                }
+            }
+
+            const formattedAmount = Number(order.amountSDG).toLocaleString('en-US');
+            const formattedDate = new Date(order.createdAt).toLocaleDateString('ar-EG', {
+                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+
+            card.innerHTML = `
+                <div>
+                    <!-- Header of Card -->
+                    <div class="flex justify-between items-start gap-2 mb-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h4 class="font-extrabold text-base text-slate-900">${order.name}</h4>
+                                <span class="text-[10px] bg-slate-100 text-slate-500 font-mono px-1.5 py-0.5 rounded">${order.id}</span>
+                            </div>
+                            ${order.phone ? `
+                                <a href="tel:${order.phone}" dir="ltr" class="text-xs text-bakery-700 hover:underline flex items-center gap-1 mt-0.5 w-max">
+                                    <span>📞</span> ${order.phone}
+                                </a>
+                            ` : '<span class="text-[11px] text-slate-400">بدون هاتف</span>'}
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            ${statusBadge}
+                        </div>
+                    </div>
+
+                    <!-- Amount & Bread count Highlight -->
+                    <div class="bg-bakery-50/80 rounded-xl p-3 border border-bakery-100 mb-3 flex items-center justify-between">
+                        <div>
+                            <span class="text-xs text-bakery-800 block">المبلغ المطلوب:</span>
+                            <span class="text-lg font-black text-bakery-900">${formattedAmount}</span>
+                            <span class="text-xs font-bold text-bakery-700">ج.س</span>
+                        </div>
+                        <div class="text-left border-r pr-3 border-bakery-200">
+                            <span class="text-xs text-bakery-800 block">الخبز المقدر:</span>
+                            <span class="text-base font-extrabold text-slate-800">${order.loaves}</span>
+                            <span class="text-xs text-slate-600">رغيفة</span>
+                        </div>
+                    </div>
+
+                    <!-- Order Details & Notes -->
+                    <div class="space-y-1.5 text-xs text-slate-600 mb-4">
+                        <div class="flex justify-between items-center">
+                            <span>طريقة السداد:</span>
+                            ${paymentBadge}
+                        </div>
+                        <div class="flex justify-between">
+                            <span>وقت الاستلام:</span>
+                            <span class="font-bold text-slate-800 font-mono">${order.pickupTime || 'غير محدد'}</span>
+                        </div>
+                        <div class="flex justify-between text-[11px] text-slate-400">
+                            <span>تاريخ التسجيل:</span>
+                            <span>${formattedDate}</span>
+                        </div>
+                        ${order.notes ? `
+                            <div class="bg-slate-50 p-2 rounded-lg text-slate-700 text-xs mt-2 border border-slate-100">
+                                <span class="font-bold text-slate-500 text-[10px] block">ملاحظات:</span>
+                                ${order.notes}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <!-- Footer & Action Buttons -->
+                <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-1.5">
+                    <div class="flex items-center gap-1">
+                        <!-- Print / WhatsApp Button -->
+                        <button onclick="viewReceipt('${order.id}')" title="عرض الإيصال" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2z"></path></svg>
+                        </button>
+                        <!-- Edit Button -->
+                        <button onclick="editOrder('${order.id}')" title="تعديل الحجز" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        </button>
+                        <!-- Delete Button -->
+                        <button onclick="deleteOrder('${order.id}')" title="حذف الحجز" class="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-1.5">
+                        ${isCreditUnpaid ? `
+                            <button onclick="toggleCreditPaid('${order.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-1.5 rounded-xl shadow-sm transition">
+                                سداد الآجل
+                            </button>
+                        ` : ''}
+
+                        ${!isCompleted ? `
+                            <button onclick="markAsDelivered('${order.id}')" class="bg-bakery-600 hover:bg-bakery-700 text-white font-bold text-xs px-3 py-1.5 rounded-xl shadow-sm transition">
+                                تم التسليم ✓
+                            </button>
+                        ` : `
+                            <button onclick="reopenOrder('${order.id}')" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-xs px-2.5 py-1.5 rounded-xl transition">
+                                إعادة فتح
+                            </button>
+                        `}
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // Handle Add/Edit Order Submit
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const editId = document.getElementById('editOrderId').value;
+            const name = document.getElementById('custName').value.trim();
+            const phone = document.getElementById('custPhone').value.trim();
+            const amountSDG = parseFloat(document.getElementById('orderAmountSDG').value) || 0;
+            const paymentType = document.querySelector('input[name="paymentType"]:checked').value;
+            const pickupTime = document.getElementById('pickupTime').value;
+            const status = document.getElementById('orderStatus').value;
+            const notes = document.getElementById('orderNotes').value.trim();
+
+            const calculatedLoaves = Math.floor(amountSDG / (unitPrice || 1));
+
+            if (editId) {
+                // Update Existing
+                const index = reservations.findIndex(r => r.id === editId);
+                if (index !== -1) {
+                    reservations[index] = {
+                        ...reservations[index],
+                        name,
+                        phone,
+                        amountSDG,
+                        loaves: calculatedLoaves,
+                        paymentType,
+                        pickupTime,
+                        status,
+                        notes,
+                        // if user switched to cash, mark paid automatically
+                        isPaid: paymentType === 'نقدي' ? true : reservations[index].isPaid
+                    };
+                    showToast('تم تحديث الحجز بنجاح!');
+                }
+            } else {
+                // Create New
+                const newId = 'BKR-' + Math.floor(100 + Math.random() * 900);
+                const newOrder = {
+                    id: newId,
+                    name,
+                    phone,
+                    amountSDG,
+                    loaves: calculatedLoaves,
+                    paymentType,
+                    isPaid: paymentType === 'نقدي',
+                    pickupTime,
+                    status,
+                    notes,
+                    createdAt: new Date().toISOString()
+                };
+                reservations.unshift(newOrder);
+                showToast('تم إضافة حجز جديد بنجاح');
+            }
+
+            saveReservations();
+            renderStats();
+            renderOrders();
+            closeModal();
+        }
+
+        // Open Modal for New Order
+        function openNewOrderModal() {
+            document.getElementById('reservationForm').reset();
+            document.getElementById('editOrderId').value = '';
+            document.getElementById('modalTitle').innerText = 'تسجيل حجز عيش جديد';
+            document.getElementById('calculatedLoavesCount').innerText = '0';
+            document.querySelector('input[name="paymentType"][value="نقدي"]').checked = true;
+
+            // Set default time (1 hour ahead)
+            const now = new Date();
+            now.setHours(now.getHours() + 1);
+            document.getElementById('pickupTime').value = now.toTimeString().substring(0, 5);
+
+            document.getElementById('orderModal').classList.remove('hidden');
+        }
+
+        // Edit Order
+        function editOrder(id) {
+            const order = reservations.find(r => r.id === id);
+            if (!order) return;
+
+            document.getElementById('editOrderId').value = order.id;
+            document.getElementById('custName').value = order.name;
+            document.getElementById('custPhone').value = order.phone || '';
+            document.getElementById('orderAmountSDG').value = order.amountSDG;
+            document.getElementById('pickupTime').value = order.pickupTime || '';
+            document.getElementById('orderStatus').value = order.status;
+            document.getElementById('orderNotes').value = order.notes || '';
+
+            const radio = document.querySelector(`input[name="paymentType"][value="${order.paymentType}"]`);
+            if (radio) radio.checked = true;
+
+            calculateLoavesFromSDG();
+
+            document.getElementById('modalTitle').innerText = 'تعديل الحجز (' + order.id + ')';
+            document.getElementById('orderModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('orderModal').classList.add('hidden');
+        }
+
+        // Mark Delivered
+        function markAsDelivered(id) {
+            const order = reservations.find(r => r.id === id);
+            if (!order) return;
+
+            order.status = 'مكتمل (تم التسليم)';
+            saveReservations();
+            renderStats();
+            renderOrders();
+            showToast('تم تسليم الخبز ونقل الحجز للحجوزات السابقة');
+        }
+
+        // Reopen Completed Order
+        function reopenOrder(id) {
+            const order = reservations.find(r => r.id === id);
+            if (!order) return;
+
+            order.status = 'قيد الانتظار';
+            saveReservations();
+            renderStats();
+            renderOrders();
+            showToast('تمت إعادة فتح الحجز وإرجاعه للحجوزات الحالية');
+        }
+
+        // Toggle Credit Payment (سداد الآجل)
+        function toggleCreditPaid(id) {
+            const order = reservations.find(r => r.id === id);
+            if (!order) return;
+
+            order.isPaid = true;
+            saveReservations();
+            renderStats();
+            renderOrders();
+            showToast('تم تسديد المبلغ الآجل بنجاح 💵');
+        }
+
+        // Delete Order
+        function deleteOrder(id) {
+            if (confirm('هل أنت متأكد من حذف هذا الحجز نهائياً؟')) {
+                reservations = reservations.filter(r => r.id !== id);
+                saveReservations();
+                renderStats();
+                renderOrders();
+                showToast('تم حذف الحجز', '🗑️');
+            }
+        }
+
+        // View & Print Receipt
+        function viewReceipt(id) {
+            const order = reservations.find(r => r.id === id);
+            if (!order) return;
+
+            currentReceiptOrder = order;
+
+            document.getElementById('receiptId').innerText = order.id;
+            document.getElementById('receiptCustName').innerText = order.name;
+            document.getElementById('receiptCustPhone').innerText = order.phone || 'غير مسجل';
+            document.getElementById('receiptPickup').innerText = order.pickupTime || 'في أقرب وقت';
+            document.getElementById('receiptLoaves').innerText = `${order.loaves} رغيفة`;
+            document.getElementById('receiptAmount').innerText = `${Number(order.amountSDG).toLocaleString('en-US')} ج.س`;
+            document.getElementById('receiptDate').innerText = new Date(order.createdAt).toLocaleString('ar-EG');
+
+            const paymentEl = document.getElementById('receiptPayment');
+            if (order.paymentType === 'نقدي') {
+                paymentEl.className = 'px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800';
+                paymentEl.innerText = 'مدفوع نقداً';
+            } else {
+                paymentEl.className = order.isPaid 
+                    ? 'px-2 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800' 
+                    : 'px-2 py-0.5 rounded font-bold bg-rose-100 text-rose-800';
+                paymentEl.innerText = order.isPaid ? 'آجل (مسدد)' : 'آجل (غير مسدد)';
+            }
+
+            const notesWrapper = document.getElementById('receiptNotesWrapper');
+            if (order.notes) {
+                notesWrapper.classList.remove('hidden');
+                document.getElementById('receiptNotes').innerText = order.notes;
+            } else {
+                notesWrapper.classList.add('hidden');
+            }
+
+            document.getElementById('receiptModal').classList.remove('hidden');
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receiptModal').classList.add('hidden');
+            currentReceiptOrder = null;
+        }
+
+        // Share Receipt details via WhatsApp
+        function shareViaWhatsApp() {
+            if (!currentReceiptOrder) return;
+            const o = currentReceiptOrder;
+            const text = 
+`*مخبز البركة الآلي - تأكيد حجز عيش* 🥖
+----------------------------------
+*رقم الحجز:* ${o.id}
+*اسم الزبون:* ${o.name}
+*المبلغ:* ${o.amountSDG} جنيه سوداني
+*العدد التقريبي:* ${o.loaves} رغيفة
+*طريقة الدفع:* ${o.paymentType} ${o.paymentType === 'آجل' ? (o.isPaid ? '(تم السداد)' : '(مستحق)') : ''}
+*موعد الاستلام:* ${o.pickupTime || 'فور الجاهزية'}
+${o.notes ? `*ملاحظات:* ${o.notes}\n` : ''}----------------------------------
+شكراً لتعاملكم معنا!`;
+
+            const phone = o.phone ? o.phone.replace(/^0/, '249') : '';
+            const url = phone 
+                ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
+                : `https://wa.me/?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+
+        // Toast feedback
+        function showToast(message, icon = '✅') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = message;
+            document.getElementById('toastIcon').innerText = icon;
+
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

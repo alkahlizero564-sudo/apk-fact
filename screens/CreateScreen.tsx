@@ -38,11 +38,43 @@ function AppBox({ title, busy, setBusy, onPreview }: BoxProps) {
   const [description, setDescription] = useState("");
   const [editOpen, setEditOpen] = useState(false);
   const [editText, setEditText] = useState("");
-  const [loading, setLoading] = useState<Kind | null>(null);
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState("");
+  const [loading, setLoading] = useState<Kind | "paste" | null>(null);
   const [log, setLog] = useState<string[]>([]);
 
   function addLog(line: string) {
     setLog((prev) => [...prev, line]);
+  }
+
+  async function uploadPastedCode() {
+    if (busy) return;
+    const n = cleanName(name);
+    const code = pasteText.trim();
+    if (!n) {
+      setLog(["❌ اكتب اسم التطبيق بالإنجليزي (حروف وأرقام بدون مسافات)."]);
+      return;
+    }
+    if (!code) {
+      setLog(["❌ الصق الكود الأول."]);
+      return;
+    }
+
+    setLog([]);
+    setBusy(true);
+    setLoading("paste");
+    try {
+      addLog("⏳ بيترفع الكود على GitHub...");
+      await pushFile(REPO, `apps/${n}/index.html`, code + "\n", `Upload code: ${n}`);
+      addLog(`✅ ارتفع الكود: apps/${n}/index.html`);
+      addLog("🎉 اضغط معاينة تشوفه.");
+      setPasteText("");
+    } catch (e: any) {
+      addLog(`❌ ${e.message}`);
+    } finally {
+      setLoading(null);
+      setBusy(false);
+    }
   }
 
   async function run(kind: Kind) {
@@ -168,6 +200,32 @@ function AppBox({ title, busy, setBusy, onPreview }: BoxProps) {
             disabled={busy}
           >
             {loading === "edit" ? <ActivityIndicator color="#fff" /> : <Text style={styles.createBtnText}>عدّل وارفع</Text>}
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <TouchableOpacity style={styles.editToggle} onPress={() => setPasteOpen(!pasteOpen)}>
+        <Text style={styles.editToggleText}>{pasteOpen ? "لصق كود جاهز ▲" : "لصق كود جاهز ▼"}</Text>
+      </TouchableOpacity>
+
+      {pasteOpen && (
+        <View style={styles.editBox}>
+          <Text style={styles.label}>الكود (HTML كامل)</Text>
+          <TextInput
+            style={[styles.textarea, { minHeight: 160, fontFamily: "monospace", fontSize: 12 }]}
+            value={pasteText}
+            onChangeText={setPasteText}
+            placeholder="الصق الكود هنا"
+            multiline
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <TouchableOpacity
+            style={[styles.createBtn, busy && loading !== "paste" && styles.disabled]}
+            onPress={uploadPastedCode}
+            disabled={busy}
+          >
+            {loading === "paste" ? <ActivityIndicator color="#fff" /> : <Text style={styles.createBtnText}>ارفع الكود</Text>}
           </TouchableOpacity>
         </View>
       )}

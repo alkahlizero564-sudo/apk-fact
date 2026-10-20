@@ -44,14 +44,14 @@ async function postJson(url: string, headers: Record<string, string>, body: any,
   }
 }
 
-async function callClaude(key: string, prompt: string): Promise<string> {
+async function callClaude(key: string, prompt: string, system: string): Promise<string> {
   const d = await postJson(
     "https://api.anthropic.com/v1/messages",
     { "x-api-key": key, "anthropic-version": "2023-06-01" },
     {
       model: "claude-sonnet-5-5",
       max_tokens: 12000,
-      system: SYSTEM,
+      system,
       messages: [{ role: "user", content: prompt }],
     },
     "Claude"
@@ -59,12 +59,12 @@ async function callClaude(key: string, prompt: string): Promise<string> {
   return (d.content || []).map((c: any) => c.text || "").join("");
 }
 
-async function callGemini(key: string, prompt: string): Promise<string> {
+async function callGemini(key: string, prompt: string, system: string): Promise<string> {
   const d = await postJson(
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
     { "x-goog-api-key": key },
     {
-      systemInstruction: { parts: [{ text: SYSTEM }] },
+      systemInstruction: { parts: [{ text: system }] },
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: { maxOutputTokens: 16000 },
     },
@@ -88,21 +88,18 @@ function extract(text: string): string {
   return code;
 }
 
-export async function generateApp(
-  description: string,
-  existingHtml: string | null,
+async function runWithFallback<T>(
+  system: string,
+  prompt: string,
+  parse: (text: string) => T,
   onStatus: (s: string) => void
-): Promise<{ html: string; provider: string }> {
-  const prompt = existingHtml
-    ? `Here is the current app:\n\`\`\`html\n${existingHtml}\n\`\`\`\n\nApply this change and return the FULL updated file:\n${description}`
-    : `Create this app:\n${description}`;
-
+): Promise<{ value: T; provider: string }> {
   const claudeKey = await SecureStore.getItemAsync("CLAUDE_API_KEY");
   const geminiKey = await SecureStore.getItemAsync("GEMINI_API_KEY");
 
   const providers = [
-    { label: "Claude", key: claudeKey, call: (k: string) => callClaude(k, prompt), tries: 2 },
-    { label: "Gemini", key: geminiKey, call: (k: string) => callGemini(k, prompt), tries: 3 },
+    { label: "Claude", key: claudeKey, call: (k: string) => callClaude(k, prompt, system), tries: 2 },
+    { label: "Gemini", key: geminiKey, call: (k: string) => callGemini(k, prompt, system), tries: 3 },
   ];
 
   const failures: string[] = [];
@@ -112,10 +109,10 @@ export async function generateApp(
       continue;
     }
     for (let i = 1; i <= p.tries; i++) {
-      onStatus(`⏳ بيتولّد الكود بواسطة ${p.label}${i > 1 ? ` (محاولة ${i})` : ""}...`);
+      onStatus(`⏳ بيتولّد الرد بواسطة ${p.label}${i > 1 ? ` (محاولة ${i})` : ""}...`);
       try {
-        const html = extract(await p.call(p.key));
-        return { html, provider: p.label };
+        const value = parse(await p.call(p.key));
+        return { value, provider: p.label };
       } catch (e: any) {
         const msg = String(e?.message || e).slice(0, 200);
         const retryable = e?.status === undefined || [0, 500, 502, 503, 529].includes(e.status);
@@ -128,4 +125,34 @@ export async function generateApp(
     }
   }
   throw new Error(failures.join("\n"));
-                  }
+}
+
+export async function generateApp(
+  description: string,
+  existingHtml: string | null,
+  onStatus: (s: string) => void
+): Promise<{ html: string; provider: string }> {
+  const prompt = existingHtml
+    ? `Here is the current app:\n\`\`\`html\n${existingHtml}\n\`\`\`\n\nApply this change and return the FULL updated file:\n${description}`
+    : `Create this app:\n${description}`;
+
+  const r = await runWithFallback(SYSTEM, prompt, extract, onStatus);
+  return { html: r.value, provider: r.provider };
+}
+
+export async function askText(
+  system: string,
+  prompt: string,
+  onStatus: (s: string) => void
+): Promise<{ text: string; provider: string }> {
+  const r = await runWithFallback(
+    system,
+    prompt,
+    (t) => {
+      if (!t.trim()) throw new Error("الرد فارغ");
+      return t;
+    },
+    onStatus
+  );
+  return { text: r.value, provider: r.provider };
+                                  }

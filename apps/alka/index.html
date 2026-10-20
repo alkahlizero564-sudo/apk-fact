@@ -83,6 +83,7 @@
             align-items: center;
             gap: 12px;
             cursor: pointer;
+            user-select: none;
         }
 
         .brand-icon {
@@ -143,6 +144,7 @@
             align-items: center;
             gap: 4px;
             cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         .conn-dot {
@@ -442,11 +444,6 @@
             box-shadow: 0 2px 8px rgba(194, 105, 16, 0.25);
         }
 
-        .btn-submit.btn-success-state {
-            background: linear-gradient(135deg, #16a34a, #22c55e) !important;
-            box-shadow: 0 4px 15px rgba(22, 163, 74, 0.35) !important;
-        }
-
         /* Order Filter Tabs */
         .filter-capsules {
             display: flex;
@@ -497,21 +494,12 @@
 
         .order-item.completed-order {
             border-right: 5px solid var(--success);
-            opacity: 0.92;
+            opacity: 0.95;
         }
 
         .order-item.cancelled-order {
             border-right: 5px solid var(--danger);
-            opacity: 0.75;
-        }
-
-        .order-item.newly-added {
-            animation: highlightFade 2s ease-out;
-        }
-
-        @keyframes highlightFade {
-            0% { transform: scale(0.97); box-shadow: 0 0 0 3px rgba(194, 105, 16, 0.4); }
-            100% { transform: scale(1); box-shadow: var(--shadow-sm); }
+            opacity: 0.8;
         }
 
         .order-top {
@@ -522,11 +510,13 @@
         }
 
         .order-id {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 800;
             color: var(--primary-dark);
-            font-family: monospace, sans-serif;
             letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .order-date {
@@ -601,7 +591,7 @@
 
         .btn-small {
             flex: 1;
-            padding: 9px 8px;
+            padding: 8px 10px;
             font-size: 12px;
             font-weight: 700;
             border-radius: 8px;
@@ -622,6 +612,12 @@
             background: #fee2e2;
             color: #b91c1c;
             border-color: #fca5a5;
+        }
+
+        .btn-copy {
+            background: #f1f5f9;
+            color: #334155;
+            border-color: #cbd5e1;
         }
 
         /* Empty State */
@@ -778,16 +774,6 @@
         .toast i.success { color: #4ade80; }
         .toast i.error { color: #f87171; }
 
-        /* Workplace tags */
-        .work-tag {
-            font-size: 11px;
-            background: #ede6dc;
-            padding: 2px 6px;
-            border-radius: 4px;
-            color: #5d4e41;
-            font-weight: 600;
-        }
-
         .notice-box {
             font-size: 12px;
             line-height: 1.5;
@@ -829,10 +815,10 @@
             color: var(--primary-dark);
         }
 
-        .sync-spinner {
-            animation: spin 1s linear infinite;
+        .spin {
+            animation: spinAnim 0.8s linear infinite;
         }
-        @keyframes spin {
+        @keyframes spinAnim {
             100% { transform: rotate(360deg); }
         }
     </style>
@@ -853,7 +839,7 @@
                 </div>
             </div>
             <div class="header-actions">
-                <div class="conn-pill" id="connPill" onclick="openConfigModal()" title="حالة الاتصال بقاعدة البيانات المشتركة">
+                <div class="conn-pill" id="connPill" onclick="openConfigModal()" title="حالة الاتصال بقاعدة البيانات">
                     <span class="conn-dot" id="connDot"></span>
                     <span id="connText">متصل</span>
                 </div>
@@ -876,7 +862,7 @@
         <!-- User info quick pill -->
         <div class="user-quick-strip" id="userQuickBar" onclick="switchTab('profile')" style="display: none;">
             <div>
-                <i class="fa-solid fa-building-user text-amber-600" style="color: var(--primary);"></i>
+                <i class="fa-solid fa-building-user" style="color: var(--primary);"></i>
                 <span id="quickUserWork">مكان العمل: --</span>
             </div>
             <span style="color: var(--primary); font-weight:700;"><i class="fa-solid fa-pen-to-square"></i> تعديل البيانات</span>
@@ -936,11 +922,11 @@
                     <div class="form-group">
                         <label>وردية الاستلام المفضلة</label>
                         <div class="shift-picker">
-                            <div class="shift-btn active" id="shiftMorning" onclick="selectShift('morning')">
+                            <div class="shift-btn active" id="shiftMorning" onclick="selectShift('الوردية الصباحية (7:00 ص)')">
                                 <i class="fa-solid fa-sun" style="color: #f59e0b; margin-left: 5px;"></i>
                                 الوردية الصباحية (7:00 ص)
                             </div>
-                            <div class="shift-btn" id="shiftEvening" onclick="selectShift('evening')">
+                            <div class="shift-btn" id="shiftEvening" onclick="selectShift('الوردية المسائية (4:00 م)')">
                                 <i class="fa-solid fa-moon" style="color: #6366f1; margin-left: 5px;"></i>
                                 الوردية المسائية (4:00 م)
                             </div>
@@ -1006,9 +992,7 @@
             </div>
 
             <!-- Orders Container -->
-            <div id="ordersContainer">
-                <!-- Dynamically rendered -->
-            </div>
+            <div id="ordersContainer"></div>
         </section>
 
         <!-- VIEW 3: PROFILE VIEW -->
@@ -1117,7 +1101,7 @@
             <i class="fa-solid fa-circle-exclamation" style="font-size: 16px; margin-top: 2px;"></i>
             <div>
                 <strong>مرحباً بك في فرن BCC!</strong><br>
-                يرجى تسجيل بياناتك أول مرة ليتم حفظها في هاتفك وقاعدة بيانات الفرن تلقائياً في كل حجوزاتك.
+                يرجى تسجيل بياناتك ليتم ربط حجوزاتك ومتابعتها بسهولة.
             </div>
         </div>
 
@@ -1148,24 +1132,24 @@
 
             <button type="submit" id="btnModalSubmit" class="btn-submit" style="margin-top: 14px;">
                 <i class="fa-solid fa-check"></i>
-                <span>حفظ البيانات ومتابعة التطبيق</span>
+                <span>حفظ ومتابعة</span>
             </button>
         </form>
     </div>
 </div>
 
-<!-- Config Modal for Supabase Connection (Editable directly if needed) -->
+<!-- Config Modal for Supabase Connection -->
 <div class="modal-overlay" id="configModal" onclick="closeConfigModal()">
     <div class="modal-card" onclick="event.stopPropagation()">
         <div class="modal-header">
             <div class="modal-title">
                 <i class="fa-solid fa-plug"></i>
-                <span>إعدادات قاعدة بيانات Supabase المشتركة</span>
+                <span>إعدادات قاعدة بيانات Supabase</span>
             </div>
             <button type="button" class="close-btn" onclick="closeConfigModal()"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px; line-height:1.6;">
-            هذا التطبيق متصل بنفس قاعدة بيانات تطبيق الإدارة والخباز (hlisa) ليتم تحديث الحجوزات والعملاء لحظياً.
+            يمكنك إدخال رابط الـ API والمفتاح للربط بنظام الفرن الموحد (hlisa). التطبيق يعمل محلياً في حالة عدم وجود شبكة.
         </p>
 
         <form id="configForm" onsubmit="handleConfigSave(event)">
@@ -1206,123 +1190,116 @@
 <script>
     /* --------------------------------------------------------------------------
        SUPABASE CONFIGURATION CONSTANTS
-       Shared project with 'hlisa' administration app
     -------------------------------------------------------------------------- */
-    // Reads custom config if user provided them, or uses defaults
-    const DEFAULT_SUPABASE_URL = "https://your-supabase-project.supabase.co";
-    const DEFAULT_SUPABASE_ANON_KEY = "your-supabase-anon-key";
+    const DEFAULT_SUPABASE_URL = "https://placeholder-bcc.supabase.co";
+    const DEFAULT_SUPABASE_ANON_KEY = "placeholder-bcc-anon-key";
 
-    const SUPABASE_URL = localStorage.getItem('bcc_supabase_url') || window.SUPABASE_URL || DEFAULT_SUPABASE_URL;
-    const SUPABASE_ANON_KEY = localStorage.getItem('bcc_supabase_anon_key') || window.SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
+    let currentSupabaseUrl = localStorage.getItem('bcc_supabase_url') || DEFAULT_SUPABASE_URL;
+    let currentSupabaseKey = localStorage.getItem('bcc_supabase_anon_key') || DEFAULT_SUPABASE_ANON_KEY;
 
     /* --------------------------------------------------------------------------
-       STATE & CONSTANTS
+       STATE & VARIABLES
     -------------------------------------------------------------------------- */
     let currentUser = null;
     let selectedPaymentMethod = 'نقدي';
     let selectedShift = 'الوردية الصباحية (7:00 ص)';
     let currentFilter = 'all';
     let isMandatoryLogin = false;
+    let isOnlineSync = true;
+
     let bakerySettings = {
         is_booking_open: true,
-        sound_alerts_enabled: true,
         announcement: null
     };
 
-    // LocalStorage Keys
     const STORAGE_USER_KEY = 'bcc_bakery_user_data_v2';
     const STORAGE_ORDERS_KEY = 'bcc_bakery_orders_list_v2';
 
-    let inMemoryOrders = [];
-    let isOnlineSync = true;
+    let ordersList = [];
 
     /* --------------------------------------------------------------------------
-       SUPABASE REST API CLIENT HELPER
+       SUPABASE CLIENT HELPER
     -------------------------------------------------------------------------- */
     async function supabaseFetch(endpoint, options = {}) {
-        const url = `${SUPABASE_URL.replace(/\/+$/, '')}/rest/v1/${endpoint.replace(/^\/+/, '')}`;
+        // If dummy config, fail silently to fallback gracefully
+        if (currentSupabaseUrl.includes('placeholder-bcc') || !currentSupabaseUrl) {
+            setConnectionState(false, 'محلي');
+            throw new Error('Supabase not configured');
+        }
+
+        const cleanUrl = `${currentSupabaseUrl.replace(/\/+$/, '')}/rest/v1/${endpoint.replace(/^\/+/, '')}`;
         const headers = {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': currentSupabaseKey,
+            'Authorization': `Bearer ${currentSupabaseKey}`,
             'Content-Type': 'application/json',
             ...(options.headers || {})
         };
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 9000);
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
 
         try {
-            const res = await fetch(url, {
+            const res = await fetch(cleanUrl, {
                 ...options,
                 headers,
                 signal: controller.signal
             });
             clearTimeout(timeoutId);
 
-            setConnectionState(true);
-
             if (!res.ok) {
-                const errorBody = await res.text();
-                throw new Error(`HTTP ${res.status}: ${errorBody}`);
+                const errorText = await res.text();
+                throw new Error(`HTTP ${res.status}: ${errorText}`);
             }
 
-            // If empty body (like 204 No Content), return empty
+            setConnectionState(true, 'متصل');
             const text = await res.text();
             return text ? JSON.parse(text) : null;
         } catch (err) {
             clearTimeout(timeoutId);
-            console.warn('Supabase fetch error for ' + endpoint, err);
-            // If network issue or invalid URL/key
-            setConnectionState(false);
+            setConnectionState(false, 'أوفلاين');
             throw err;
         }
     }
 
-    function setConnectionState(online) {
+    function setConnectionState(online, label) {
         isOnlineSync = online;
         const dot = document.getElementById('connDot');
         const text = document.getElementById('connText');
         if (dot && text) {
             if (online) {
                 dot.className = 'conn-dot';
-                text.textContent = 'متصل';
+                text.textContent = label || 'متصل';
             } else {
                 dot.className = 'conn-dot offline';
-                text.textContent = 'أوفلاين';
+                text.textContent = label || 'أوفلاين';
             }
         }
     }
 
     /* --------------------------------------------------------------------------
-       INIT APP
+       INIT ON DOM LOAD
     -------------------------------------------------------------------------- */
-    document.addEventListener('DOMContentLoaded', async () => {
+    document.addEventListener('DOMContentLoaded', () => {
         loadUser();
+        loadLocalOrders();
         updateTotalDisplay();
         setupEventListeners();
 
-        // 1. Check if user is registered; if not, show modal
+        // Check if user is set up; if not prompt modal
         if (!currentUser || !currentUser.name || !currentUser.phone) {
             openProfileModal(true);
         } else {
-            // Sync user customer record with Supabase
             syncCustomerWithSupabase(currentUser).catch(() => {});
         }
 
-        // 2. Fetch Bakery Settings (booking open status, announcement)
+        // Fetch Bakery settings & orders
         loadBakerySettings().catch(() => {});
-
-        // 3. Initial orders load from cache + remote
-        renderOrders();
         loadRemoteOrders(false).catch(() => {});
 
-        // Periodically check bakery settings every 30 seconds
-        setInterval(loadBakerySettings, 30000);
+        // Polling
+        setInterval(loadBakerySettings, 45000);
     });
 
-    /* --------------------------------------------------------------------------
-       EVENT LISTENERS ATTACHMENT
-    -------------------------------------------------------------------------- */
     function setupEventListeners() {
         const resForm = document.getElementById('reservationForm');
         if (resForm) {
@@ -1341,30 +1318,394 @@
     }
 
     /* --------------------------------------------------------------------------
-       BAKERY SETTINGS (bakery_settings table)
+       TAB SWITCHING
+    -------------------------------------------------------------------------- */
+    function switchTab(tabId) {
+        const vBooking = document.getElementById('viewBooking');
+        const vHistory = document.getElementById('viewHistory');
+        const vProfile = document.getElementById('viewProfile');
+
+        const btnBooking = document.getElementById('tabBooking');
+        const btnHistory = document.getElementById('tabHistory');
+        const btnProfile = document.getElementById('tabProfile');
+
+        // Hide all views
+        vBooking.style.display = 'none';
+        vHistory.style.display = 'none';
+        vProfile.style.display = 'none';
+
+        btnBooking.classList.remove('active');
+        btnHistory.classList.remove('active');
+        btnProfile.classList.remove('active');
+
+        if (tabId === 'booking') {
+            vBooking.style.display = 'block';
+            btnBooking.classList.add('active');
+        } else if (tabId === 'history') {
+            vHistory.style.display = 'block';
+            btnHistory.classList.add('active');
+            renderOrders();
+        } else if (tabId === 'profile') {
+            vProfile.style.display = 'block';
+            btnProfile.classList.add('active');
+        }
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* --------------------------------------------------------------------------
+       PRESET & FORM CONTROLS
+    -------------------------------------------------------------------------- */
+    function setPresetAmount(val) {
+        const input = document.getElementById('amountSdg');
+        if (input) {
+            input.value = val;
+            updateTotalDisplay();
+            // Highlight preset button
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.includes(val.toLocaleString('en-US')) || btn.textContent.includes(val));
+            });
+        }
+    }
+
+    function updateTotalDisplay() {
+        const input = document.getElementById('amountSdg');
+        const display = document.getElementById('calcPriceDisplay');
+        const val = parseFloat(input.value) || 0;
+        display.textContent = `${val.toLocaleString('ar-EG')} ج.س`;
+    }
+
+    function selectShift(shiftName) {
+        selectedShift = shiftName;
+        const morning = document.getElementById('shiftMorning');
+        const evening = document.getElementById('shiftEvening');
+        if (shiftName.includes('الصباحية')) {
+            morning.classList.add('active');
+            evening.classList.remove('active');
+        } else {
+            evening.classList.add('active');
+            morning.classList.remove('active');
+        }
+    }
+
+    function selectPayment(method) {
+        selectedPaymentMethod = method;
+        const cashCard = document.getElementById('payCash');
+        const creditCard = document.getElementById('payCredit');
+        if (method === 'نقدي') {
+            cashCard.classList.add('selected');
+            creditCard.classList.remove('selected');
+        } else {
+            creditCard.classList.add('selected');
+            cashCard.classList.remove('selected');
+        }
+    }
+
+    /* --------------------------------------------------------------------------
+       RESERVATION SUBMISSION
+    -------------------------------------------------------------------------- */
+    async function handleReservationSubmit(e) {
+        e.preventDefault();
+
+        // 1. Check if user is logged in
+        if (!currentUser || !currentUser.name || !currentUser.phone) {
+            showToast('يرجى إكمال بياناتك للمتابعة', false);
+            openProfileModal(true);
+            return;
+        }
+
+        // 2. Check if booking is open
+        if (bakerySettings.is_booking_open === false) {
+            showToast('عذراً، الحجز مغلق حالياً من إدارة الفرن', false);
+            return;
+        }
+
+        const amountInput = document.getElementById('amountSdg');
+        const notesInput = document.getElementById('orderNotes');
+        const submitBtn = document.getElementById('btnConfirmReservation');
+
+        const amount = parseFloat(amountInput.value);
+        if (!amount || amount < 100) {
+            showToast('أقل قيمة للحجز هي 100 جنيه سوداني', false);
+            amountInput.focus();
+            return;
+        }
+
+        // Disable button while processing
+        const originalBtnHtml = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner spin"></i> جاري إرسال الحجز...';
+
+        const orderCode = 'BCC-' + Math.floor(100000 + Math.random() * 900000);
+        const newOrder = {
+            id: 'ord_' + Date.now(),
+            order_code: orderCode,
+            customer_name: currentUser.name,
+            customer_phone: currentUser.phone,
+            workplace: currentUser.workplace || '',
+            amount_sdg: amount,
+            shift: selectedShift,
+            payment_method: selectedPaymentMethod,
+            notes: notesInput.value.trim(),
+            status: 'pending',
+            created_at: new Date().toISOString()
+        };
+
+        try {
+            // Attempt Supabase insert
+            const remoteResult = await supabaseFetch('reservations', {
+                method: 'POST',
+                headers: { 'Prefer': 'return=representation' },
+                body: JSON.stringify(newOrder)
+            }).catch(() => null);
+
+            if (remoteResult && remoteResult.length > 0) {
+                newOrder.id = remoteResult[0].id || newOrder.id;
+            }
+        } catch (err) {
+            console.log('Saved order locally (offline fallback)');
+        }
+
+        // Save order locally
+        ordersList.unshift(newOrder);
+        saveOrdersLocally();
+
+        // Clear form
+        amountInput.value = '';
+        notesInput.value = '';
+        updateTotalDisplay();
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
+
+        showToast(`تم تأكيد الحجز بنجاح! رقم طلبك: ${orderCode}`, true);
+
+        // Switch to history tab to view the order
+        setTimeout(() => {
+            switchTab('history');
+        }, 800);
+    }
+
+    /* --------------------------------------------------------------------------
+       ORDERS STORAGE & RENDERING
+    -------------------------------------------------------------------------- */
+    function loadLocalOrders() {
+        try {
+            const data = localStorage.getItem(STORAGE_ORDERS_KEY);
+            if (data) {
+                ordersList = JSON.parse(data);
+            }
+        } catch (e) {
+            ordersList = [];
+        }
+    }
+
+    function saveOrdersLocally() {
+        try {
+            localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(ordersList));
+        } catch (e) {
+            console.error('Local save error', e);
+        }
+    }
+
+    async function loadRemoteOrders(isManual = false) {
+        const refreshIcon = document.getElementById('refreshIcon');
+        if (refreshIcon) refreshIcon.classList.add('spin');
+
+        if (currentUser && currentUser.phone) {
+            try {
+                const phoneFilter = encodeURIComponent(currentUser.phone);
+                const remote = await supabaseFetch(`reservations?customer_phone=eq.${phoneFilter}&order=created_at.desc`);
+                if (remote && Array.isArray(remote)) {
+                    ordersList = remote;
+                    saveOrdersLocally();
+                    if (isManual) showToast('تم تحديث قائمة الحجوزات', true);
+                }
+            } catch (err) {
+                if (isManual) showToast('تم عرض النسخة المحفوظة بالجهاز', false);
+            }
+        }
+
+        renderOrders();
+        if (refreshIcon) {
+            setTimeout(() => refreshIcon.classList.remove('spin'), 500);
+        }
+    }
+
+    function filterOrders(type, btnElement) {
+        currentFilter = type;
+        document.querySelectorAll('.filter-capsule').forEach(b => b.classList.remove('active'));
+        if (btnElement) btnElement.classList.add('active');
+        renderOrders();
+    }
+
+    function renderOrders() {
+        const container = document.getElementById('ordersContainer');
+        const countText = document.getElementById('ordersCountText');
+        if (!container) return;
+
+        let filtered = [...ordersList];
+
+        if (currentFilter === 'current') {
+            filtered = filtered.filter(o => o.status === 'pending' || o.status === 'ready' || o.status === 'in_progress');
+        } else if (currentFilter === 'completed') {
+            filtered = filtered.filter(o => o.status === 'completed' || o.status === 'cancelled');
+        }
+
+        if (countText) {
+            countText.textContent = `${filtered.length} حجز`;
+        }
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fa-solid fa-receipt"></i>
+                    <h3>لا توجد حجوزات في هذا القسم</h3>
+                    <p style="font-size: 13px; margin-top: 4px;">يمكنك طلب حجز عيش جديد في أي وقت بسهولة</p>
+                    <button type="button" class="btn-submit" onclick="switchTab('booking')" style="margin-top:16px; max-width:200px; margin-inline:auto;">
+                        <i class="fa-solid fa-plus"></i> اطلب حجز الآن
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        filtered.forEach(order => {
+            const statusConfig = getStatusBadge(order.status);
+            const isCancelable = order.status === 'pending';
+            const orderCode = order.order_code || order.id;
+            const dateStr = formatOrderDate(order.created_at);
+
+            let borderClass = 'active-order';
+            if (order.status === 'ready') borderClass = 'ready-order';
+            else if (order.status === 'completed') borderClass = 'completed-order';
+            else if (order.status === 'cancelled') borderClass = 'cancelled-order';
+
+            html += `
+                <div class="order-item ${borderClass}">
+                    <div class="order-top">
+                        <div class="order-id">
+                            <i class="fa-solid fa-hashtag" style="font-size:12px; color:var(--text-muted);"></i>
+                            ${escapeHtml(orderCode)}
+                        </div>
+                        <div class="order-date">
+                            <i class="fa-regular fa-clock"></i>
+                            ${dateStr}
+                        </div>
+                    </div>
+
+                    <div class="order-info-row">
+                        <span style="color:var(--text-muted); font-size:12px;">قيمة الحجز:</span>
+                        <strong style="font-size:15px; color:var(--primary-dark);">${(order.amount_sdg || 0).toLocaleString('ar-EG')} ج.س</strong>
+                    </div>
+
+                    <div class="order-info-row">
+                        <span style="color:var(--text-muted); font-size:12px;">الوردية المقررة:</span>
+                        <span>${escapeHtml(order.shift || 'الصباحية')}</span>
+                    </div>
+
+                    <div class="order-info-row">
+                        <span style="color:var(--text-muted); font-size:12px;">طريقة الدفع:</span>
+                        <span class="badge ${order.payment_method === 'آجل' ? 'badge-credit' : 'badge-cash'}">
+                            <i class="fa-solid ${order.payment_method === 'آجل' ? 'fa-file-invoice-dollar' : 'fa-money-bill'}"></i>
+                            ${escapeHtml(order.payment_method || 'نقدي')}
+                        </span>
+                    </div>
+
+                    <div class="order-info-row">
+                        <span style="color:var(--text-muted); font-size:12px;">الحالة:</span>
+                        <span class="badge ${statusConfig.className}">
+                            <i class="fa-solid ${statusConfig.icon}"></i>
+                            ${statusConfig.label}
+                        </span>
+                    </div>
+
+                    ${order.notes ? `
+                        <div style="font-size:11px; background:#f9f6f0; border-radius:6px; padding:6px 10px; margin-top:6px; color:#6b5d52;">
+                            <strong>ملاحظة:</strong> ${escapeHtml(order.notes)}
+                        </div>
+                    ` : ''}
+
+                    <div class="order-actions">
+                        <button type="button" class="btn-small btn-copy" onclick="copyOrderCode('${orderCode}')">
+                            <i class="fa-regular fa-copy"></i> نسخ الرقم
+                        </button>
+                        ${isCancelable ? `
+                            <button type="button" class="btn-small btn-cancel" onclick="cancelOrder('${order.id}')">
+                                <i class="fa-solid fa-xmark"></i> إلغاء الحجز
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    function getStatusBadge(status) {
+        switch (status) {
+            case 'pending':
+                return { label: 'قيد الانتظار', className: 'badge-status-pending', icon: 'fa-hourglass-half' };
+            case 'ready':
+                return { label: 'جاهز للاستلام', className: 'badge-status-ready', icon: 'fa-box-open' };
+            case 'completed':
+                return { label: 'تم الاستلام', className: 'badge-status-done', icon: 'fa-check-double' };
+            case 'cancelled':
+                return { label: 'ملغي', className: 'badge-status-cancel', icon: 'fa-ban' };
+            default:
+                return { label: 'جاري التجهيز', className: 'badge-status-pending', icon: 'fa-fire-burner' };
+        }
+    }
+
+    async function cancelOrder(orderId) {
+        if (!confirm('هل أنت متأكد من إلغاء هذا الحجز؟')) return;
+
+        // Update locally
+        const target = ordersList.find(o => o.id === orderId || o.order_code === orderId);
+        if (target) {
+            target.status = 'cancelled';
+            saveOrdersLocally();
+            renderOrders();
+        }
+
+        try {
+            await supabaseFetch(`reservations?id=eq.${orderId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status: 'cancelled' })
+            });
+        } catch (e) {
+            // Updated locally
+        }
+
+        showToast('تم إلغاء الحجز', true);
+    }
+
+    function copyOrderCode(code) {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(code).then(() => {
+                showToast(`تم نسخ رقم الحجز: ${code}`, true);
+            }).catch(() => {
+                showToast(`رقم الحجز: ${code}`, true);
+            });
+        } else {
+            showToast(`رقم الحجز: ${code}`, true);
+        }
+    }
+
+    /* --------------------------------------------------------------------------
+       BAKERY SETTINGS (OPEN/CLOSED & ANNOUNCEMENT)
     -------------------------------------------------------------------------- */
     async function loadBakerySettings() {
         try {
-            // Table: bakery_settings (id='default')
             const data = await supabaseFetch('bakery_settings?id=eq.default&select=*');
             if (data && data.length > 0) {
                 bakerySettings = data[0];
-            } else {
-                // If not created yet, try inserting default
-                const inserted = await supabaseFetch('bakery_settings', {
-                    method: 'POST',
-                    headers: { 'Prefer': 'return=representation' },
-                    body: JSON.stringify({
-                        id: 'default',
-                        is_booking_open: true,
-                        sound_alerts_enabled: true
-                    })
-                }).catch(() => null);
-                if (inserted && inserted[0]) bakerySettings = inserted[0];
+                applyBakerySettingsUI();
             }
-            applyBakerySettingsUI();
         } catch (e) {
-            console.log('Using default bakery settings');
             applyBakerySettingsUI();
         }
     }
@@ -1375,7 +1716,6 @@
         const announcementBar = document.getElementById('announcementBanner');
         const announcementText = document.getElementById('announcementText');
 
-        // Announcement banner
         if (bakerySettings.announcement && bakerySettings.announcement.trim()) {
             announcementText.textContent = bakerySettings.announcement;
             announcementBar.style.display = 'flex';
@@ -1383,7 +1723,6 @@
             announcementBar.style.display = 'none';
         }
 
-        // Booking status
         if (bakerySettings.is_booking_open === false) {
             closedNotice.style.display = 'flex';
             submitBtn.disabled = true;
@@ -1396,54 +1735,8 @@
     }
 
     /* --------------------------------------------------------------------------
-       CUSTOMER MANAGEMENT (customers table)
+       USER PROFILE & AUTH
     -------------------------------------------------------------------------- */
-    async function syncCustomerWithSupabase(user) {
-        if (!user || !user.phone || !user.name) return null;
-        try {
-            // Check if customer exists by phone
-            const existing = await supabaseFetch(`customers?phone=eq.${encodeURIComponent(user.phone)}&select=*`);
-            
-            if (existing && existing.length > 0) {
-                const customerRecord = existing[0];
-                currentUser.id = customerRecord.id;
-                // Update profile info if changed
-                if (customerRecord.name !== user.name || customerRecord.workplace !== user.workplace) {
-                    await supabaseFetch(`customers?id=eq.${customerRecord.id}`, {
-                        method: 'PATCH',
-                        body: JSON.stringify({
-                            name: user.name,
-                            workplace: user.workplace,
-                            updated_at: new Date().toISOString()
-                        })
-                    }).catch(() => {});
-                }
-                saveUserLocally(currentUser);
-                return customerRecord.id;
-            } else {
-                // Insert new customer record
-                const created = await supabaseFetch('customers', {
-                    method: 'POST',
-                    headers: { 'Prefer': 'return=representation' },
-                    body: JSON.stringify({
-                        name: user.name,
-                        phone: user.phone,
-                        workplace: user.workplace
-                    })
-                });
-
-                if (created && created.length > 0) {
-                    currentUser.id = created[0].id;
-                    saveUserLocally(currentUser);
-                    return created[0].id;
-                }
-            }
-        } catch (err) {
-            console.warn('Customer Supabase sync skipped/failed:', err);
-        }
-        return currentUser ? currentUser.id : null;
-    }
-
     function loadUser() {
         try {
             const stored = localStorage.getItem(STORAGE_USER_KEY);
@@ -1452,35 +1745,14 @@
                 updateUserUI();
             }
         } catch (e) {
-            console.error('LocalStorage load error:', e);
             currentUser = null;
         }
     }
 
-    function saveUserLocally(userObj) {
-        try {
-            localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(userObj));
-        } catch (e) {
-            console.error('LocalStorage save error:', e);
-        }
-    }
-
-    async function saveUserData(name, phone, work) {
-        currentUser = {
-            id: currentUser ? currentUser.id : null,
-            name: name.trim(),
-            phone: phone.trim(),
-            workplace: work.trim(),
-            registeredAt: currentUser && currentUser.registeredAt ? currentUser.registeredAt : new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
-
-        saveUserLocally(currentUser);
+    function saveUserLocally(obj) {
+        currentUser = obj;
+        localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(obj));
         updateUserUI();
-        if (navigator.vibrate) navigator.vibrate(30);
-
-        // Async sync with Supabase customers table
-        await syncCustomerWithSupabase(currentUser);
     }
 
     function updateUserUI() {
@@ -1501,12 +1773,12 @@
             quickBar.style.display = 'flex';
             quickWork.textContent = `مكان العمل: ${currentUser.workplace || 'غير محدد'}`;
 
-            if (profName) profName.value = currentUser.name;
-            if (profPhone) profPhone.value = currentUser.phone;
+            if (profName) profName.value = currentUser.name || '';
+            if (profPhone) profPhone.value = currentUser.phone || '';
             if (profWork) profWork.value = currentUser.workplace || '';
 
-            if (mName) mName.value = currentUser.name;
-            if (mPhone) mPhone.value = currentUser.phone;
+            if (mName) mName.value = currentUser.name || '';
+            if (mPhone) mPhone.value = currentUser.phone || '';
             if (mWork) mWork.value = currentUser.workplace || '';
         } else {
             headerName.textContent = 'تسجيل دخول';
@@ -1514,11 +1786,234 @@
         }
     }
 
-    async function handleModalAuth(e) {
-        if (e) e.preventDefault();
-        const name = document.getElementById('mName').value;
-        const phone = document.getElementById('mPhone').value;
-        const work = document.getElementById('mWork').value;
+    async function handleProfileSave(e) {
+        e.preventDefault();
+        const name = document.getElementById('profName').value.trim();
+        const phone = document.getElementById('profPhone').value.trim();
+        const work = document.getElementById('profWork').value.trim();
 
-        if (!name.trim() || !phone.trim() || !work.trim()) {
-            showToast('يرجى ملء جميع الحقول المطلوبة',
+        if (!name || !phone || !work) {
+            showToast('يرجى ملء جميع الحقول المطلوبة', false);
+            return;
+        }
+
+        const updated = {
+            ...(currentUser || {}),
+            name,
+            phone,
+            workplace: work,
+            updated_at: new Date().toISOString()
+        };
+
+        saveUserLocally(updated);
+        showToast('تم حفظ البيانات بنجاح', true);
+        syncCustomerWithSupabase(updated).catch(() => {});
+    }
+
+    async function handleModalAuth(e) {
+        e.preventDefault();
+        const name = document.getElementById('mName').value.trim();
+        const phone = document.getElementById('mPhone').value.trim();
+        const work = document.getElementById('mWork').value.trim();
+
+        if (!name || !phone || !work) {
+            showToast('يرجى ملء جميع الحقول المطلوبة', false);
+            return;
+        }
+
+        const newUser = {
+            id: (currentUser && currentUser.id) ? currentUser.id : 'usr_' + Date.now(),
+            name,
+            phone,
+            workplace: work,
+            created_at: new Date().toISOString()
+        };
+
+        saveUserLocally(newUser);
+        closeProfileModal();
+        showToast(`مرحباً بك يا ${name.split(' ')[0]}!`, true);
+
+        syncCustomerWithSupabase(newUser).catch(() => {});
+        loadRemoteOrders(false).catch(() => {});
+    }
+
+    async function syncCustomerWithSupabase(user) {
+        if (!user || !user.phone || !user.name) return;
+        try {
+            const existing = await supabaseFetch(`customers?phone=eq.${encodeURIComponent(user.phone)}&select=*`);
+            if (existing && existing.length > 0) {
+                user.id = existing[0].id;
+                saveUserLocally(user);
+                await supabaseFetch(`customers?id=eq.${existing[0].id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({
+                        name: user.name,
+                        workplace: user.workplace,
+                        updated_at: new Date().toISOString()
+                    })
+                });
+            } else {
+                const inserted = await supabaseFetch('customers', {
+                    method: 'POST',
+                    headers: { 'Prefer': 'return=representation' },
+                    body: JSON.stringify({
+                        name: user.name,
+                        phone: user.phone,
+                        workplace: user.workplace
+                    })
+                });
+                if (inserted && inserted.length > 0) {
+                    user.id = inserted[0].id;
+                    saveUserLocally(user);
+                }
+            }
+        } catch (e) {
+            // Offline fallback
+        }
+    }
+
+    function openProfileModal(mandatory = false) {
+        isMandatoryLogin = mandatory;
+        const modal = document.getElementById('profileModal');
+        const closeBtn = document.getElementById('modalCloseBtn');
+        const notice = document.getElementById('modalFirstLoginNotice');
+        const title = document.getElementById('modalTitleText');
+
+        if (mandatory) {
+            closeBtn.style.display = 'none';
+            notice.style.display = 'flex';
+            title.textContent = 'تسجيل بيانات العميل';
+        } else {
+            closeBtn.style.display = 'flex';
+            notice.style.display = 'none';
+            title.textContent = 'تعديل بيانات الحساب';
+        }
+
+        updateUserUI();
+        modal.classList.add('open');
+    }
+
+    function closeProfileModal() {
+        if (isMandatoryLogin && (!currentUser || !currentUser.name || !currentUser.phone)) {
+            showToast('يجب إدخال البيانات للمتابعة', false);
+            return;
+        }
+        document.getElementById('profileModal').classList.remove('open');
+    }
+
+    function handleBackdropClick(e) {
+        if (!isMandatoryLogin) {
+            closeProfileModal();
+        }
+    }
+
+    /* --------------------------------------------------------------------------
+       SUPABASE CONFIG MODAL
+    -------------------------------------------------------------------------- */
+    function openConfigModal() {
+        const modal = document.getElementById('configModal');
+        const urlInput = document.getElementById('cfgUrl');
+        const keyInput = document.getElementById('cfgKey');
+
+        urlInput.value = localStorage.getItem('bcc_supabase_url') || '';
+        keyInput.value = localStorage.getItem('bcc_supabase_anon_key') || '';
+
+        modal.classList.add('open');
+    }
+
+    function closeConfigModal() {
+        document.getElementById('configModal').classList.remove('open');
+    }
+
+    async function handleConfigSave(e) {
+        e.preventDefault();
+        const url = document.getElementById('cfgUrl').value.trim();
+        const key = document.getElementById('cfgKey').value.trim();
+
+        if (!url || !key) {
+            showToast('يرجى إدخال الرابط والمفتاح', false);
+            return;
+        }
+
+        localStorage.setItem('bcc_supabase_url', url);
+        localStorage.setItem('bcc_supabase_anon_key', key);
+        currentSupabaseUrl = url;
+        currentSupabaseKey = key;
+
+        showToast('جاري اختبار الاتصال...', true);
+
+        try {
+            await supabaseFetch('bakery_settings?id=eq.default&select=*');
+            showToast('تم الاتصال بنجاح بقاعدة البيانات!', true);
+            closeConfigModal();
+            loadBakerySettings();
+            loadRemoteOrders(false);
+        } catch (err) {
+            showToast('فشل الاتصال: يرجى التأكد من صحة الرابط والمفتاح', false);
+        }
+    }
+
+    function resetDefaultConfig() {
+        localStorage.removeItem('bcc_supabase_url');
+        localStorage.removeItem('bcc_supabase_anon_key');
+        currentSupabaseUrl = DEFAULT_SUPABASE_URL;
+        currentSupabaseKey = DEFAULT_SUPABASE_ANON_KEY;
+        document.getElementById('cfgUrl').value = '';
+        document.getElementById('cfgKey').value = '';
+        setConnectionState(false, 'محلي');
+        showToast('تمت استعادة الإعدادات الافتراضية', true);
+    }
+
+    /* --------------------------------------------------------------------------
+       HELPERS & UTILS
+    -------------------------------------------------------------------------- */
+    let toastTimeout = null;
+    function showToast(msg, isSuccess = true) {
+        const toast = document.getElementById('toastBox');
+        const toastMsg = document.getElementById('toastMsg');
+        const toastIcon = document.getElementById('toastIcon');
+
+        if (!toast) return;
+
+        toastMsg.textContent = msg;
+        if (isSuccess) {
+            toastIcon.className = 'fa-solid fa-circle-check success';
+        } else {
+            toastIcon.className = 'fa-solid fa-circle-exclamation error';
+        }
+
+        toast.classList.add('show');
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3200);
+    }
+
+    function formatOrderDate(isoString) {
+        if (!isoString) return '--';
+        try {
+            const date = new Date(isoString);
+            return date.toLocaleDateString('ar-EG', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            return isoString;
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+</script>
+
+</body>
+</html>

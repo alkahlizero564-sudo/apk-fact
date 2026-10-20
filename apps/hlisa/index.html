@@ -135,6 +135,11 @@
             animation: pulseDot 1.5s infinite;
         }
 
+        .live-dot.offline {
+            background-color: #ef4444;
+            animation: none;
+        }
+
         @keyframes pulseDot {
             0% { transform: scale(0.9); opacity: 0.7; }
             50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 8px #22c55e; }
@@ -424,7 +429,7 @@
 
         .order-card.completed-state {
             border-right: 5px solid #16a34a;
-            opacity: 0.85;
+            opacity: 0.88;
         }
 
         .order-card.cancelled-state {
@@ -869,7 +874,7 @@
         .toast i.warning { color: #facc15; }
         .toast i.error { color: #f87171; }
 
-        /* Notification alert banner for customer apps */
+        /* Sync banner */
         .sync-banner {
             background: #eff6ff;
             border: 1px solid #bfdbfe;
@@ -907,6 +912,22 @@
             color: var(--primary);
             border-color: var(--primary);
         }
+
+        .form-input {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-size: 12px;
+            direction: ltr;
+            text-align: left;
+            margin-top: 4px;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+        }
     </style>
 </head>
 <body>
@@ -924,9 +945,9 @@
                     <p>استلام الطلبات ومتابعة الوردية والحسابات</p>
                 </div>
             </div>
-            <div class="admin-live-badge">
-                <span class="live-dot"></span>
-                <span>متصل مباشر</span>
+            <div class="admin-live-badge" id="networkLiveBadge">
+                <span class="live-dot" id="networkLiveDot"></span>
+                <span id="networkLiveText">متصل مباشر</span>
             </div>
         </div>
     </header>
@@ -940,7 +961,7 @@
                 </div>
                 <div class="status-text">
                     <h4 id="bookingStatusLabel">الحجز متاح حالياً للزبائن</h4>
-                    <span id="bookingStatusSub">يمكن للزبائن من تطبيق الحجز إرسال طلبات جديدة</span>
+                    <span id="bookingStatusSub">يمكن للزبائن من تطبيق الحجز (alka) إرسال طلبات جديدة</span>
                 </div>
             </div>
         </div>
@@ -981,10 +1002,10 @@
     <!-- Live Sync Alert -->
     <div class="sync-banner">
         <div style="display:flex; align-items:center; gap:6px;">
-            <i class="fa-solid fa-arrows-rotate fa-spin" style="animation-duration: 4s;"></i>
-            <span>مرتبط لحظياً بتطبيق حجز العيش</span>
+            <i class="fa-solid fa-arrows-rotate fa-spin" id="syncSpinner" style="animation-duration: 3s;"></i>
+            <span id="syncBannerText">مرتبط بقاعدة Supabase المشتركة مع تطبيق alka</span>
         </div>
-        <button class="btn-ghost" style="padding: 3px 8px; font-size: 11px;" onclick="loadAndRenderAll(true)">
+        <button class="btn-ghost" style="padding: 3px 8px; font-size: 11px;" onclick="fetchFromSupabase(true)">
             <i class="fa-solid fa-rotate-right"></i> تحديث
         </button>
     </div>
@@ -1124,7 +1145,7 @@
             </div>
         </section>
 
-        <!-- TAB 3: SETTINGS & BACKUP -->
+        <!-- TAB 3: SETTINGS & SUPABASE CONFIG -->
         <section id="viewSettings" style="display: none;">
             <div class="card">
                 <div class="card-header-line">
@@ -1140,7 +1161,7 @@
                             <strong>صوت التنبيه عند وصول حجز جديد</strong>
                             <div style="font-size: 11px; color: var(--text-muted);">تشغيل رنة صوتية في لوحة الإدارة</div>
                         </div>
-                        <input type="checkbox" id="chkSound" checked style="width:20px; height:20px; accent-color:var(--primary);">
+                        <input type="checkbox" id="chkSound" checked onchange="saveSoundSetting()" style="width:20px; height:20px; accent-color:var(--primary);">
                     </div>
 
                     <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:12px; border-bottom:1px solid #f0e6da;">
@@ -1156,7 +1177,39 @@
                             <i class="fa-solid fa-trash-can"></i> مسح سجل الطلبات القديمة
                         </button>
                         <button class="btn-ctrl" style="width:100%; background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;" onclick="injectDemoOrders()">
-                            <i class="fa-solid fa-plus-circle"></i> إضافة 6 حجوزات نموذجية جديدة
+                            <i class="fa-solid fa-plus-circle"></i> إضافة 5 حجوزات نموذجية جديدة
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Supabase Cloud Sync Configuration -->
+            <div class="card">
+                <div class="card-header-line">
+                    <span class="card-title">
+                        <i class="fa-solid fa-database" style="color: var(--primary);"></i>
+                        الربط السحابي مع Supabase (تطبيق alka)
+                    </span>
+                    <span id="sbConnectionBadge" style="font-size:10px; font-weight:800; background:#dcfce7; color:#15803d; padding:2px 7px; border-radius:6px;">جاهز ومربوط</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
+                    يتم استلام الطلبات وإرسال إشعار (طلبك جاهز) وقفل/فتح الحجز مباشرة عبر نفس مشروع Supabase المشترك.
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <div>
+                        <label style="font-size:11px; font-weight:700;">Supabase Project URL:</label>
+                        <input type="text" id="cfgSbUrl" class="form-input" placeholder="https://xyzcompany.supabase.co">
+                    </div>
+                    <div>
+                        <label style="font-size:11px; font-weight:700;">Supabase Anon Key:</label>
+                        <input type="password" id="cfgSbKey" class="form-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                    </div>
+                    <div style="display:flex; gap:8px; margin-top:6px;">
+                        <button class="btn-ctrl" style="flex:1; background:var(--primary); color:#fff;" onclick="saveSupabaseConfig()">
+                            <i class="fa-solid fa-floppy-disk"></i> حفظ وإعادة الربط
+                        </button>
+                        <button class="btn-ghost" onclick="testSupabaseConnection()">
+                            <i class="fa-solid fa-plug"></i> فحص الاتصال
                         </button>
                     </div>
                 </div>
@@ -1189,11 +1242,34 @@
 
 <script>
     /* =========================================================
-       CONSTANTS & SHARED STORAGE KEYS (Synced with customer app)
+       SUPABASE CONFIGURATION & CONSTANTS
+       (Shared with alka customer app)
     ========================================================= */
-    const STORAGE_ORDERS_KEY = 'bcc_bakery_orders_list_v2';
-    const STORAGE_BOOKING_STATUS_KEY = 'bcc_bakery_booking_status_v2';
+    const SUPABASE_URL = 'https://YOUR_SUPABASE_PROJECT_REF.supabase.co';
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+    // BroadcastChannel for cross-tab realtime sync
     const BROADCAST_CHANNEL_NAME = 'bcc_bakery_channel';
+    const STORAGE_LOCAL_ORDERS_KEY = 'bcc_bakery_orders_list_v2';
+    const STORAGE_LOCAL_BOOKING_KEY = 'bcc_bakery_booking_status_v2';
+    const STORAGE_SB_URL_KEY = 'bcc_supabase_url';
+    const STORAGE_SB_KEY_KEY = 'bcc_supabase_key';
+
+    function getActiveSupabaseUrl() {
+        const custom = localStorage.getItem(STORAGE_SB_URL_KEY);
+        return (custom && custom.trim() !== '') ? custom.trim().replace(/\/$/, '') : SUPABASE_URL;
+    }
+
+    function getActiveSupabaseKey() {
+        const custom = localStorage.getItem(STORAGE_SB_KEY_KEY);
+        return (custom && custom.trim() !== '') ? custom.trim() : SUPABASE_ANON_KEY;
+    }
+
+    function isSupabaseConfigured() {
+        const url = getActiveSupabaseUrl();
+        const key = getActiveSupabaseKey();
+        return url && key && !url.includes('YOUR_SUPABASE_PROJECT_REF') && !key.includes('YOUR_SUPABASE_ANON_KEY');
+    }
 
     let orders = [];
     let isBookingOpen = true;
@@ -1201,8 +1277,13 @@
     let searchQuery = '';
     let reportPeriod = 'week';
     let broadcastChannel = null;
+    let pollingInterval = null;
+    let isOnline = false;
+    let knownOrderIds = new Set();
 
-    /* Initialize Audio Context for Beep */
+    /* =========================================================
+       AUDIO CHIME
+    ========================================================= */
     function playBeep() {
         try {
             const chk = document.getElementById('chkSound');
@@ -1230,19 +1311,26 @@
     ========================================================= */
     document.addEventListener('DOMContentLoaded', () => {
         initBroadcast();
-        loadBookingStatus();
-        loadOrders();
-        renderAll();
+        loadLocalSettings();
+        populateSettingsInputs();
+        
+        // Fetch from Supabase, or fall back to local store
+        fetchFromSupabase(false);
 
-        // Listen to storage events from other tabs / windows
+        // Start 5-second polling to capture orders from alka app in real time
+        pollingInterval = setInterval(() => {
+            fetchFromSupabase(false, true);
+        }, 5000);
+
+        // Listen for storage events (e.g. from local tabs)
         window.addEventListener('storage', (event) => {
-            if (event.key === STORAGE_ORDERS_KEY) {
-                loadOrders();
+            if (event.key === STORAGE_LOCAL_ORDERS_KEY) {
+                loadLocalOrders();
                 renderAll();
-                showToast('وصل طلب حجز جديد من الزبائن! 🍞', 'info');
+                showToast('تحديث محلي: طلب حجز جديد! 🍞', 'info');
                 playBeep();
-            } else if (event.key === STORAGE_BOOKING_STATUS_KEY) {
-                loadBookingStatus();
+            } else if (event.key === STORAGE_LOCAL_BOOKING_KEY) {
+                loadLocalBookingStatus();
             }
         });
     });
@@ -1255,9 +1343,8 @@
                 if (!data) return;
 
                 if (data.type === 'NEW_ORDER_PLACED') {
-                    loadOrders();
-                    renderAll();
-                    showToast(`طلب جديد من: ${data.order?.userName || 'زبون'}`, 'info');
+                    fetchFromSupabase(false);
+                    showToast(`طلب جديد من: ${data.order?.userName || data.order?.customer_name || 'زبون'}`, 'info');
                     playBeep();
                 } else if (data.type === 'BOOKING_TOGGLED') {
                     isBookingOpen = !!data.isOpen;
@@ -1267,672 +1354,71 @@
         }
     }
 
-    /* =========================================================
-       BOOKING OPEN/CLOSE TOGGLE LOGIC
-    ========================================================= */
-    function loadBookingStatus() {
-        try {
-            const stored = localStorage.getItem(STORAGE_BOOKING_STATUS_KEY);
-            if (stored !== null) {
-                isBookingOpen = JSON.parse(stored);
-            } else {
-                isBookingOpen = true;
-            }
-        } catch(e) {
-            isBookingOpen = true;
-        }
-        updateBookingUI();
+    function populateSettingsInputs() {
+        const urlInput = document.getElementById('cfgSbUrl');
+        const keyInput = document.getElementById('cfgSbKey');
+        if (urlInput) urlInput.value = localStorage.getItem(STORAGE_SB_URL_KEY) || (SUPABASE_URL.includes('YOUR_') ? '' : SUPABASE_URL);
+        if (keyInput) keyInput.value = localStorage.getItem(STORAGE_SB_KEY_KEY) || (SUPABASE_ANON_KEY.includes('YOUR_') ? '' : SUPABASE_ANON_KEY);
     }
 
-    function setBookingStatus(isOpen) {
-        isBookingOpen = isOpen;
-        try {
-            localStorage.setItem(STORAGE_BOOKING_STATUS_KEY, JSON.stringify(isOpen));
-        } catch(e) {
-            console.error(e);
-        }
+    function updateNetworkStatus(online, message = '') {
+        isOnline = online;
+        const dot = document.getElementById('networkLiveDot');
+        const text = document.getElementById('networkLiveText');
+        const badge = document.getElementById('sbConnectionBadge');
+        const syncText = document.getElementById('syncBannerText');
 
-        // Broadcast to customer apps
-        if (broadcastChannel) {
-            broadcastChannel.postMessage({
-                type: 'BOOKING_TOGGLED',
-                isOpen: isBookingOpen
-            });
-        }
-
-        updateBookingUI();
-
-        if (isOpen) {
-            showToast('تم فتح الحجز للزبائن بنجاح ✅', 'success');
+        if (online) {
+            if (dot) dot.className = 'live-dot';
+            if (text) text.textContent = 'متصل سحابياً';
+            if (badge) {
+                badge.textContent = 'متصل بنجاح';
+                badge.style.background = '#dcfce7';
+                badge.style.color = '#15803d';
+            }
+            if (syncText) syncText.textContent = 'مرتبط لحظياً بـ Supabase (تطبيق alka للزبائن)';
         } else {
-            showToast('تم قفل باب الحجز! لن يتمكن الزبائن من الحجز مؤقتاً ⛔', 'warning');
-        }
-
-        if (navigator.vibrate) navigator.vibrate(30);
-    }
-
-    function toggleBookingFast() {
-        setBookingStatus(!isBookingOpen);
-    }
-
-    function updateBookingUI() {
-        const btnOpen = document.getElementById('btnEnableBooking');
-        const btnClose = document.getElementById('btnDisableBooking');
-        const statusLabel = document.getElementById('bookingStatusLabel');
-        const statusSub = document.getElementById('bookingStatusSub');
-        const iconBox = document.getElementById('bookingStateIcon');
-        const iconEl = document.getElementById('bookingIconEl');
-        const setSub = document.getElementById('settingsBookingStatusText');
-
-        if (isBookingOpen) {
-            btnOpen.classList.remove('inactive');
-            btnClose.classList.add('inactive');
-            statusLabel.textContent = 'الحجز مفتوح ومتاح للزبائن';
-            statusSub.textContent = 'يمكن للزبائن من التطبيق الأول إرسال طلباتهم فوراً';
-            iconBox.className = 'status-icon-box booking-open-style';
-            iconEl.className = 'fa-solid fa-door-open';
-            if (setSub) setSub.textContent = 'مفتوح للزبائن';
-        } else {
-            btnOpen.classList.add('inactive');
-            btnClose.classList.remove('inactive');
-            statusLabel.textContent = 'الحجز مقفول حالياً';
-            statusSub.textContent = 'تم إيقاف استلام الطلبات من الزبائن لحين فتح الحجز مجدداً';
-            iconBox.className = 'status-icon-box booking-closed-style';
-            iconEl.className = 'fa-solid fa-door-closed';
-            if (setSub) setSub.textContent = 'مقفول مؤقتاً';
+            if (dot) dot.className = 'live-dot offline';
+            if (text) text.textContent = 'وضع محلي';
+            if (badge) {
+                badge.textContent = 'غير متصل بالسحاب';
+                badge.style.background = '#fee2e2';
+                badge.style.color = '#991b1b';
+            }
+            if (syncText) syncText.textContent = message || 'يعمل في وضع التخزين المحلي (Offline)';
         }
     }
 
     /* =========================================================
-       ORDERS MANAGEMENT & STATUS
+       SUPABASE REST API CLIENT FUNCTIONS
     ========================================================= */
-    function loadOrders() {
-        try {
-            const data = localStorage.getItem(STORAGE_ORDERS_KEY);
-            orders = data ? JSON.parse(data) : [];
-        } catch(e) {
-            console.error('Error reading orders from localStorage', e);
-            orders = [];
-        }
-
-        // If completely empty on first launch, auto inject a few sample orders so the user can immediately experience the app
-        if (orders.length === 0) {
-            injectDemoOrders(false);
-        }
+    function getSupabaseHeaders() {
+        const key = getActiveSupabaseKey();
+        return {
+            'apikey': key,
+            'Authorization': `Bearer ${key}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+        };
     }
 
-    function saveOrders() {
-        try {
-            localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(orders));
-        } catch(e) {
-            console.error(e);
-        }
-    }
-
-    function loadAndRenderAll(notify = false) {
-        loadOrders();
-        renderAll();
-        if (notify) showToast('تم تحديث البيانات والمزامنة بنجاح 🔄', 'info');
-    }
-
-    /* "طلبك جاهز" - Notification to first app */
-    function markOrderReady(orderId) {
-        let targetOrder = null;
-        orders = orders.map(ord => {
-            if (ord.id === orderId) {
-                targetOrder = { ...ord, status: 'جاهز للاستلام', readyAt: new Date().toISOString() };
-                return targetOrder;
+    async function fetchFromSupabase(userInitiated = false, isSilentPoll = false) {
+        if (!isSupabaseConfigured()) {
+            loadLocalBookingStatus();
+            loadLocalOrders();
+            renderAll();
+            updateNetworkStatus(false, 'بانتظار إدخال مفاتيح Supabase');
+            if (userInitiated) {
+                showToast('يرجى ضبط مفاتيح Supabase من الإعدادات للربط الكامل', 'warning');
             }
-            return ord;
-        });
-
-        saveOrders();
-        renderAll();
-
-        // Broadcast to customer application!
-        if (broadcastChannel && targetOrder) {
-            broadcastChannel.postMessage({
-                type: 'ORDER_READY_NOTIFICATION',
-                orderId: targetOrder.id,
-                userName: targetOrder.userName,
-                userPhone: targetOrder.userPhone,
-                amountSdg: targetOrder.amountSdg,
-                message: `عزيزي ${targetOrder.userName}، طلبك رقم #${targetOrder.id} أصبح جاهزاً للاستلام الآن من مخبز BCC!`
-            });
-        }
-
-        // Haptic feedback
-        if (navigator.vibrate) navigator.vibrate([60, 40, 80]);
-
-        showToast(`تم إرسال إشعار (طلبك جاهز) إلى ${targetOrder ? targetOrder.userName : 'الزبون'} بنجاح! 🍞🔔`, 'success');
-    }
-
-    function markOrderDone(orderId) {
-        let name = '';
-        orders = orders.map(ord => {
-            if (ord.id === orderId) {
-                name = ord.userName;
-                return { ...ord, status: 'مكتمل', completedAt: new Date().toISOString() };
-            }
-            return ord;
-        });
-
-        saveOrders();
-        renderAll();
-
-        // Broadcast completion to first app
-        if (broadcastChannel) {
-            broadcastChannel.postMessage({
-                type: 'ORDER_COMPLETED',
-                orderId: orderId
-            });
-        }
-
-        showToast(`تم تأكيد تسليم طلب ${name} واستلام المقابل بنجاح!`, 'success');
-    }
-
-    function deleteOrder(orderId) {
-        if (!confirm('هل تريد حذف هذا الطلب نهائياً من القائمة؟')) return;
-        orders = orders.filter(o => o.id !== orderId);
-        saveOrders();
-        renderAll();
-        showToast('تم حذف الطلب', 'warning');
-    }
-
-    /* =========================================================
-       FILTERING & SEARCH
-    ========================================================= */
-    function setOrderFilter(filter, el) {
-        currentFilter = filter;
-        document.querySelectorAll('.filter-capsule').forEach(btn => btn.classList.remove('active'));
-        if (el) el.classList.add('active');
-        renderOrdersList();
-    }
-
-    function handleSearch() {
-        searchQuery = document.getElementById('orderSearchInput').value.trim().toLowerCase();
-        renderOrdersList();
-    }
-
-    /* =========================================================
-       RENDERING
-    ========================================================= */
-    function renderAll() {
-        updateTopCounters();
-        renderOrdersList();
-        renderReports();
-    }
-
-    function updateTopCounters() {
-        const totalOrders = orders.length;
-        const totalSdg = orders
-            .filter(o => o.status !== 'ملغي')
-            .reduce((sum, o) => sum + (Number(o.amountSdg) || 0), 0);
-
-        document.getElementById('topTotalOrdersCount').textContent = `${totalOrders.toLocaleString('ar-EG')} طلب`;
-        document.getElementById('topTotalRevenue').textContent = `${totalSdg.toLocaleString('ar-EG')} ج.س`;
-
-        // Filter Counts
-        const pendingCount = orders.filter(o => o.status === 'نشط').length;
-        const readyCount = orders.filter(o => o.status === 'جاهز للاستلام').length;
-        const creditCount = orders.filter(o => o.paymentMethod === 'آجل').length;
-        const doneCount = orders.filter(o => o.status === 'مكتمل').length;
-
-        document.getElementById('pendingBadgeCount').textContent = `${pendingCount} قيد التجهيز`;
-        document.getElementById('cntAll').textContent = totalOrders;
-        document.getElementById('cntPending').textContent = pendingCount;
-        document.getElementById('cntReady').textContent = readyCount;
-        document.getElementById('cntCredit').textContent = creditCount;
-        document.getElementById('cntDone').textContent = doneCount;
-    }
-
-    function renderOrdersList() {
-        const container = document.getElementById('ordersContainer');
-
-        let filtered = orders.filter(ord => {
-            // Filter capsule
-            if (currentFilter === 'pending' && ord.status !== 'نشط') return false;
-            if (currentFilter === 'ready' && ord.status !== 'جاهز للاستلام') return false;
-            if (currentFilter === 'credit' && ord.paymentMethod !== 'آجل') return false;
-            if (currentFilter === 'completed' && ord.status !== 'مكتمل') return false;
-
-            // Search query
-            if (searchQuery) {
-                const name = (ord.userName || '').toLowerCase();
-                const phone = (ord.userPhone || '').toLowerCase();
-                const work = (ord.workplace || '').toLowerCase();
-                const id = (ord.id || '').toLowerCase();
-                return name.includes(searchQuery) || phone.includes(searchQuery) || work.includes(searchQuery) || id.includes(searchQuery);
-            }
-            return true;
-        });
-
-        if (filtered.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fa-solid fa-bread-slice"></i>
-                    <h3>لا توجد طلبات في هذا القسم حالياً</h3>
-                    <p style="font-size: 12px; margin-top: 4px;">الطلبات الجديدة المحجوزة من الزبائن ستظهر هنا بشكل فوري وتلقائي.</p>
-                </div>
-            `;
             return;
         }
 
-        let html = '';
-        filtered.forEach(order => {
-            const dateObj = new Date(order.createdAt);
-            const dateFormatted = isNaN(dateObj.getTime()) ? 'الآن' : dateObj.toLocaleDateString('ar-SD', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+        try {
+            const url = getActiveSupabaseUrl();
+            const headers = getSupabaseHeaders();
 
-            // Status Styling
-            let stateClass = 'pending-state';
-            let statusBadge = '<span class="badge badge-pending"><i class="fa-solid fa-hourglass-half"></i> قيد التجهيز</span>';
-
-            if (order.status === 'جاهز للاستلام') {
-                stateClass = 'ready-state';
-                statusBadge = '<span class="badge badge-ready"><i class="fa-solid fa-bell"></i> طلبك جاهز (أُرسل إشعار)</span>';
-            } else if (order.status === 'مكتمل') {
-                stateClass = 'completed-state';
-                statusBadge = '<span class="badge badge-done"><i class="fa-solid fa-circle-check"></i> تم التسليم</span>';
-            } else if (order.status === 'ملغي') {
-                stateClass = 'cancelled-state';
-                statusBadge = '<span class="badge badge-cancelled"><i class="fa-solid fa-ban"></i> ملغي</span>';
-            }
-
-            // Payment styling
-            const paymentBadge = order.paymentMethod === 'نقدي'
-                ? '<span class="badge badge-cash"><i class="fa-solid fa-money-bill-1-wave"></i> دفع نقدي</span>'
-                : '<span class="badge badge-credit"><i class="fa-solid fa-file-invoice"></i> دفع آجل (فاتورة)</span>';
-
-            // Clean phone number for direct calling and whatsapp
-            const rawPhone = (order.userPhone || '').replace(/[^0-9]/g, '');
-
-            html += `
-                <div class="order-card ${stateClass}">
-                    <div class="order-card-header">
-                        <div class="customer-meta">
-                            <h4>
-                                <i class="fa-regular fa-user" style="color:var(--primary);"></i>
-                                ${escapeHtml(order.userName || 'زبون')}
-                                <span class="order-code">#${escapeHtml(order.id)}</span>
-                            </h4>
-                            <div class="order-timestamp">
-                                <i class="fa-regular fa-clock"></i>
-                                ${dateFormatted}
-                            </div>
-                        </div>
-                        <div>${statusBadge}</div>
-                    </div>
-
-                    <!-- Customer & Order details grid -->
-                    <div class="order-data-grid">
-                        <div class="data-item">
-                            <span class="label">قيمة العيش المطلوبة:</span>
-                            <span class="val price">${Number(order.amountSdg || 0).toLocaleString('ar-EG')} ج.س</span>
-                        </div>
-
-                        <div class="data-item">
-                            <span class="label">طريقة الدفع:</span>
-                            <div>${paymentBadge}</div>
-                        </div>
-
-                        <div class="data-item">
-                            <span class="label">مكان العمل / الإدارة:</span>
-                            <span class="work-badge">
-                                <i class="fa-solid fa-building"></i> ${escapeHtml(order.workplace || 'غير محدد')}
-                            </span>
-                        </div>
-
-                        <div class="data-item">
-                            <span class="label">الوردية المحددة:</span>
-                            <span class="val" style="font-size:12px; color:#4b5563;">
-                                <i class="fa-solid fa-business-time"></i> ${escapeHtml(order.shift || 'غير محدد')}
-                            </span>
-                        </div>
-
-                        <div class="data-item" style="grid-column: span 2;">
-                            <span class="label">رقم الهاتف:</span>
-                            <span class="val" dir="ltr" style="text-align:right; font-family:sans-serif; letter-spacing:1px; color:#1e293b;">
-                                <i class="fa-solid fa-phone" style="color:#0284c7; margin-left:4px;"></i> ${escapeHtml(order.userPhone || '--')}
-                            </span>
-                        </div>
-                    </div>
-
-                    ${order.notes && order.notes !== 'بدون ملاحظات' ? `
-                    <div class="order-notes-box">
-                        <i class="fa-solid fa-clipboard-check"></i>
-                        <span><strong>ملاحظة الزبون:</strong> ${escapeHtml(order.notes)}</span>
-                    </div>
-                    ` : ''}
-
-                    <!-- Management Actions Bar -->
-                    <div class="admin-action-row">
-                        ${order.status === 'نشط' ? `
-                            <button type="button" class="btn-action btn-ready" onclick="markOrderReady('${order.id}')" title="إرسال إشعار للزبون بأن عيشه ساخن وجاهز للاستلام">
-                                <i class="fa-solid fa-bell"></i>
-                                <span>طلبك جاهز 🔔</span>
-                            </button>
-                        ` : ''}
-
-                        ${order.status === 'جاهز للاستلام' ? `
-                            <button type="button" class="btn-action btn-done" onclick="markOrderDone('${order.id}')">
-                                <i class="fa-solid fa-check-double"></i>
-                                <span>تم الاستلام والتسليم</span>
-                            </button>
-                        ` : ''}
-
-                        ${order.status === 'نشط' ? `
-                            <button type="button" class="btn-action btn-done" onclick="markOrderDone('${order.id}')" style="background: #15803d;">
-                                <i class="fa-solid fa-check"></i>
-                                <span>تسليم مباشر</span>
-                            </button>
-                        ` : ''}
-
-                        ${rawPhone ? `
-                            <a href="tel:${rawPhone}" class="btn-phone" title="اتصال مباشر بالزبون">
-                                <i class="fa-solid fa-phone-flip"></i>
-                            </a>
-                            <a href="https://wa.me/249${rawPhone.replace(/^0+/, '')}?text=${encodeURIComponent('مرحباً بك من مخبز BCC بخصوص طلب العيش الخاص بك رقم #' + order.id)}" target="_blank" class="btn-phone" style="color:#15803d;" title="واتساب الزبون">
-                                <i class="fa-brands fa-whatsapp"></i>
-                            </a>
-                        ` : ''}
-
-                        <button type="button" class="btn-action btn-delete" onclick="deleteOrder('${order.id}')" title="حذف الطلب">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-        });
-
-        container.innerHTML = html;
-    }
-
-    /* =========================================================
-       REPORTS & ANALYTICS CALCULATION
-    ========================================================= */
-    function setReportPeriod(period, btn) {
-        reportPeriod = period;
-        document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
-        if (btn) btn.classList.add('active');
-        renderReports();
-    }
-
-    function renderReports() {
-        const periodText = document.getElementById('reportPeriodText');
-        const now = new Date();
-
-        // Calculate time limit
-        let timeThreshold = 0;
-        if (reportPeriod === 'today') {
-            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            timeThreshold = startOfDay.getTime();
-            periodText.textContent = 'تقرير اليوم';
-        } else if (reportPeriod === 'week') {
-            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            timeThreshold = weekAgo.getTime();
-            periodText.textContent = 'التقرير الأسبوعي (آخر 7 أيام)';
-        } else if (reportPeriod === 'month') {
-            const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-            timeThreshold = monthAgo.getTime();
-            periodText.textContent = 'التقرير الشهري (آخر 30 يوماً)';
-        }
-
-        // Filter orders within period
-        const periodOrders = orders.filter(o => {
-            if (o.status === 'ملغي') return false;
-            const t = new Date(o.createdAt).getTime();
-            return isNaN(t) || t >= timeThreshold;
-        });
-
-        let totalSdg = 0;
-        let cashSdg = 0;
-        let creditSdg = 0;
-        let morningCount = 0;
-        let morningSdg = 0;
-        let eveningCount = 0;
-        let eveningSdg = 0;
-
-        const workplacesMap = {};
-
-        periodOrders.forEach(ord => {
-            const amt = Number(ord.amountSdg) || 0;
-            totalSdg += amt;
-
-            if (ord.paymentMethod === 'نقدي') {
-                cashSdg += amt;
-            } else {
-                creditSdg += amt;
-            }
-
-            if ((ord.shift || '').includes('صباح')) {
-                morningCount++;
-                morningSdg += amt;
-            } else {
-                eveningCount++;
-                eveningSdg += amt;
-            }
-
-            const wp = ord.workplace ? ord.workplace.trim() : 'أفراد / غير محدد';
-            if (!workplacesMap[wp]) {
-                workplacesMap[wp] = { name: wp, total: 0, count: 0, credit: 0, cash: 0 };
-            }
-            workplacesMap[wp].total += amt;
-            workplacesMap[wp].count += 1;
-            if (ord.paymentMethod === 'آجل') {
-                workplacesMap[wp].credit += amt;
-            } else {
-                workplacesMap[wp].cash += amt;
-            }
-        });
-
-        // UI Updates
-        document.getElementById('repTotalAmount').textContent = `${totalSdg.toLocaleString('ar-EG')} ج.س`;
-        document.getElementById('repCashAmount').textContent = `${cashSdg.toLocaleString('ar-EG')} ج.س`;
-        document.getElementById('repCreditAmount').textContent = `${creditSdg.toLocaleString('ar-EG')} ج.س`;
-
-        const cashPct = totalSdg > 0 ? Math.round((cashSdg / totalSdg) * 100) : 0;
-        const creditPct = totalSdg > 0 ? Math.round((creditSdg / totalSdg) * 100) : 0;
-        document.getElementById('repCashPercent').textContent = `${cashPct}% من الإجمالي`;
-        document.getElementById('repCreditPercent').textContent = `${creditPct}% من الإجمالي`;
-
-        document.getElementById('repOrdersCount').textContent = `${periodOrders.length} طلب`;
-        const avg = periodOrders.length > 0 ? Math.round(totalSdg / periodOrders.length) : 0;
-        document.getElementById('repAvgAmount').textContent = `${avg.toLocaleString('ar-EG')} ج.س`;
-
-        // Shifts Breakdown
-        document.getElementById('shiftMorningCount').textContent = `${morningCount} طلب`;
-        document.getElementById('shiftMorningTotal').textContent = `${morningSdg.toLocaleString('ar-EG')} ج.س`;
-        document.getElementById('shiftEveningCount').textContent = `${eveningCount} طلب`;
-        document.getElementById('shiftEveningTotal').textContent = `${eveningSdg.toLocaleString('ar-EG')} ج.س`;
-
-        // Workplace Breakdown List
-        const wpContainer = document.getElementById('workplacesListContainer');
-        const sortedWp = Object.values(workplacesMap).sort((a, b) => b.total - a.total);
-
-        if (sortedWp.length === 0) {
-            wpContainer.innerHTML = '<div style="color:var(--text-muted); font-size:12px; text-align:center; padding:15px;">لا توجد بيانات للفترة المحددة</div>';
-        } else {
-            let wpHtml = '';
-            sortedWp.forEach(item => {
-                wpHtml += `
-                    <div class="breakdown-row">
-                        <div class="breakdown-title">
-                            <i class="fa-solid fa-building" style="color:var(--primary); font-size:13px;"></i>
-                            <div>
-                                <div>${escapeHtml(item.name)}</div>
-                                <div style="font-size:10px; color:var(--text-muted);">
-                                    آجل: ${item.credit.toLocaleString('ar-EG')} ج.س | نقدي: ${item.cash.toLocaleString('ar-EG')} ج.س
-                                </div>
-                            </div>
-                        </div>
-                        <div class="breakdown-amounts">
-                            <div class="sum">${item.total.toLocaleString('ar-EG')} ج.س</div>
-                            <div class="cnt">${item.count} حجز</div>
-                        </div>
-                    </div>
-                `;
-            });
-            wpContainer.innerHTML = wpHtml;
-        }
-    }
-
-    /* =========================================================
-       NAVIGATION TABS
-    ========================================================= */
-    function switchTab(tab) {
-        const viewOrders = document.getElementById('viewOrders');
-        const viewReports = document.getElementById('viewReports');
-        const viewSettings = document.getElementById('viewSettings');
-
-        const tabOrders = document.getElementById('tabOrders');
-        const tabReports = document.getElementById('tabReports');
-        const tabSettings = document.getElementById('tabSettings');
-
-        [viewOrders, viewReports, viewSettings].forEach(v => v.style.display = 'none');
-        [tabOrders, tabReports, tabSettings].forEach(t => t.classList.remove('active'));
-
-        if (tab === 'orders') {
-            viewOrders.style.display = 'block';
-            tabOrders.classList.add('active');
-            renderOrdersList();
-        } else if (tab === 'reports') {
-            viewReports.style.display = 'block';
-            tabReports.classList.add('active');
-            renderReports();
-        } else if (tab === 'settings') {
-            viewSettings.style.display = 'block';
-            tabSettings.classList.add('active');
-        }
-
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    /* =========================================================
-       DEMO DATA INJECTION FOR REALISTIC TESTING
-    ========================================================= */
-    function injectDemoOrders(showToastMsg = true) {
-        const demoSamples = [
-            {
-                id: 'BCC-' + Math.floor(100000 + Math.random() * 900000),
-                userName: 'د. مجتبى عبد الباقي',
-                userPhone: '0912345678',
-                workplace: 'مستشفى الخرطوم التعليمي',
-                amountSdg: 15000,
-                paymentMethod: 'آجل',
-                shift: 'الوردية الصباحية (7:00 ص)',
-                notes: 'عيش طازج ومقمر، التسليم لقسم الحوادث',
-                status: 'نشط',
-                createdAt: new Date(Date.now() - 25 * 60 * 1000).toISOString()
-            },
-            {
-                id: 'BCC-' + Math.floor(100000 + Math.random() * 900000),
-                userName: 'الطيب أحمد عثمان',
-                userPhone: '0922887711',
-                workplace: 'بنك الخرطوم - فرع السوق العربي',
-                amountSdg: 8000,
-                paymentMethod: 'نقدي',
-                shift: 'الوردية الصباحية (7:00 ص)',
-                notes: 'تعبئة في أكياس ورقية نظيفة',
-                status: 'نشط',
-                createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString()
-            },
-            {
-                id: 'BCC-' + Math.floor(100000 + Math.random() * 900000),
-                userName: 'أستاذة سارة الفاضل',
-                userPhone: '0123998877',
-                workplace: 'وزارة التربية والتعليم',
-                amountSdg: 5000,
-                paymentMethod: 'آجل',
-                shift: 'الوردية الصباحية (7:00 ص)',
-                notes: 'استلام في بداية الوردية مباشرة',
-                status: 'جاهز للاستلام',
-                createdAt: new Date(Date.now() - 90 * 60 * 1000).toISOString()
-            },
-            {
-                id: 'BCC-' + Math.floor(100000 + Math.random() * 900000),
-                userName: 'مهندس بكري حمدتو',
-                userPhone: '0911223344',
-                workplace: 'شركة سوداتل للاتصالات',
-                amountSdg: 12000,
-                paymentMethod: 'نقدي',
-                shift: 'الوردية المسائية (4:00 م)',
-                notes: 'تجهيز سريع للاستلام بالسيارة',
-                status: 'نشط',
-                createdAt: new Date(Date.now() - 120 * 60 * 1000).toISOString()
-            },
-            {
-                id: 'BCC-' + Math.floor(100000 + Math.random() * 900000),
-                userName: 'حنان ميرغني النور',
-                userPhone: '0966554433',
-                workplace: 'هيئة الموانئ البحرية',
-                amountSdg: 20000,
-                paymentMethod: 'آجل',
-                shift: 'الوردية الصباحية (7:00 ص)',
-                notes: 'طلبية عيش للفطور الجماعي',
-                status: 'مكتمل',
-                createdAt: new Date(Date.now() - 300 * 60 * 1000).toISOString()
-            }
-        ];
-
-        orders = [...demoSamples, ...orders];
-        saveOrders();
-        renderAll();
-        if (showToastMsg) {
-            showToast('تمت إضافة عينات طلبات تجريبية بنجاح 🪄', 'success');
-        }
-    }
-
-    function clearAllOrders() {
-        if (!confirm('تحذير: هل أنت متأكد من مسح جميع الطلبات من السجل؟ لا يمكن التراجع.')) return;
-        orders = [];
-        saveOrders();
-        renderAll();
-        showToast('تم إفراغ السجل بالكامل', 'warning');
-    }
-
-    /* =========================================================
-       HELPER UTILITIES
-    ========================================================= */
-    function escapeHtml(text) {
-        if (!text) return '';
-        return String(text)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
-
-    let toastTimeout;
-    function showToast(msg, type = 'success') {
-        const toast = document.getElementById('toastBox');
-        const toastMsg = document.getElementById('toastMsg');
-        const toastIcon = document.getElementById('toastIcon');
-
-        clearTimeout(toastTimeout);
-        toastMsg.textContent = msg;
-
-        if (type === 'success') {
-            toastIcon.className = 'fa-solid fa-circle-check success';
-        } else if (type === 'info') {
-            toastIcon.className = 'fa-solid fa-bell info';
-        } else if (type === 'warning') {
-            toastIcon.className = 'fa-solid fa-triangle-exclamation warning';
-        } else {
-            toastIcon.className = 'fa-solid fa-circle-xmark error';
-        }
-
-        toast.classList.add('show');
-        toastTimeout = setTimeout(() => {
-            toast.classList.remove('show');
-        }, 3600);
-    }
-</script>
-
-</body>
-</html>
+            // 1. Fetch Bakery Settings
+            const settingsRes = await fetch(`${url}/rest/v1/bakery_settings?id=eq.default`, { headers });
+            if (settingsRes.ok) {
+                const settingsData = await settingsRes.json();

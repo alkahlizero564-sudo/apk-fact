@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import {
   View, TextInput, Text, TouchableOpacity, StyleSheet,
-  ScrollView, ActivityIndicator, Modal, Image,
+  ScrollView, ActivityIndicator, Modal, Image, Alert,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import * as ImagePicker from "expo-image-picker";
 import { pushFile, pushBase64File, listWorkflowRuns, latestRunId, getFileText, getFailureLog } from "../services/github";
 import { REPO } from "../services/config";
+import { linkAppsViaSupabase } from "../services/link";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -33,10 +34,11 @@ type BoxProps = {
   setBusy: (b: boolean) => void;
   onPreview: (name: string) => void;
   onNameChange?: (name: string) => void;
+  isSecond?: boolean;
   relatedName?: string;
 };
 
-function AppBox({ title, busy, setBusy, onPreview, onNameChange, relatedName }: BoxProps) {
+function AppBox({ title, busy, setBusy, onPreview, onNameChange, isSecond, relatedName }: BoxProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [editOpen, setEditOpen] = useState(false);
@@ -214,7 +216,7 @@ function AppBox({ title, busy, setBusy, onPreview, onNameChange, relatedName }: 
       />
       <Text style={styles.hint}>للإنشاء استخدم اسم جديد. للتعديل على تطبيق موجود استخدم زر تعديل الكود.</Text>
 
-      {onNameChange === undefined && (
+      {isSecond && (
         <TouchableOpacity style={styles.relatedBtn} onPress={() => setUseRelated(!useRelated)}>
           <Text style={styles.relatedText}>
             {useRelated ? "✅" : "⬜"} اقرأ التطبيق الأول قبل ما تبني ده (مشروع واحد)
@@ -332,6 +334,9 @@ function AppBox({ title, busy, setBusy, onPreview, onNameChange, relatedName }: 
 export default function CreateScreen() {
   const [busy, setBusy] = useState(false);
   const [firstName, setFirstName] = useState("");
+  const [secondName, setSecondName] = useState("");
+  const [linking, setLinking] = useState(false);
+  const [linkLog, setLinkLog] = useState<string[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewName, setPreviewName] = useState("");
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
@@ -355,6 +360,43 @@ export default function CreateScreen() {
     }
   }
 
+  function askLink() {
+    if (busy) return;
+    const a = cleanName(firstName);
+    const b = cleanName(secondName);
+    if (!a || !b) {
+      setLinkLog(["❌ اكتب اسم التطبيق الأول والتاني في صندوقيهم فوق وتحت."]);
+      return;
+    }
+    Alert.alert(
+      "ربط التطبيقين عبر Supabase",
+      `بيتعمل الآتي:\n• بتتنشأ جداول وصلاحيات في مشروع Supabase بتاعك.\n• بيتعاد كتابة التطبيقين (${a} و${b}) وبيترفعوا على GitHub.\n\nالتطبيقين القدام بيتغيروا. تكمّل؟`,
+      [
+        { text: "إلغاء", style: "cancel" },
+        { text: "ربط", onPress: () => doLink(a, b) },
+      ]
+    );
+  }
+
+  async function doLink(a: string, b: string) {
+    setLinkLog([]);
+    setBusy(true);
+    setLinking(true);
+    const add = (s: string) => setLinkLog((prev) => [...prev, s]);
+    try {
+      const r = await linkAppsViaSupabase(a, b, add);
+      add("✅ اتعاد كتابة التطبيقين وارتفعوا.");
+      if (r.summary) add(`📝 ${r.summary}`);
+      if (r.tables.length) add(`🗄️ الجداول: ${r.tables.join("، ")}`);
+      add("🎉 اضغط معاينة في كل تطبيق تشوفو.");
+    } catch (e: any) {
+      add(`❌ ${e.message}`);
+    } finally {
+      setLinking(false);
+      setBusy(false);
+    }
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -365,11 +407,35 @@ export default function CreateScreen() {
           onPreview={openPreview}
           onNameChange={setFirstName}
         />
+
+        <View style={styles.linkCard}>
+          <Text style={styles.linkTitle}>ربط التطبيقين</Text>
+          <Text style={styles.linkDesc}>
+            يستخدم اسمي التطبيقين المكتوبين فوق وتحت، ولازم يكونوا موجودين. الربط يعيد كتابة التطبيقين.
+          </Text>
+          <TouchableOpacity
+            style={[styles.linkBtn, busy && !linking && styles.disabled]}
+            onPress={askLink}
+            disabled={busy}
+          >
+            {linking ? <ActivityIndicator color="#fff" /> : <Text style={styles.linkBtnText}>ربط التطبيقين عبر Supabase</Text>}
+          </TouchableOpacity>
+          {linkLog.length > 0 && (
+            <View style={styles.logBox}>
+              {linkLog.map((line, i) => (
+                <Text key={i} style={styles.logLine}>{line}</Text>
+              ))}
+            </View>
+          )}
+        </View>
+
         <AppBox
           title="إنشاء التطبيق الثاني"
           busy={busy}
           setBusy={setBusy}
           onPreview={openPreview}
+          onNameChange={setSecondName}
+          isSecond
           relatedName={cleanName(firstName)}
         />
       </ScrollView>
@@ -404,6 +470,11 @@ const styles = StyleSheet.create({
   relatedBtn: { marginTop: 12, padding: 10, borderRadius: 10, backgroundColor: "#f0f7ff", borderWidth: 1, borderColor: "#cfe3ff" },
   relatedText: { fontWeight: "700", color: "#1d4ed8" },
   relatedWarn: { color: "#b45309", fontSize: 12, marginTop: 4 },
+  linkCard: { borderWidth: 1, borderColor: "#c7d2fe", borderRadius: 14, padding: 14, marginBottom: 20, backgroundColor: "#eef2ff" },
+  linkTitle: { fontWeight: "700", fontSize: 17, marginBottom: 4 },
+  linkDesc: { color: "#666", fontSize: 13, lineHeight: 20 },
+  linkBtn: { backgroundColor: "#1d4ed8", borderRadius: 12, padding: 14, alignItems: "center", marginTop: 12 },
+  linkBtnText: { color: "#fff", fontWeight: "700" },
   createBtn: { backgroundColor: "#111", borderRadius: 12, padding: 14, alignItems: "center", marginTop: 16 },
   createBtnText: { color: "#fff", fontWeight: "700" },
   previewBtn: { borderWidth: 1, borderColor: "#111", borderRadius: 12, padding: 12, alignItems: "center", marginTop: 10 },

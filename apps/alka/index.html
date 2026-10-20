@@ -323,8 +323,8 @@
             color: var(--primary-dark);
         }
 
-        /* Bread Calculation Live Summary */
-        .calculation-box {
+        /* Order Total Card */
+        .total-summary-box {
             background: linear-gradient(135deg, #fff9f2, #fff0db);
             border: 1px solid #fed7aa;
             border-radius: var(--radius-md);
@@ -335,25 +335,19 @@
             justify-content: space-between;
         }
 
-        .calc-item {
-            text-align: center;
-            flex: 1;
+        .summary-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #8c5717;
         }
 
-        .calc-item:first-child {
-            border-left: 1px solid #fed7aa;
-        }
-
-        .calc-value {
-            font-size: 20px;
+        .summary-value {
+            font-size: 22px;
             font-weight: 800;
             color: var(--primary-dark);
-        }
-
-        .calc-label {
-            font-size: 11px;
-            color: var(--text-muted);
-            font-weight: 600;
         }
 
         /* Primary Button */
@@ -489,11 +483,6 @@
             color: #1e40af;
         }
 
-        .badge-status-ready {
-            background: #ecfdf5;
-            color: #065f46;
-        }
-
         .badge-status-done {
             background: #f3f4f6;
             color: #374151;
@@ -526,12 +515,6 @@
             background: #fee2e2;
             color: #b91c1c;
             border-color: #fca5a5;
-        }
-
-        .btn-receipt {
-            background: #f1f5f9;
-            color: #334155;
-            border-color: #cbd5e1;
         }
 
         /* Empty State */
@@ -579,8 +562,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.55);
-            backdrop-filter: blur(3px);
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
             z-index: 100;
             display: flex;
             align-items: center;
@@ -615,7 +598,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
 
         .modal-title {
@@ -638,6 +621,21 @@
             align-items: center;
             justify-content: center;
             color: var(--text-muted);
+        }
+
+        /* Mandatory first-login notification */
+        .first-login-badge {
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+            color: #92400e;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-bottom: 16px;
+            line-height: 1.5;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
         }
 
         /* Toast message */
@@ -734,7 +732,7 @@
                     <p>نظام الحجز المسبق والتسليم السريع</p>
                 </div>
             </div>
-            <div class="user-badge" onclick="openProfileModal()">
+            <div class="user-badge" onclick="openProfileModal(false)">
                 <i class="fa-regular fa-circle-user"></i>
                 <span id="headerUserName">تسجيل دخول</span>
             </div>
@@ -744,7 +742,7 @@
     <!-- Main Content Tabs -->
     <main>
         <!-- User info quick pill -->
-        <div class="user-quick-strip" id="userQuickBar" onclick="openProfileModal()" style="display: none;">
+        <div class="user-quick-strip" id="userQuickBar" onclick="openProfileModal(false)" style="display: none;">
             <div>
                 <i class="fa-solid fa-building-user text-amber-600" style="color: var(--primary);"></i>
                 <span id="quickUserWork">مكان العمل: --</span>
@@ -761,7 +759,7 @@
                         طلب حجز عيش جديد
                     </span>
                     <span style="font-size: 11px; background: #e0f2fe; color:#0369a1; padding: 2px 8px; border-radius: 6px; font-weight: 700;">
-                        سعر الرغيفة: 50 ج.س
+                        حجز فوري ومضمون
                     </span>
                 </div>
 
@@ -773,7 +771,7 @@
                         </label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-money-bill-wave"></i>
-                            <input type="number" id="amountSdg" placeholder="مثال: 5000" min="100" step="50" required oninput="calculateLoaves()">
+                            <input type="number" id="amountSdg" placeholder="مثال: 5000" min="100" step="50" required oninput="updateTotalDisplay()">
                         </div>
                         <!-- Presets for fast selection -->
                         <div class="preset-grid">
@@ -784,16 +782,13 @@
                         </div>
                     </div>
 
-                    <!-- Calculated count banner -->
-                    <div class="calculation-box">
-                        <div class="calc-item">
-                            <div class="calc-value" id="calcLoaves">0</div>
-                            <div class="calc-label">عدد العيش التقريبي (رغيفة)</div>
+                    <!-- Total Amount Display -->
+                    <div class="total-summary-box">
+                        <div class="summary-label">
+                            <i class="fa-solid fa-receipt"></i>
+                            <span>المبلغ الإجمالي للحجز:</span>
                         </div>
-                        <div class="calc-item">
-                            <div class="calc-value" id="calcPriceDisplay">0 ج.س</div>
-                            <div class="calc-label">إجمالي المبلغ المحسوب</div>
-                        </div>
+                        <div class="summary-value" id="calcPriceDisplay">0 ج.س</div>
                     </div>
 
                     <!-- Shift / Pickup Time -->
@@ -854,7 +849,7 @@
             </div>
         </section>
 
-        <!-- VIEW 2: ORDERS HISTORY (Current & Past) -->
+        <!-- VIEW 2: ORDERS HISTORY -->
         <section id="viewHistory" style="display: none;">
             <div class="filter-capsules">
                 <button class="filter-capsule active" onclick="filterOrders('all', this)">كل الحجوزات</button>
@@ -905,7 +900,7 @@
 
                     <button type="submit" class="btn-submit" style="margin-top: 15px;">
                         <i class="fa-solid fa-floppy-disk"></i>
-                        حفظ البيانات
+                        حفظ وتحديث البيانات
                     </button>
                 </form>
             </div>
@@ -915,9 +910,9 @@
                     <i class="fa-solid fa-shield-halved"></i> سياسة فرن BCC:
                 </h4>
                 <ul style="font-size: 12px; color: var(--text-muted); padding-right: 18px; line-height: 1.8;">
-                    <li>يتم إشعاركم فور الانتهاء من خبز الطلبية لتكون ساخنة.</li>
+                    <li>يتم تجهيز طلبيتك لتكون طازجة وساخنة في وقت الوردية المحدد.</li>
                     <li>الدفع الآجل مخصص فقط للجهات المسجلة بفرن BCC.</li>
-                    <li>في حالة تعذر الحضور يرجى إلغاء الحجز قبل بدء الوردية بساعتين.</li>
+                    <li>في حالة تعذر الحضور يرجى إلغاء الحجز قبل بدء الوردية بوقت كافٍ.</li>
                 </ul>
             </div>
         </section>
@@ -940,23 +935,28 @@
     </nav>
 </div>
 
-<!-- Modal For Fast Login / Initial Registration -->
-<div class="modal-overlay" id="profileModal">
-    <div class="modal-card">
+<!-- Modal For Mandatory First-Time Login / Profile Edit -->
+<div class="modal-overlay" id="profileModal" onclick="handleBackdropClick(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
         <div class="modal-header">
             <div class="modal-title">
                 <i class="fa-solid fa-id-badge"></i>
-                تسجيل بيانات العميل
+                <span id="modalTitleText">تسجيل بيانات العميل</span>
             </div>
-            <button class="close-btn" onclick="closeProfileModal()"><i class="fa-solid fa-xmark"></i></button>
+            <button class="close-btn" id="modalCloseBtn" onclick="closeProfileModal()"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
-            يرجى إدخال اسمك ورقم هاتفك ومكان العمل ليتم تأكيد حجوزات الخبز ومتابعة الدفع نقداً أو أجلاً.
-        </p>
+
+        <div class="first-login-badge" id="modalFirstLoginNotice">
+            <i class="fa-solid fa-circle-exclamation" style="font-size: 16px; margin-top: 2px;"></i>
+            <div>
+                <strong>مرحباً بك في فرن BCC!</strong><br>
+                يرجى تسجيل بياناتك أول مرة ليتم حفظها في هاتفك واستخدامها تلقائياً في كل حجوزاتك.
+            </div>
+        </div>
 
         <form id="modalAuthForm" onsubmit="handleModalAuth(event)">
             <div class="form-group">
-                <label>الاسم الكامل</label>
+                <label>الاسم بالكامل <span style="color:red">*</span></label>
                 <div class="input-wrapper">
                     <i class="fa-regular fa-user"></i>
                     <input type="text" id="mName" required placeholder="مثال: عثمان علي بابكر">
@@ -964,7 +964,7 @@
             </div>
 
             <div class="form-group">
-                <label>رقم الهاتف</label>
+                <label>رقم الهاتف <span style="color:red">*</span></label>
                 <div class="input-wrapper">
                     <i class="fa-solid fa-phone"></i>
                     <input type="tel" id="mPhone" required placeholder="0912345678" dir="ltr" style="text-align: right;">
@@ -972,7 +972,7 @@
             </div>
 
             <div class="form-group">
-                <label>مكان العمل</label>
+                <label>مكان العمل أو الإدارة <span style="color:red">*</span></label>
                 <div class="input-wrapper">
                     <i class="fa-solid fa-briefcase"></i>
                     <input type="text" id="mWork" required placeholder="الشركة / الإدارة / المستشفى / السوق">
@@ -981,7 +981,7 @@
 
             <button type="submit" class="btn-submit" style="margin-top: 14px;">
                 <i class="fa-solid fa-check"></i>
-                متابعة الحجز الآن
+                حفظ البيانات ومتابعة التطبيق
             </button>
         </form>
     </div>
@@ -995,31 +995,28 @@
 
 <script>
     /* -----------------------------------------------
-       CONSTANTS & STATE
+       STATE & CONSTANTS
     ------------------------------------------------- */
-    const PRICE_PER_LOAF = 50; // سعر الرغيفة 50 جنيه سوداني كمثال قياسي
     let currentUser = null;
     let selectedPaymentMethod = 'نقدي';
     let selectedShift = 'الوردية الصباحية (7:00 ص)';
     let currentFilter = 'all';
+    let isMandatoryLogin = false;
 
     // LocalStorage Keys
-    const STORAGE_USER_KEY = 'bcc_bakery_user_data';
-    const STORAGE_ORDERS_KEY = 'bcc_bakery_orders_list';
+    const STORAGE_USER_KEY = 'bcc_bakery_user_data_v2';
+    const STORAGE_ORDERS_KEY = 'bcc_bakery_orders_list_v2';
 
     /* -----------------------------------------------
        INIT APP
     ------------------------------------------------- */
     document.addEventListener('DOMContentLoaded', () => {
         loadUser();
-        loadOrders();
-        calculateLoaves();
+        updateTotalDisplay();
 
-        // Check if user has logged in before, if not ask gently
-        if (!currentUser || !currentUser.name) {
-            setTimeout(() => {
-                openProfileModal();
-            }, 600);
+        // Mandatory check: If no user saved in localStorage, force modal open immediately
+        if (!currentUser || !currentUser.name || !currentUser.phone || !currentUser.workplace) {
+            openProfileModal(true);
         }
     });
 
@@ -1034,9 +1031,8 @@
                 updateUserUI();
             } catch (e) {
                 console.error(e);
+                currentUser = null;
             }
-        } else {
-            updateUserUI();
         }
     }
 
@@ -1045,11 +1041,12 @@
             name: name.trim(),
             phone: phone.trim(),
             workplace: work.trim(),
+            registeredAt: currentUser && currentUser.registeredAt ? currentUser.registeredAt : new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
         localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(currentUser));
         updateUserUI();
-        showToast('تم حفظ بياناتك بنجاح', 'success');
+        showToast('تم حفظ وتثبيت بياناتك بنجاح', 'success');
     }
 
     function updateUserUI() {
@@ -1057,7 +1054,7 @@
         const quickBar = document.getElementById('userQuickBar');
         const quickWork = document.getElementById('quickUserWork');
 
-        // Fields in Profile tab
+        // Profile tab fields
         const profName = document.getElementById('profName');
         const profPhone = document.getElementById('profPhone');
         const profWork = document.getElementById('profWork');
@@ -1072,13 +1069,13 @@
             quickBar.style.display = 'flex';
             quickWork.textContent = `مكان العمل: ${currentUser.workplace}`;
 
-            if(profName) profName.value = currentUser.name;
-            if(profPhone) profPhone.value = currentUser.phone;
-            if(profWork) profWork.value = currentUser.workplace;
+            if (profName) profName.value = currentUser.name;
+            if (profPhone) profPhone.value = currentUser.phone;
+            if (profWork) profWork.value = currentUser.workplace;
 
-            if(mName) mName.value = currentUser.name;
-            if(mPhone) mPhone.value = currentUser.phone;
-            if(mWork) mWork.value = currentUser.workplace;
+            if (mName) mName.value = currentUser.name;
+            if (mPhone) mPhone.value = currentUser.phone;
+            if (mWork) mWork.value = currentUser.workplace;
         } else {
             headerName.textContent = 'تسجيل دخول';
             quickBar.style.display = 'none';
@@ -1090,7 +1087,14 @@
         const name = document.getElementById('mName').value;
         const phone = document.getElementById('mPhone').value;
         const work = document.getElementById('mWork').value;
+
+        if (!name.trim() || !phone.trim() || !work.trim()) {
+            showToast('يرجى ملء جميع البيانات المطلوبة', 'error');
+            return;
+        }
+
         saveUserData(name, phone, work);
+        isMandatoryLogin = false;
         closeProfileModal();
     }
 
@@ -1105,12 +1109,39 @@
     /* -----------------------------------------------
        MODAL CONTROLS
     ------------------------------------------------- */
-    function openProfileModal() {
-        document.getElementById('profileModal').classList.add('open');
+    function openProfileModal(mandatory = false) {
+        isMandatoryLogin = mandatory;
+        const modal = document.getElementById('profileModal');
+        const closeBtn = document.getElementById('modalCloseBtn');
+        const notice = document.getElementById('modalFirstLoginNotice');
+        const title = document.getElementById('modalTitleText');
+
+        if (mandatory) {
+            closeBtn.style.display = 'none';
+            notice.style.display = 'flex';
+            title.textContent = 'تسجيل الدخول لأول مرة';
+        } else {
+            closeBtn.style.display = 'flex';
+            notice.style.display = 'none';
+            title.textContent = 'تعديل بيانات الحساب';
+        }
+
+        modal.classList.add('open');
     }
 
     function closeProfileModal() {
+        if (isMandatoryLogin && (!currentUser || !currentUser.name)) {
+            showToast('يجب تسجيل بياناتك أولاً للدخول إلى التطبيق', 'error');
+            return;
+        }
         document.getElementById('profileModal').classList.remove('open');
+    }
+
+    function handleBackdropClick(e) {
+        if (isMandatoryLogin && (!currentUser || !currentUser.name)) {
+            return; // Can't dismiss by clicking outside if it's first-time login
+        }
+        closeProfileModal();
     }
 
     /* -----------------------------------------------
@@ -1145,18 +1176,15 @@
     /* -----------------------------------------------
        RESERVATION FORM LOGIC
     ------------------------------------------------- */
-    function calculateLoaves() {
+    function updateTotalDisplay() {
         const input = document.getElementById('amountSdg');
         const val = parseFloat(input.value) || 0;
-        const count = Math.floor(val / PRICE_PER_LOAF);
-
-        document.getElementById('calcLoaves').textContent = count.toLocaleString('ar-EG');
         document.getElementById('calcPriceDisplay').textContent = `${val.toLocaleString('ar-EG')} ج.س`;
     }
 
     function setPresetAmount(val) {
         document.getElementById('amountSdg').value = val;
-        calculateLoaves();
+        updateTotalDisplay();
 
         // Highlight preset buttons
         document.querySelectorAll('.preset-btn').forEach(b => {
@@ -1201,8 +1229,8 @@
 
         // Check user identity
         if (!currentUser || !currentUser.name || !currentUser.phone) {
-            showToast('الرجاء إدخال بياناتك أولاً (الاسم ورقم الهاتف ومكان العمل)', 'error');
-            openProfileModal();
+            showToast('الرجاء إدخال بياناتك أولاً للمتابعة', 'error');
+            openProfileModal(true);
             return;
         }
 
@@ -1212,21 +1240,19 @@
             return;
         }
 
-        const loavesCount = Math.floor(amount / PRICE_PER_LOAF);
         const notes = document.getElementById('orderNotes').value.trim();
 
-        // Create Order Object
+        // Create Order Object (without loaves count)
         const newOrder = {
             id: 'BCC-' + Math.floor(100000 + Math.random() * 900000),
             userName: currentUser.name,
             userPhone: currentUser.phone,
             workplace: currentUser.workplace,
             amountSdg: amount,
-            loaves: loavesCount,
             paymentMethod: selectedPaymentMethod,
             shift: selectedShift,
             notes: notes || 'بدون ملاحظات',
-            status: 'نشط', // نشط (Active) or مكتمل (Completed) or ملغي (Cancelled)
+            status: 'نشط',
             createdAt: new Date().toISOString()
         };
 
@@ -1235,14 +1261,15 @@
         // Reset form
         document.getElementById('amountSdg').value = '';
         document.getElementById('orderNotes').value = '';
-        calculateLoaves();
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+        updateTotalDisplay();
 
         showToast('تم تسجيل حجز العيش بنجاح في فرن BCC!', 'success');
 
         // Go to History
         setTimeout(() => {
             switchTab('history');
-        }, 700);
+        }, 600);
     }
 
     /* -----------------------------------------------
@@ -1255,16 +1282,8 @@
 
     function saveOrder(order) {
         const orders = getStoredOrders();
-        orders.unshift(order); // Add newest on top
+        orders.unshift(order);
         localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(orders));
-    }
-
-    function loadOrders() {
-        // If empty, generate default initial sample to help user see how it functions
-        const orders = getStoredOrders();
-        if (orders.length === 0 && currentUser) {
-            // Can be left empty or populate sample
-        }
     }
 
     function filterOrders(type, btn) {
@@ -1369,11 +1388,6 @@
                     <div class="order-info-row">
                         <span style="color: var(--text-muted); font-size: 12px;">قيمة الحجز:</span>
                         <strong style="font-size: 15px; color: var(--primary-dark);">${order.amountSdg.toLocaleString('ar-EG')} جنيه سوداني</strong>
-                    </div>
-
-                    <div class="order-info-row">
-                        <span style="color: var(--text-muted); font-size: 12px;">عدد العيش:</span>
-                        <strong style="color: var(--text-main); font-size: 14px;">${order.loaves.toLocaleString('ar-EG')} رغيفة</strong>
                     </div>
 
                     <div class="order-info-row">

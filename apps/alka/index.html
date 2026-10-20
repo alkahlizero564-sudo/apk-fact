@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مخبز BCC - تطبيق حجز العيش</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #c26910;
+            --primary-dark: #984e05;
+            --primary-light: #fdf5ec;
+            --accent: #f59e0b;
+            --bg: #f8f6f2;
+            --card-bg: #ffffff;
+            --text-main: #2b231d;
+            --text-muted: #7d7268;
+            --border: #ede4d8;
+            --success: #16a34a;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --shadow-sm: 0 2px 8px rgba(138, 77, 18, 0.06);
+            --shadow-md: 0 8px 24px rgba(138, 77, 18, 0.08);
+            --shadow-lg: 0 14px 34px rgba(138, 77, 18, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Tajawal', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            background-image: radial-gradient(#e5d8c8 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 480px;
+            background: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Top Header */
+        header {
+            background: linear-gradient(135deg, #a45308, #d97706);
+            color: #fff;
+            padding: 20px 18px 16px;
+            border-bottom-left-radius: 26px;
+            border-bottom-right-radius: 26px;
+            box-shadow: 0 8px 20px rgba(164, 83, 8, 0.25);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(4px);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .brand-text h1 {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+        }
+
+        .brand-text p {
+            font-size: 11px;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .user-badge {
+            background: rgba(255, 255, 255, 0.18);
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            transition: all 0.2s;
+        }
+
+        .user-badge:active {
+            transform: scale(0.96);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Main Content Viewport */
+        main {
+            flex: 1;
+            padding: 16px 16px 85px;
+            overflow-y: auto;
+        }
+
+        /* Tabs Navigation Bottom */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            max-width: 480px;
+            background: #ffffff;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 12px 14px;
+            z-index: 50;
+            box-shadow: 0 -4px 18px rgba(0,0,0,0.05);
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .nav-btn i {
+            font-size: 18px;
+        }
+
+        .nav-btn.active {
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        /* Cards and Elements */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 16px;
+        }
+
+        .card-header-line {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--text-main);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            right: 14px;
+            color: var(--primary);
+            font-size: 15px;
+        }
+
+        .input-wrapper input,
+        .input-wrapper select,
+        .input-wrapper textarea {
+            width: 100%;
+            padding: 12px 42px 12px 14px;
+            border-radius: var(--radius-md);
+            border: 1.5px solid var(--border);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            outline: none;
+            background: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-wrapper input:focus,
+        .input-wrapper select:focus,
+        .input-wrapper textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(194, 105, 16, 0.12);
+        }
+
+        /* Price Presets */
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .preset-btn {
+            background: #fbf7f2;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px 4px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:active, .preset-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        /* Payment Selector */
+        .payment-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 6px;
+        }
+
+        .payment-card {
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fff;
+        }
+
+        .payment-card i {
+            font-size: 24px;
+            color: var(--text-muted);
+        }
+
+        .payment-card span {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .payment-card small {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .payment-card.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .payment-card.selected i,
+        .payment-card.selected span {
+            color: var(--primary-dark);
+        }
+
+        /* Bread Calculation Live Summary */
+        .calculation-box {
+            background: linear-gradient(135deg, #fff9f2, #fff0db);
+            border: 1px solid #fed7aa;
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin: 16px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .calc-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .calc-item:first-child {
+            border-left: 1px solid #fed7aa;
+        }
+
+        .calc-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary-dark);
+        }
+
+        .calc-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        /* Primary Button */
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, #c26910, #e07a16);
+            color: #fff;
+            border: none;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 800;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(194, 105, 16, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s transform, 0.2s opacity;
+        }
+
+        .btn-submit:active {
+            transform: scale(0.98);
+        }
+
+        /* Order Filter Tabs */
+        .filter-capsules {
+            display: flex;
+            background: #ede6dc;
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+
+        .filter-capsule {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            border-radius: 9px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: 0.2s;
+        }
+
+        .filter-capsule.active {
+            background: #fff;
+            color: var(--primary-dark);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+
+        /* Orders List Cards */
+        .order-item {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
+            transition: 0.2s;
+            position: relative;
+        }
+
+        .order-item.active-order {
+            border-right: 5px solid var(--primary);
+        }
+
+        .order-item.completed-order {
+            border-right: 5px solid var(--success);
+            opacity: 0.88;
+        }
+
+        .order-item.cancelled-order {
+            border-right: 5px solid var(--danger);
+            opacity: 0.65;
+        }
+
+        .order-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .order-id {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--primary-dark);
+        }
+
+        .order-date {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .order-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 6px 0;
+            font-size: 13px;
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 8px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .badge-cash {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .badge-credit {
+            background: #fffbeb;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        .badge-status-pending {
+            background: #eff6ff;
+            color: #1e40af;
+        }
+
+        .badge-status-ready {
+            background: #ecfdf5;
+            color: #065f46;
+        }
+
+        .badge-status-done {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .order-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #f3ece4;
+        }
+
+        .btn-small {
+            flex: 1;
+            padding: 7px;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: 0.2s;
+        }
+
+        .btn-cancel {
+            background: #fee2e2;
+            color: #b91c1c;
+            border-color: #fca5a5;
+        }
+
+        .btn-receipt {
+            background: #f1f5f9;
+            color: #334155;
+            border-color: #cbd5e1;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #d7ccc0;
+            margin-bottom: 12px;
+        }
+
+        .empty-state h3 {
+            font-size: 16px;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        /* User Info Box Banner */
+        .user-quick-strip {
+            background: #fffbf5;
+            border: 1px dashed #fbd38d;
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .user-quick-strip div {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Modal Dialog */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(3px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: #fff;
+            width: 100%;
+            max-width: 420px;
+            border-radius: var(--radius-lg);
+            padding: 22px;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(15px);
+            transition: transform 0.25s;
+        }
+
+        .modal-overlay.open .modal-card {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .modal-title {
+            font-size: 17px;
+            font-weight: 800;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .close-btn {
+            background: #f3ece4;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+        }
+
+        /* Toast message */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: #201a15;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 700;
+            z-index: 200;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast i.success { color: #4ade80; }
+        .toast i.error { color: #f87171; }
+
+        /* Workplace tags */
+        .work-tag {
+            font-size: 11px;
+            background: #ede6dc;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #5d4e41;
+            font-weight: 600;
+        }
+
+        .notice-box {
+            font-size: 12px;
+            line-height: 1.5;
+            color: #8c5717;
+            background: #fff8eb;
+            border: 1px solid #feebc8;
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+        }
+
+        /* Shift radio buttons */
+        .shift-picker {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .shift-btn {
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 10px;
+            background: #fbf9f6;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .shift-btn.active {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            color: var(--primary-dark);
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <!-- Header -->
+    <header>
+        <div class="header-top">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-bread-slice"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>فرن BCC الآلي</h1>
+                    <p>نظام الحجز المسبق والتسليم السريع</p>
+                </div>
+            </div>
+            <div class="user-badge" onclick="openProfileModal()">
+                <i class="fa-regular fa-circle-user"></i>
+                <span id="headerUserName">تسجيل دخول</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Tabs -->
+    <main>
+        <!-- User info quick pill -->
+        <div class="user-quick-strip" id="userQuickBar" onclick="openProfileModal()" style="display: none;">
+            <div>
+                <i class="fa-solid fa-building-user text-amber-600" style="color: var(--primary);"></i>
+                <span id="quickUserWork">مكان العمل: --</span>
+            </div>
+            <span style="color: var(--primary); font-weight:700;"><i class="fa-solid fa-pen-to-square"></i> تعديل</span>
+        </div>
+
+        <!-- VIEW 1: NEW RESERVATION -->
+        <section id="viewBooking">
+            <div class="card">
+                <div class="card-header-line">
+                    <span class="card-title">
+                        <i class="fa-solid fa-calendar-plus" style="color: var(--primary);"></i>
+                        طلب حجز عيش جديد
+                    </span>
+                    <span style="font-size: 11px; background: #e0f2fe; color:#0369a1; padding: 2px 8px; border-radius: 6px; font-weight: 700;">
+                        سعر الرغيفة: 50 ج.س
+                    </span>
+                </div>
+
+                <form id="reservationForm" onsubmit="handleReservationSubmit(event)">
+                    <!-- SDG Amount -->
+                    <div class="form-group">
+                        <label for="amountSdg">
+                            قيمة العيش المطلوبة (بالجنيه السوداني) <span style="color:red">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                            <input type="number" id="amountSdg" placeholder="مثال: 5000" min="100" step="50" required oninput="calculateLoaves()">
+                        </div>
+                        <!-- Presets for fast selection -->
+                        <div class="preset-grid">
+                            <button type="button" class="preset-btn" onclick="setPresetAmount(1000)">1,000 ج.س</button>
+                            <button type="button" class="preset-btn" onclick="setPresetAmount(2000)">2,000 ج.س</button>
+                            <button type="button" class="preset-btn" onclick="setPresetAmount(5000)">5,000 ج.س</button>
+                            <button type="button" class="preset-btn" onclick="setPresetAmount(10000)">10,000 ج.س</button>
+                        </div>
+                    </div>
+
+                    <!-- Calculated count banner -->
+                    <div class="calculation-box">
+                        <div class="calc-item">
+                            <div class="calc-value" id="calcLoaves">0</div>
+                            <div class="calc-label">عدد العيش التقريبي (رغيفة)</div>
+                        </div>
+                        <div class="calc-item">
+                            <div class="calc-value" id="calcPriceDisplay">0 ج.س</div>
+                            <div class="calc-label">إجمالي المبلغ المحسوب</div>
+                        </div>
+                    </div>
+
+                    <!-- Shift / Pickup Time -->
+                    <div class="form-group">
+                        <label>وردية الاستلام المفضلة</label>
+                        <div class="shift-picker">
+                            <div class="shift-btn active" id="shiftMorning" onclick="selectShift('morning')">
+                                <i class="fa-solid fa-sun" style="color: #f59e0b; margin-left: 5px;"></i>
+                                الوردية الصباحية (7:00 ص)
+                            </div>
+                            <div class="shift-btn" id="shiftEvening" onclick="selectShift('evening')">
+                                <i class="fa-solid fa-moon" style="color: #6366f1; margin-left: 5px;"></i>
+                                الوردية المسائية (4:00 م)
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Mode (Cash / Deferred) -->
+                    <div class="form-group">
+                        <label>طريقة الدفع المقررة <span style="color:red">*</span></label>
+                        <div class="payment-options">
+                            <div class="payment-card selected" id="payCash" onclick="selectPayment('نقدي')">
+                                <i class="fa-solid fa-hand-holding-dollar"></i>
+                                <span>دفع نقدي (كاش)</span>
+                                <small>الدفع عند الاستلام بالمخبز</small>
+                            </div>
+                            <div class="payment-card" id="payCredit" onclick="selectPayment('آجل')">
+                                <i class="fa-solid fa-file-invoice-dollar"></i>
+                                <span>دفع آجل (خصم/فاتورة)</span>
+                                <small>لموظفي جهات العمل المعتمدة</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Extra Notes -->
+                    <div class="form-group">
+                        <label for="orderNotes">ملاحظات إضافية (اختياري)</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-comment-dots"></i>
+                            <input type="text" id="orderNotes" placeholder="مثلاً: تغليف محكم، عيش محمر...">
+                        </div>
+                    </div>
+
+                    <div class="notice-box">
+                        <i class="fa-solid fa-circle-info" style="font-size: 15px; margin-top: 2px;"></i>
+                        <div>
+                            يرجى الحضور في موعد الوردية لضمان استلام العيش طازجاً وساخناً من فرن BCC. الحجوزات الآجلة تتطلب مطابقة جهة العمل.
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <button type="submit" class="btn-submit">
+                            <i class="fa-solid fa-circle-check"></i>
+                            تأكيد وإرسال الحجز
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- VIEW 2: ORDERS HISTORY (Current & Past) -->
+        <section id="viewHistory" style="display: none;">
+            <div class="filter-capsules">
+                <button class="filter-capsule active" onclick="filterOrders('all', this)">كل الحجوزات</button>
+                <button class="filter-capsule" onclick="filterOrders('current', this)">الحالية (النشطة)</button>
+                <button class="filter-capsule" onclick="filterOrders('completed', this)">السابقة</button>
+            </div>
+
+            <!-- Orders Container -->
+            <div id="ordersContainer">
+                <!-- Dynamically rendered -->
+            </div>
+        </section>
+
+        <!-- VIEW 3: PROFILE VIEW -->
+        <section id="viewProfile" style="display: none;">
+            <div class="card">
+                <div class="card-header-line">
+                    <span class="card-title">
+                        <i class="fa-solid fa-address-card" style="color: var(--primary);"></i>
+                        بيانات العميل وجهة العمل
+                    </span>
+                </div>
+                <form id="profileFormInside" onsubmit="handleProfileSave(event)">
+                    <div class="form-group">
+                        <label>الاسم بالكامل</label>
+                        <div class="input-wrapper">
+                            <i class="fa-regular fa-user"></i>
+                            <input type="text" id="profName" required placeholder="أدخل اسمك الثلاثي">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>رقم الهاتف (سوداني / زين / إم تي إن)</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-phone"></i>
+                            <input type="tel" id="profPhone" required placeholder="09xxxxxxx أو 01xxxxxxx" dir="ltr" style="text-align: right;">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>مكان العمل أو الإدارة / المؤسسة</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-building"></i>
+                            <input type="text" id="profWork" required placeholder="مثال: مستشفى الخرطوم، بنك الخرطوم...">
+                        </div>
+                        <small style="color: var(--text-muted); font-size: 11px;">مهم جداً لاعتماد الدفع بالآجل والتعرف عليك أثناء الاستلام.</small>
+                    </div>
+
+                    <button type="submit" class="btn-submit" style="margin-top: 15px;">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        حفظ البيانات
+                    </button>
+                </form>
+            </div>
+
+            <div class="card" style="margin-top: 12px; background: #faf5ef; border-color: #eeddc9;">
+                <h4 style="font-size: 14px; margin-bottom: 8px; color: var(--primary-dark);">
+                    <i class="fa-solid fa-shield-halved"></i> سياسة فرن BCC:
+                </h4>
+                <ul style="font-size: 12px; color: var(--text-muted); padding-right: 18px; line-height: 1.8;">
+                    <li>يتم إشعاركم فور الانتهاء من خبز الطلبية لتكون ساخنة.</li>
+                    <li>الدفع الآجل مخصص فقط للجهات المسجلة بفرن BCC.</li>
+                    <li>في حالة تعذر الحضور يرجى إلغاء الحجز قبل بدء الوردية بساعتين.</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+        <button class="nav-btn active" id="tabBooking" onclick="switchTab('booking')">
+            <i class="fa-solid fa-bread-slice"></i>
+            <span>طلب حجز</span>
+        </button>
+        <button class="nav-btn" id="tabHistory" onclick="switchTab('history')">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>سجل الحجوزات</span>
+        </button>
+        <button class="nav-btn" id="tabProfile" onclick="switchTab('profile')">
+            <i class="fa-solid fa-user-gear"></i>
+            <span>حسابي</span>
+        </button>
+    </nav>
+</div>
+
+<!-- Modal For Fast Login / Initial Registration -->
+<div class="modal-overlay" id="profileModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-title">
+                <i class="fa-solid fa-id-badge"></i>
+                تسجيل بيانات العميل
+            </div>
+            <button class="close-btn" onclick="closeProfileModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+            يرجى إدخال اسمك ورقم هاتفك ومكان العمل ليتم تأكيد حجوزات الخبز ومتابعة الدفع نقداً أو أجلاً.
+        </p>
+
+        <form id="modalAuthForm" onsubmit="handleModalAuth(event)">
+            <div class="form-group">
+                <label>الاسم الكامل</label>
+                <div class="input-wrapper">
+                    <i class="fa-regular fa-user"></i>
+                    <input type="text" id="mName" required placeholder="مثال: عثمان علي بابكر">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>رقم الهاتف</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-phone"></i>
+                    <input type="tel" id="mPhone" required placeholder="0912345678" dir="ltr" style="text-align: right;">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>مكان العمل</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-briefcase"></i>
+                    <input type="text" id="mWork" required placeholder="الشركة / الإدارة / المستشفى / السوق">
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit" style="margin-top: 14px;">
+                <i class="fa-solid fa-check"></i>
+                متابعة الحجز الآن
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Toast notification box -->
+<div class="toast" id="toastBox">
+    <i class="fa-solid fa-circle-check success" id="toastIcon"></i>
+    <span id="toastMsg">تم بنجاح!</span>
+</div>
+
+<script>
+    /* -----------------------------------------------
+       CONSTANTS & STATE
+    ------------------------------------------------- */
+    const PRICE_PER_LOAF = 50; // سعر الرغيفة 50 جنيه سوداني كمثال قياسي
+    let currentUser = null;
+    let selectedPaymentMethod = 'نقدي';
+    let selectedShift = 'الوردية الصباحية (7:00 ص)';
+    let currentFilter = 'all';
+
+    // LocalStorage Keys
+    const STORAGE_USER_KEY = 'bcc_bakery_user_data';
+    const STORAGE_ORDERS_KEY = 'bcc_bakery_orders_list';
+
+    /* -----------------------------------------------
+       INIT APP
+    ------------------------------------------------- */
+    document.addEventListener('DOMContentLoaded', () => {
+        loadUser();
+        loadOrders();
+        calculateLoaves();
+
+        // Check if user has logged in before, if not ask gently
+        if (!currentUser || !currentUser.name) {
+            setTimeout(() => {
+                openProfileModal();
+            }, 600);
+        }
+    });
+
+    /* -----------------------------------------------
+       USER & AUTHENTICATION MANAGEMENT
+    ------------------------------------------------- */
+    function loadUser() {
+        const stored = localStorage.getItem(STORAGE_USER_KEY);
+        if (stored) {
+            try {
+                currentUser = JSON.parse(stored);
+                updateUserUI();
+            } catch (e) {
+                console.error(e);
+            }
+        } else {
+            updateUserUI();
+        }
+    }
+
+    function saveUserData(name, phone, work) {
+        currentUser = {
+            name: name.trim(),
+            phone: phone.trim(),
+            workplace: work.trim(),
+            updatedAt: new Date().toISOString()
+        };
+        localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(currentUser));
+        updateUserUI();
+        showToast('تم حفظ بياناتك بنجاح', 'success');
+    }
+
+    function updateUserUI() {
+        const headerName = document.getElementById('headerUserName');
+        const quickBar = document.getElementById('userQuickBar');
+        const quickWork = document.getElementById('quickUserWork');
+
+        // Fields in Profile tab
+        const profName = document.getElementById('profName');
+        const profPhone = document.getElementById('profPhone');
+        const profWork = document.getElementById('profWork');
+
+        // Modal fields
+        const mName = document.getElementById('mName');
+        const mPhone = document.getElementById('mPhone');
+        const mWork = document.getElementById('mWork');
+
+        if (currentUser && currentUser.name) {
+            headerName.textContent = currentUser.name.split(' ')[0];
+            quickBar.style.display = 'flex';
+            quickWork.textContent = `مكان العمل: ${currentUser.workplace}`;
+
+            if(profName) profName.value = currentUser.name;
+            if(profPhone) profPhone.value = currentUser.phone;
+            if(profWork) profWork.value = currentUser.workplace;
+
+            if(mName) mName.value = currentUser.name;
+            if(mPhone) mPhone.value = currentUser.phone;
+            if(mWork) mWork.value = currentUser.workplace;
+        } else {
+            headerName.textContent = 'تسجيل دخول';
+            quickBar.style.display = 'none';
+        }
+    }
+
+    function handleModalAuth(e) {
+        e.preventDefault();
+        const name = document.getElementById('mName').value;
+        const phone = document.getElementById('mPhone').value;
+        const work = document.getElementById('mWork').value;
+        saveUserData(name, phone, work);
+        closeProfileModal();
+    }
+
+    function handleProfileSave(e) {
+        e.preventDefault();
+        const name = document.getElementById('profName').value;
+        const phone = document.getElementById('profPhone').value;
+        const work = document.getElementById('profWork').value;
+        saveUserData(name, phone, work);
+    }
+
+    /* -----------------------------------------------
+       MODAL CONTROLS
+    ------------------------------------------------- */
+    function openProfileModal() {
+        document.getElementById('profileModal').classList.add('open');
+    }
+
+    function closeProfileModal() {
+        document.getElementById('profileModal').classList.remove('open');
+    }
+
+    /* -----------------------------------------------
+       TABS NAVIGATION
+    ------------------------------------------------- */
+    function switchTab(tab) {
+        const viewBooking = document.getElementById('viewBooking');
+        const viewHistory = document.getElementById('viewHistory');
+        const viewProfile = document.getElementById('viewProfile');
+
+        const tabBooking = document.getElementById('tabBooking');
+        const tabHistory = document.getElementById('tabHistory');
+        const tabProfile = document.getElementById('tabProfile');
+
+        // Reset
+        [viewBooking, viewHistory, viewProfile].forEach(el => el.style.display = 'none');
+        [tabBooking, tabHistory, tabProfile].forEach(el => el.classList.remove('active'));
+
+        if (tab === 'booking') {
+            viewBooking.style.display = 'block';
+            tabBooking.classList.add('active');
+        } else if (tab === 'history') {
+            viewHistory.style.display = 'block';
+            tabHistory.classList.add('active');
+            renderOrders();
+        } else if (tab === 'profile') {
+            viewProfile.style.display = 'block';
+            tabProfile.classList.add('active');
+        }
+    }
+
+    /* -----------------------------------------------
+       RESERVATION FORM LOGIC
+    ------------------------------------------------- */
+    function calculateLoaves() {
+        const input = document.getElementById('amountSdg');
+        const val = parseFloat(input.value) || 0;
+        const count = Math.floor(val / PRICE_PER_LOAF);
+
+        document.getElementById('calcLoaves').textContent = count.toLocaleString('ar-EG');
+        document.getElementById('calcPriceDisplay').textContent = `${val.toLocaleString('ar-EG')} ج.س`;
+    }
+
+    function setPresetAmount(val) {
+        document.getElementById('amountSdg').value = val;
+        calculateLoaves();
+
+        // Highlight preset buttons
+        document.querySelectorAll('.preset-btn').forEach(b => {
+            b.classList.remove('active');
+            if (b.textContent.includes(val.toLocaleString())) {
+                b.classList.add('active');
+            }
+        });
+    }
+
+    function selectShift(type) {
+        const morning = document.getElementById('shiftMorning');
+        const evening = document.getElementById('shiftEvening');
+        morning.classList.remove('active');
+        evening.classList.remove('active');
+
+        if (type === 'morning') {
+            morning.classList.add('active');
+            selectedShift = 'الوردية الصباحية (7:00 ص)';
+        } else {
+            evening.classList.add('active');
+            selectedShift = 'الوردية المسائية (4:00 م)';
+        }
+    }
+
+    function selectPayment(mode) {
+        selectedPaymentMethod = mode;
+        const cashCard = document.getElementById('payCash');
+        const creditCard = document.getElementById('payCredit');
+
+        if (mode === 'نقدي') {
+            cashCard.classList.add('selected');
+            creditCard.classList.remove('selected');
+        } else {
+            creditCard.classList.add('selected');
+            cashCard.classList.remove('selected');
+        }
+    }
+
+    function handleReservationSubmit(e) {
+        e.preventDefault();
+
+        // Check user identity
+        if (!currentUser || !currentUser.name || !currentUser.phone) {
+            showToast('الرجاء إدخال بياناتك أولاً (الاسم ورقم الهاتف ومكان العمل)', 'error');
+            openProfileModal();
+            return;
+        }
+
+        const amount = parseFloat(document.getElementById('amountSdg').value);
+        if (!amount || amount < 100) {
+            showToast('الرجاء إدخال مبلغ صحيح (100 جنيه سوداني كحد أدنى)', 'error');
+            return;
+        }
+
+        const loavesCount = Math.floor(amount / PRICE_PER_LOAF);
+        const notes = document.getElementById('orderNotes').value.trim();
+
+        // Create Order Object
+        const newOrder = {
+            id: 'BCC-' + Math.floor(100000 + Math.random() * 900000),
+            userName: currentUser.name,
+            userPhone: currentUser.phone,
+            workplace: currentUser.workplace,
+            amountSdg: amount,
+            loaves: loavesCount,
+            paymentMethod: selectedPaymentMethod,
+            shift: selectedShift,
+            notes: notes || 'بدون ملاحظات',
+            status: 'نشط', // نشط (Active) or مكتمل (Completed) or ملغي (Cancelled)
+            createdAt: new Date().toISOString()
+        };
+
+        saveOrder(newOrder);
+
+        // Reset form
+        document.getElementById('amountSdg').value = '';
+        document.getElementById('orderNotes').value = '';
+        calculateLoaves();
+
+        showToast('تم تسجيل حجز العيش بنجاح في فرن BCC!', 'success');
+
+        // Go to History
+        setTimeout(() => {
+            switchTab('history');
+        }, 700);
+    }
+
+    /* -----------------------------------------------
+       ORDERS STORAGE & RENDERING
+    ------------------------------------------------- */
+    function getStoredOrders() {
+        const data = localStorage.getItem(STORAGE_ORDERS_KEY);
+        return data ? JSON.parse(data) : [];
+    }
+
+    function saveOrder(order) {
+        const orders = getStoredOrders();
+        orders.unshift(order); // Add newest on top
+        localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(orders));
+    }
+
+    function loadOrders() {
+        // If empty, generate default initial sample to help user see how it functions
+        const orders = getStoredOrders();
+        if (orders.length === 0 && currentUser) {
+            // Can be left empty or populate sample
+        }
+    }
+
+    function filterOrders(type, btn) {
+        currentFilter = type;
+        document.querySelectorAll('.filter-capsule').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        renderOrders();
+    }
+
+    function cancelOrder(orderId) {
+        if (!confirm('هل أنت متأكد من رغبتك في إلغاء هذا الحجز؟')) return;
+
+        const orders = getStoredOrders();
+        const updated = orders.map(ord => {
+            if (ord.id === orderId) {
+                return { ...ord, status: 'ملغي' };
+            }
+            return ord;
+        });
+
+        localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(updated));
+        showToast('تم إلغاء الحجز', 'success');
+        renderOrders();
+    }
+
+    function markOrderCompleted(orderId) {
+        const orders = getStoredOrders();
+        const updated = orders.map(ord => {
+            if (ord.id === orderId) {
+                return { ...ord, status: 'مكتمل' };
+            }
+            return ord;
+        });
+
+        localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(updated));
+        showToast('تم تأكيد استلام الخبز بنجاح', 'success');
+        renderOrders();
+    }
+
+    function renderOrders() {
+        const container = document.getElementById('ordersContainer');
+        const orders = getStoredOrders();
+
+        let filtered = orders;
+        if (currentFilter === 'current') {
+            filtered = orders.filter(o => o.status === 'نشط');
+        } else if (currentFilter === 'completed') {
+            filtered = orders.filter(o => o.status === 'مكتمل' || o.status === 'ملغي');
+        }
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fa-solid fa-basket-shopping"></i>
+                    <h3>لا توجد حجوزات في هذا القسم</h3>
+                    <p>قم بإنشاء حجز عيش جديد من قائمة الحجز ليظهر هنا.</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        filtered.forEach(order => {
+            const dateObj = new Date(order.createdAt);
+            const dateFormatted = dateObj.toLocaleDateString('ar-SD', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            let statusClass = 'order-item active-order';
+            let statusBadge = '<span class="badge badge-status-pending"><i class="fa-solid fa-hourglass-half"></i> قيد التجهيز</span>';
+
+            if (order.status === 'مكتمل') {
+                statusClass = 'order-item completed-order';
+                statusBadge = '<span class="badge badge-status-done"><i class="fa-solid fa-check-double"></i> تم الاستلام</span>';
+            } else if (order.status === 'ملغي') {
+                statusClass = 'order-item cancelled-order';
+                statusBadge = '<span class="badge" style="background:#fee2e2; color:#991b1b;"><i class="fa-solid fa-ban"></i> ملغي</span>';
+            }
+
+            const paymentBadge = order.paymentMethod === 'نقدي' 
+                ? '<span class="badge badge-cash"><i class="fa-solid fa-money-bill"></i> نقدي (كاش)</span>'
+                : '<span class="badge badge-credit"><i class="fa-solid fa-file-invoice"></i> دفع آجل</span>';
+
+            html += `
+                <div class="${statusClass}">
+                    <div class="order-top">
+                        <div>
+                            <div class="order-id">#${order.id}</div>
+                            <div class="order-date">
+                                <i class="fa-regular fa-clock"></i>
+                                ${dateFormatted}
+                            </div>
+                        </div>
+                        <div>
+                            ${statusBadge}
+                        </div>
+                    </div>
+
+                    <div class="order-info-row">
+                        <span style="color: var(--text-muted); font-size: 12px;">قيمة الحجز:</span>
+                        <strong style="font-size: 15px; color: var(--primary-dark);">${order.amountSdg.toLocaleString('ar-EG')} جنيه سوداني</strong>
+                    </div>
+
+                    <div class="order-info-row">
+                        <span style="color: var(--text-muted); font-size: 12px;">عدد العيش:</span>
+                        <strong style="color: var(--text-main); font-size: 14px;">${order.loaves.toLocaleString('ar-EG')} رغيفة</strong>
+                    </div>
+
+                    <div class="order-info-row">
+                        <span style="color: var(--text-muted); font-size: 12px;">طريقة الدفع:</span>
+                        ${paymentBadge}
+                    </div>
+
+                    <div class="order-info-row">
+                        <span style="color: var(--text-muted); font-size: 12px;">جهة العمل المسجلة:</span>
+                        <span class="work-tag"><i class="fa-solid fa-building"></i> ${order.workplace || 'غير محدد'}</span>
+                    </div>
+
+                    <div class="order-info-row">
+                        <span style="color: var(--text-muted); font-size: 12px;">موعد الوردية:</span>
+                        <span style="font-weight: 700; color: #4b5563; font-size: 12px;">${order.shift || 'غير محدد'}</span>
+                    </div>
+
+                    ${order.notes && order.notes !== 'بدون ملاحظات' ? `
+                    <div style="font-size: 11px; color: #6b7280; background: #fdfaf6; padding: 6px 10px; border-radius: 6px; margin-top: 6px;">
+                        <i class="fa-solid fa-note-sticky" style="color: var(--primary);"></i> ${order.notes}
+                    </div>
+                    ` : ''}
+
+                    ${order.status === 'نشط' ? `
+                    <div class="order-actions">
+                        <button class="btn-small" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;" onclick="markOrderCompleted('${order.id}')">
+                            <i class="fa-solid fa-check"></i> تأكيد الاستلام
+                        </button>
+                        <button class="btn-small btn-cancel" onclick="cancelOrder('${order.id}')">
+                            <i class="fa-solid fa-xmark"></i> إلغاء الحجز
+                        </button>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    /* -----------------------------------------------
+       TOAST UTILITY
+    ------------------------------------------------- */
+    let toastTimeout;
+    function showToast(msg, type = 'success') {
+        const toast = document.getElementById('toastBox');
+        const toastMsg = document.getElementById('toastMsg');
+        const toastIcon = document.getElementById('toastIcon');
+
+        clearTimeout(toastTimeout);
+
+        toastMsg.textContent = msg;
+        if (type === 'success') {
+            toastIcon.className = 'fa-solid fa-circle-check success';
+        } else {
+            toastIcon.className = 'fa-solid fa-circle-exclamation error';
+        }
+
+        toast.classList.add('show');
+        toastTimeout = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3200);
+    }
+</script>
+
+</body>
+</html>

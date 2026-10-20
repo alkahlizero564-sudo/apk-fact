@@ -122,7 +122,9 @@ export default function ConnectionsScreen() {
       <View style={{ height: 24 }} />
 
       <Text style={styles.section}>Gemini</Text>
-      <Field label="API Key" storeKey="GEMINI_API_KEY" placeholder="AIza..." />
+      <Field label="API Key (الأول)" storeKey="GEMINI_API_KEY" placeholder="AIza..." />
+      <Field label="API Key (الثاني)" storeKey="GEMINI_API_KEY_2" placeholder="AIza..." />
+      <Field label="API Key (الثالث)" storeKey="GEMINI_API_KEY_3" placeholder="AIza..." />
       <TouchableOpacity style={styles.testBtn} onPress={handleTestGemini}>
         <Text style={{ color: "white" }}>اختبار اتصال Gemini</Text>
       </TouchableOpacity>

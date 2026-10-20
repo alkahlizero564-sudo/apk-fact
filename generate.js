@@ -3,7 +3,14 @@ const path = require("path");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const lines = fs.readFileSync("request.txt", "utf8").trim().split("\n");
-const name = (lines.shift() || "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+const clean = (s) => (s || "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+const name = clean(lines.shift());
+
+let related = "";
+if (lines.length && /^@related:/i.test(lines[0].trim())) {
+  related = clean(lines.shift().trim().replace(/^@related:/i, ""));
+}
+
 const request = lines.join("\n").trim();
 if (!name || !request) {
   console.error("السطر الأول اسم التطبيق (إنجليزي) والباقي الوصف");
@@ -14,14 +21,32 @@ const dir = path.join("apps", name);
 const FILE = path.join(dir, "index.html");
 const existing = fs.existsSync(FILE) ? fs.readFileSync(FILE, "utf8") : "";
 
+let relatedCode = "";
+if (related && related !== name) {
+  const relFile = path.join("apps", related, "index.html");
+  if (fs.existsSync(relFile)) {
+    relatedCode = fs.readFileSync(relFile, "utf8").slice(0, 80000);
+    console.log(`قراءة التطبيق المرتبط: ${relFile}`);
+  } else {
+    console.log(`التطبيق المرتبط غير موجود: ${relFile}`);
+  }
+}
+
+const relatedBlock = relatedCode
+  ? `\n\nThis app belongs to the SAME project as another app that is already built (the "${related}" app). ` +
+    `Read its code carefully first:\n\`\`\`html\n${relatedCode}\n\`\`\`\n` +
+    `Keep the new app consistent with it (same visual style, colors, language, and data/field names) ` +
+    `and make the two apps work together as parts of one program.\n`
+  : "";
+
 const system =
   "You are an expert web developer. Output ONE complete, self-contained HTML file " +
   "(inline CSS and JS), mobile-friendly, with RTL Arabic support when the request is in Arabic. " +
   "Reply with ONLY the full file inside a single ```html code block. No explanations.";
 
 const prompt = existing
-  ? `Here is the current app:\n\`\`\`html\n${existing}\n\`\`\`\n\nApply this change and return the FULL updated file:\n${request}`
-  : `Create this app:\n${request}`;
+  ? `Here is the current app:\n\`\`\`html\n${existing}\n\`\`\`${relatedBlock}\n\nApply this change and return the FULL updated file:\n${request}`
+  : `Create this app:\n${request}${relatedBlock}`;
 
 class ApiError extends Error {
   constructor(message, status) {

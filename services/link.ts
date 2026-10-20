@@ -1,16 +1,16 @@
 // services/link.ts
-// نسخة آمنة مؤقتة: تسمح بنجاح البناء ولا توقف التطبيق عند الاستدعاء
+// نسخة مؤقتة: تتوافق مع استدعاء CreateScreen وتعرض رسالة واضحة بدل الانهيار
 
 export type LinkResult = {
-  ok: boolean;
-  message: string;
-  data?: any;
+  summary?: string;
+  tables: string[];
 };
 
-export async function linkAppsViaSupabase(...args: any[]): Promise<LinkResult> {
-  console.warn("linkAppsViaSupabase: لم يتم تنفيذها بعد", args);
-  return {
-    ok: false,
-    message: "ميزة الربط عبر Supabase غير مفعّلة بعد",
-  };
-}
+export async function linkAppsViaSupabase(
+  appA: string,
+  appB: string,
+  log: (line: string) => void
+): Promise<LinkResult> {
+  log(`⚠️ ميزة الربط بين ${appA} و${appB} لم تُبرمج بعد.`);
+  throw new Error("ميزة الربط عبر Supabase غير مفعّلة بعد");
+    }

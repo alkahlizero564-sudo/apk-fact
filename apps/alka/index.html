@@ -82,6 +82,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            cursor: pointer;
         }
 
         .brand-icon {
@@ -111,7 +112,7 @@
 
         .user-badge {
             background: rgba(255, 255, 255, 0.18);
-            padding: 6px 12px;
+            padding: 6px 14px;
             border-radius: 30px;
             font-size: 12px;
             display: flex;
@@ -226,6 +227,7 @@
             right: 14px;
             color: var(--primary);
             font-size: 15px;
+            pointer-events: none;
         }
 
         .input-wrapper input,
@@ -262,7 +264,7 @@
             background: #fbf7f2;
             border: 1px solid var(--border);
             color: var(--text-main);
-            padding: 8px 4px;
+            padding: 9px 4px;
             border-radius: 10px;
             font-size: 12px;
             font-weight: 700;
@@ -275,6 +277,7 @@
             background: var(--primary);
             color: #fff;
             border-color: var(--primary);
+            transform: scale(0.98);
         }
 
         /* Payment Selector */
@@ -296,11 +299,13 @@
             cursor: pointer;
             transition: all 0.2s;
             background: #fff;
+            text-align: center;
         }
 
         .payment-card i {
             font-size: 24px;
             color: var(--text-muted);
+            transition: color 0.2s;
         }
 
         .payment-card span {
@@ -366,11 +371,17 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            transition: 0.2s transform, 0.2s opacity;
+            transition: all 0.2s;
         }
 
         .btn-submit:active {
             transform: scale(0.98);
+            box-shadow: 0 2px 8px rgba(194, 105, 16, 0.25);
+        }
+
+        .btn-submit.btn-success-state {
+            background: linear-gradient(135deg, #16a34a, #22c55e) !important;
+            box-shadow: 0 4px 15px rgba(22, 163, 74, 0.35) !important;
         }
 
         /* Order Filter Tabs */
@@ -419,12 +430,21 @@
 
         .order-item.completed-order {
             border-right: 5px solid var(--success);
-            opacity: 0.88;
+            opacity: 0.92;
         }
 
         .order-item.cancelled-order {
             border-right: 5px solid var(--danger);
-            opacity: 0.65;
+            opacity: 0.75;
+        }
+
+        .order-item.newly-added {
+            animation: highlightFade 2s ease-out;
+        }
+
+        @keyframes highlightFade {
+            0% { transform: scale(0.97); box-shadow: 0 0 0 3px rgba(194, 105, 16, 0.4); }
+            100% { transform: scale(1); box-shadow: var(--shadow-sm); }
         }
 
         .order-top {
@@ -484,8 +504,9 @@
         }
 
         .badge-status-done {
-            background: #f3f4f6;
-            color: #374151;
+            background: #f0fdf4;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
         }
 
         .order-actions {
@@ -498,7 +519,7 @@
 
         .btn-small {
             flex: 1;
-            padding: 7px;
+            padding: 9px 8px;
             font-size: 12px;
             font-weight: 700;
             border-radius: 8px;
@@ -507,8 +528,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 4px;
+            gap: 5px;
             transition: 0.2s;
+        }
+
+        .btn-small:active {
+            transform: scale(0.97);
         }
 
         .btn-cancel {
@@ -547,6 +572,7 @@
             align-items: center;
             justify-content: space-between;
             font-size: 12px;
+            cursor: pointer;
         }
 
         .user-quick-strip div {
@@ -657,6 +683,8 @@
             gap: 8px;
             transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
             pointer-events: none;
+            max-width: 90%;
+            text-align: center;
         }
 
         .toast.show {
@@ -700,7 +728,7 @@
 
         .shift-btn {
             border: 1px solid var(--border);
-            padding: 10px;
+            padding: 10px 8px;
             border-radius: 10px;
             background: #fbf9f6;
             text-align: center;
@@ -708,6 +736,7 @@
             font-weight: 700;
             cursor: pointer;
             transition: 0.2s;
+            user-select: none;
         }
 
         .shift-btn.active {
@@ -723,7 +752,7 @@
     <!-- Header -->
     <header>
         <div class="header-top">
-            <div class="brand">
+            <div class="brand" onclick="switchTab('booking')">
                 <div class="brand-icon">
                     <i class="fa-solid fa-bread-slice"></i>
                 </div>
@@ -732,7 +761,7 @@
                     <p>نظام الحجز المسبق والتسليم السريع</p>
                 </div>
             </div>
-            <div class="user-badge" onclick="openProfileModal(false)">
+            <div class="user-badge" id="headerUserBadge" onclick="openProfileModal(false)">
                 <i class="fa-regular fa-circle-user"></i>
                 <span id="headerUserName">تسجيل دخول</span>
             </div>
@@ -742,12 +771,12 @@
     <!-- Main Content Tabs -->
     <main>
         <!-- User info quick pill -->
-        <div class="user-quick-strip" id="userQuickBar" onclick="openProfileModal(false)" style="display: none;">
+        <div class="user-quick-strip" id="userQuickBar" onclick="switchTab('profile')" style="display: none;">
             <div>
                 <i class="fa-solid fa-building-user text-amber-600" style="color: var(--primary);"></i>
                 <span id="quickUserWork">مكان العمل: --</span>
             </div>
-            <span style="color: var(--primary); font-weight:700;"><i class="fa-solid fa-pen-to-square"></i> تعديل</span>
+            <span style="color: var(--primary); font-weight:700;"><i class="fa-solid fa-pen-to-square"></i> تعديل البيانات</span>
         </div>
 
         <!-- VIEW 1: NEW RESERVATION -->
@@ -758,12 +787,12 @@
                         <i class="fa-solid fa-calendar-plus" style="color: var(--primary);"></i>
                         طلب حجز عيش جديد
                     </span>
-                    <span style="font-size: 11px; background: #e0f2fe; color:#0369a1; padding: 2px 8px; border-radius: 6px; font-weight: 700;">
+                    <span style="font-size: 11px; background: #e0f2fe; color:#0369a1; padding: 3px 8px; border-radius: 6px; font-weight: 700;">
                         حجز فوري ومضمون
                     </span>
                 </div>
 
-                <form id="reservationForm" onsubmit="handleReservationSubmit(event)">
+                <form id="reservationForm">
                     <!-- SDG Amount -->
                     <div class="form-group">
                         <label for="amountSdg">
@@ -835,14 +864,14 @@
                     <div class="notice-box">
                         <i class="fa-solid fa-circle-info" style="font-size: 15px; margin-top: 2px;"></i>
                         <div>
-                            يرجى الحضور في موعد الوردية لضمان استلام العيش طازجاً وساخناً من فرن BCC. الحجوزات الآجلة تتطلب مطابقة جهة العمل.
+                            يرجى الحضور في موعد الوردية لضمان استلام العيش طازجاً وساخناً من فرن BCC. الحجوزات الآجلة مخصصة لجهات العمل المسجلة.
                         </div>
                     </div>
 
                     <div style="margin-top: 20px;">
-                        <button type="submit" class="btn-submit">
+                        <button type="submit" id="btnConfirmReservation" class="btn-submit">
                             <i class="fa-solid fa-circle-check"></i>
-                            تأكيد وإرسال الحجز
+                            <span>تأكيد وإرسال الحجز</span>
                         </button>
                     </div>
                 </form>
@@ -852,9 +881,9 @@
         <!-- VIEW 2: ORDERS HISTORY -->
         <section id="viewHistory" style="display: none;">
             <div class="filter-capsules">
-                <button class="filter-capsule active" onclick="filterOrders('all', this)">كل الحجوزات</button>
-                <button class="filter-capsule" onclick="filterOrders('current', this)">الحالية (النشطة)</button>
-                <button class="filter-capsule" onclick="filterOrders('completed', this)">السابقة</button>
+                <button type="button" class="filter-capsule active" onclick="filterOrders('all', this)">كل الحجوزات</button>
+                <button type="button" class="filter-capsule" onclick="filterOrders('current', this)">الحالية (النشطة)</button>
+                <button type="button" class="filter-capsule" onclick="filterOrders('completed', this)">السابقة</button>
             </div>
 
             <!-- Orders Container -->
@@ -871,10 +900,13 @@
                         <i class="fa-solid fa-address-card" style="color: var(--primary);"></i>
                         بيانات العميل وجهة العمل
                     </span>
+                    <span style="font-size: 11px; background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 6px; font-weight: 700;">
+                        ملف الحساب
+                    </span>
                 </div>
-                <form id="profileFormInside" onsubmit="handleProfileSave(event)">
+                <form id="profileFormInside">
                     <div class="form-group">
-                        <label>الاسم بالكامل</label>
+                        <label for="profName">الاسم بالكامل <span style="color:red">*</span></label>
                         <div class="input-wrapper">
                             <i class="fa-regular fa-user"></i>
                             <input type="text" id="profName" required placeholder="أدخل اسمك الثلاثي">
@@ -882,7 +914,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>رقم الهاتف (سوداني / زين / إم تي إن)</label>
+                        <label for="profPhone">رقم الهاتف (سوداني / زين / إم تي إن) <span style="color:red">*</span></label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-phone"></i>
                             <input type="tel" id="profPhone" required placeholder="09xxxxxxx أو 01xxxxxxx" dir="ltr" style="text-align: right;">
@@ -890,17 +922,17 @@
                     </div>
 
                     <div class="form-group">
-                        <label>مكان العمل أو الإدارة / المؤسسة</label>
+                        <label for="profWork">مكان العمل أو الإدارة / المؤسسة <span style="color:red">*</span></label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-building"></i>
-                            <input type="text" id="profWork" required placeholder="مثال: مستشفى الخرطوم، بنك الخرطوم...">
+                            <input type="text" id="profWork" required placeholder="مثال: مستشفى الخرطوم، بنك الخرطوم، هيئة الموانئ...">
                         </div>
-                        <small style="color: var(--text-muted); font-size: 11px;">مهم جداً لاعتماد الدفع بالآجل والتعرف عليك أثناء الاستلام.</small>
+                        <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">مهم جداً لاعتماد الدفع بالآجل والتعرف عليك أثناء الاستلام.</small>
                     </div>
 
-                    <button type="submit" class="btn-submit" style="margin-top: 15px;">
+                    <button type="submit" id="btnSaveProfile" class="btn-submit" style="margin-top: 15px;">
                         <i class="fa-solid fa-floppy-disk"></i>
-                        حفظ وتحديث البيانات
+                        <span>حفظ وتحديث البيانات</span>
                     </button>
                 </form>
             </div>
@@ -920,15 +952,15 @@
 
     <!-- Bottom Navigation Bar -->
     <nav class="bottom-nav">
-        <button class="nav-btn active" id="tabBooking" onclick="switchTab('booking')">
+        <button type="button" class="nav-btn active" id="tabBooking" onclick="switchTab('booking')">
             <i class="fa-solid fa-bread-slice"></i>
             <span>طلب حجز</span>
         </button>
-        <button class="nav-btn" id="tabHistory" onclick="switchTab('history')">
+        <button type="button" class="nav-btn" id="tabHistory" onclick="switchTab('history')">
             <i class="fa-solid fa-clock-rotate-left"></i>
             <span>سجل الحجوزات</span>
         </button>
-        <button class="nav-btn" id="tabProfile" onclick="switchTab('profile')">
+        <button type="button" class="nav-btn" id="tabProfile" onclick="switchTab('profile')">
             <i class="fa-solid fa-user-gear"></i>
             <span>حسابي</span>
         </button>
@@ -943,7 +975,7 @@
                 <i class="fa-solid fa-id-badge"></i>
                 <span id="modalTitleText">تسجيل بيانات العميل</span>
             </div>
-            <button class="close-btn" id="modalCloseBtn" onclick="closeProfileModal()"><i class="fa-solid fa-xmark"></i></button>
+            <button type="button" class="close-btn" id="modalCloseBtn" onclick="closeProfileModal()"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
         <div class="first-login-badge" id="modalFirstLoginNotice">
@@ -954,9 +986,9 @@
             </div>
         </div>
 
-        <form id="modalAuthForm" onsubmit="handleModalAuth(event)">
+        <form id="modalAuthForm">
             <div class="form-group">
-                <label>الاسم بالكامل <span style="color:red">*</span></label>
+                <label for="mName">الاسم بالكامل <span style="color:red">*</span></label>
                 <div class="input-wrapper">
                     <i class="fa-regular fa-user"></i>
                     <input type="text" id="mName" required placeholder="مثال: عثمان علي بابكر">
@@ -964,7 +996,7 @@
             </div>
 
             <div class="form-group">
-                <label>رقم الهاتف <span style="color:red">*</span></label>
+                <label for="mPhone">رقم الهاتف <span style="color:red">*</span></label>
                 <div class="input-wrapper">
                     <i class="fa-solid fa-phone"></i>
                     <input type="tel" id="mPhone" required placeholder="0912345678" dir="ltr" style="text-align: right;">
@@ -972,16 +1004,16 @@
             </div>
 
             <div class="form-group">
-                <label>مكان العمل أو الإدارة <span style="color:red">*</span></label>
+                <label for="mWork">مكان العمل أو الإدارة <span style="color:red">*</span></label>
                 <div class="input-wrapper">
                     <i class="fa-solid fa-briefcase"></i>
                     <input type="text" id="mWork" required placeholder="الشركة / الإدارة / المستشفى / السوق">
                 </div>
             </div>
 
-            <button type="submit" class="btn-submit" style="margin-top: 14px;">
+            <button type="submit" id="btnModalSubmit" class="btn-submit" style="margin-top: 14px;">
                 <i class="fa-solid fa-check"></i>
-                حفظ البيانات ومتابعة التطبيق
+                <span>حفظ البيانات ومتابعة التطبيق</span>
             </button>
         </form>
     </div>
@@ -1007,32 +1039,59 @@
     const STORAGE_USER_KEY = 'bcc_bakery_user_data_v2';
     const STORAGE_ORDERS_KEY = 'bcc_bakery_orders_list_v2';
 
+    // Safe memory storage fallback in case LocalStorage is disabled or in private browsing
+    let inMemoryOrders = [];
+
     /* -----------------------------------------------
        INIT APP
     ------------------------------------------------- */
     document.addEventListener('DOMContentLoaded', () => {
         loadUser();
         updateTotalDisplay();
+        setupEventListeners();
 
-        // Mandatory check: If no user saved in localStorage, force modal open immediately
-        if (!currentUser || !currentUser.name || !currentUser.phone || !currentUser.workplace) {
+        // Check if user is registered; if not, show modal
+        if (!currentUser || !currentUser.name || !currentUser.phone) {
             openProfileModal(true);
         }
     });
 
     /* -----------------------------------------------
+       EVENT LISTENERS ATTACHMENT
+    ------------------------------------------------- */
+    function setupEventListeners() {
+        // Form 1: New Reservation
+        const resForm = document.getElementById('reservationForm');
+        if (resForm) {
+            resForm.addEventListener('submit', handleReservationSubmit);
+        }
+
+        // Form 2: Inside Profile Tab
+        const profForm = document.getElementById('profileFormInside');
+        if (profForm) {
+            profForm.addEventListener('submit', handleProfileSave);
+        }
+
+        // Form 3: Modal Dialog
+        const modalForm = document.getElementById('modalAuthForm');
+        if (modalForm) {
+            modalForm.addEventListener('submit', handleModalAuth);
+        }
+    }
+
+    /* -----------------------------------------------
        USER & AUTHENTICATION MANAGEMENT
     ------------------------------------------------- */
     function loadUser() {
-        const stored = localStorage.getItem(STORAGE_USER_KEY);
-        if (stored) {
-            try {
+        try {
+            const stored = localStorage.getItem(STORAGE_USER_KEY);
+            if (stored) {
                 currentUser = JSON.parse(stored);
                 updateUserUI();
-            } catch (e) {
-                console.error(e);
-                currentUser = null;
             }
+        } catch (e) {
+            console.error('LocalStorage load error:', e);
+            currentUser = null;
         }
     }
 
@@ -1044,9 +1103,15 @@
             registeredAt: currentUser && currentUser.registeredAt ? currentUser.registeredAt : new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
-        localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(currentUser));
+
+        try {
+            localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(currentUser));
+        } catch (e) {
+            console.error('LocalStorage save error:', e);
+        }
+
         updateUserUI();
-        showToast('تم حفظ وتثبيت بياناتك بنجاح', 'success');
+        if (navigator.vibrate) navigator.vibrate(30);
     }
 
     function updateUserUI() {
@@ -1067,15 +1132,15 @@
         if (currentUser && currentUser.name) {
             headerName.textContent = currentUser.name.split(' ')[0];
             quickBar.style.display = 'flex';
-            quickWork.textContent = `مكان العمل: ${currentUser.workplace}`;
+            quickWork.textContent = `مكان العمل: ${currentUser.workplace || 'غير محدد'}`;
 
             if (profName) profName.value = currentUser.name;
             if (profPhone) profPhone.value = currentUser.phone;
-            if (profWork) profWork.value = currentUser.workplace;
+            if (profWork) profWork.value = currentUser.workplace || '';
 
             if (mName) mName.value = currentUser.name;
             if (mPhone) mPhone.value = currentUser.phone;
-            if (mWork) mWork.value = currentUser.workplace;
+            if (mWork) mWork.value = currentUser.workplace || '';
         } else {
             headerName.textContent = 'تسجيل دخول';
             quickBar.style.display = 'none';
@@ -1083,27 +1148,63 @@
     }
 
     function handleModalAuth(e) {
-        e.preventDefault();
+        if (e) e.preventDefault();
         const name = document.getElementById('mName').value;
         const phone = document.getElementById('mPhone').value;
         const work = document.getElementById('mWork').value;
 
         if (!name.trim() || !phone.trim() || !work.trim()) {
-            showToast('يرجى ملء جميع البيانات المطلوبة', 'error');
+            showToast('يرجى ملء جميع الحقول المطلوبة', 'error');
             return;
         }
 
-        saveUserData(name, phone, work);
-        isMandatoryLogin = false;
-        closeProfileModal();
+        const btn = document.getElementById('btnModalSubmit');
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارِ الحفظ...';
+
+        setTimeout(() => {
+            saveUserData(name, phone, work);
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> تم الحفظ!';
+            btn.classList.add('btn-success-state');
+
+            setTimeout(() => {
+                btn.innerHTML = originalContent;
+                btn.classList.remove('btn-success-state');
+                isMandatoryLogin = false;
+                closeProfileModal();
+                showToast(`أهلاً بك يا ${name.split(' ')[0]}، تم حفظ بياناتك بنجاح`, 'success');
+            }, 500);
+        }, 300);
     }
 
     function handleProfileSave(e) {
-        e.preventDefault();
+        if (e) e.preventDefault();
         const name = document.getElementById('profName').value;
         const phone = document.getElementById('profPhone').value;
         const work = document.getElementById('profWork').value;
-        saveUserData(name, phone, work);
+
+        if (!name.trim() || !phone.trim() || !work.trim()) {
+            showToast('يرجى ملء جميع بياناتك', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('btnSaveProfile');
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارِ الحفظ...';
+        btn.disabled = true;
+
+        setTimeout(() => {
+            saveUserData(name, phone, work);
+            btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> تم حفظ وتحديث البيانات!';
+            btn.classList.add('btn-success-state');
+            showToast('تم حفظ وتحديث بياناتك بنجاح في النظام ✅', 'success');
+
+            setTimeout(() => {
+                btn.innerHTML = originalContent;
+                btn.classList.remove('btn-success-state');
+                btn.disabled = false;
+            }, 1800);
+        }, 400);
     }
 
     /* -----------------------------------------------
@@ -1126,12 +1227,19 @@
             title.textContent = 'تعديل بيانات الحساب';
         }
 
+        // populate fields with current user if exists
+        if (currentUser) {
+            document.getElementById('mName').value = currentUser.name || '';
+            document.getElementById('mPhone').value = currentUser.phone || '';
+            document.getElementById('mWork').value = currentUser.workplace || '';
+        }
+
         modal.classList.add('open');
     }
 
     function closeProfileModal() {
         if (isMandatoryLogin && (!currentUser || !currentUser.name)) {
-            showToast('يجب تسجيل بياناتك أولاً للدخول إلى التطبيق', 'error');
+            showToast('يجب تسجيل بياناتك أولاً للدخول إلى تطبيق المخبز', 'error');
             return;
         }
         document.getElementById('profileModal').classList.remove('open');
@@ -1139,7 +1247,7 @@
 
     function handleBackdropClick(e) {
         if (isMandatoryLogin && (!currentUser || !currentUser.name)) {
-            return; // Can't dismiss by clicking outside if it's first-time login
+            return;
         }
         closeProfileModal();
     }
@@ -1156,20 +1264,24 @@
         const tabHistory = document.getElementById('tabHistory');
         const tabProfile = document.getElementById('tabProfile');
 
-        // Reset
+        // Reset display
         [viewBooking, viewHistory, viewProfile].forEach(el => el.style.display = 'none');
         [tabBooking, tabHistory, tabProfile].forEach(el => el.classList.remove('active'));
 
         if (tab === 'booking') {
             viewBooking.style.display = 'block';
             tabBooking.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         } else if (tab === 'history') {
             viewHistory.style.display = 'block';
             tabHistory.classList.add('active');
             renderOrders();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         } else if (tab === 'profile') {
             viewProfile.style.display = 'block';
             tabProfile.classList.add('active');
+            updateUserUI();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }
 
@@ -1183,7 +1295,8 @@
     }
 
     function setPresetAmount(val) {
-        document.getElementById('amountSdg').value = val;
+        const input = document.getElementById('amountSdg');
+        input.value = val;
         updateTotalDisplay();
 
         // Highlight preset buttons
@@ -1193,6 +1306,8 @@
                 b.classList.add('active');
             }
         });
+
+        if (navigator.vibrate) navigator.vibrate(20);
     }
 
     function selectShift(type) {
@@ -1225,76 +1340,108 @@
     }
 
     function handleReservationSubmit(e) {
-        e.preventDefault();
+        if (e) e.preventDefault();
 
         // Check user identity
         if (!currentUser || !currentUser.name || !currentUser.phone) {
-            showToast('الرجاء إدخال بياناتك أولاً للمتابعة', 'error');
+            showToast('الرجاء إدخال بياناتك أولاً لإتمام الحجز', 'error');
             openProfileModal(true);
             return;
         }
 
-        const amount = parseFloat(document.getElementById('amountSdg').value);
-        if (!amount || amount < 100) {
-            showToast('الرجاء إدخال مبلغ صحيح (100 جنيه سوداني كحد أدنى)', 'error');
+        const amountInput = document.getElementById('amountSdg');
+        const amount = parseFloat(amountInput.value);
+
+        if (!amount || isNaN(amount) || amount < 100) {
+            showToast('الرجاء إدخال مبلغ صحيح لا يقل عن 100 جنيه سوداني', 'error');
+            amountInput.focus();
             return;
         }
 
         const notes = document.getElementById('orderNotes').value.trim();
+        const btn = document.getElementById('btnConfirmReservation');
+        const originalContent = btn.innerHTML;
 
-        // Create Order Object (without loaves count)
-        const newOrder = {
-            id: 'BCC-' + Math.floor(100000 + Math.random() * 900000),
-            userName: currentUser.name,
-            userPhone: currentUser.phone,
-            workplace: currentUser.workplace,
-            amountSdg: amount,
-            paymentMethod: selectedPaymentMethod,
-            shift: selectedShift,
-            notes: notes || 'بدون ملاحظات',
-            status: 'نشط',
-            createdAt: new Date().toISOString()
-        };
+        // Button action feedback
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارِ تأكيد الحجز...';
+        btn.disabled = true;
 
-        saveOrder(newOrder);
-
-        // Reset form
-        document.getElementById('amountSdg').value = '';
-        document.getElementById('orderNotes').value = '';
-        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-        updateTotalDisplay();
-
-        showToast('تم تسجيل حجز العيش بنجاح في فرن BCC!', 'success');
-
-        // Go to History
         setTimeout(() => {
-            switchTab('history');
-        }, 600);
+            // Create Order Object
+            const newOrder = {
+                id: 'BCC-' + Math.floor(100000 + Math.random() * 900000),
+                userName: currentUser.name,
+                userPhone: currentUser.phone,
+                workplace: currentUser.workplace || 'غير محدد',
+                amountSdg: amount,
+                paymentMethod: selectedPaymentMethod,
+                shift: selectedShift,
+                notes: notes || 'بدون ملاحظات',
+                status: 'نشط',
+                createdAt: new Date().toISOString()
+            };
+
+            // Save to storage
+            saveOrder(newOrder);
+
+            // Audio / Haptic feedback
+            if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+
+            btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> تم الحجز بنجاح!';
+            btn.classList.add('btn-success-state');
+
+            // Reset form fields
+            amountInput.value = '';
+            document.getElementById('orderNotes').value = '';
+            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+            updateTotalDisplay();
+
+            showToast(`تم حجز عيش بقيمة ${amount.toLocaleString('ar-EG')} ج.س بنجاح!`, 'success');
+
+            setTimeout(() => {
+                btn.innerHTML = originalContent;
+                btn.classList.remove('btn-success-state');
+                btn.disabled = false;
+
+                // Move directly to the orders list and mark active
+                switchTab('history');
+            }, 800);
+        }, 500);
     }
 
     /* -----------------------------------------------
        ORDERS STORAGE & RENDERING
     ------------------------------------------------- */
     function getStoredOrders() {
-        const data = localStorage.getItem(STORAGE_ORDERS_KEY);
-        return data ? JSON.parse(data) : [];
+        try {
+            const data = localStorage.getItem(STORAGE_ORDERS_KEY);
+            return data ? JSON.parse(data) : inMemoryOrders;
+        } catch (e) {
+            console.error('Error reading orders from localStorage:', e);
+            return inMemoryOrders;
+        }
     }
 
     function saveOrder(order) {
         const orders = getStoredOrders();
         orders.unshift(order);
-        localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(orders));
+        inMemoryOrders = orders;
+        try {
+            localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(orders));
+        } catch (e) {
+            console.error('Error writing orders to localStorage:', e);
+        }
     }
 
     function filterOrders(type, btn) {
         currentFilter = type;
         document.querySelectorAll('.filter-capsule').forEach(c => c.classList.remove('active'));
-        btn.classList.add('active');
+        if (btn) btn.classList.add('active');
         renderOrders();
     }
 
     function cancelOrder(orderId) {
-        if (!confirm('هل أنت متأكد من رغبتك في إلغاء هذا الحجز؟')) return;
+        if (!confirm('هل تريد بالتأكيد إلغاء هذا الحجز؟')) return;
 
         const orders = getStoredOrders();
         const updated = orders.map(ord => {
@@ -1304,8 +1451,14 @@
             return ord;
         });
 
-        localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(updated));
-        showToast('تم إلغاء الحجز', 'success');
+        inMemoryOrders = updated;
+        try {
+            localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(updated));
+        } catch (e) {
+            console.error(e);
+        }
+
+        showToast('تم إلغاء الحجز بنجاح', 'success');
         renderOrders();
     }
 
@@ -1318,8 +1471,14 @@
             return ord;
         });
 
-        localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(updated));
-        showToast('تم تأكيد استلام الخبز بنجاح', 'success');
+        inMemoryOrders = updated;
+        try {
+            localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(updated));
+        } catch (e) {
+            console.error(e);
+        }
+
+        showToast('تم تأكيد استلام الخبز، بالهناء والشفاء!', 'success');
         renderOrders();
     }
 
@@ -1339,14 +1498,17 @@
                 <div class="empty-state">
                     <i class="fa-solid fa-basket-shopping"></i>
                     <h3>لا توجد حجوزات في هذا القسم</h3>
-                    <p>قم بإنشاء حجز عيش جديد من قائمة الحجز ليظهر هنا.</p>
+                    <p style="margin-bottom: 16px;">قم بإنشاء حجز عيش جديد ليظهر لك في هذا السجل فوراً.</p>
+                    <button type="button" class="btn-submit" style="max-width: 220px; margin: 0 auto; padding: 10px;" onclick="switchTab('booking')">
+                        <i class="fa-solid fa-plus"></i> حجز عيش الآن
+                    </button>
                 </div>
             `;
             return;
         }
 
         let html = '';
-        filtered.forEach(order => {
+        filtered.forEach((order, index) => {
             const dateObj = new Date(order.createdAt);
             const dateFormatted = dateObj.toLocaleDateString('ar-SD', {
                 month: 'short',
@@ -1366,12 +1528,15 @@
                 statusBadge = '<span class="badge" style="background:#fee2e2; color:#991b1b;"><i class="fa-solid fa-ban"></i> ملغي</span>';
             }
 
+            // Animate first item if recently added
+            const isFirst = index === 0 ? 'newly-added' : '';
+
             const paymentBadge = order.paymentMethod === 'نقدي' 
                 ? '<span class="badge badge-cash"><i class="fa-solid fa-money-bill"></i> نقدي (كاش)</span>'
                 : '<span class="badge badge-credit"><i class="fa-solid fa-file-invoice"></i> دفع آجل</span>';
 
             html += `
-                <div class="${statusClass}">
+                <div class="${statusClass} ${isFirst}">
                     <div class="order-top">
                         <div>
                             <div class="order-id">#${order.id}</div>
@@ -1386,8 +1551,13 @@
                     </div>
 
                     <div class="order-info-row">
+                        <span style="color: var(--text-muted); font-size: 12px;">صاحب الحجز:</span>
+                        <strong style="font-size: 13px; color: var(--text-main);">${order.userName || 'غير معروف'}</strong>
+                    </div>
+
+                    <div class="order-info-row">
                         <span style="color: var(--text-muted); font-size: 12px;">قيمة الحجز:</span>
-                        <strong style="font-size: 15px; color: var(--primary-dark);">${order.amountSdg.toLocaleString('ar-EG')} جنيه سوداني</strong>
+                        <strong style="font-size: 16px; color: var(--primary-dark);">${Number(order.amountSdg).toLocaleString('ar-EG')} جنيه سوداني</strong>
                     </div>
 
                     <div class="order-info-row">
@@ -1396,27 +1566,27 @@
                     </div>
 
                     <div class="order-info-row">
-                        <span style="color: var(--text-muted); font-size: 12px;">جهة العمل المسجلة:</span>
+                        <span style="color: var(--text-muted); font-size: 12px;">جهة العمل:</span>
                         <span class="work-tag"><i class="fa-solid fa-building"></i> ${order.workplace || 'غير محدد'}</span>
                     </div>
 
                     <div class="order-info-row">
-                        <span style="color: var(--text-muted); font-size: 12px;">موعد الوردية:</span>
+                        <span style="color: var(--text-muted); font-size: 12px;">الوردية المقررة:</span>
                         <span style="font-weight: 700; color: #4b5563; font-size: 12px;">${order.shift || 'غير محدد'}</span>
                     </div>
 
                     ${order.notes && order.notes !== 'بدون ملاحظات' ? `
-                    <div style="font-size: 11px; color: #6b7280; background: #fdfaf6; padding: 6px 10px; border-radius: 6px; margin-top: 6px;">
-                        <i class="fa-solid fa-note-sticky" style="color: var(--primary);"></i> ${order.notes}
+                    <div style="font-size: 12px; color: #6b7280; background: #fdfaf6; padding: 6px 10px; border-radius: 6px; margin-top: 6px; border: 1px dashed #eeddc9;">
+                        <i class="fa-solid fa-note-sticky" style="color: var(--primary); margin-left: 4px;"></i> ${order.notes}
                     </div>
                     ` : ''}
 
                     ${order.status === 'نشط' ? `
                     <div class="order-actions">
-                        <button class="btn-small" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;" onclick="markOrderCompleted('${order.id}')">
+                        <button type="button" class="btn-small" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;" onclick="markOrderCompleted('${order.id}')">
                             <i class="fa-solid fa-check"></i> تأكيد الاستلام
                         </button>
-                        <button class="btn-small btn-cancel" onclick="cancelOrder('${order.id}')">
+                        <button type="button" class="btn-small btn-cancel" onclick="cancelOrder('${order.id}')">
                             <i class="fa-solid fa-xmark"></i> إلغاء الحجز
                         </button>
                     </div>
@@ -1449,7 +1619,7 @@
         toast.classList.add('show');
         toastTimeout = setTimeout(() => {
             toast.classList.remove('show');
-        }, 3200);
+        }, 3400);
     }
 </script>
 

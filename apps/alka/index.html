@@ -63,7 +63,7 @@
         header {
             background: linear-gradient(135deg, #a45308, #d97706);
             color: #fff;
-            padding: 20px 18px 16px;
+            padding: 18px 18px 14px;
             border-bottom-left-radius: 26px;
             border-bottom-right-radius: 26px;
             box-shadow: 0 8px 20px rgba(164, 83, 8, 0.25);
@@ -110,9 +110,15 @@
             font-weight: 500;
         }
 
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .user-badge {
             background: rgba(255, 255, 255, 0.18);
-            padding: 6px 14px;
+            padding: 6px 12px;
             border-radius: 30px;
             font-size: 12px;
             display: flex;
@@ -126,6 +132,57 @@
         .user-badge:active {
             transform: scale(0.96);
             background: rgba(255, 255, 255, 0.3);
+        }
+
+        .conn-pill {
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        .conn-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 6px #22c55e;
+        }
+        .conn-dot.offline {
+            background: #ef4444;
+            box-shadow: 0 0 6px #ef4444;
+        }
+
+        /* Announcement Banner */
+        .announcement-bar {
+            background: #fef08a;
+            border-bottom: 1px solid #facc15;
+            color: #854d0e;
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Booking Closed Banner */
+        .closed-banner {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+            padding: 12px 14px;
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         /* Main Content Viewport */
@@ -374,7 +431,13 @@
             transition: all 0.2s;
         }
 
-        .btn-submit:active {
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            filter: grayscale(40%);
+        }
+
+        .btn-submit:active:not(:disabled) {
             transform: scale(0.98);
             box-shadow: 0 2px 8px rgba(194, 105, 16, 0.25);
         }
@@ -428,6 +491,10 @@
             border-right: 5px solid var(--primary);
         }
 
+        .order-item.ready-order {
+            border-right: 5px solid #0284c7;
+        }
+
         .order-item.completed-order {
             border-right: 5px solid var(--success);
             opacity: 0.92;
@@ -458,6 +525,8 @@
             font-size: 13px;
             font-weight: 800;
             color: var(--primary-dark);
+            font-family: monospace, sans-serif;
+            letter-spacing: 0.5px;
         }
 
         .order-date {
@@ -501,12 +570,25 @@
         .badge-status-pending {
             background: #eff6ff;
             color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
+        .badge-status-ready {
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #7dd3fc;
         }
 
         .badge-status-done {
             background: #f0fdf4;
             color: #15803d;
             border: 1px solid #bbf7d0;
+        }
+
+        .badge-status-cancel {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
         }
 
         .order-actions {
@@ -614,6 +696,8 @@
             box-shadow: var(--shadow-lg);
             transform: translateY(15px);
             transition: transform 0.25s;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .modal-overlay.open .modal-card {
@@ -744,6 +828,13 @@
             background: var(--primary-light);
             color: var(--primary-dark);
         }
+
+        .sync-spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -761,12 +852,24 @@
                     <p>نظام الحجز المسبق والتسليم السريع</p>
                 </div>
             </div>
-            <div class="user-badge" id="headerUserBadge" onclick="openProfileModal(false)">
-                <i class="fa-regular fa-circle-user"></i>
-                <span id="headerUserName">تسجيل دخول</span>
+            <div class="header-actions">
+                <div class="conn-pill" id="connPill" onclick="openConfigModal()" title="حالة الاتصال بقاعدة البيانات المشتركة">
+                    <span class="conn-dot" id="connDot"></span>
+                    <span id="connText">متصل</span>
+                </div>
+                <div class="user-badge" id="headerUserBadge" onclick="openProfileModal(false)">
+                    <i class="fa-regular fa-circle-user"></i>
+                    <span id="headerUserName">تسجيل دخول</span>
+                </div>
             </div>
         </div>
     </header>
+
+    <!-- Global Announcement Banner from bakery_settings -->
+    <div id="announcementBanner" class="announcement-bar" style="display: none;">
+        <i class="fa-solid fa-bullhorn"></i>
+        <span id="announcementText"></span>
+    </div>
 
     <!-- Main Content Tabs -->
     <main>
@@ -781,6 +884,15 @@
 
         <!-- VIEW 1: NEW RESERVATION -->
         <section id="viewBooking">
+            <!-- Booking Closed Notice (dynamic) -->
+            <div id="bookingClosedNotice" class="closed-banner" style="display: none;">
+                <i class="fa-solid fa-circle-xmark" style="font-size: 20px;"></i>
+                <div>
+                    <div>الحجز مغلق حالياً من قِبل إدارة المخبز</div>
+                    <small style="opacity: 0.9; font-weight: 500;">يرجى الانتظار حتى فتح وردية الحجز القادمة</small>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-header-line">
                     <span class="card-title">
@@ -886,6 +998,13 @@
                 <button type="button" class="filter-capsule" onclick="filterOrders('completed', this)">السابقة</button>
             </div>
 
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding: 0 4px;">
+                <span style="font-size:12px; color:var(--text-muted);" id="ordersCountText">جاري تحميل الحجوزات...</span>
+                <button type="button" onclick="loadRemoteOrders(true)" style="background:none; border:none; color:var(--primary); font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                    <i class="fa-solid fa-arrows-rotate" id="refreshIcon"></i> تحديث
+                </button>
+            </div>
+
             <!-- Orders Container -->
             <div id="ordersContainer">
                 <!-- Dynamically rendered -->
@@ -937,6 +1056,22 @@
                 </form>
             </div>
 
+            <!-- Database connection button -->
+            <div class="card" style="background: #faf8f5;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight:700; font-size:13px; color:var(--text-main);">
+                            <i class="fa-solid fa-database" style="color:var(--primary); margin-left:6px;"></i>
+                            الربط بقاعدة بيانات الفرن
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted);">نظام موحد ومباشر مع شاشة الخباز والإدارة (hlisa)</div>
+                    </div>
+                    <button type="button" class="btn-small" onclick="openConfigModal()" style="max-width:110px; background:#fff; border:1px solid var(--border);">
+                        إعدادات الربط
+                    </button>
+                </div>
+            </div>
+
             <div class="card" style="margin-top: 12px; background: #faf5ef; border-color: #eeddc9;">
                 <h4 style="font-size: 14px; margin-bottom: 8px; color: var(--primary-dark);">
                     <i class="fa-solid fa-shield-halved"></i> سياسة فرن BCC:
@@ -982,7 +1117,7 @@
             <i class="fa-solid fa-circle-exclamation" style="font-size: 16px; margin-top: 2px;"></i>
             <div>
                 <strong>مرحباً بك في فرن BCC!</strong><br>
-                يرجى تسجيل بياناتك أول مرة ليتم حفظها في هاتفك واستخدامها تلقائياً في كل حجوزاتك.
+                يرجى تسجيل بياناتك أول مرة ليتم حفظها في هاتفك وقاعدة بيانات الفرن تلقائياً في كل حجوزاتك.
             </div>
         </div>
 
@@ -1019,6 +1154,49 @@
     </div>
 </div>
 
+<!-- Config Modal for Supabase Connection (Editable directly if needed) -->
+<div class="modal-overlay" id="configModal" onclick="closeConfigModal()">
+    <div class="modal-card" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <div class="modal-title">
+                <i class="fa-solid fa-plug"></i>
+                <span>إعدادات قاعدة بيانات Supabase المشتركة</span>
+            </div>
+            <button type="button" class="close-btn" onclick="closeConfigModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px; line-height:1.6;">
+            هذا التطبيق متصل بنفس قاعدة بيانات تطبيق الإدارة والخباز (hlisa) ليتم تحديث الحجوزات والعملاء لحظياً.
+        </p>
+
+        <form id="configForm" onsubmit="handleConfigSave(event)">
+            <div class="form-group">
+                <label for="cfgUrl">Supabase URL</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-link"></i>
+                    <input type="url" id="cfgUrl" dir="ltr" style="text-align:left; font-size:12px;" placeholder="https://xyz.supabase.co" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="cfgKey">Supabase Anon Key</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-key"></i>
+                    <input type="password" id="cfgKey" dir="ltr" style="text-align:left; font-size:12px;" placeholder="eyJhbGciOi..." required>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top:16px;">
+                <button type="submit" class="btn-submit" style="flex:1;">
+                    <i class="fa-solid fa-save"></i> حفظ واختبار
+                </button>
+                <button type="button" class="btn-small" onclick="resetDefaultConfig()" style="background:#f3ece4; color:var(--text-main); max-width:90px;">
+                    استعادة
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Toast notification box -->
 <div class="toast" id="toastBox">
     <i class="fa-solid fa-circle-check success" id="toastIcon"></i>
@@ -1026,62 +1204,246 @@
 </div>
 
 <script>
-    /* -----------------------------------------------
+    /* --------------------------------------------------------------------------
+       SUPABASE CONFIGURATION CONSTANTS
+       Shared project with 'hlisa' administration app
+    -------------------------------------------------------------------------- */
+    // Reads custom config if user provided them, or uses defaults
+    const DEFAULT_SUPABASE_URL = "https://your-supabase-project.supabase.co";
+    const DEFAULT_SUPABASE_ANON_KEY = "your-supabase-anon-key";
+
+    const SUPABASE_URL = localStorage.getItem('bcc_supabase_url') || window.SUPABASE_URL || DEFAULT_SUPABASE_URL;
+    const SUPABASE_ANON_KEY = localStorage.getItem('bcc_supabase_anon_key') || window.SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
+
+    /* --------------------------------------------------------------------------
        STATE & CONSTANTS
-    ------------------------------------------------- */
+    -------------------------------------------------------------------------- */
     let currentUser = null;
     let selectedPaymentMethod = 'نقدي';
     let selectedShift = 'الوردية الصباحية (7:00 ص)';
     let currentFilter = 'all';
     let isMandatoryLogin = false;
+    let bakerySettings = {
+        is_booking_open: true,
+        sound_alerts_enabled: true,
+        announcement: null
+    };
 
     // LocalStorage Keys
     const STORAGE_USER_KEY = 'bcc_bakery_user_data_v2';
     const STORAGE_ORDERS_KEY = 'bcc_bakery_orders_list_v2';
 
-    // Safe memory storage fallback in case LocalStorage is disabled or in private browsing
     let inMemoryOrders = [];
+    let isOnlineSync = true;
 
-    /* -----------------------------------------------
+    /* --------------------------------------------------------------------------
+       SUPABASE REST API CLIENT HELPER
+    -------------------------------------------------------------------------- */
+    async function supabaseFetch(endpoint, options = {}) {
+        const url = `${SUPABASE_URL.replace(/\/+$/, '')}/rest/v1/${endpoint.replace(/^\/+/, '')}`;
+        const headers = {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            ...(options.headers || {})
+        };
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 9000);
+
+        try {
+            const res = await fetch(url, {
+                ...options,
+                headers,
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            setConnectionState(true);
+
+            if (!res.ok) {
+                const errorBody = await res.text();
+                throw new Error(`HTTP ${res.status}: ${errorBody}`);
+            }
+
+            // If empty body (like 204 No Content), return empty
+            const text = await res.text();
+            return text ? JSON.parse(text) : null;
+        } catch (err) {
+            clearTimeout(timeoutId);
+            console.warn('Supabase fetch error for ' + endpoint, err);
+            // If network issue or invalid URL/key
+            setConnectionState(false);
+            throw err;
+        }
+    }
+
+    function setConnectionState(online) {
+        isOnlineSync = online;
+        const dot = document.getElementById('connDot');
+        const text = document.getElementById('connText');
+        if (dot && text) {
+            if (online) {
+                dot.className = 'conn-dot';
+                text.textContent = 'متصل';
+            } else {
+                dot.className = 'conn-dot offline';
+                text.textContent = 'أوفلاين';
+            }
+        }
+    }
+
+    /* --------------------------------------------------------------------------
        INIT APP
-    ------------------------------------------------- */
-    document.addEventListener('DOMContentLoaded', () => {
+    -------------------------------------------------------------------------- */
+    document.addEventListener('DOMContentLoaded', async () => {
         loadUser();
         updateTotalDisplay();
         setupEventListeners();
 
-        // Check if user is registered; if not, show modal
+        // 1. Check if user is registered; if not, show modal
         if (!currentUser || !currentUser.name || !currentUser.phone) {
             openProfileModal(true);
+        } else {
+            // Sync user customer record with Supabase
+            syncCustomerWithSupabase(currentUser).catch(() => {});
         }
+
+        // 2. Fetch Bakery Settings (booking open status, announcement)
+        loadBakerySettings().catch(() => {});
+
+        // 3. Initial orders load from cache + remote
+        renderOrders();
+        loadRemoteOrders(false).catch(() => {});
+
+        // Periodically check bakery settings every 30 seconds
+        setInterval(loadBakerySettings, 30000);
     });
 
-    /* -----------------------------------------------
+    /* --------------------------------------------------------------------------
        EVENT LISTENERS ATTACHMENT
-    ------------------------------------------------- */
+    -------------------------------------------------------------------------- */
     function setupEventListeners() {
-        // Form 1: New Reservation
         const resForm = document.getElementById('reservationForm');
         if (resForm) {
             resForm.addEventListener('submit', handleReservationSubmit);
         }
 
-        // Form 2: Inside Profile Tab
         const profForm = document.getElementById('profileFormInside');
         if (profForm) {
             profForm.addEventListener('submit', handleProfileSave);
         }
 
-        // Form 3: Modal Dialog
         const modalForm = document.getElementById('modalAuthForm');
         if (modalForm) {
             modalForm.addEventListener('submit', handleModalAuth);
         }
     }
 
-    /* -----------------------------------------------
-       USER & AUTHENTICATION MANAGEMENT
-    ------------------------------------------------- */
+    /* --------------------------------------------------------------------------
+       BAKERY SETTINGS (bakery_settings table)
+    -------------------------------------------------------------------------- */
+    async function loadBakerySettings() {
+        try {
+            // Table: bakery_settings (id='default')
+            const data = await supabaseFetch('bakery_settings?id=eq.default&select=*');
+            if (data && data.length > 0) {
+                bakerySettings = data[0];
+            } else {
+                // If not created yet, try inserting default
+                const inserted = await supabaseFetch('bakery_settings', {
+                    method: 'POST',
+                    headers: { 'Prefer': 'return=representation' },
+                    body: JSON.stringify({
+                        id: 'default',
+                        is_booking_open: true,
+                        sound_alerts_enabled: true
+                    })
+                }).catch(() => null);
+                if (inserted && inserted[0]) bakerySettings = inserted[0];
+            }
+            applyBakerySettingsUI();
+        } catch (e) {
+            console.log('Using default bakery settings');
+            applyBakerySettingsUI();
+        }
+    }
+
+    function applyBakerySettingsUI() {
+        const closedNotice = document.getElementById('bookingClosedNotice');
+        const submitBtn = document.getElementById('btnConfirmReservation');
+        const announcementBar = document.getElementById('announcementBanner');
+        const announcementText = document.getElementById('announcementText');
+
+        // Announcement banner
+        if (bakerySettings.announcement && bakerySettings.announcement.trim()) {
+            announcementText.textContent = bakerySettings.announcement;
+            announcementBar.style.display = 'flex';
+        } else {
+            announcementBar.style.display = 'none';
+        }
+
+        // Booking status
+        if (bakerySettings.is_booking_open === false) {
+            closedNotice.style.display = 'flex';
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-lock"></i> الحجز مغلق حالياً';
+        } else {
+            closedNotice.style.display = 'none';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> تأكيد وإرسال الحجز';
+        }
+    }
+
+    /* --------------------------------------------------------------------------
+       CUSTOMER MANAGEMENT (customers table)
+    -------------------------------------------------------------------------- */
+    async function syncCustomerWithSupabase(user) {
+        if (!user || !user.phone || !user.name) return null;
+        try {
+            // Check if customer exists by phone
+            const existing = await supabaseFetch(`customers?phone=eq.${encodeURIComponent(user.phone)}&select=*`);
+            
+            if (existing && existing.length > 0) {
+                const customerRecord = existing[0];
+                currentUser.id = customerRecord.id;
+                // Update profile info if changed
+                if (customerRecord.name !== user.name || customerRecord.workplace !== user.workplace) {
+                    await supabaseFetch(`customers?id=eq.${customerRecord.id}`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({
+                            name: user.name,
+                            workplace: user.workplace,
+                            updated_at: new Date().toISOString()
+                        })
+                    }).catch(() => {});
+                }
+                saveUserLocally(currentUser);
+                return customerRecord.id;
+            } else {
+                // Insert new customer record
+                const created = await supabaseFetch('customers', {
+                    method: 'POST',
+                    headers: { 'Prefer': 'return=representation' },
+                    body: JSON.stringify({
+                        name: user.name,
+                        phone: user.phone,
+                        workplace: user.workplace
+                    })
+                });
+
+                if (created && created.length > 0) {
+                    currentUser.id = created[0].id;
+                    saveUserLocally(currentUser);
+                    return created[0].id;
+                }
+            }
+        } catch (err) {
+            console.warn('Customer Supabase sync skipped/failed:', err);
+        }
+        return currentUser ? currentUser.id : null;
+    }
+
     function loadUser() {
         try {
             const stored = localStorage.getItem(STORAGE_USER_KEY);
@@ -1095,8 +1457,17 @@
         }
     }
 
-    function saveUserData(name, phone, work) {
+    function saveUserLocally(userObj) {
+        try {
+            localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(userObj));
+        } catch (e) {
+            console.error('LocalStorage save error:', e);
+        }
+    }
+
+    async function saveUserData(name, phone, work) {
         currentUser = {
+            id: currentUser ? currentUser.id : null,
             name: name.trim(),
             phone: phone.trim(),
             workplace: work.trim(),
@@ -1104,14 +1475,12 @@
             updatedAt: new Date().toISOString()
         };
 
-        try {
-            localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(currentUser));
-        } catch (e) {
-            console.error('LocalStorage save error:', e);
-        }
-
+        saveUserLocally(currentUser);
         updateUserUI();
         if (navigator.vibrate) navigator.vibrate(30);
+
+        // Async sync with Supabase customers table
+        await syncCustomerWithSupabase(currentUser);
     }
 
     function updateUserUI() {
@@ -1119,12 +1488,10 @@
         const quickBar = document.getElementById('userQuickBar');
         const quickWork = document.getElementById('quickUserWork');
 
-        // Profile tab fields
         const profName = document.getElementById('profName');
         const profPhone = document.getElementById('profPhone');
         const profWork = document.getElementById('profWork');
 
-        // Modal fields
         const mName = document.getElementById('mName');
         const mPhone = document.getElementById('mPhone');
         const mWork = document.getElementById('mWork');
@@ -1147,481 +1514,11 @@
         }
     }
 
-    function handleModalAuth(e) {
+    async function handleModalAuth(e) {
         if (e) e.preventDefault();
         const name = document.getElementById('mName').value;
         const phone = document.getElementById('mPhone').value;
         const work = document.getElementById('mWork').value;
 
         if (!name.trim() || !phone.trim() || !work.trim()) {
-            showToast('يرجى ملء جميع الحقول المطلوبة', 'error');
-            return;
-        }
-
-        const btn = document.getElementById('btnModalSubmit');
-        const originalContent = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارِ الحفظ...';
-
-        setTimeout(() => {
-            saveUserData(name, phone, work);
-            btn.innerHTML = '<i class="fa-solid fa-check"></i> تم الحفظ!';
-            btn.classList.add('btn-success-state');
-
-            setTimeout(() => {
-                btn.innerHTML = originalContent;
-                btn.classList.remove('btn-success-state');
-                isMandatoryLogin = false;
-                closeProfileModal();
-                showToast(`أهلاً بك يا ${name.split(' ')[0]}، تم حفظ بياناتك بنجاح`, 'success');
-            }, 500);
-        }, 300);
-    }
-
-    function handleProfileSave(e) {
-        if (e) e.preventDefault();
-        const name = document.getElementById('profName').value;
-        const phone = document.getElementById('profPhone').value;
-        const work = document.getElementById('profWork').value;
-
-        if (!name.trim() || !phone.trim() || !work.trim()) {
-            showToast('يرجى ملء جميع بياناتك', 'error');
-            return;
-        }
-
-        const btn = document.getElementById('btnSaveProfile');
-        const originalContent = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارِ الحفظ...';
-        btn.disabled = true;
-
-        setTimeout(() => {
-            saveUserData(name, phone, work);
-            btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> تم حفظ وتحديث البيانات!';
-            btn.classList.add('btn-success-state');
-            showToast('تم حفظ وتحديث بياناتك بنجاح في النظام ✅', 'success');
-
-            setTimeout(() => {
-                btn.innerHTML = originalContent;
-                btn.classList.remove('btn-success-state');
-                btn.disabled = false;
-            }, 1800);
-        }, 400);
-    }
-
-    /* -----------------------------------------------
-       MODAL CONTROLS
-    ------------------------------------------------- */
-    function openProfileModal(mandatory = false) {
-        isMandatoryLogin = mandatory;
-        const modal = document.getElementById('profileModal');
-        const closeBtn = document.getElementById('modalCloseBtn');
-        const notice = document.getElementById('modalFirstLoginNotice');
-        const title = document.getElementById('modalTitleText');
-
-        if (mandatory) {
-            closeBtn.style.display = 'none';
-            notice.style.display = 'flex';
-            title.textContent = 'تسجيل الدخول لأول مرة';
-        } else {
-            closeBtn.style.display = 'flex';
-            notice.style.display = 'none';
-            title.textContent = 'تعديل بيانات الحساب';
-        }
-
-        // populate fields with current user if exists
-        if (currentUser) {
-            document.getElementById('mName').value = currentUser.name || '';
-            document.getElementById('mPhone').value = currentUser.phone || '';
-            document.getElementById('mWork').value = currentUser.workplace || '';
-        }
-
-        modal.classList.add('open');
-    }
-
-    function closeProfileModal() {
-        if (isMandatoryLogin && (!currentUser || !currentUser.name)) {
-            showToast('يجب تسجيل بياناتك أولاً للدخول إلى تطبيق المخبز', 'error');
-            return;
-        }
-        document.getElementById('profileModal').classList.remove('open');
-    }
-
-    function handleBackdropClick(e) {
-        if (isMandatoryLogin && (!currentUser || !currentUser.name)) {
-            return;
-        }
-        closeProfileModal();
-    }
-
-    /* -----------------------------------------------
-       TABS NAVIGATION
-    ------------------------------------------------- */
-    function switchTab(tab) {
-        const viewBooking = document.getElementById('viewBooking');
-        const viewHistory = document.getElementById('viewHistory');
-        const viewProfile = document.getElementById('viewProfile');
-
-        const tabBooking = document.getElementById('tabBooking');
-        const tabHistory = document.getElementById('tabHistory');
-        const tabProfile = document.getElementById('tabProfile');
-
-        // Reset display
-        [viewBooking, viewHistory, viewProfile].forEach(el => el.style.display = 'none');
-        [tabBooking, tabHistory, tabProfile].forEach(el => el.classList.remove('active'));
-
-        if (tab === 'booking') {
-            viewBooking.style.display = 'block';
-            tabBooking.classList.add('active');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else if (tab === 'history') {
-            viewHistory.style.display = 'block';
-            tabHistory.classList.add('active');
-            renderOrders();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else if (tab === 'profile') {
-            viewProfile.style.display = 'block';
-            tabProfile.classList.add('active');
-            updateUserUI();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    }
-
-    /* -----------------------------------------------
-       RESERVATION FORM LOGIC
-    ------------------------------------------------- */
-    function updateTotalDisplay() {
-        const input = document.getElementById('amountSdg');
-        const val = parseFloat(input.value) || 0;
-        document.getElementById('calcPriceDisplay').textContent = `${val.toLocaleString('ar-EG')} ج.س`;
-    }
-
-    function setPresetAmount(val) {
-        const input = document.getElementById('amountSdg');
-        input.value = val;
-        updateTotalDisplay();
-
-        // Highlight preset buttons
-        document.querySelectorAll('.preset-btn').forEach(b => {
-            b.classList.remove('active');
-            if (b.textContent.includes(val.toLocaleString())) {
-                b.classList.add('active');
-            }
-        });
-
-        if (navigator.vibrate) navigator.vibrate(20);
-    }
-
-    function selectShift(type) {
-        const morning = document.getElementById('shiftMorning');
-        const evening = document.getElementById('shiftEvening');
-        morning.classList.remove('active');
-        evening.classList.remove('active');
-
-        if (type === 'morning') {
-            morning.classList.add('active');
-            selectedShift = 'الوردية الصباحية (7:00 ص)';
-        } else {
-            evening.classList.add('active');
-            selectedShift = 'الوردية المسائية (4:00 م)';
-        }
-    }
-
-    function selectPayment(mode) {
-        selectedPaymentMethod = mode;
-        const cashCard = document.getElementById('payCash');
-        const creditCard = document.getElementById('payCredit');
-
-        if (mode === 'نقدي') {
-            cashCard.classList.add('selected');
-            creditCard.classList.remove('selected');
-        } else {
-            creditCard.classList.add('selected');
-            cashCard.classList.remove('selected');
-        }
-    }
-
-    function handleReservationSubmit(e) {
-        if (e) e.preventDefault();
-
-        // Check user identity
-        if (!currentUser || !currentUser.name || !currentUser.phone) {
-            showToast('الرجاء إدخال بياناتك أولاً لإتمام الحجز', 'error');
-            openProfileModal(true);
-            return;
-        }
-
-        const amountInput = document.getElementById('amountSdg');
-        const amount = parseFloat(amountInput.value);
-
-        if (!amount || isNaN(amount) || amount < 100) {
-            showToast('الرجاء إدخال مبلغ صحيح لا يقل عن 100 جنيه سوداني', 'error');
-            amountInput.focus();
-            return;
-        }
-
-        const notes = document.getElementById('orderNotes').value.trim();
-        const btn = document.getElementById('btnConfirmReservation');
-        const originalContent = btn.innerHTML;
-
-        // Button action feedback
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارِ تأكيد الحجز...';
-        btn.disabled = true;
-
-        setTimeout(() => {
-            // Create Order Object
-            const newOrder = {
-                id: 'BCC-' + Math.floor(100000 + Math.random() * 900000),
-                userName: currentUser.name,
-                userPhone: currentUser.phone,
-                workplace: currentUser.workplace || 'غير محدد',
-                amountSdg: amount,
-                paymentMethod: selectedPaymentMethod,
-                shift: selectedShift,
-                notes: notes || 'بدون ملاحظات',
-                status: 'نشط',
-                createdAt: new Date().toISOString()
-            };
-
-            // Save to storage
-            saveOrder(newOrder);
-
-            // Audio / Haptic feedback
-            if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
-
-            btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> تم الحجز بنجاح!';
-            btn.classList.add('btn-success-state');
-
-            // Reset form fields
-            amountInput.value = '';
-            document.getElementById('orderNotes').value = '';
-            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-            updateTotalDisplay();
-
-            showToast(`تم حجز عيش بقيمة ${amount.toLocaleString('ar-EG')} ج.س بنجاح!`, 'success');
-
-            setTimeout(() => {
-                btn.innerHTML = originalContent;
-                btn.classList.remove('btn-success-state');
-                btn.disabled = false;
-
-                // Move directly to the orders list and mark active
-                switchTab('history');
-            }, 800);
-        }, 500);
-    }
-
-    /* -----------------------------------------------
-       ORDERS STORAGE & RENDERING
-    ------------------------------------------------- */
-    function getStoredOrders() {
-        try {
-            const data = localStorage.getItem(STORAGE_ORDERS_KEY);
-            return data ? JSON.parse(data) : inMemoryOrders;
-        } catch (e) {
-            console.error('Error reading orders from localStorage:', e);
-            return inMemoryOrders;
-        }
-    }
-
-    function saveOrder(order) {
-        const orders = getStoredOrders();
-        orders.unshift(order);
-        inMemoryOrders = orders;
-        try {
-            localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(orders));
-        } catch (e) {
-            console.error('Error writing orders to localStorage:', e);
-        }
-    }
-
-    function filterOrders(type, btn) {
-        currentFilter = type;
-        document.querySelectorAll('.filter-capsule').forEach(c => c.classList.remove('active'));
-        if (btn) btn.classList.add('active');
-        renderOrders();
-    }
-
-    function cancelOrder(orderId) {
-        if (!confirm('هل تريد بالتأكيد إلغاء هذا الحجز؟')) return;
-
-        const orders = getStoredOrders();
-        const updated = orders.map(ord => {
-            if (ord.id === orderId) {
-                return { ...ord, status: 'ملغي' };
-            }
-            return ord;
-        });
-
-        inMemoryOrders = updated;
-        try {
-            localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(updated));
-        } catch (e) {
-            console.error(e);
-        }
-
-        showToast('تم إلغاء الحجز بنجاح', 'success');
-        renderOrders();
-    }
-
-    function markOrderCompleted(orderId) {
-        const orders = getStoredOrders();
-        const updated = orders.map(ord => {
-            if (ord.id === orderId) {
-                return { ...ord, status: 'مكتمل' };
-            }
-            return ord;
-        });
-
-        inMemoryOrders = updated;
-        try {
-            localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(updated));
-        } catch (e) {
-            console.error(e);
-        }
-
-        showToast('تم تأكيد استلام الخبز، بالهناء والشفاء!', 'success');
-        renderOrders();
-    }
-
-    function renderOrders() {
-        const container = document.getElementById('ordersContainer');
-        const orders = getStoredOrders();
-
-        let filtered = orders;
-        if (currentFilter === 'current') {
-            filtered = orders.filter(o => o.status === 'نشط');
-        } else if (currentFilter === 'completed') {
-            filtered = orders.filter(o => o.status === 'مكتمل' || o.status === 'ملغي');
-        }
-
-        if (filtered.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fa-solid fa-basket-shopping"></i>
-                    <h3>لا توجد حجوزات في هذا القسم</h3>
-                    <p style="margin-bottom: 16px;">قم بإنشاء حجز عيش جديد ليظهر لك في هذا السجل فوراً.</p>
-                    <button type="button" class="btn-submit" style="max-width: 220px; margin: 0 auto; padding: 10px;" onclick="switchTab('booking')">
-                        <i class="fa-solid fa-plus"></i> حجز عيش الآن
-                    </button>
-                </div>
-            `;
-            return;
-        }
-
-        let html = '';
-        filtered.forEach((order, index) => {
-            const dateObj = new Date(order.createdAt);
-            const dateFormatted = dateObj.toLocaleDateString('ar-SD', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-
-            let statusClass = 'order-item active-order';
-            let statusBadge = '<span class="badge badge-status-pending"><i class="fa-solid fa-hourglass-half"></i> قيد التجهيز</span>';
-
-            if (order.status === 'مكتمل') {
-                statusClass = 'order-item completed-order';
-                statusBadge = '<span class="badge badge-status-done"><i class="fa-solid fa-check-double"></i> تم الاستلام</span>';
-            } else if (order.status === 'ملغي') {
-                statusClass = 'order-item cancelled-order';
-                statusBadge = '<span class="badge" style="background:#fee2e2; color:#991b1b;"><i class="fa-solid fa-ban"></i> ملغي</span>';
-            }
-
-            // Animate first item if recently added
-            const isFirst = index === 0 ? 'newly-added' : '';
-
-            const paymentBadge = order.paymentMethod === 'نقدي' 
-                ? '<span class="badge badge-cash"><i class="fa-solid fa-money-bill"></i> نقدي (كاش)</span>'
-                : '<span class="badge badge-credit"><i class="fa-solid fa-file-invoice"></i> دفع آجل</span>';
-
-            html += `
-                <div class="${statusClass} ${isFirst}">
-                    <div class="order-top">
-                        <div>
-                            <div class="order-id">#${order.id}</div>
-                            <div class="order-date">
-                                <i class="fa-regular fa-clock"></i>
-                                ${dateFormatted}
-                            </div>
-                        </div>
-                        <div>
-                            ${statusBadge}
-                        </div>
-                    </div>
-
-                    <div class="order-info-row">
-                        <span style="color: var(--text-muted); font-size: 12px;">صاحب الحجز:</span>
-                        <strong style="font-size: 13px; color: var(--text-main);">${order.userName || 'غير معروف'}</strong>
-                    </div>
-
-                    <div class="order-info-row">
-                        <span style="color: var(--text-muted); font-size: 12px;">قيمة الحجز:</span>
-                        <strong style="font-size: 16px; color: var(--primary-dark);">${Number(order.amountSdg).toLocaleString('ar-EG')} جنيه سوداني</strong>
-                    </div>
-
-                    <div class="order-info-row">
-                        <span style="color: var(--text-muted); font-size: 12px;">طريقة الدفع:</span>
-                        ${paymentBadge}
-                    </div>
-
-                    <div class="order-info-row">
-                        <span style="color: var(--text-muted); font-size: 12px;">جهة العمل:</span>
-                        <span class="work-tag"><i class="fa-solid fa-building"></i> ${order.workplace || 'غير محدد'}</span>
-                    </div>
-
-                    <div class="order-info-row">
-                        <span style="color: var(--text-muted); font-size: 12px;">الوردية المقررة:</span>
-                        <span style="font-weight: 700; color: #4b5563; font-size: 12px;">${order.shift || 'غير محدد'}</span>
-                    </div>
-
-                    ${order.notes && order.notes !== 'بدون ملاحظات' ? `
-                    <div style="font-size: 12px; color: #6b7280; background: #fdfaf6; padding: 6px 10px; border-radius: 6px; margin-top: 6px; border: 1px dashed #eeddc9;">
-                        <i class="fa-solid fa-note-sticky" style="color: var(--primary); margin-left: 4px;"></i> ${order.notes}
-                    </div>
-                    ` : ''}
-
-                    ${order.status === 'نشط' ? `
-                    <div class="order-actions">
-                        <button type="button" class="btn-small" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;" onclick="markOrderCompleted('${order.id}')">
-                            <i class="fa-solid fa-check"></i> تأكيد الاستلام
-                        </button>
-                        <button type="button" class="btn-small btn-cancel" onclick="cancelOrder('${order.id}')">
-                            <i class="fa-solid fa-xmark"></i> إلغاء الحجز
-                        </button>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
-        });
-
-        container.innerHTML = html;
-    }
-
-    /* -----------------------------------------------
-       TOAST UTILITY
-    ------------------------------------------------- */
-    let toastTimeout;
-    function showToast(msg, type = 'success') {
-        const toast = document.getElementById('toastBox');
-        const toastMsg = document.getElementById('toastMsg');
-        const toastIcon = document.getElementById('toastIcon');
-
-        clearTimeout(toastTimeout);
-
-        toastMsg.textContent = msg;
-        if (type === 'success') {
-            toastIcon.className = 'fa-solid fa-circle-check success';
-        } else {
-            toastIcon.className = 'fa-solid fa-circle-exclamation error';
-        }
-
-        toast.classList.add('show');
-        toastTimeout = setTimeout(() => {
-            toast.classList.remove('show');
-        }, 3400);
-    }
-</script>
-
-</body>
-</html>
+            showToast('يرجى ملء جميع الحقول المطلوبة',

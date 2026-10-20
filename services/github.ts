@@ -276,3 +276,38 @@ export async function deleteFolder(
     }
   }
 }
+export async function pushBase64File(
+  repoFullName: string,
+  path: string,
+  base64Content: string,
+  commitMessage: string,
+  branch: string = "main"
+) {
+  const token = await getToken();
+
+  let sha: string | undefined;
+  const existing = await fetch(
+    `${GITHUB_API}/repos/${repoFullName}/contents/${path}?ref=${branch}&t=${Date.now()}`,
+    { headers: authHeaders(token) }
+  );
+  if (existing.ok) {
+    const data = await existing.json();
+    sha = data.sha;
+  }
+
+  const res = await fetch(`${GITHUB_API}/repos/${repoFullName}/contents/${path}`, {
+    method: "PUT",
+    headers: { ...authHeaders(token), "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message: commitMessage,
+      content: base64Content,
+      branch,
+      ...(sha ? { sha } : {}),
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`GitHub push failed (${res.status}): ${await res.text()}`);
+  }
+  return res.json();
+}

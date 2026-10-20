@@ -52,4 +52,29 @@ export async function runSql(query: string): Promise<any> {
     throw new Error(`SQL execution failed (${res.status}): ${await res.text()}`);
   }
   return res.json();
-                    }
+}
+
+export async function getSupabaseClientInfo(): Promise<{ url: string; anonKey: string }> {
+  const token = await getManagementToken();
+  const ref = await getProjectRef();
+
+  const res = await fetch(`${MGMT_API}/projects/${ref}/api-keys`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Fetching Supabase keys failed (${res.status}): ${await res.text()}`);
+  }
+
+  const keys = await res.json();
+  const list: any[] = Array.isArray(keys) ? keys : [];
+  const key =
+    list.find((k) => k.name === "anon") ||
+    list.find((k) => k.type === "publishable");
+
+  if (!key || !key.api_key) {
+    throw new Error("ما لقيت مفتاح anon أو publishable للمشروع.");
+  }
+
+  return { url: `https://${ref}.supabase.co`, anonKey: key.api_key };
+}

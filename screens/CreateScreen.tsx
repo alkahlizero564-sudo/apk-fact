@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import {
   View, TextInput, Text, TouchableOpacity, StyleSheet,
-  ScrollView, ActivityIndicator, Modal,
+  ScrollView, ActivityIndicator, Modal, Image,
 } from "react-native";
 import { WebView } from "react-native-webview";
-import { pushFile, listWorkflowRuns, latestRunId, getFileText, getFailureLog } from "../services/github";
+import * as ImagePicker from "expo-image-picker";
+import { pushFile, pushBase64File, listWorkflowRuns, latestRunId, getFileText, getFailureLog } from "../services/github";
 import { REPO } from "../services/config";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -40,11 +41,51 @@ function AppBox({ title, busy, setBusy, onPreview }: BoxProps) {
   const [editText, setEditText] = useState("");
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
-  const [loading, setLoading] = useState<Kind | "paste" | null>(null);
+  const [iconUri, setIconUri] = useState<string | null>(null);
+  const [loading, setLoading] = useState<Kind | "paste" | "icon" | null>(null);
   const [log, setLog] = useState<string[]>([]);
 
   function addLog(line: string) {
     setLog((prev) => [...prev, line]);
+  }
+
+  async function pickIcon() {
+    if (busy) return;
+    const n = cleanName(name);
+    if (!n) {
+      setLog(["❌ اكتب اسم التطبيق بالإنجليزي الأول، وبعدين اختار الأيقونة."]);
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+      base64: true,
+    });
+    if (result.canceled || !result.assets || !result.assets[0]) return;
+    const asset = result.assets[0];
+    if (!asset.base64) {
+      setLog(["❌ ما قدرت أقرأ الصورة. جرّب صورة تانية."]);
+      return;
+    }
+
+    setLog([]);
+    setBusy(true);
+    setLoading("icon");
+    try {
+      addLog("⏳ بتترفع الأيقونة على GitHub...");
+      await pushBase64File(REPO, `apps/${n}/icon.png`, asset.base64, `Set icon: ${n}`);
+      setIconUri(asset.uri);
+      addLog(`✅ ارتفعت الأيقونة: apps/${n}/icon.png`);
+      addLog("🎉 المرة الجاية تبني APK للتطبيق ده، بتظهر الأيقونة دي.");
+    } catch (e: any) {
+      addLog(`❌ ${e.message}`);
+    } finally {
+      setLoading(null);
+      setBusy(false);
+    }
   }
 
   async function uploadPastedCode() {
@@ -148,7 +189,7 @@ function AppBox({ title, busy, setBusy, onPreview }: BoxProps) {
       <TextInput
         style={styles.input}
         value={name}
-        onChangeText={setName}
+        onChangeText={(t) => { setName(t); setIconUri(null); }}
         placeholder="مثال: shop"
         autoCapitalize="none"
         autoCorrect={false}
@@ -178,6 +219,21 @@ function AppBox({ title, busy, setBusy, onPreview }: BoxProps) {
         disabled={!hasName}
       >
         <Text style={styles.previewBtnText}>معاينة</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.iconBtn, busy && loading !== "icon" && styles.disabled]}
+        onPress={pickIcon}
+        disabled={busy}
+      >
+        {loading === "icon" ? (
+          <ActivityIndicator />
+        ) : (
+          <View style={styles.iconRow}>
+            {iconUri && <Image source={{ uri: iconUri }} style={styles.iconThumb} />}
+            <Text style={styles.editToggleText}>{iconUri ? "تغيير الأيقونة" : "اختيار أيقونة من المعرض"}</Text>
+          </View>
+        )}
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.editToggle} onPress={() => setEditOpen(!editOpen)}>
@@ -304,6 +360,9 @@ const styles = StyleSheet.create({
   createBtnText: { color: "#fff", fontWeight: "700" },
   previewBtn: { borderWidth: 1, borderColor: "#111", borderRadius: 12, padding: 12, alignItems: "center", marginTop: 10 },
   previewBtnText: { color: "#111", fontWeight: "700" },
+  iconBtn: { borderWidth: 1, borderColor: "#888", borderRadius: 12, padding: 12, alignItems: "center", marginTop: 10, backgroundColor: "#eef4ff" },
+  iconRow: { flexDirection: "row", alignItems: "center" },
+  iconThumb: { width: 32, height: 32, borderRadius: 8, marginRight: 10 },
   editToggle: { borderWidth: 1, borderColor: "#888", borderRadius: 12, padding: 12, alignItems: "center", marginTop: 10, backgroundColor: "#f6f6f6" },
   editToggleText: { color: "#333", fontWeight: "700" },
   editBox: { marginTop: 4, borderTopWidth: 1, borderColor: "#eee", paddingTop: 4 },
@@ -314,4 +373,4 @@ const styles = StyleSheet.create({
   modalTitle: { flex: 1, fontWeight: "700", fontSize: 16 },
   closeText: { color: "#2563eb", fontWeight: "700" },
   error: { color: "#c0392b", margin: 16 },
-});
+}); 

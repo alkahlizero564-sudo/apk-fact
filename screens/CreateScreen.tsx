@@ -32,9 +32,11 @@ type BoxProps = {
   busy: boolean;
   setBusy: (b: boolean) => void;
   onPreview: (name: string) => void;
+  onNameChange?: (name: string) => void;
+  relatedName?: string;
 };
 
-function AppBox({ title, busy, setBusy, onPreview }: BoxProps) {
+function AppBox({ title, busy, setBusy, onPreview, onNameChange, relatedName }: BoxProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [editOpen, setEditOpen] = useState(false);
@@ -42,6 +44,7 @@ function AppBox({ title, busy, setBusy, onPreview }: BoxProps) {
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
   const [iconUri, setIconUri] = useState<string | null>(null);
+  const [useRelated, setUseRelated] = useState(true);
   const [loading, setLoading] = useState<Kind | "paste" | "icon" | null>(null);
   const [log, setLog] = useState<string[]>([]);
 
@@ -143,10 +146,21 @@ function AppBox({ title, busy, setBusy, onPreview }: BoxProps) {
         }
       }
 
+      const rel = relatedName && useRelated && relatedName !== n ? relatedName : "";
+      if (rel) {
+        const relExists = await getFileText(REPO, `apps/${rel}/index.html`);
+        if (relExists) {
+          addLog(`🔗 الذكاء الاصطناعي بيقرأ التطبيق الأول (${rel}) قبل ما يبني.`);
+        } else {
+          addLog(`⚠️ التطبيق الأول (${rel}) ما لقيتو في GitHub، فبيتبني التطبيق ده براهو.`);
+        }
+      }
+
       const prevId = await latestRunId(REPO, "generate.yml");
 
       addLog("⏳ بيتم إرسال الطلب...");
-      const content = `${n}\n${text}\n\n(request id: ${Date.now()})\n`;
+      const relLine = rel ? `@related: ${rel}\n` : "";
+      const content = `${n}\n${relLine}${text}\n\n(request id: ${Date.now()})\n`;
       await pushFile(REPO, "request.txt", content, `${kind === "edit" ? "Edit" : "Create"}: ${n}`);
       addLog("✅ تم إرسال الطلب.");
       addLog(kind === "edit" ? "⏳ بيتعدّل الكود... (من نصف دقيقة لدقيقتين)" : "⏳ بيتولّد الكود... (من نصف دقيقة لدقيقتين)");
@@ -189,12 +203,30 @@ function AppBox({ title, busy, setBusy, onPreview }: BoxProps) {
       <TextInput
         style={styles.input}
         value={name}
-        onChangeText={(t) => { setName(t); setIconUri(null); }}
+        onChangeText={(t) => {
+          setName(t);
+          setIconUri(null);
+          if (onNameChange) onNameChange(t);
+        }}
         placeholder="مثال: shop"
         autoCapitalize="none"
         autoCorrect={false}
       />
       <Text style={styles.hint}>للإنشاء استخدم اسم جديد. للتعديل على تطبيق موجود استخدم زر تعديل الكود.</Text>
+
+      {onNameChange === undefined && (
+        <TouchableOpacity style={styles.relatedBtn} onPress={() => setUseRelated(!useRelated)}>
+          <Text style={styles.relatedText}>
+            {useRelated ? "✅" : "⬜"} اقرأ التطبيق الأول قبل ما تبني ده (مشروع واحد)
+          </Text>
+          {useRelated && !relatedName && (
+            <Text style={styles.relatedWarn}>اكتب اسم التطبيق الأول في صندوقو فوق عشان يشتغل الربط.</Text>
+          )}
+          {useRelated && !!relatedName && (
+            <Text style={styles.hint}>التطبيق المرتبط: {relatedName}</Text>
+          )}
+        </TouchableOpacity>
+      )}
 
       <Text style={styles.label}>الوصف</Text>
       <TextInput
@@ -299,6 +331,7 @@ function AppBox({ title, busy, setBusy, onPreview }: BoxProps) {
 
 export default function CreateScreen() {
   const [busy, setBusy] = useState(false);
+  const [firstName, setFirstName] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewName, setPreviewName] = useState("");
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
@@ -325,8 +358,20 @@ export default function CreateScreen() {
   return (
     <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
-        <AppBox title="إنشاء التطبيق الأول" busy={busy} setBusy={setBusy} onPreview={openPreview} />
-        <AppBox title="إنشاء التطبيق الثاني" busy={busy} setBusy={setBusy} onPreview={openPreview} />
+        <AppBox
+          title="إنشاء التطبيق الأول"
+          busy={busy}
+          setBusy={setBusy}
+          onPreview={openPreview}
+          onNameChange={setFirstName}
+        />
+        <AppBox
+          title="إنشاء التطبيق الثاني"
+          busy={busy}
+          setBusy={setBusy}
+          onPreview={openPreview}
+          relatedName={cleanName(firstName)}
+        />
       </ScrollView>
 
       <Modal visible={previewOpen} animationType="slide" onRequestClose={() => setPreviewOpen(false)}>
@@ -356,6 +401,9 @@ const styles = StyleSheet.create({
   hint: { color: "#888", fontSize: 12, marginTop: 4 },
   input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 12, padding: 12 },
   textarea: { borderWidth: 1, borderColor: "#ccc", borderRadius: 12, padding: 12, minHeight: 90 },
+  relatedBtn: { marginTop: 12, padding: 10, borderRadius: 10, backgroundColor: "#f0f7ff", borderWidth: 1, borderColor: "#cfe3ff" },
+  relatedText: { fontWeight: "700", color: "#1d4ed8" },
+  relatedWarn: { color: "#b45309", fontSize: 12, marginTop: 4 },
   createBtn: { backgroundColor: "#111", borderRadius: 12, padding: 14, alignItems: "center", marginTop: 16 },
   createBtnText: { color: "#fff", fontWeight: "700" },
   previewBtn: { borderWidth: 1, borderColor: "#111", borderRadius: 12, padding: 12, alignItems: "center", marginTop: 10 },

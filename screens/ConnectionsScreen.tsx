@@ -1,156 +1,184 @@
-import React, { useState } from "react";
-import { View, TextInput, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
+import React, { useEffect, useState } from "react";
+import { ScrollView, Text, View, StyleSheet } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { testGithubConnection } from "../services/github";
 import { testSupabaseConnection } from "../services/supabase";
 import { testGeminiConnection, testClaudeConnection } from "../services/ai";
+import { Card, Button, KeyInput, StatusLine, Status } from "../components/ui";
+import { colors, space, type } from "../theme";
 
-function Field({ label, storeKey, secure = true, placeholder }: { label: string; storeKey: string; secure?: boolean; placeholder?: string }) {
-  const [value, setValue] = useState("");
-  const [saved, setSaved] = useState(false);
+type FieldDef = { key: string; label: string; placeholder?: string; secret?: boolean };
+
+const GITHUB_FIELDS: FieldDef[] = [
+  { key: "GITHUB_TOKEN", label: "Personal Access Token", placeholder: "ghp_...", secret: true },
+  { key: "GITHUB_REPO_1", label: "مستودع التطبيق الأول", placeholder: "username/app-one" },
+  { key: "GITHUB_REPO_2", label: "مستودع التطبيق الثاني", placeholder: "username/app-two" },
+];
+
+const SUPABASE_FIELDS: FieldDef[] = [
+  {
+    key: "SUPABASE_ACCESS_TOKEN",
+    label: "Personal Access Token (من الحساب، مش من المشروع)",
+    placeholder: "sbp_...",
+    secret: true,
+  },
+  { key: "SUPABASE_PROJECT_REF", label: "Project Ref (من رابط المشروع)", placeholder: "abcdefghijklmnop" },
+];
+
+const GEMINI_FIELDS: FieldDef[] = [
+  { key: "GEMINI_API_KEY", label: "المفتاح الأول", placeholder: "AIza...", secret: true },
+  { key: "GEMINI_API_KEY_2", label: "المفتاح الثاني", placeholder: "AIza...", secret: true },
+  { key: "GEMINI_API_KEY_3", label: "المفتاح الثالث", placeholder: "AIza...", secret: true },
+];
+
+const CLAUDE_FIELDS: FieldDef[] = [
+  { key: "CLAUDE_API_KEY", label: "API Key", placeholder: "sk-ant-...", secret: true },
+];
+
+function useSecureFields(fields: FieldDef[]) {
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [saved, setSaved] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const entries = await Promise.all(
+        fields.map(async (f) => [f.key, (await SecureStore.getItemAsync(f.key)) ?? ""] as const)
+      );
+      if (!alive) return;
+      const loaded = Object.fromEntries(entries);
+      setValues(loaded);
+      setSaved(loaded);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [fields]);
+
+  const dirty = fields.some((f) => (values[f.key] ?? "") !== (saved[f.key] ?? ""));
+
+  async function save() {
+    const next: Record<string, string> = {};
+    for (const f of fields) {
+      const v = (values[f.key] ?? "").trim();
+      next[f.key] = v;
+      if (v) await SecureStore.setItemAsync(f.key, v);
+      else await SecureStore.deleteItemAsync(f.key);
+    }
+    setValues(next);
+    setSaved(next);
+  }
+
+  return { values, setValue: (key: string, v: string) => setValues((p) => ({ ...p, [key]: v })), dirty, save };
+}
+
+function ConnectionSection({
+  title,
+  hint,
+  fields,
+  testLabel,
+  onTest,
+}: {
+  title: string;
+  hint?: string;
+  fields: FieldDef[];
+  testLabel: string;
+  onTest: () => Promise<string>;
+}) {
+  const { values, setValue, dirty, save } = useSecureFields(fields);
+  const [status, setStatus] = useState<Status>({ kind: "idle" });
+
+  async function run() {
+    setStatus({ kind: "loading" });
+    try {
+      if (dirty) await save();
+      const message = await onTest();
+      setStatus({ kind: "ok", message });
+    } catch (e: any) {
+      setStatus({ kind: "error", message: e?.message ?? "تعذّر الاتصال" });
+    }
+  }
+
   return (
-    <View style={{ marginBottom: 16 }}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        style={styles.input}
-        value={value}
-        onChangeText={(t) => { setValue(t); setSaved(false); }}
-        placeholder={placeholder}
-        secureTextEntry={secure}
-        autoCapitalize="none"
+    <Card style={{ marginBottom: space.lg }}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {hint ? <Text style={styles.hint}>{hint}</Text> : <View style={{ height: space.md }} />}
+
+      {fields.map((f) => (
+        <KeyInput
+          key={f.key}
+          label={f.label}
+          placeholder={f.placeholder}
+          secret={f.secret}
+          value={values[f.key] ?? ""}
+          onChangeText={(t) => setValue(f.key, t)}
+        />
+      ))}
+
+      <Button
+        title={dirty ? `حفظ و${testLabel}` : testLabel}
+        onPress={run}
+        loading={status.kind === "loading"}
       />
-      <TouchableOpacity
-        style={styles.saveBtn}
-        onPress={async () => {
-          if (!value.trim()) return;
-          await SecureStore.setItemAsync(storeKey, value.trim());
-          setSaved(true);
-        }}
-      >
-        <Text style={{ color: "white" }}>{saved ? "✓ محفوظ" : "حفظ"}</Text>
-      </TouchableOpacity>
-    </View>
+      <StatusLine status={status} />
+    </Card>
   );
 }
 
 export default function ConnectionsScreen() {
-  const [githubResult, setGithubResult] = useState<string | null>(null);
-  const [supabaseResult, setSupabaseResult] = useState<string | null>(null);
-  const [loadingGithub, setLoadingGithub] = useState(false);
-  const [loadingSupabase, setLoadingSupabase] = useState(false);
-  const [geminiResult, setGeminiResult] = useState<string | null>(null);
-  const [claudeResult, setClaudeResult] = useState<string | null>(null);
-  const [loadingGemini, setLoadingGemini] = useState(false);
-  const [loadingClaude, setLoadingClaude] = useState(false);
-
-  async function handleTestGithub() {
-    setLoadingGithub(true);
-    setGithubResult(null);
-    try {
-      const r = await testGithubConnection();
-      setGithubResult(`✅ متصل بنجاح باسم: ${r.login}`);
-    } catch (e: any) {
-      setGithubResult(`❌ ${e.message}`);
-    } finally {
-      setLoadingGithub(false);
-    }
-  }
-
-  async function handleTestSupabase() {
-    setLoadingSupabase(true);
-    setSupabaseResult(null);
-    try {
-      const r = await testSupabaseConnection();
-      setSupabaseResult(`✅ متصل بمشروع: ${r.name} (${r.status})`);
-    } catch (e: any) {
-      setSupabaseResult(`❌ ${e.message}`);
-    } finally {
-      setLoadingSupabase(false);
-    }
-  }
-
-  async function handleTestGemini() {
-    setLoadingGemini(true);
-    setGeminiResult(null);
-    try {
-      const r = await testGeminiConnection();
-      setGeminiResult(`✅ متصل، عدد النماذج المتاحة: ${r.modelCount}`);
-    } catch (e: any) {
-      setGeminiResult(`❌ ${e.message}`);
-    } finally {
-      setLoadingGemini(false);
-    }
-  }
-
-  async function handleTestClaude() {
-    setLoadingClaude(true);
-    setClaudeResult(null);
-    try {
-      await testClaudeConnection();
-      setClaudeResult(`✅ متصل بنجاح`);
-    } catch (e: any) {
-      setClaudeResult(`❌ ${e.message}`);
-    } finally {
-      setLoadingClaude(false);
-    }
-  }
-
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.section}>GitHub</Text>
-      <Field label="Personal Access Token" storeKey="GITHUB_TOKEN" placeholder="ghp_..." />
-      <Field label="مستودع التطبيق الأول (username/repo)" storeKey="GITHUB_REPO_1" secure={false} placeholder="username/app-one" />
-      <Field label="مستودع التطبيق الثاني (username/repo)" storeKey="GITHUB_REPO_2" secure={false} placeholder="username/app-two" />
-      <TouchableOpacity style={styles.testBtn} onPress={handleTestGithub}>
-        <Text style={{ color: "white" }}>اختبار اتصال GitHub</Text>
-      </TouchableOpacity>
-      {loadingGithub && <ActivityIndicator style={{ marginTop: 8 }} />}
-      {githubResult && <Text style={styles.result}>{githubResult}</Text>}
+    <ScrollView
+      style={{ backgroundColor: colors.bg }}
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+    >
+      <ConnectionSection
+        title="GitHub"
+        fields={GITHUB_FIELDS}
+        testLabel="اختبار الاتصال"
+        onTest={async () => {
+          const r = await testGithubConnection();
+          return `متصل بنجاح باسم: ${r.login}`;
+        }}
+      />
 
-      <View style={{ height: 24 }} />
+      <ConnectionSection
+        title="Supabase"
+        hint="مشروع Supabase ده بيتشارك بين التطبيق الأول والتاني، وهو اللي بيربطهم ببعض."
+        fields={SUPABASE_FIELDS}
+        testLabel="اختبار الاتصال"
+        onTest={async () => {
+          const r = await testSupabaseConnection();
+          return `متصل بمشروع: ${r.name} (${r.status})`;
+        }}
+      />
 
-      <Text style={styles.section}>Supabase</Text>
-      <Text style={styles.hint}>مشروع Supabase ده بيتشارك بين التطبيق الأول والتاني — ده اللي بيربطهم ببعض.</Text>
-      <Field label="Personal Access Token (من Account، مش من المشروع)" storeKey="SUPABASE_ACCESS_TOKEN" placeholder="sbp_..." />
-      <Field label="Project Ref (من رابط المشروع)" storeKey="SUPABASE_PROJECT_REF" secure={false} placeholder="qlvmxnoewxzykgbneadv" />
-      <TouchableOpacity style={styles.testBtn} onPress={handleTestSupabase}>
-        <Text style={{ color: "white" }}>اختبار اتصال Supabase</Text>
-      </TouchableOpacity>
-      {loadingSupabase && <ActivityIndicator style={{ marginTop: 8 }} />}
-      {supabaseResult && <Text style={styles.result}>{supabaseResult}</Text>}
+      <ConnectionSection
+        title="Gemini"
+        hint="تقدر تضيف لحد ثلاثة مفاتيح."
+        fields={GEMINI_FIELDS}
+        testLabel="اختبار الاتصال"
+        onTest={async () => {
+          const r = await testGeminiConnection();
+          return `متصل، عدد النماذج المتاحة: ${r.modelCount}`;
+        }}
+      />
 
-      <View style={{ height: 24 }} />
-
-      <Text style={styles.section}>Gemini</Text>
-      <Field label="API Key (الأول)" storeKey="GEMINI_API_KEY" placeholder="AIza..." />
-      <Field label="API Key (الثاني)" storeKey="GEMINI_API_KEY_2" placeholder="AIza..." />
-      <Field label="API Key (الثالث)" storeKey="GEMINI_API_KEY_3" placeholder="AIza..." />
-      <TouchableOpacity style={styles.testBtn} onPress={handleTestGemini}>
-        <Text style={{ color: "white" }}>اختبار اتصال Gemini</Text>
-      </TouchableOpacity>
-      {loadingGemini && <ActivityIndicator style={{ marginTop: 8 }} />}
-      {geminiResult && <Text style={styles.result}>{geminiResult}</Text>}
-
-      <View style={{ height: 24 }} />
-
-      <Text style={styles.section}>Claude</Text>
-      <Field label="API Key" storeKey="CLAUDE_API_KEY" placeholder="sk-ant-..." />
-      <TouchableOpacity style={styles.testBtn} onPress={handleTestClaude}>
-        <Text style={{ color: "white" }}>اختبار اتصال Claude</Text>
-      </TouchableOpacity>
-      {loadingClaude && <ActivityIndicator style={{ marginTop: 8 }} />}
-      {claudeResult && <Text style={styles.result}>{claudeResult}</Text>}
+      <ConnectionSection
+        title="Claude"
+        fields={CLAUDE_FIELDS}
+        testLabel="اختبار الاتصال"
+        onTest={async () => {
+          await testClaudeConnection();
+          return "متصل بنجاح";
+        }}
+      />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16 },
-  section: { fontSize: 18, fontWeight: "700", marginBottom: 12 },
-  label: { marginBottom: 6, fontWeight: "600" },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 10, padding: 10, marginBottom: 6 },
-  saveBtn: { backgroundColor: "#444", borderRadius: 8, padding: 8, alignItems: "center", alignSelf: "flex-start", paddingHorizontal: 16 },
-  testBtn: { backgroundColor: "#111", borderRadius: 10, padding: 12, alignItems: "center", marginTop: 4 },
-  result: { marginTop: 10, lineHeight: 20 },
-  hint: { color: "#888", fontSize: 12, marginBottom: 10 },
+  container: { padding: space.lg, paddingBottom: 96 },
+  sectionTitle: { ...type.sectionTitle, color: colors.text },
+  hint: { ...type.hint, color: colors.textMuted, marginTop: space.xs, marginBottom: space.lg },
 });

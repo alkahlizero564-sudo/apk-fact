@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Linking } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import * as FileSystem from "expo-file-system";
 import * as IntentLauncher from "expo-intent-launcher";
@@ -13,6 +13,8 @@ import {
   getAssetDownloadInfo,
 } from "../services/github";
 import { REPO } from "../services/config";
+import { Card, Button } from "../components/ui";
+import { colors, space, radius, type } from "../theme";
 
 type Run = { id: number; status: string; conclusion: string | null; createdAt: string; htmlUrl: string };
 
@@ -131,41 +133,56 @@ export default function BuildScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={styles.container}>
       <View style={styles.headRow}>
         <Text style={styles.section}>تطبيقاتك</Text>
-        <TouchableOpacity onPress={loadApps}>
+        <TouchableOpacity onPress={loadApps} hitSlop={8}>
           <Text style={styles.refreshText}>تحديث ↻</Text>
         </TouchableOpacity>
       </View>
 
-      {apps.length === 0 && <Text style={styles.note}>مفيش تطبيقات لسه. اعمل واحد من تبويب الإنشاء.</Text>}
+      {apps.length === 0 && (
+        <Card style={styles.emptyCard}>
+          <Text style={styles.note}>مفيش تطبيقات لسه. اعمل واحد من تبويب الإنشاء.</Text>
+        </Card>
+      )}
+
       {apps.map((a) => (
-        <View key={a} style={styles.appRow}>
-          <Text style={styles.appName}>{a}</Text>
-          <TouchableOpacity style={styles.appBtn} onPress={() => buildApp(a)} disabled={!!busy}>
-            {busy === a ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.appBtnText}>ابنِ ونزّل وثبّت</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+        <Card key={a} style={styles.appRow}>
+          <Text style={styles.appName} numberOfLines={1}>
+            {a}
+          </Text>
+          <Button
+            title="ابنِ ونزّل وثبّت"
+            onPress={() => buildApp(a)}
+            disabled={!!busy}
+            loading={busy === a}
+            style={styles.appBtn}
+          />
+        </Card>
       ))}
 
-      {status !== "" && <Text style={styles.status}>{status}</Text>}
-      {error && <Text style={styles.error}>❌ {error}</Text>}
+      {status !== "" && (
+        <View style={[styles.notice, { backgroundColor: colors.infoBg }]}>
+          <Text style={[styles.noticeText, { color: colors.infoText }]}>{status}</Text>
+        </View>
+      )}
+      {error && (
+        <View style={[styles.notice, { backgroundColor: colors.errorBg }]}>
+          <Text style={[styles.errorText, { color: colors.errorText }]}>❌ {error}</Text>
+        </View>
+      )}
 
-      <Text style={[styles.section, { marginTop: 32 }]}>بناء الأداة نفسها</Text>
-      <Text style={styles.note}>
-        ده يبني نسخة جديدة من الأداة (مو من تطبيقاتك). تحتاجه بس لما نغيّر كود الأداة.
-      </Text>
-      <TouchableOpacity style={styles.buildBtn} onPress={buildTool} disabled={!!busy}>
-        {busy === "tool" ? <ActivityIndicator color="#fff" /> : <Text style={styles.buildBtnText}>ابدأ بناء الأداة</Text>}
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.refreshBtn} onPress={refreshRuns}>
-        <Text style={styles.refreshBtnText}>تحديث الحالة</Text>
-      </TouchableOpacity>
+      <Card style={{ marginTop: space.xl }}>
+        <Text style={styles.section}>بناء الأداة نفسها</Text>
+        <Text style={[styles.note, { marginTop: space.xs, marginBottom: space.lg }]}>
+          ده يبني نسخة جديدة من الأداة (مو من تطبيقاتك). تحتاجه بس لما نغيّر كود الأداة.
+        </Text>
+        <Button title="ابدأ بناء الأداة" onPress={buildTool} disabled={!!busy} loading={busy === "tool"} />
+        <TouchableOpacity style={styles.refreshBtn} onPress={refreshRuns}>
+          <Text style={styles.refreshBtnText}>تحديث الحالة</Text>
+        </TouchableOpacity>
+      </Card>
 
       {runs.map((run) => (
         <TouchableOpacity key={run.id} style={styles.runCard} onPress={() => Linking.openURL(run.htmlUrl)}>
@@ -179,23 +196,29 @@ export default function BuildScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16 },
-  headRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
-  section: { fontWeight: "700", fontSize: 16, flex: 1 },
-  refreshText: { color: "#2563eb", padding: 6 },
-  note: { color: "#666", lineHeight: 20, marginBottom: 12, fontSize: 13 },
-  appRow: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#eee", borderRadius: 10, padding: 10, marginBottom: 8 },
-  appName: { flex: 1, fontWeight: "700" },
-  appBtn: { backgroundColor: "#111", borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, minWidth: 120, alignItems: "center" },
-  appBtnText: { color: "#fff", fontWeight: "700", fontSize: 13 },
-  status: { marginTop: 12, lineHeight: 22 },
-  error: { color: "#c0392b", marginTop: 12, fontFamily: "monospace", fontSize: 12 },
-  buildBtn: { backgroundColor: "#444", borderRadius: 12, padding: 14, alignItems: "center" },
-  buildBtnText: { color: "#fff", fontWeight: "700" },
-  refreshBtn: { marginTop: 10, alignItems: "center", padding: 8 },
-  refreshBtnText: { color: "#444" },
-  runCard: { borderWidth: 1, borderColor: "#eee", borderRadius: 10, padding: 12, marginTop: 12 },
-  runStatus: { fontWeight: "700", marginBottom: 4 },
-  runDate: { color: "#888", fontSize: 12, marginBottom: 4 },
-  runLink: { color: "#2563eb" },
+  container: { padding: space.lg, paddingBottom: 96 },
+  headRow: { flexDirection: "row", alignItems: "center", marginBottom: space.md },
+  section: { ...type.sectionTitle, color: colors.text, flex: 1 },
+  refreshText: { color: colors.primary, fontWeight: "600", padding: space.xs },
+  note: { ...type.hint, color: colors.textMuted },
+  emptyCard: { alignItems: "center", paddingVertical: space.xl },
+  appRow: { flexDirection: "row", alignItems: "center", gap: space.md, marginBottom: space.md, padding: space.md },
+  appName: { flex: 1, fontSize: 16, fontWeight: "700", color: colors.text },
+  appBtn: { minWidth: 150, minHeight: 44 },
+  notice: { borderRadius: radius.field, padding: space.md, marginTop: space.md },
+  noticeText: { ...type.body },
+  errorText: { fontFamily: "monospace", fontSize: 12, lineHeight: 18 },
+  refreshBtn: { marginTop: space.md, alignItems: "center", padding: space.sm },
+  refreshBtnText: { color: colors.primary, fontWeight: "600" },
+  runCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.card,
+    padding: space.lg,
+    marginTop: space.md,
+  },
+  runStatus: { fontWeight: "700", color: colors.text, marginBottom: space.xs },
+  runDate: { color: colors.textMuted, fontSize: 12, marginBottom: space.xs },
+  runLink: { color: colors.primary, fontWeight: "600" },
 });

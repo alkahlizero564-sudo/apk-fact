@@ -39,3 +39,40 @@ export async function testClaudeConnection(): Promise<{ reply: string }> {
   const data = await res.json();
   return { reply: data.content?.[0]?.text ?? "" };
 }
+import * as SecureStore from "expo-secure-store";
+
+export type GeminiModel = { id: string; displayName: string };
+
+export async function listGeminiModels(): Promise<GeminiModel[]> {
+  let apiKey = "";
+  for (const k of ["GEMINI_API_KEY", "GEMINI_API_KEY_2", "GEMINI_API_KEY_3"]) {
+    const v = await SecureStore.getItemAsync(k);
+    if (v) {
+      apiKey = v;
+      break;
+    }
+  }
+  if (!apiKey) throw new Error("أضف مفتاح Gemini واحفظه الأول.");
+
+  const out: GeminiModel[] = [];
+  let pageToken = "";
+  do {
+    const url =
+      "https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000" +
+      (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : "");
+    const res = await fetch(url, { headers: { "x-goog-api-key": apiKey } });
+    if (!res.ok) throw new Error(`فشل جلب النماذج (${res.status})`);
+    const data = await res.json();
+    for (const m of data.models ?? []) {
+      if ((m.supportedGenerationMethods ?? []).includes("generateContent")) {
+        out.push({
+          id: String(m.name).replace(/^models\//, ""),
+          displayName: m.displayName ?? String(m.name),
+        });
+      }
+    }
+    pageToken = data.nextPageToken ?? "";
+  } while (pageToken);
+
+  return out.sort((a, b) => a.id.localeCompare(b.id));
+} 

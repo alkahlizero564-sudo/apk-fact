@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { ScrollView, Text, View, StyleSheet } from "react-native";
+import { ScrollView, Text, View, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { testGithubConnection } from "../services/github";
 import { testSupabaseConnection } from "../services/supabase";
-import { testGeminiConnection, testClaudeConnection } from "../services/ai";
+import { testGeminiConnection, testClaudeConnection, listGeminiModels, GeminiModel } from "../services/ai";
 import { Card, Button, KeyInput, StatusLine, Status } from "../components/ui";
-import { colors, space, type } from "../theme";
+import { colors, space, radius, type } from "../theme";
 
 type FieldDef = { key: string; label: string; placeholder?: string; secret?: boolean };
+
+const GEMINI_MODEL_KEY = "GEMINI_MODEL";
 
 const GITHUB_FIELDS: FieldDef[] = [
   { key: "GITHUB_TOKEN", label: "Personal Access Token", placeholder: "ghp_...", secret: true },
@@ -125,6 +127,96 @@ function ConnectionSection({
   );
 }
 
+function GeminiModelPicker() {
+  const [models, setModels] = useState<GeminiModel[]>([]);
+  const [selected, setSelected] = useState("");
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<Status>({ kind: "idle" });
+
+  useEffect(() => {
+    SecureStore.getItemAsync(GEMINI_MODEL_KEY).then((v) => setSelected(v ?? ""));
+  }, []);
+
+  async function fetchModels() {
+    setStatus({ kind: "loading" });
+    try {
+      const list = await listGeminiModels();
+      setModels(list);
+      setStatus({ kind: "ok", message: `تم جلب ${list.length} نموذج` });
+    } catch (e: any) {
+      setStatus({ kind: "error", message: e?.message ?? "تعذّر جلب النماذج" });
+    }
+  }
+
+  async function choose(id: string) {
+    setSelected(id);
+    await SecureStore.setItemAsync(GEMINI_MODEL_KEY, id);
+  }
+
+  const q = query.trim().toLowerCase();
+  const filtered = models.filter((m) => (m.id + " " + m.displayName).toLowerCase().includes(q));
+  const shown = filtered.slice(0, 15);
+
+  return (
+    <Card style={{ marginBottom: space.lg }}>
+      <Text style={styles.sectionTitle}>نموذج Gemini</Text>
+      <Text style={styles.hint}>
+        {selected ? `النموذج المختار: ${selected}` : "ما اخترت نموذج لسه."}
+      </Text>
+
+      <Button
+        title="جلب النماذج المتاحة"
+        variant="secondary"
+        onPress={fetchModels}
+        loading={status.kind === "loading"}
+      />
+      <StatusLine status={status} />
+
+      {models.length > 0 && (
+        <View style={{ marginTop: space.lg }}>
+          <TextInput
+            style={styles.search}
+            value={query}
+            onChangeText={setQuery}
+            placeholder="ابحث، مثال: flash"
+            placeholderTextColor={colors.textMuted}
+            autoCapitalize="none"
+            autoCorrect={false}
+            textAlign="left"
+            writingDirection="ltr"
+          />
+
+          {shown.map((m) => {
+            const active = m.id === selected;
+            return (
+              <TouchableOpacity
+                key={m.id}
+                style={[styles.modelRow, active && styles.modelRowActive]}
+                onPress={() => choose(m.id)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: active }}
+              >
+                <Text style={[styles.radio, active && { color: colors.primary }]}>{active ? "◉" : "○"}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.modelId}>{m.id}</Text>
+                  <Text style={styles.modelName}>{m.displayName}</Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+
+          {filtered.length > shown.length && (
+            <Text style={[styles.hint, { marginTop: space.md }]}>
+              عرض {shown.length} من {filtered.length}. اكتب في البحث لتضييق القائمة.
+            </Text>
+          )}
+          {filtered.length === 0 && <Text style={[styles.hint, { marginTop: space.md }]}>ما في نتائج.</Text>}
+        </View>
+      )}
+    </Card>
+  );
+}
+
 export default function ConnectionsScreen() {
   return (
     <ScrollView
@@ -164,6 +256,8 @@ export default function ConnectionsScreen() {
         }}
       />
 
+      <GeminiModelPicker />
+
       <ConnectionSection
         title="Claude"
         fields={CLAUDE_FIELDS}
@@ -181,4 +275,27 @@ const styles = StyleSheet.create({
   container: { padding: space.lg, paddingBottom: 96 },
   sectionTitle: { ...type.sectionTitle, color: colors.text },
   hint: { ...type.hint, color: colors.textMuted, marginTop: space.xs, marginBottom: space.lg },
+  search: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.field,
+    paddingHorizontal: space.md,
+    minHeight: 46,
+    fontSize: 15,
+    color: colors.text,
+    marginBottom: space.sm,
+  },
+  modelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.md,
+    minHeight: 52,
+    paddingHorizontal: space.sm,
+    borderTopWidth: 1,
+    borderColor: colors.border,
+  },
+  modelRowActive: { backgroundColor: colors.infoBg, borderRadius: radius.field },
+  radio: { fontSize: 18, color: colors.textMuted },
+  modelId: { fontSize: 14, fontWeight: "600", color: colors.text, textAlign: "left", writingDirection: "ltr" },
+  modelName: { fontSize: 12, color: colors.textMuted, textAlign: "left", writingDirection: "ltr" },
 });

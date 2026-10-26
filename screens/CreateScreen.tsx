@@ -8,6 +8,8 @@ import * as ImagePicker from "expo-image-picker";
 import { pushFile, pushBase64File, listWorkflowRuns, latestRunId, getFileText, getFailureLog } from "../services/github";
 import { REPO } from "../services/config";
 import { linkAppsViaSupabase } from "../services/link";
+import { Card, Button } from "../components/ui";
+import { colors, space, radius, type } from "../theme";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -27,6 +29,46 @@ async function waitForRun(prevId: number) {
 }
 
 type Kind = "create" | "edit";
+
+function LogBox({ lines }: { lines: string[] }) {
+  if (lines.length === 0) return null;
+  return (
+    <View style={styles.logBox}>
+      {lines.map((line, i) => (
+        <Text key={i} style={styles.logLine}>{line}</Text>
+      ))}
+    </View>
+  );
+}
+
+function RowButton({
+  label,
+  onPress,
+  disabled,
+  dim,
+  left,
+  right,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  dim?: boolean;
+  left?: React.ReactNode;
+  right?: React.ReactNode;
+}) {
+  return (
+    <TouchableOpacity
+      style={[styles.rowBtn, dim && styles.disabled]}
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+    >
+      {left}
+      <Text style={styles.rowBtnText}>{label}</Text>
+      {right}
+    </TouchableOpacity>
+  );
+}
 
 type BoxProps = {
   title: string;
@@ -198,7 +240,7 @@ function AppBox({ title, busy, setBusy, onPreview, onNameChange, isSecond, relat
   const hasName = !!cleanName(name);
 
   return (
-    <View style={styles.box}>
+    <Card style={styles.box}>
       <Text style={styles.boxTitle}>{title}</Text>
 
       <Text style={styles.label}>اسم التطبيق (إنجليزي)</Text>
@@ -211,6 +253,7 @@ function AppBox({ title, busy, setBusy, onPreview, onNameChange, isSecond, relat
           if (onNameChange) onNameChange(t);
         }}
         placeholder="مثال: shop"
+        placeholderTextColor={colors.textMuted}
         autoCapitalize="none"
         autoCorrect={false}
       />
@@ -236,98 +279,95 @@ function AppBox({ title, busy, setBusy, onPreview, onNameChange, isSecond, relat
         value={description}
         onChangeText={setDescription}
         placeholder="مثال: متجر ملابس فيه سلة مشتريات وقائمة أسعار"
+        placeholderTextColor={colors.textMuted}
         multiline
       />
 
-      <TouchableOpacity
-        style={[styles.createBtn, busy && loading !== "create" && styles.disabled]}
+      <Button
+        title="إنشاء ورفع"
         onPress={() => run("create")}
         disabled={busy}
-      >
-        {loading === "create" ? <ActivityIndicator color="#fff" /> : <Text style={styles.createBtnText}>إنشاء ورفع</Text>}
-      </TouchableOpacity>
+        loading={loading === "create"}
+        style={{ marginTop: space.lg }}
+      />
 
-      <TouchableOpacity
-        style={[styles.previewBtn, !hasName && styles.disabled]}
+      <Button
+        title="معاينة"
+        variant="secondary"
         onPress={() => onPreview(cleanName(name))}
         disabled={!hasName}
-      >
-        <Text style={styles.previewBtnText}>معاينة</Text>
-      </TouchableOpacity>
+        style={{ marginTop: space.md }}
+      />
 
-      <TouchableOpacity
-        style={[styles.iconBtn, busy && loading !== "icon" && styles.disabled]}
-        onPress={pickIcon}
-        disabled={busy}
-      >
-        {loading === "icon" ? (
-          <ActivityIndicator />
-        ) : (
-          <View style={styles.iconRow}>
-            {iconUri && <Image source={{ uri: iconUri }} style={styles.iconThumb} />}
-            <Text style={styles.editToggleText}>{iconUri ? "تغيير الأيقونة" : "اختيار أيقونة من المعرض"}</Text>
+      <View style={styles.tools}>
+        <RowButton
+          label={iconUri ? "تغيير الأيقونة" : "اختيار أيقونة من المعرض"}
+          onPress={pickIcon}
+          disabled={busy}
+          dim={busy && loading !== "icon"}
+          left={iconUri ? <Image source={{ uri: iconUri }} style={styles.iconThumb} /> : undefined}
+          right={loading === "icon" ? <ActivityIndicator color={colors.primary} /> : undefined}
+        />
+
+        <RowButton
+          label="تعديل الكود"
+          onPress={() => setEditOpen(!editOpen)}
+          right={<Text style={styles.chevron}>{editOpen ? "▲" : "▼"}</Text>}
+        />
+
+        {editOpen && (
+          <View style={styles.editBox}>
+            <Text style={styles.label}>وصف التعديل</Text>
+            <TextInput
+              style={styles.textarea}
+              value={editText}
+              onChangeText={setEditText}
+              placeholder="مثال: غيّر الألوان للأخضر وأضف زر واتساب"
+              placeholderTextColor={colors.textMuted}
+              multiline
+            />
+            <Button
+              title="عدّل وارفع"
+              onPress={() => run("edit")}
+              disabled={busy}
+              loading={loading === "edit"}
+              style={{ marginTop: space.md }}
+            />
           </View>
         )}
-      </TouchableOpacity>
 
-      <TouchableOpacity style={styles.editToggle} onPress={() => setEditOpen(!editOpen)}>
-        <Text style={styles.editToggleText}>{editOpen ? "تعديل الكود ▲" : "تعديل الكود ▼"}</Text>
-      </TouchableOpacity>
+        <RowButton
+          label="لصق كود جاهز"
+          onPress={() => setPasteOpen(!pasteOpen)}
+          right={<Text style={styles.chevron}>{pasteOpen ? "▲" : "▼"}</Text>}
+        />
 
-      {editOpen && (
-        <View style={styles.editBox}>
-          <Text style={styles.label}>وصف التعديل</Text>
-          <TextInput
-            style={styles.textarea}
-            value={editText}
-            onChangeText={setEditText}
-            placeholder="مثال: غيّر الألوان للأخضر وأضف زر واتساب"
-            multiline
-          />
-          <TouchableOpacity
-            style={[styles.createBtn, busy && loading !== "edit" && styles.disabled]}
-            onPress={() => run("edit")}
-            disabled={busy}
-          >
-            {loading === "edit" ? <ActivityIndicator color="#fff" /> : <Text style={styles.createBtnText}>عدّل وارفع</Text>}
-          </TouchableOpacity>
-        </View>
-      )}
+        {pasteOpen && (
+          <View style={styles.editBox}>
+            <Text style={styles.label}>الكود (HTML كامل)</Text>
+            <TextInput
+              style={[styles.textarea, { minHeight: 160, fontFamily: "monospace", fontSize: 12 }]}
+              value={pasteText}
+              onChangeText={setPasteText}
+              placeholder="الصق الكود هنا"
+              placeholderTextColor={colors.textMuted}
+              multiline
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <Button
+              title="ارفع الكود"
+              onPress={uploadPastedCode}
+              disabled={busy}
+              loading={loading === "paste"}
+              style={{ marginTop: space.md }}
+            />
+          </View>
+        )}
+      </View>
 
-      <TouchableOpacity style={styles.editToggle} onPress={() => setPasteOpen(!pasteOpen)}>
-        <Text style={styles.editToggleText}>{pasteOpen ? "لصق كود جاهز ▲" : "لصق كود جاهز ▼"}</Text>
-      </TouchableOpacity>
-
-      {pasteOpen && (
-        <View style={styles.editBox}>
-          <Text style={styles.label}>الكود (HTML كامل)</Text>
-          <TextInput
-            style={[styles.textarea, { minHeight: 160, fontFamily: "monospace", fontSize: 12 }]}
-            value={pasteText}
-            onChangeText={setPasteText}
-            placeholder="الصق الكود هنا"
-            multiline
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <TouchableOpacity
-            style={[styles.createBtn, busy && loading !== "paste" && styles.disabled]}
-            onPress={uploadPastedCode}
-            disabled={busy}
-          >
-            {loading === "paste" ? <ActivityIndicator color="#fff" /> : <Text style={styles.createBtnText}>ارفع الكود</Text>}
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {log.length > 0 && (
-        <View style={styles.logBox}>
-          {log.map((line, i) => (
-            <Text key={i} style={styles.logLine}>{line}</Text>
-          ))}
-        </View>
-      )}
-    </View>
+      <LogBox lines={log} />
+    </Card>
   );
 }
 
@@ -398,8 +438,8 @@ export default function CreateScreen() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={styles.container}>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <AppBox
           title="إنشاء التطبيق الأول"
           busy={busy}
@@ -408,26 +448,20 @@ export default function CreateScreen() {
           onNameChange={setFirstName}
         />
 
-        <View style={styles.linkCard}>
-          <Text style={styles.linkTitle}>ربط التطبيقين</Text>
+        <Card style={styles.linkCard}>
+          <Text style={styles.boxTitle}>ربط التطبيقين</Text>
           <Text style={styles.linkDesc}>
             يستخدم اسمي التطبيقين المكتوبين فوق وتحت، ولازم يكونوا موجودين. الربط يعيد كتابة التطبيقين.
           </Text>
-          <TouchableOpacity
-            style={[styles.linkBtn, busy && !linking && styles.disabled]}
+          <Button
+            title="ربط التطبيقين عبر Supabase"
             onPress={askLink}
             disabled={busy}
-          >
-            {linking ? <ActivityIndicator color="#fff" /> : <Text style={styles.linkBtnText}>ربط التطبيقين عبر Supabase</Text>}
-          </TouchableOpacity>
-          {linkLog.length > 0 && (
-            <View style={styles.logBox}>
-              {linkLog.map((line, i) => (
-                <Text key={i} style={styles.logLine}>{line}</Text>
-              ))}
-            </View>
-          )}
-        </View>
+            loading={linking}
+            style={{ marginTop: space.md }}
+          />
+          <LogBox lines={linkLog} />
+        </Card>
 
         <AppBox
           title="إنشاء التطبيق الثاني"
@@ -441,15 +475,19 @@ export default function CreateScreen() {
       </ScrollView>
 
       <Modal visible={previewOpen} animationType="slide" onRequestClose={() => setPreviewOpen(false)}>
-        <View style={{ flex: 1, backgroundColor: "#fff" }}>
+        <View style={{ flex: 1, backgroundColor: colors.surface }}>
           <View style={styles.modalHead}>
             <Text style={styles.modalTitle}>{previewName}</Text>
-            <TouchableOpacity onPress={() => setPreviewOpen(false)}>
+            <TouchableOpacity onPress={() => setPreviewOpen(false)} hitSlop={8}>
               <Text style={styles.closeText}>إغلاق ✕</Text>
             </TouchableOpacity>
           </View>
-          {previewLoading && <ActivityIndicator style={{ marginTop: 16 }} />}
-          {previewError && <Text style={styles.error}>❌ {previewError}</Text>}
+          {previewLoading && <ActivityIndicator style={{ marginTop: space.lg }} color={colors.primary} />}
+          {previewError && (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>❌ {previewError}</Text>
+            </View>
+          )}
           {previewHtml && (
             <WebView originWhitelist={["*"]} source={{ html: previewHtml }} style={{ flex: 1 }} />
           )}
@@ -460,36 +498,71 @@ export default function CreateScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, paddingBottom: 48 },
-  box: { borderWidth: 1, borderColor: "#ddd", borderRadius: 14, padding: 14, marginBottom: 20, backgroundColor: "#fff" },
-  boxTitle: { fontWeight: "700", fontSize: 17, marginBottom: 4 },
-  label: { fontWeight: "700", marginTop: 12, marginBottom: 6 },
-  hint: { color: "#888", fontSize: 12, marginTop: 4 },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 12, padding: 12 },
-  textarea: { borderWidth: 1, borderColor: "#ccc", borderRadius: 12, padding: 12, minHeight: 90 },
-  relatedBtn: { marginTop: 12, padding: 10, borderRadius: 10, backgroundColor: "#f0f7ff", borderWidth: 1, borderColor: "#cfe3ff" },
-  relatedText: { fontWeight: "700", color: "#1d4ed8" },
-  relatedWarn: { color: "#b45309", fontSize: 12, marginTop: 4 },
-  linkCard: { borderWidth: 1, borderColor: "#c7d2fe", borderRadius: 14, padding: 14, marginBottom: 20, backgroundColor: "#eef2ff" },
-  linkTitle: { fontWeight: "700", fontSize: 17, marginBottom: 4 },
-  linkDesc: { color: "#666", fontSize: 13, lineHeight: 20 },
-  linkBtn: { backgroundColor: "#1d4ed8", borderRadius: 12, padding: 14, alignItems: "center", marginTop: 12 },
-  linkBtnText: { color: "#fff", fontWeight: "700" },
-  createBtn: { backgroundColor: "#111", borderRadius: 12, padding: 14, alignItems: "center", marginTop: 16 },
-  createBtnText: { color: "#fff", fontWeight: "700" },
-  previewBtn: { borderWidth: 1, borderColor: "#111", borderRadius: 12, padding: 12, alignItems: "center", marginTop: 10 },
-  previewBtnText: { color: "#111", fontWeight: "700" },
-  iconBtn: { borderWidth: 1, borderColor: "#888", borderRadius: 12, padding: 12, alignItems: "center", marginTop: 10, backgroundColor: "#eef4ff" },
-  iconRow: { flexDirection: "row", alignItems: "center" },
-  iconThumb: { width: 32, height: 32, borderRadius: 8, marginRight: 10 },
-  editToggle: { borderWidth: 1, borderColor: "#888", borderRadius: 12, padding: 12, alignItems: "center", marginTop: 10, backgroundColor: "#f6f6f6" },
-  editToggleText: { color: "#333", fontWeight: "700" },
-  editBox: { marginTop: 4, borderTopWidth: 1, borderColor: "#eee", paddingTop: 4 },
+  container: { padding: space.lg, paddingBottom: 96 },
+  box: { marginBottom: space.xl },
+  boxTitle: { ...type.sectionTitle, color: colors.text, marginBottom: space.xs },
+  label: { ...type.label, color: colors.text, marginTop: space.lg, marginBottom: space.sm },
+  hint: { ...type.hint, color: colors.textMuted, marginTop: space.sm },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.field,
+    paddingHorizontal: space.md,
+    minHeight: 46,
+    fontSize: 15,
+    color: colors.text,
+    backgroundColor: colors.surface,
+  },
+  textarea: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.field,
+    padding: space.md,
+    minHeight: 96,
+    fontSize: 15,
+    color: colors.text,
+    backgroundColor: colors.surface,
+    textAlignVertical: "top",
+  },
+  relatedBtn: {
+    marginTop: space.lg,
+    padding: space.md,
+    borderRadius: radius.field,
+    backgroundColor: colors.infoBg,
+    borderWidth: 1,
+    borderColor: "#C9D9FA",
+  },
+  relatedText: { fontWeight: "700", color: colors.infoText, lineHeight: 22 },
+  relatedWarn: { color: "#92400E", ...type.hint, marginTop: space.xs },
+  linkCard: { marginBottom: space.xl, backgroundColor: colors.infoBg, borderColor: "#C9D9FA" },
+  linkDesc: { ...type.hint, color: colors.textMuted },
+  tools: { marginTop: space.lg },
+  rowBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.md,
+    minHeight: 52,
+    borderTopWidth: 1,
+    borderColor: colors.border,
+  },
+  rowBtnText: { flex: 1, fontSize: 15, fontWeight: "600", color: colors.text },
+  chevron: { color: colors.textMuted, fontSize: 12 },
+  iconThumb: { width: 32, height: 32, borderRadius: 8 },
+  editBox: { paddingBottom: space.md },
   disabled: { opacity: 0.4 },
-  logBox: { marginTop: 16, backgroundColor: "#f3f3f3", borderRadius: 10, padding: 12 },
-  logLine: { marginBottom: 4, fontFamily: "monospace", fontSize: 13 },
-  modalHead: { flexDirection: "row", alignItems: "center", paddingTop: 40, paddingBottom: 12, paddingHorizontal: 16, borderBottomWidth: 1, borderColor: "#eee" },
-  modalTitle: { flex: 1, fontWeight: "700", fontSize: 16 },
-  closeText: { color: "#2563eb", fontWeight: "700" },
-  error: { color: "#c0392b", margin: 16 },
+  logBox: { marginTop: space.lg, backgroundColor: colors.bg, borderRadius: radius.field, padding: space.md },
+  logLine: { marginBottom: space.xs, fontFamily: "monospace", fontSize: 13, lineHeight: 20, color: colors.text },
+  modalHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingTop: 40,
+    paddingBottom: space.md,
+    paddingHorizontal: space.lg,
+    borderBottomWidth: 1,
+    borderColor: colors.border,
+  },
+  modalTitle: { flex: 1, ...type.sectionTitle, color: colors.text },
+  closeText: { color: colors.primary, fontWeight: "700" },
+  errorBox: { backgroundColor: colors.errorBg, borderRadius: radius.field, padding: space.md, margin: space.lg },
+  errorText: { color: colors.errorText, ...type.body },
 }); 

@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { WebView } from "react-native-webview";
 import { listDir, getFileText, deleteFolder } from "../services/github";
 import { REPO } from "../services/config";
+import { colors, space, radius, type } from "../theme";
 
 export default function PreviewScreen() {
   const [apps, setApps] = useState<string[]>([]);
@@ -71,47 +72,66 @@ export default function PreviewScreen() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <View style={styles.topRow}>
         <Text style={styles.title}>تطبيقاتك</Text>
-        <TouchableOpacity style={styles.refreshBtn} onPress={refresh}>
+        <TouchableOpacity onPress={refresh} hitSlop={8}>
           <Text style={styles.refreshText}>تحديث ↻</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView horizontal style={styles.appsBar} contentContainerStyle={{ paddingHorizontal: 8 }}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.appsBar}
+        contentContainerStyle={styles.appsBarContent}
+      >
         {apps.map((a) => (
           <TouchableOpacity
             key={a}
-            style={[styles.appTab, selected === a && styles.appTabActive]}
+            style={[styles.chip, selected === a && styles.chipActive]}
             onPress={() => openApp(a)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: selected === a }}
           >
-            <Text style={selected === a ? styles.appTabTextActive : styles.appTabText}>{a}</Text>
+            <Text style={[styles.chipText, selected === a && styles.chipTextActive]}>{a}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
       {selected && (
         <View style={styles.actionRow}>
-          <Text style={styles.selectedName}>{selected}</Text>
-          <TouchableOpacity style={styles.deleteBtn} onPress={() => confirmDelete(selected)} disabled={loading}>
+          <Text style={styles.selectedName} numberOfLines={1}>
+            {selected}
+          </Text>
+          <TouchableOpacity
+            style={[styles.deleteBtn, loading && { opacity: 0.5 }]}
+            onPress={() => confirmDelete(selected)}
+            disabled={loading}
+          >
             <Text style={styles.deleteText}>🗑 حذف</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {loading && <ActivityIndicator style={{ marginTop: 16 }} />}
-      {error && <Text style={styles.error}>❌ {error}</Text>}
+      {loading && <ActivityIndicator style={{ marginTop: space.lg }} color={colors.primary} />}
+      {error && (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>❌ {error}</Text>
+        </View>
+      )}
 
       {!loading && !error && apps.length === 0 && (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>لسه مفيش تطبيقات. روح لتبويب "الإنشاء" واعمل أول تطبيق.</Text>
+          <Text style={styles.emptyTitle}>لسه مفيش تطبيقات</Text>
+          <Text style={styles.emptyText}>روح لتبويب "الإنشاء" واعمل أول تطبيق.</Text>
         </View>
       )}
 
       {!loading && !selected && apps.length > 0 && (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>اختر تطبيق من الأعلى عشان تعاينه.</Text>
+          <Text style={styles.emptyTitle}>اختر تطبيق للمعاينة</Text>
+          <Text style={styles.emptyText}>اضغط على اسم التطبيق من الشريط اللي فوق.</Text>
         </View>
       )}
 
@@ -121,20 +141,62 @@ export default function PreviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  topRow: { flexDirection: "row", alignItems: "center", padding: 12, borderBottomWidth: 1, borderColor: "#eee" },
-  title: { fontWeight: "700", fontSize: 16 },
-  refreshBtn: { marginLeft: "auto", padding: 6 },
-  refreshText: { color: "#2563eb" },
-  appsBar: { maxHeight: 46, borderBottomWidth: 1, borderColor: "#eee" },
-  appTab: { paddingVertical: 12, paddingHorizontal: 14, marginRight: 4 },
-  appTabActive: { borderBottomWidth: 2, borderColor: "#111" },
-  appTabText: { color: "#888" },
-  appTabTextActive: { color: "#111", fontWeight: "700" },
-  actionRow: { flexDirection: "row", alignItems: "center", padding: 10, borderBottomWidth: 1, borderColor: "#eee" },
-  selectedName: { flex: 1, fontWeight: "700" },
-  deleteBtn: { borderWidth: 1, borderColor: "#c0392b", borderRadius: 10, paddingVertical: 6, paddingHorizontal: 14 },
-  deleteText: { color: "#c0392b", fontWeight: "700" },
-  error: { color: "#c0392b", margin: 16 },
-  empty: { alignItems: "center", justifyContent: "center", padding: 24 },
-  emptyText: { textAlign: "center", color: "#666", lineHeight: 22 },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderColor: colors.border,
+  },
+  title: { ...type.sectionTitle, color: colors.text, flex: 1 },
+  refreshText: { color: colors.primary, fontWeight: "600", padding: space.xs },
+  appsBar: {
+    flexGrow: 0,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderColor: colors.border,
+  },
+  appsBarContent: { paddingHorizontal: space.md, paddingVertical: space.sm, gap: space.sm },
+  chip: {
+    paddingVertical: space.sm,
+    paddingHorizontal: space.lg,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipText: { color: colors.textMuted, fontWeight: "600" },
+  chipTextActive: { color: colors.primaryText, fontWeight: "700" },
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.md,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderColor: colors.border,
+  },
+  selectedName: { flex: 1, fontWeight: "700", fontSize: 16, color: colors.text },
+  deleteBtn: {
+    borderWidth: 1.5,
+    borderColor: colors.errorText,
+    borderRadius: radius.button,
+    paddingVertical: space.sm,
+    paddingHorizontal: space.lg,
+  },
+  deleteText: { color: colors.errorText, fontWeight: "700" },
+  errorBox: {
+    backgroundColor: colors.errorBg,
+    borderRadius: radius.field,
+    padding: space.md,
+    margin: space.lg,
+  },
+  errorText: { color: colors.errorText, ...type.body },
+  empty: { alignItems: "center", justifyContent: "center", padding: space.xxl },
+  emptyTitle: { ...type.sectionTitle, color: colors.text, marginBottom: space.sm, textAlign: "center" },
+  emptyText: { ...type.body, color: colors.textMuted, textAlign: "center" },
 });

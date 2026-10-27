@@ -1,0 +1,44 @@
+name: build-flutter
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "App folder name under apps/"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Build APK
+        run: |
+          set -e
+          APP="${{ inputs.app }}"
+          PROJ="$RUNNER_TEMP/flutter_app"
+          NAME="app_$(echo "$APP" | tr '-' '_')"
+          flutter create --platforms=android --project-name "$NAME" "$PROJ"
+          rm -rf "$PROJ/test"
+          cp "apps/$APP/lib/main.dart" "$PROJ/lib/main.dart"
+          cd "$PROJ"
+          flutter build apk --release
+          cp build/app/outputs/flutter-apk/app-release.apk "$GITHUB_WORKSPACE/$APP.apk"
+      - name: Publish APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ inputs.app }}
+          name: ${{ inputs.app }}
+          files: ${{ inputs.app }}.apk
+          make_latest: false

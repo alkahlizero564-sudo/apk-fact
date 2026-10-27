@@ -11,6 +11,7 @@ import {
   getFailureLog,
   findAppApkAsset,
   getAssetDownloadInfo,
+  getFileText,
 } from "../services/github";
 import { REPO } from "../services/config";
 import { Card, Button } from "../components/ui";
@@ -33,10 +34,22 @@ export default function BuildScreen() {
   const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [runs, setRuns] = useState<Run[]>([]);
+  const [flutterApps, setFlutterApps] = useState<string[]>([]);
 
   const loadApps = useCallback(async () => {
     try {
-      setApps(await listDir(REPO, "apps"));
+      const list = await listDir(REPO, "apps");
+      setApps(list);
+      const flags = await Promise.all(
+        list.map(async (a: string) => {
+          try {
+            return !!(await getFileText(REPO, `apps/${a}/lib/main.dart`));
+          } catch {
+            return false;
+          }
+        })
+      );
+      setFlutterApps(list.filter((_: string, i: number) => flags[i]));
     } catch (e: any) {
       setError(e.message);
     }
@@ -48,10 +61,10 @@ export default function BuildScreen() {
     }, [loadApps])
   );
 
-  async function triggerWithRetry(name: string) {
+  async function triggerWithRetry(name: string, workflow: string) {
     for (let i = 0; i < 5; i++) {
       try {
-        await triggerWorkflow(REPO, "build-app.yml", { app: name });
+        await triggerWorkflow(REPO, workflow, { app: name });
         return;
       } catch (e) {
         if (i === 4) throw e;
@@ -64,17 +77,18 @@ export default function BuildScreen() {
     if (busy) return;
     setBusy(name);
     setError(null);
+    const workflow = flutterApps.includes(name) ? "build-flutter.yml" : "build-app.yml";
     try {
       setStatus("⏳ تجهيز...");
-      const prevId = await latestRunId(REPO, "build-app.yml");
-      await triggerWithRetry(name);
+      const prevId = await latestRunId(REPO, workflow);
+      await triggerWithRetry(name, workflow);
       setStatus("⏳ بيتبني التطبيق على GitHub... (من 5 إلى 15 دقيقة، خلّي الأداة مفتوحة)");
 
       const started = Date.now();
       let run: any = null;
       while (Date.now() - started < 40 * 60 * 1000) {
         await sleep(15000);
-        const list = await listWorkflowRuns(REPO, "build-app.yml");
+        const list = await listWorkflowRuns(REPO, workflow);
         const r = list.find((x: any) => x.id > prevId);
         if (r && r.status === "completed") {
           run = r;
@@ -151,6 +165,7 @@ export default function BuildScreen() {
         <Card key={a} style={styles.appRow}>
           <Text style={styles.appName} numberOfLines={1}>
             {a}
+            {flutterApps.includes(a) ? " · Flutter" : ""}
           </Text>
           <Button
             title="ابنِ ونزّل وثبّت"

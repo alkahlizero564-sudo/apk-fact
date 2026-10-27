@@ -1,0 +1,35 @@
+name: generate-flutter
+
+on:
+  push:
+    paths:
+      - "request-flutter.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: generate-flutter
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Generate Flutter app and preview
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+          GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+        run: python scripts/generate_flutter.py
+      - name: Commit result
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add apps
+          git commit -m "Generate Flutter app" || echo "nothing to commit"
+          git pull --rebase
+          git push

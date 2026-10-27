@@ -62,7 +62,7 @@ async function post(url, options, label) {
     const r = await fetch(url, { ...options, signal: ctrl.signal });
     if (!r.ok) {
       const body = await r.text();
-      throw new ApiError(`${label} ${r.status}: ${body.slice(0, 300)}`, r.status);
+      throw new ApiError(`${label} ${r.status}: ${body.slice(0, 600)}`, r.status);
     }
     return await r.json();
   } catch (e) {
@@ -95,12 +95,13 @@ async function callClaude() {
   return d.content.map((c) => c.text || "").join("");
 }
 
-async function callGemini() {
+async function callGemini(key) {
+  const model = process.env.GEMINI_MODEL || "gemini-3.8-flash";
   const d = await post(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", "x-goog-api-key": key },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -141,19 +142,72 @@ async function tryProvider(fn, label, tries) {
   return { error: lastErr };
 }
 
+// ---- Gemini: rotate between keys when one runs out ----
+
+const geminiKeys = [
+  process.env.GEMINI_API_KEY,
+  process.env.GEMINI_API_KEY_2,
+  process.env.GEMINI_API_KEY_3,
+].filter(Boolean);
+
+function classifyGemini(e) {
+  const msg = String((e && e.message) || "").toLowerCase();
+  const status = e && e.status;
+  if (status === 429 || msg.includes("resource_exhausted") || msg.includes("quota")) {
+    if (msg.includes("perday") || msg.includes("per day") || msg.includes("daily")) return "dead";
+    return "cooldown";
+  }
+  if (status === 401 || status === 403 || (status === 400 && msg.includes("api key"))) return "dead";
+  return "retry";
+}
+
+async function tryGeminiKeys(keys, rounds) {
+  const dead = new Set();
+  const cooldown = new Map();
+  let lastErr = "";
+  for (let round = 0; round < rounds; round++) {
+    for (let n = 0; n < keys.length; n++) {
+      const key = keys[n];
+      if (dead.has(key) || (cooldown.get(key) || 0) > Date.now()) continue;
+      try {
+        return { code: extract(await callGemini(key)) };
+      } catch (e) {
+        lastErr = String((e && e.message) || e).replace(/\s+/g, " ").slice(0, 200);
+        const kind = classifyGemini(e);
+        console.log(`Gemini المفتاح ${n + 1} فشل (${kind}): ${lastErr}`);
+        if (kind === "dead") dead.add(key);
+        else if (kind === "cooldown") cooldown.set(key, Date.now() + 60000);
+      }
+    }
+    if (dead.size === keys.length) break;
+    if (round < rounds - 1) {
+      const wait = Math.min(15000 * 2 ** round, 90000);
+      console.log(`لا يوجد مفتاح متاح الآن، انتظار ${wait / 1000} ثانية`);
+      await sleep(wait);
+    }
+  }
+  return { error: lastErr };
+}
+
+async function runProvider(label) {
+  if (label === "Claude") {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return { error: "المفتاح ANTHROPIC_API_KEY غير موجود في الأسرار" };
+    }
+    return tryProvider(callClaude, "Claude", 3);
+  }
+  if (geminiKeys.length === 0) {
+    return { error: "المفتاح GEMINI_API_KEY غير موجود في الأسرار" };
+  }
+  return tryGeminiKeys(geminiKeys, 4);
+}
+
 (async () => {
-  const order =
-    process.env.AI_PROVIDER === "gemini"
-      ? [["Gemini", callGemini, "GEMINI_API_KEY"], ["Claude", callClaude, "ANTHROPIC_API_KEY"]]
-      : [["Claude", callClaude, "ANTHROPIC_API_KEY"], ["Gemini", callGemini, "GEMINI_API_KEY"]];
+  const order = process.env.AI_PROVIDER === "gemini" ? ["Gemini", "Claude"] : ["Claude", "Gemini"];
 
   const failures = [];
-  for (const [label, fn, key] of order) {
-    if (!process.env[key]) {
-      failures.push(`${label}: المفتاح ${key} غير موجود في الأسرار`);
-      continue;
-    }
-    const res = await tryProvider(fn, label, label === "Claude" ? 3 : 4);
+  for (const label of order) {
+    const res = await runProvider(label);
     if (res.code) {
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(FILE, res.code);

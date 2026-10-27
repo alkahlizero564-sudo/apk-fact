@@ -2,33 +2,11 @@ import json
 import os
 import re
 import sys
-import urllib.request
 from pathlib import Path
 
+from gemini_client import call_gemini
+
 DEFAULT_MODEL = "gemini-2.5-flash"
-
-
-def call_gemini(model, prompt, keys):
-    last = None
-    for key in keys:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-        payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"responseMimeType": "application/json", "temperature": 0.2},
-        }
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json", "x-goog-api-key": key},
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=240) as r:
-                data = json.load(r)
-            parts = data["candidates"][0]["content"]["parts"]
-            return "".join(p.get("text", "") for p in parts)
-        except Exception as e:  # try the next key
-            last = e
-    raise SystemExit(f"Gemini request failed: {last}")
 
 
 def parse_json(text):
@@ -66,7 +44,7 @@ BUILD ERRORS:
 CURRENT lib/main.dart:
 {code}
 """
-    result = parse_json(call_gemini(model, prompt, keys))
+    result = parse_json(call_gemini(model, prompt, keys, temperature=0.2))
     fixed = result.get("main_dart", "").strip()
     if not fixed:
         raise SystemExit("Model returned no code")

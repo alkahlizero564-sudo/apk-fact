@@ -16,6 +16,11 @@ jobs:
     timeout-minutes: 45
     env:
       APP: ${{ github.event.inputs.app }}
+      MAX_ATTEMPTS: "3"
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+      GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+      GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
     steps:
       - uses: actions/checkout@v4
 
@@ -28,7 +33,11 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Wrap HTML as Android app and build
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Wrap HTML as Android app and build (AI fixes errors and retries)
         run: |
           set -e
           if ! [[ "$APP" =~ ^[a-z0-9-]+$ ]]; then echo "bad app name"; exit 1; fi
@@ -56,11 +65,54 @@ jobs:
             echo "No custom icon, using default"
           fi
 
-          npx cap sync android
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/$APP.apk"
+          chmod +x android/gradlew
+
+          OK=0
+          for i in $(seq 1 "$MAX_ATTEMPTS"); do
+            echo "=== Build attempt $i of $MAX_ATTEMPTS ==="
+            rm -rf www
+            mkdir www
+            cp -r "$SRC"/. www/
+            rm -f www/icon.png
+            set +e
+            (npx cap sync android && cd android && ./gradlew assembleDebug --no-daemon) 2>&1 | tee /tmp/build.log
+            STATUS=${PIPESTATUS[0]}
+            set -e
+            if [ "$STATUS" -eq 0 ]; then
+              OK=1
+              break
+            fi
+            if [ "$i" -eq "$MAX_ATTEMPTS" ]; then
+              break
+            fi
+            echo "=== Build failed. Asking AI to check index.html ==="
+            set +e
+            python "$GITHUB_WORKSPACE/scripts/fix_html.py" "$SRC/index.html" /tmp/build.log
+            FIX=$?
+            set -e
+            if [ "$FIX" -eq 3 ]; then
+              echo "Not caused by index.html, retrying once more without changes"
+            elif [ "$FIX" -ne 0 ]; then
+              echo "AI could not fix this build (code $FIX)"
+              break
+            fi
+          done
+
+          if [ "$OK" -ne 1 ]; then
+            echo "Build failed after $MAX_ATTEMPTS attempts"
+            exit 1
+          fi
+
+          cp android/app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/$APP.apk"
+
+      - name: Save fixed code
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add "apps/$APP/index.html"
+          git commit -m "Auto-fix build errors: $APP" || echo "no code changes"
+          git pull --rebase
+          git push
 
       - name: Publish APK as a Release
         env:

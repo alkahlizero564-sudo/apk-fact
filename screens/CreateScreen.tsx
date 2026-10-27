@@ -5,6 +5,7 @@ import {
 } from "react-native";
 import { WebView } from "react-native-webview";
 import * as ImagePicker from "expo-image-picker";
+import * as SecureStore from "expo-secure-store";
 import { pushFile, pushBase64File, listWorkflowRuns, latestRunId, getFileText, getFailureLog } from "../services/github";
 import { REPO } from "../services/config";
 import { linkAppsViaSupabase } from "../services/link";
@@ -17,11 +18,11 @@ function cleanName(n: string) {
   return n.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
 }
 
-async function waitForRun(prevId: number) {
+async function waitForRun(prevId: number, workflow: string = "generate.yml") {
   const started = Date.now();
   while (Date.now() - started < 4 * 60 * 1000) {
     await sleep(5000);
-    const runs = await listWorkflowRuns(REPO, "generate.yml");
+    const runs = await listWorkflowRuns(REPO, workflow);
     const run = runs.find((r: any) => r.id > prevId);
     if (run && run.status === "completed") return run;
   }
@@ -89,6 +90,7 @@ function AppBox({ title, busy, setBusy, onPreview, onNameChange, isSecond, relat
   const [pasteText, setPasteText] = useState("");
   const [iconUri, setIconUri] = useState<string | null>(null);
   const [useRelated, setUseRelated] = useState(true);
+  const [lang, setLang] = useState<"html" | "flutter">("html");
   const [loading, setLoading] = useState<Kind | "paste" | "icon" | null>(null);
   const [log, setLog] = useState<string[]>([]);
 
@@ -153,8 +155,9 @@ function AppBox({ title, busy, setBusy, onPreview, onNameChange, isSecond, relat
     setLoading("paste");
     try {
       addLog("⏳ بيترفع الكود على GitHub...");
-      await pushFile(REPO, `apps/${n}/index.html`, code + "\n", `Upload code: ${n}`);
-      addLog(`✅ ارتفع الكود: apps/${n}/index.html`);
+      const target = lang === "flutter" ? `apps/${n}/lib/main.dart` : `apps/${n}/index.html`;
+      await pushFile(REPO, target, code + "\n", `Upload code: ${n}`);
+      addLog(`✅ ارتفع الكود: ${target}`);
       addLog("🎉 اضغط معاينة تشوفه.");
       setPasteText("");
     } catch (e: any) {
@@ -178,12 +181,17 @@ function AppBox({ title, busy, setBusy, onPreview, onNameChange, isSecond, relat
       return;
     }
 
+    const isFlutter = lang === "flutter";
+    const workflow = isFlutter ? "generate-flutter.yml" : "generate.yml";
+    const requestFile = isFlutter ? "request-flutter.txt" : "request.txt";
+    const mainFile = isFlutter ? `apps/${n}/lib/main.dart` : `apps/${n}/index.html`;
+
     setLog([]);
     setBusy(true);
     setLoading(kind);
     try {
       if (kind === "edit") {
-        const existing = await getFileText(REPO, `apps/${n}/index.html`);
+        const existing = await getFileText(REPO, mainFile);
         if (!existing) {
           addLog("❌ التطبيق ده مش موجود. اعمل إنشاء الأول.");
           return;
@@ -192,7 +200,9 @@ function AppBox({ title, busy, setBusy, onPreview, onNameChange, isSecond, relat
 
       const rel = relatedName && useRelated && relatedName !== n ? relatedName : "";
       if (rel) {
-        const relExists = await getFileText(REPO, `apps/${rel}/index.html`);
+        const relExists =
+          (await getFileText(REPO, `apps/${rel}/index.html`)) ||
+          (await getFileText(REPO, `apps/${rel}/lib/main.dart`));
         if (relExists) {
           addLog(`🔗 الذكاء الاصطناعي بيقرأ التطبيق الأول (${rel}) قبل ما يبني.`);
         } else {
@@ -200,16 +210,18 @@ function AppBox({ title, busy, setBusy, onPreview, onNameChange, isSecond, relat
         }
       }
 
-      const prevId = await latestRunId(REPO, "generate.yml");
+      const prevId = await latestRunId(REPO, workflow);
 
       addLog("⏳ بيتم إرسال الطلب...");
       const relLine = rel ? `@related: ${rel}\n` : "";
-      const content = `${n}\n${relLine}${text}\n\n(request id: ${Date.now()})\n`;
-      await pushFile(REPO, "request.txt", content, `${kind === "edit" ? "Edit" : "Create"}: ${n}`);
+      const model = isFlutter ? (await SecureStore.getItemAsync("GEMINI_MODEL")) ?? "" : "";
+      const modelLine = model ? `@model: ${model}\n` : "";
+      const content = `${n}\n${relLine}${modelLine}${text}\n\n(request id: ${Date.now()})\n`;
+      await pushFile(REPO, requestFile, content, `${kind === "edit" ? "Edit" : "Create"}: ${n}`);
       addLog("✅ تم إرسال الطلب.");
       addLog(kind === "edit" ? "⏳ بيتعدّل الكود... (من نصف دقيقة لدقيقتين)" : "⏳ بيتولّد الكود... (من نصف دقيقة لدقيقتين)");
 
-      const r = await waitForRun(prevId);
+      const r = await waitForRun(prevId, workflow);
       if (!r) {
         addLog("⚠️ أخذ وقت طويل. جرّب المعاينة بعد شوية.");
         return;
@@ -221,12 +233,12 @@ function AppBox({ title, busy, setBusy, onPreview, onNameChange, isSecond, relat
         return;
       }
 
-      const html = await getFileText(REPO, `apps/${n}/index.html`);
-      if (!html) {
+      const code = await getFileText(REPO, mainFile);
+      if (!code) {
         addLog("⚠️ نجح لكن الملف ما ظهر. جرّب المعاينة بعد شوية.");
         return;
       }
-      addLog(kind === "edit" ? `✅ اتعدّل وارتفع: apps/${n}/index.html` : `✅ اتولّد وارتفع: apps/${n}/index.html`);
+      addLog(kind === "edit" ? `✅ اتعدّل وارتفع: ${mainFile}` : `✅ اتولّد وارتفع: ${mainFile}`);
       addLog("🎉 اضغط معاينة تشوفه.");
       if (kind === "edit") setEditText("");
     } catch (e: any) {
@@ -272,6 +284,24 @@ function AppBox({ title, busy, setBusy, onPreview, onNameChange, isSecond, relat
           )}
         </TouchableOpacity>
       )}
+
+      <Text style={styles.label}>لغة الكود</Text>
+      <View style={styles.langRow}>
+        {(["html", "flutter"] as const).map((l) => (
+          <TouchableOpacity
+            key={l}
+            style={[styles.langChip, lang === l && styles.langChipActive]}
+            onPress={() => setLang(l)}
+            disabled={busy}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: lang === l }}
+          >
+            <Text style={[styles.langText, lang === l && styles.langTextActive]}>
+              {l === "html" ? "HTML" : "Flutter"}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       <Text style={styles.label}>الوصف</Text>
       <TextInput
@@ -344,7 +374,7 @@ function AppBox({ title, busy, setBusy, onPreview, onNameChange, isSecond, relat
 
         {pasteOpen && (
           <View style={styles.editBox}>
-            <Text style={styles.label}>الكود (HTML كامل)</Text>
+            <Text style={styles.label}>{lang === "flutter" ? "الكود (main.dart كامل)" : "الكود (HTML كامل)"}</Text>
             <TextInput
               style={[styles.textarea, { minHeight: 160, fontFamily: "monospace", fontSize: 12 }]}
               value={pasteText}
@@ -390,7 +420,9 @@ export default function CreateScreen() {
     setPreviewOpen(true);
     setPreviewLoading(true);
     try {
-      const text = await getFileText(REPO, `apps/${name}/index.html`);
+      const text =
+        (await getFileText(REPO, `apps/${name}/index.html`)) ||
+        (await getFileText(REPO, `apps/${name}/preview.html`));
       if (!text) throw new Error("التطبيق ده مش موجود لسه. اعمل إنشاء الأول.");
       setPreviewHtml(text);
     } catch (e: any) {
@@ -534,6 +566,18 @@ const styles = StyleSheet.create({
   },
   relatedText: { fontWeight: "700", color: colors.infoText, lineHeight: 22 },
   relatedWarn: { color: "#92400E", ...type.hint, marginTop: space.xs },
+  langRow: { flexDirection: "row", gap: space.sm },
+  langChip: {
+    paddingVertical: space.sm,
+    paddingHorizontal: space.xl,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  langChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  langText: { color: colors.textMuted, fontWeight: "600" },
+  langTextActive: { color: colors.primaryText, fontWeight: "700" },
   linkCard: { marginBottom: space.xl, backgroundColor: colors.infoBg, borderColor: "#C9D9FA" },
   linkDesc: { ...type.hint, color: colors.textMuted },
   tools: { marginTop: space.lg },

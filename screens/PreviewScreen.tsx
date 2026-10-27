@@ -39,7 +39,9 @@ export default function PreviewScreen() {
     setError(null);
     setLoading(true);
     try {
-      const text = await getFileText(REPO, `apps/${name}/index.html`);
+      const text =
+        (await getFileText(REPO, `apps/${name}/index.html`)) ||
+        (await getFileText(REPO, `apps/${name}/preview.html`));
       if (!text) throw new Error("الملف مش موجود.");
       setHtml(text);
     } catch (e: any) {

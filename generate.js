@@ -95,8 +95,7 @@ async function callClaude() {
   return d.content.map((c) => c.text || "").join("");
 }
 
-async function callGemini(key) {
-  const model = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+async function callGemini(key, model) {
   const d = await post(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     {
@@ -142,7 +141,7 @@ async function tryProvider(fn, label, tries) {
   return { error: lastErr };
 }
 
-// ---- Gemini: rotate between keys when one runs out ----
+// ---- Gemini: rotate between keys, and fall back to other models when one is busy ----
 
 const geminiKeys = [
   process.env.GEMINI_API_KEY,
@@ -150,39 +149,52 @@ const geminiKeys = [
   process.env.GEMINI_API_KEY_3,
 ].filter(Boolean);
 
+const primaryModel = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+const FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
+const geminiModels = [primaryModel, ...FALLBACK_MODELS.filter((m) => m !== primaryModel)];
+
 function classifyGemini(e) {
   const msg = String((e && e.message) || "").toLowerCase();
   const status = e && e.status;
+  if (status === 401 || status === 403 || (status === 400 && msg.includes("api key"))) return "invalid";
   if (status === 429 || msg.includes("resource_exhausted") || msg.includes("quota")) {
-    if (msg.includes("perday") || msg.includes("per day") || msg.includes("daily")) return "dead";
+    if (msg.includes("perday") || msg.includes("per day") || msg.includes("daily")) return "quota_day";
     return "cooldown";
   }
-  if (status === 401 || status === 403 || (status === 400 && msg.includes("api key"))) return "dead";
-  return "retry";
+  return "retry"; // 503, timeout, unknown model, bad output: move to the next model now
 }
 
-async function tryGeminiKeys(keys, rounds) {
-  const dead = new Set();
+async function tryGeminiKeys(keys, models, rounds) {
+  const deadKeys = new Set();
+  const deadPairs = new Set();
   const cooldown = new Map();
   let lastErr = "";
   for (let round = 0; round < rounds; round++) {
-    for (let n = 0; n < keys.length; n++) {
-      const key = keys[n];
-      if (dead.has(key) || (cooldown.get(key) || 0) > Date.now()) continue;
-      try {
-        return { code: extract(await callGemini(key)) };
-      } catch (e) {
-        lastErr = String((e && e.message) || e).replace(/\s+/g, " ").slice(0, 200);
-        const kind = classifyGemini(e);
-        console.log(`Gemini المفتاح ${n + 1} فشل (${kind}): ${lastErr}`);
-        if (kind === "dead") dead.add(key);
-        else if (kind === "cooldown") cooldown.set(key, Date.now() + 60000);
+    for (const model of models) {
+      for (let n = 0; n < keys.length; n++) {
+        const key = keys[n];
+        const pair = `${n}|${model}`;
+        if (deadKeys.has(key) || deadPairs.has(pair) || (cooldown.get(pair) || 0) > Date.now()) continue;
+        try {
+          return { code: extract(await callGemini(key, model)), model };
+        } catch (e) {
+          lastErr = String((e && e.message) || e).replace(/\s+/g, " ").slice(0, 200);
+          const kind = classifyGemini(e);
+          console.log(`Gemini [${model}] المفتاح ${n + 1} فشل (${kind}): ${lastErr}`);
+          if (kind === "invalid") deadKeys.add(key);
+          else if (kind === "quota_day") deadPairs.add(pair);
+          else if (kind === "cooldown") cooldown.set(pair, Date.now() + 60000);
+          else break; // model busy or unreachable: go to the next model right away
+        }
       }
     }
-    if (dead.size === keys.length) break;
+    const allDead = models.every((m) =>
+      keys.every((k, n) => deadKeys.has(k) || deadPairs.has(`${n}|${m}`))
+    );
+    if (allDead) break;
     if (round < rounds - 1) {
-      const wait = Math.min(15000 * 2 ** round, 90000);
-      console.log(`لا يوجد مفتاح متاح الآن، انتظار ${wait / 1000} ثانية`);
+      const wait = Math.min(10000 * 2 ** round, 60000);
+      console.log(`لا يوجد نموذج أو مفتاح متاح الآن، انتظار ${wait / 1000} ثانية`);
       await sleep(wait);
     }
   }
@@ -199,7 +211,7 @@ async function runProvider(label) {
   if (geminiKeys.length === 0) {
     return { error: "المفتاح GEMINI_API_KEY غير موجود في الأسرار" };
   }
-  return tryGeminiKeys(geminiKeys, 4);
+  return tryGeminiKeys(geminiKeys, geminiModels, 3);
 }
 
 (async () => {
@@ -211,7 +223,7 @@ async function runProvider(label) {
     if (res.code) {
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(FILE, res.code);
-      console.log(`تم: ${FILE} بواسطة ${label}`);
+      console.log(`تم: ${FILE} بواسطة ${label}${res.model ? " (" + res.model + ")" : ""}`);
       return;
     }
     failures.push(`${label}: ${res.error}`);

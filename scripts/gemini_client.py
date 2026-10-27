@@ -3,6 +3,8 @@ import time
 import urllib.error
 import urllib.request
 
+FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+
 
 class GeminiError(Exception):
     def __init__(self, status, body):
@@ -38,38 +40,49 @@ def _request(model, prompt, key, temperature):
 
 def _classify(e):
     body = e.body.lower()
+    if e.status in (401, 403) or (e.status == 400 and "api key" in body):
+        return "invalid"       # bad key: skip it everywhere
     if e.status == 429 or "resource_exhausted" in body or "quota" in body:
         if "perday" in body or "per day" in body or "daily" in body:
-            return "dead"      # out of daily quota
-        return "cooldown"      # per-minute rate limit
-    if e.status in (401, 403) or (e.status == 400 and "api key" in body):
-        return "dead"          # invalid or blocked key
-    return "retry"             # 500, 503, timeout, empty response
+            return "quota_day"  # this key is out of daily quota for this model
+        return "cooldown"       # per-minute rate limit
+    return "retry"              # 503, timeout, unknown model: next model now
 
 
-def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=4):
-    dead = set()
+def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=3):
+    models = [model] + [m for m in FALLBACK_MODELS if m != model]
+    dead_keys = set()
+    dead_pairs = set()
     cooldown = {}
     last = "no keys"
     for round_no in range(max_rounds):
-        for n, key in enumerate(keys, start=1):
-            if key in dead or cooldown.get(key, 0) > time.time():
-                continue
-            try:
-                return _request(model, prompt, key, temperature)
-            except GeminiError as e:
-                last = str(e)
-                kind = _classify(e)
-                print(f"Gemini key #{n} failed ({kind}): {last}", flush=True)
-                if kind == "dead":
-                    dead.add(key)
-                elif kind == "cooldown":
-                    cooldown[key] = time.time() + 60
-        if len(dead) == len(keys):
+        for m in models:
+            for n, key in enumerate(keys, start=1):
+                pair = (n, m)
+                if key in dead_keys or pair in dead_pairs or cooldown.get(pair, 0) > time.time():
+                    continue
+                try:
+                    return _request(m, prompt, key, temperature)
+                except GeminiError as e:
+                    last = str(e)
+                    kind = _classify(e)
+                    print(f"Gemini [{m}] key #{n} failed ({kind}): {last}", flush=True)
+                    if kind == "invalid":
+                        dead_keys.add(key)
+                    elif kind == "quota_day":
+                        dead_pairs.add(pair)
+                    elif kind == "cooldown":
+                        cooldown[pair] = time.time() + 60
+                    else:
+                        break  # model busy or unreachable: go to the next model now
+        all_dead = all(
+            k in dead_keys or (n, m) in dead_pairs
+            for m in models
+            for n, k in enumerate(keys, start=1)
+        )
+        if all_dead or round_no == max_rounds - 1:
             break
-        if round_no == max_rounds - 1:
-            break
-        wait = min(15 * (2 ** round_no), 90)
-        print(f"No key available, waiting {wait}s before the next round", flush=True)
+        wait = min(10 * (2 ** round_no), 60)
+        print(f"No model or key available, waiting {wait}s before the next round", flush=True)
         time.sleep(wait)
-    raise SystemExit(f"Gemini failed on all keys. Last error: {last}")
+    raise SystemExit(f"Gemini failed on all keys and models. Last error: {last}")

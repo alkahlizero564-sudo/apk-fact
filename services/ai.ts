@@ -1,6 +1,8 @@
 import * as SecureStore from "expo-secure-store";
 
-async function getKey(name: "GEMINI_API_KEY" | "CLAUDE_API_KEY"): Promise<string> {
+async function getKey(
+  name: "GEMINI_API_KEY" | "CLAUDE_API_KEY"
+): Promise<string> {
   const key = await SecureStore.getItemAsync(name);
   if (!key) throw new Error(`${name} missing. Set it in Settings first.`);
   return key;
@@ -39,7 +41,6 @@ export async function testClaudeConnection(): Promise<{ reply: string }> {
   const data = await res.json();
   return { reply: data.content?.[0]?.text ?? "" };
 }
-import * as SecureStore from "expo-secure-store";
 
 export type GeminiModel = { id: string; displayName: string };
 
@@ -75,4 +76,4 @@ export async function listGeminiModels(): Promise<GeminiModel[]> {
   } while (pageToken);
 
   return out.sort((a, b) => a.id.localeCompare(b.id));
-} 
+}

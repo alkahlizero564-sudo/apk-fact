@@ -13,6 +13,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -79,10 +80,11 @@ jobs:
           git pull --rebase
           git push
 
-      - name: Publish APK
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: apk-${{ inputs.app }}
-          name: ${{ inputs.app }}
-          files: ${{ inputs.app }}.apk
-          make_latest: false
+      - name: Publish APK as a Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APP: ${{ inputs.app }}
+        run: |
+          gh release create "app-$APP-${{ github.run_number }}" "$APP.apk" \
+            --title "$APP #${{ github.run_number }}" \
+            --notes "APK for $APP"

@@ -57,7 +57,7 @@ class ApiError extends Error {
 
 async function post(url, options, label) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 150000);
+  const timer = setTimeout(() => ctrl.abort(), 300000);
   try {
     const r = await fetch(url, { ...options, signal: ctrl.signal });
     if (!r.ok) {
@@ -150,13 +150,14 @@ const geminiKeys = [
 ].filter(Boolean);
 
 const primaryModel = process.env.GEMINI_MODEL || "gemini-3.8-flash";
-const FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
+const FALLBACK_MODELS = ["gemini-3.5-flash", "gemini-3.5-flash-lite"];
 const geminiModels = [primaryModel, ...FALLBACK_MODELS.filter((m) => m !== primaryModel)];
 
 function classifyGemini(e) {
   const msg = String((e && e.message) || "").toLowerCase();
   const status = e && e.status;
   if (status === 401 || status === 403 || (status === 400 && msg.includes("api key"))) return "invalid";
+  if (status === 404) return "gone"; // model retired or unknown: never try it again
   if (status === 429 || msg.includes("resource_exhausted") || msg.includes("quota")) {
     if (msg.includes("perday") || msg.includes("per day") || msg.includes("daily")) return "quota_day";
     return "cooldown";
@@ -167,10 +168,12 @@ function classifyGemini(e) {
 async function tryGeminiKeys(keys, models, rounds) {
   const deadKeys = new Set();
   const deadPairs = new Set();
+  const deadModels = new Set();
   const cooldown = new Map();
   let lastErr = "";
   for (let round = 0; round < rounds; round++) {
     for (const model of models) {
+      if (deadModels.has(model)) continue;
       for (let n = 0; n < keys.length; n++) {
         const key = keys[n];
         const pair = `${n}|${model}`;
@@ -182,6 +185,7 @@ async function tryGeminiKeys(keys, models, rounds) {
           const kind = classifyGemini(e);
           console.log(`Gemini [${model}] المفتاح ${n + 1} فشل (${kind}): ${lastErr}`);
           if (kind === "invalid") deadKeys.add(key);
+          else if (kind === "gone") { deadModels.add(model); break; }
           else if (kind === "quota_day") deadPairs.add(pair);
           else if (kind === "cooldown") cooldown.set(pair, Date.now() + 60000);
           else break; // model busy or unreachable: go to the next model right away
@@ -189,7 +193,7 @@ async function tryGeminiKeys(keys, models, rounds) {
       }
     }
     const allDead = models.every((m) =>
-      keys.every((k, n) => deadKeys.has(k) || deadPairs.has(`${n}|${m}`))
+      deadModels.has(m) || keys.every((k, n) => deadKeys.has(k) || deadPairs.has(`${n}|${m}`))
     );
     if (allDead) break;
     if (round < rounds - 1) {

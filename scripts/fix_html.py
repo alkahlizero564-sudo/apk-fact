@@ -6,7 +6,7 @@ from pathlib import Path
 
 from gemini_client import call_gemini
 
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_MODEL = "gemini-3.8-flash"
 
 
 def parse_json(text):

@@ -3,7 +3,7 @@ import time
 import urllib.error
 import urllib.request
 
-FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+FALLBACK_MODELS = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"]
 
 
 class GeminiError(Exception):
@@ -25,7 +25,7 @@ def _request(model, prompt, key, temperature):
         headers={"Content-Type": "application/json", "x-goog-api-key": key},
     )
     try:
-        with urllib.request.urlopen(req, timeout=120) as r:
+        with urllib.request.urlopen(req, timeout=300) as r:
             data = json.load(r)
     except urllib.error.HTTPError as e:
         raise GeminiError(e.code, e.read().decode("utf-8", "replace"))
@@ -42,6 +42,8 @@ def _classify(e):
     body = e.body.lower()
     if e.status in (401, 403) or (e.status == 400 and "api key" in body):
         return "invalid"       # bad key: skip it everywhere
+    if e.status == 404:
+        return "gone"          # model retired or unknown: never try it again
     if e.status == 429 or "resource_exhausted" in body or "quota" in body:
         if "perday" in body or "per day" in body or "daily" in body:
             return "quota_day"  # this key is out of daily quota for this model
@@ -53,10 +55,13 @@ def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=3):
     models = [model] + [m for m in FALLBACK_MODELS if m != model]
     dead_keys = set()
     dead_pairs = set()
+    dead_models = set()
     cooldown = {}
     last = "no keys"
     for round_no in range(max_rounds):
         for m in models:
+            if m in dead_models:
+                continue
             for n, key in enumerate(keys, start=1):
                 pair = (n, m)
                 if key in dead_keys or pair in dead_pairs or cooldown.get(pair, 0) > time.time():
@@ -69,6 +74,9 @@ def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=3):
                     print(f"Gemini [{m}] key #{n} failed ({kind}): {last}", flush=True)
                     if kind == "invalid":
                         dead_keys.add(key)
+                    elif kind == "gone":
+                        dead_models.add(m)
+                        break
                     elif kind == "quota_day":
                         dead_pairs.add(pair)
                     elif kind == "cooldown":
@@ -76,7 +84,7 @@ def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=3):
                     else:
                         break  # model busy or unreachable: go to the next model now
         all_dead = all(
-            k in dead_keys or (n, m) in dead_pairs
+            m in dead_models or k in dead_keys or (n, m) in dead_pairs
             for m in models
             for n, k in enumerate(keys, start=1)
         )

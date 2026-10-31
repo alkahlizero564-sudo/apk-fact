@@ -25,6 +25,8 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
   const [lang, setLang] = useState<Lang>("flutter");
   const [description, setDescription] = useState("");
   const [admins, setAdmins] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [adminName, setAdminName] = useState("");
   const [push, setPush] = useState(true);
   const [ready, setReady] = useState<PairReadiness | null>(null);
   const [taken, setTaken] = useState(false);
@@ -70,7 +72,7 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
     reset();
     if (!usePush) report("firebase", "done", lang === "python" ? "Python: إشعارات داخل التطبيق فقط" : "الإشعارات مطفية");
     try {
-      await createPair({ base: clean, lang, admins: emails.join(","), push: usePush, description: description.trim() }, report);
+      await createPair({ base: clean, lang, admins: emails.join(","), push: usePush, description: description.trim(), customerName, adminName }, report);
       setPhase("done");
     } catch (e: any) {
       setError(e.message);
@@ -169,6 +171,25 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
               error={base && !baseValid ? "حروف إنجليزية صغيرة وأرقام و -، ويبدأ بحرف" : taken ? "في تطبيق بنفس الاسم. اختر اسم تاني." : null}
               helper={baseValid ? `التطبيقين: ${apps.customer} و ${apps.admin}` : "منه بيتعمل اسم التطبيقين"}
             />
+            <View style={styles.names}>
+              <Field
+                label="اسم تطبيق الزبون"
+                icon="person-outline"
+                value={customerName}
+                onChangeText={setCustomerName}
+                placeholder="مثال: كافيه النيل"
+                maxLength={40}
+              />
+              <Field
+                label="اسم تطبيق الإدارة"
+                icon="shield-checkmark-outline"
+                value={adminName}
+                onChangeText={setAdminName}
+                placeholder="مثال: إدارة كافيه النيل"
+                maxLength={40}
+              />
+            </View>
+            <Text style={styles.namesHint}>الأسماء دي بتظهر تحت أيقونات التطبيقين بعد التثبيت، وتقدر تكتبها بالعربي (اختياري).</Text>
 
             <Text style={styles.label}>اللغة</Text>
             <View style={styles.langs}>
@@ -294,4 +315,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
+  names: { gap: 0 },
+  namesHint: { fontSize: 12, color: colors.textMuted, textAlign: "right", marginTop: -space.sm, marginBottom: space.lg },
 });

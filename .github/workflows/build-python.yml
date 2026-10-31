@@ -58,6 +58,8 @@ jobs:
           PROJ="$RUNNER_TEMP/py_app"
           NAME="app_$(echo "$APP" | tr '-' '_')"
           test -f "$SRC/main.py"
+          LABEL=$(python scripts/app_label.py get "$APP")
+          echo "App name on the phone: $LABEL"
 
           OK=0
           for i in $(seq 1 "$MAX_ATTEMPTS"); do
@@ -74,7 +76,7 @@ jobs:
             (
               python scripts/check_python.py "$PROJ/main.py" &&
               cd "$PROJ" &&
-              flet build apk --yes --skip-flutter-doctor --project "$NAME" --product "$APP" \
+              flet build apk --yes --skip-flutter-doctor --project "$NAME" --product "$LABEL" \
                 --org com.generated --build-number "$VERSION" --build-version "1.0.$VERSION" -o "$PROJ/out"
             ) 2>&1 | tee "$RUNNER_TEMP/build.log"
             STATUS=${PIPESTATUS[0]}

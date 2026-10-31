@@ -19,7 +19,7 @@ import {
 import { AppAvatar, LANG_ICONS, LangBadge } from "../components/appVisuals";
 import { TEMPLATES, Template } from "../services/templates";
 import { LANGS, LANG_ORDER, Lang } from "../services/langs";
-import { appExists, cleanName, generateApp, listApps, uploadCode, AppInfo } from "../services/appActions";
+import { appExists, cleanName, cleanLabel, generateApp, listApps, setDisplayName, uploadCode, AppInfo } from "../services/appActions";
 import { colors, langColors, space, radius, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
 
@@ -58,6 +58,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
   const [template, setTemplate] = useState<Template | undefined>(preset);
   const [lang, setLang] = useState<Lang>(preset?.lang ?? "html");
   const [name, setName] = useState(preset?.name ?? "");
+  const [label, setLabel] = useState(preset?.title ?? "");
   const [text, setText] = useState(preset?.description ?? "");
   const [code, setCode] = useState("");
   const [related, setRelated] = useState("");
@@ -92,6 +93,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
     setTemplate(t);
     setLang(t.lang);
     setName(t.name);
+    setLabel(t.title);
     setText(t.description);
   }
 
@@ -125,6 +127,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
         genReset();
         await generateApp({ name: clean, lang, text: text.trim(), kind: "create", related: related || undefined }, genReport);
       }
+      if (cleanLabel(label)) await setDisplayName(clean, label);
       setPhase("done");
     } catch (e: any) {
       setError(e.message);
@@ -293,7 +296,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
         ) : step === 2 ? (
           <>
             <Field
-              label="اسم التطبيق"
+              label="الاسم بالإنجليزي (للمجلد والحزمة)"
               icon="at-outline"
               value={name}
               onChangeText={setName}
@@ -304,6 +307,15 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
               error={nameError}
               helper={clean ? `بيتحفظ باسم apps/${clean}` : "حروف إنجليزية صغيرة وأرقام، بدون مسافات"}
               right={clean && !nameError ? <Ionicons name="checkmark-circle" size={18} color={colors.okText} /> : null}
+            />
+            <Field
+              label="اسم التطبيق على الجهاز"
+              icon="text-outline"
+              value={label}
+              onChangeText={setLabel}
+              placeholder="مثال: متجر الورد"
+              maxLength={40}
+              helper="بيظهر تحت أيقونة التطبيق بعد التثبيت، وتقدر تكتبه بالعربي (اختياري)"
             />
             {start === "paste" ? (
               <Field
@@ -395,6 +407,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
                 title="البداية"
                 value={start === "paste" ? "كود جاهز" : start === "template" ? template?.title ?? "قالب" : "من الصفر"}
               />
+              {cleanLabel(label) ? <ListRow icon="text-outline" title="الاسم على الجهاز" value={cleanLabel(label)} /> : null}
               <ListRow icon={LANG_ICONS[lang]} tint={langColors[lang]} title="اللغة" value={LANGS[lang].label} />
               {related ? <ListRow icon="link-outline" title="مرتبط بـ" value={related} /> : null}
               <ListRow

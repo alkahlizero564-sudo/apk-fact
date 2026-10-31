@@ -57,6 +57,9 @@ jobs:
           NAME="app_$(echo "$APP" | tr '-' '_')"
           flutter create --platforms=android --org com.generated --project-name "$NAME" "$PROJ"
           rm -rf "$PROJ/test"
+          # The name under the icon (can be Arabic), from apps/<app>/display-name.txt.
+          python scripts/app_label.py android "$PROJ/android/app/src/main/res" "$APP"
+          python scripts/app_label.py manifest "$PROJ/android/app/src/main/AndroidManifest.xml"
 
           OK=0
           for i in $(seq 1 "$MAX_ATTEMPTS"); do

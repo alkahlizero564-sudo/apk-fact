@@ -2,6 +2,8 @@ name: generate-kotlin
 
 on:
   push:
+    # Only requests on main: other branches merge main's request files and must not regenerate apps.
+    branches: [main]
     paths:
       - "request-kotlin.txt"
   workflow_dispatch:

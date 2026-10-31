@@ -18,7 +18,7 @@ from pathlib import Path
 FIXES_DIR = Path(__file__).resolve().parent.parent / "fixes"
 MAX_RULES = 400
 TOKEN = re.compile(r"\w+|[^\w\s]")
-ERROR_LINE = re.compile(r"main\.(?:dart|py)\"?(?:, line |:)(\d+)|\bline (\d+)")
+ERROR_LINE = re.compile(r"(?:main\.(?:dart|py)|MainActivity\.kt)\"?(?:, line |:)(\d+)|\bline (\d+)")
 
 
 def _path(lang):

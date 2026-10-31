@@ -1,4 +1,4 @@
-"""Shared settings for the native app languages (Flutter and Python/Flet)."""
+"""Shared settings for the native app languages (Flutter, Python/Flet and Kotlin/Compose)."""
 
 from pathlib import Path
 
@@ -69,6 +69,40 @@ LANGS = {
             "If the description is Arabic, set `page.rtl = True` and write Arabic texts."
         ),
     },
+    "kotlin": {
+        "title": "Kotlin (Jetpack Compose)",
+        "request_file": "request-kotlin.txt",
+        "code_file": "MainActivity.kt",
+        "code_key": "main_kt",
+        "fence": "kotlin",
+        "deps_file": None,  # every library below is already in the project (scripts/templates/kotlin)
+        "allowed_deps": [],
+        "rules": (
+            "Write a native Android app in Kotlin with Jetpack Compose and Material 3, in a single file "
+            "MainActivity.kt whose first line is `package app.main`. "
+            "`class MainActivity : ComponentActivity()` overrides `onCreate(savedInstanceState: Bundle?)`, calls "
+            "`super.onCreate(savedInstanceState)`, then `enableEdgeToEdge()`, then `setContent { AppTheme { App() } }`. "
+            "The project already contains exactly these libraries (Compose BOM 2024.12, Kotlin 2.0) and NOTHING else: "
+            "androidx.compose.ui / foundation / animation / material3, androidx.compose.material.icons (core and "
+            "extended: Icons.Filled.X, Icons.Outlined.X, Icons.Rounded.X, Icons.AutoMirrored.Filled.ArrowBack), "
+            "androidx.activity.compose, androidx.navigation.compose (NavHost, composable, rememberNavController), "
+            "androidx.lifecycle.viewmodel.compose and lifecycle-runtime-compose, kotlinx.coroutines, okhttp3, "
+            "org.json, coil.compose.AsyncImage, and the Android SDK. Do NOT use Room, Hilt, kapt, ksp, "
+            "kotlinx.serialization, Retrofit, Gson, Accompanist, AppCompat, XML layouts or any R.drawable/R.string "
+            "resource. Experimental Material 3 / foundation APIs are already opted in (no @OptIn needed). "
+            "Write every import explicitly (no wildcard imports) and only import what you use. "
+            "Build the theme yourself: `@Composable fun AppTheme(content: @Composable () -> Unit)` with "
+            "lightColorScheme/darkColorScheme from your palette and isSystemInDarkTheme(). "
+            "State: remember / mutableStateOf / mutableStateListOf (with `import androidx.compose.runtime.getValue` and "
+            "`setValue` when using `by`), or a ViewModel. Save data with SharedPreferences (JSON strings via org.json) "
+            "so it survives restarts. Network calls only inside coroutines on Dispatchers.IO. "
+            "Use Scaffold with TopAppBar/CenterAlignedTopAppBar, NavigationBar + NavigationBarItem for tabs, "
+            "LazyColumn/LazyVerticalGrid for lists, Card, ElevatedCard, OutlinedTextField, FilterChip, "
+            "AlertDialog, ModalBottomSheet, SnackbarHost. Use Modifier.padding(innerPadding) from the Scaffold. "
+            "If the description is Arabic, wrap the app in "
+            "`CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl)` and write Arabic texts."
+        ),
+    },
 }
 
 
@@ -121,6 +155,8 @@ def clean_deps(lang, deps):
 
 
 def write_deps(lang, app_dir, deps):
+    if not LANGS[lang]["deps_file"]:
+        return
     path = app_dir / LANGS[lang]["deps_file"]
     if lang == "python":
         lines = [f"flet=={FLET_VERSION}"] + deps
@@ -130,6 +166,8 @@ def write_deps(lang, app_dir, deps):
 
 
 def read_deps(lang, app_dir):
+    if not LANGS[lang]["deps_file"]:
+        return []
     path = app_dir / LANGS[lang]["deps_file"]
     if not path.exists():
         return []

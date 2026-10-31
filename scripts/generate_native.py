@@ -107,6 +107,18 @@ def check_flutter_app(app_dir):
             print("Warning: still not clean, the build step will try again")
 
 
+def check_kotlin_app(app_dir, name):
+    """Compile (and fix) the Kotlin app with Gradle when it is installed; never fails generation."""
+    if not shutil.which("gradle"):
+        print("Gradle not installed here; the build step will check the code")
+        return
+    with tempfile.TemporaryDirectory() as tmp:
+        r = subprocess.run([sys.executable, str(HERE / "check_kotlin.py"), str(app_dir), str(Path(tmp) / "proj"),
+                            "--rounds", "2", "--app", name])
+        if r.returncode != 0:
+            print("Warning: still not clean, the build step will try again")
+
+
 def main():
     lang = sys.argv[1]
     cfg = LANGS[lang]
@@ -200,10 +212,12 @@ App name: {name}
             still = python_problems(code_path)
             if still:
                 print("Warning: still not clean, the build step will try again:\n" + still)
+    elif lang == "kotlin":
+        check_kotlin_app(base, name)
     else:
         check_flutter_app(base)
 
-    print(f"Wrote apps/{name}/{cfg['code_file']}, preview.html and {cfg['deps_file']} ({', '.join(deps) or 'no extra packages'})")
+    print(f"Wrote apps/{name}/{cfg['code_file']} and preview.html ({', '.join(deps) or 'no extra packages'})")
 
 
 if __name__ == "__main__":

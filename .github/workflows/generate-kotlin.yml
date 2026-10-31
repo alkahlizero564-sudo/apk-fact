@@ -1,0 +1,45 @@
+name: generate-kotlin
+
+on:
+  push:
+    paths:
+      - "request-kotlin.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: generate-kotlin
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      # Used to compile (and fix) the code before it is saved.
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10.2"
+      - name: Generate Kotlin app and AI preview
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+          GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+        run: python scripts/generate_native.py kotlin
+      - name: Commit result
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add apps fixes
+          git commit -m "Generate Kotlin app" || echo "nothing to commit"
+          git pull --rebase
+          git push

@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تطبيق أنا - مصروفاتي</title>
+  <style>
+    :root {
+      --bg-color: #F4F7F6;
+      --surface-color: #FFFFFF;
+      --text-color: #1F2937;
+      --subtext-color: #6B7280;
+      --primary: #00897B;
+      --primary-dark: #00695C;
+      --accent: #00E676;
+      --card-bg: #FFFFFF;
+      --border-color: #E5E7EB;
+      --red: #EF4444;
+    }
+
+    body.dark {
+      --bg-color: #121816;
+      --surface-color: #1E2624;
+      --text-color: #F3F4F6;
+      --subtext-color: #9CA3AF;
+      --card-bg: #1E2624;
+      --border-color: #2D3748;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0f172a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* Mobile Container Simulation */
+    .phone-container {
+      width: 380px;
+      height: 750px;
+      background-color: var(--bg-color);
+      border-radius: 40px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      border: 10px solid #1e293b;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      transition: background-color 0.3s ease;
+    }
+
+    /* App Bar */
+    .app-bar {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: var(--bg-color);
+    }
+    .app-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: rgba(0, 137, 123, 0.15);
+      color: var(--primary);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    .brand-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--text-color);
+      line-height: 1.2;
+    }
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--subtext-color);
+    }
+    .theme-toggle-btn {
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 50%;
+      color: var(--primary);
+    }
+
+    /* Content Area */
+    .content-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px 80px 16px;
+    }
+
+    /* Banner Card */
+    .summary-card {
+      background: linear-gradient(135deg, var(--primary), #004D40);
+      border-radius: 20px;
+      padding: 20px;
+      color: white;
+      box-shadow: 0 10px 20px rgba(0, 137, 123, 0.2);
+      margin-bottom: 16px;
+    }
+    .summary-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    .budget-tag {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    .total-amount {
+      font-size: 30px;
+      font-weight: 800;
+      margin: 10px 0;
+    }
+    .progress-bar {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #00E676;
+      width: 29%;
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+
+    /* Filter Chips */
+    .categories-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .chip {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .chip.active {
+      background: rgba(0, 137, 123, 0.15);
+      border-color: var(--primary);
+      color: var(--primary);
+      font-weight: bold;
+    }
+
+    /* Expense Item Card */
+    .expense-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+      transition: transform 0.2s;
+    }
+    .cat-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .item-info {
+      flex: 1;
+    }
+    .item-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-color);
+    }
+    .item-sub {
+      font-size: 11px;
+      color: var(--subtext-color);
+      margin-top: 2px;
+    }
+    .item-amount {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--red);
+    }
+    .fav-btn {
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 65px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      color: var(--subtext-color);
+      font-size: 10px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      flex: 1;
+    }
+    .nav-item.active {
+      color: var(--primary);
+      font-weight: bold;
+    }
+    .nav-item span {
+      font-size: 18px;
+    }
+
+    /* Floating Action Button */
+    .fab {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-weight: bold;
+      font-size: 13px;
+      box-shadow: 0 8px 16px rgba(0, 137, 123, 0.4);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 10;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: absolute;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: #323232;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-size: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+      z-index: 99;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Modal Sheet */
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 50;
+      display: none;
+      align-items: flex-end;
+    }
+    .modal-overlay.open {
+      display: flex;
+    }
+    .modal-sheet {
+      background: var(--bg-color);
+      width: 100%;
+      border-radius: 24px 24px 0 0;
+      padding: 20px;
+      max-height: 85%;
+      overflow-y: auto;
+      animation: slideUp 0.25s ease-out;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: bold;
+      color: var(--text-color);
+      margin-bottom: 6px;
+    }
+    .form-control {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      background: var(--card-bg);
+      color: var(--text-color);
+      font-size: 13px;
+    }
+    .btn-submit {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 14px;
+      font-weight: bold;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="phone-container" id="appBody">
+  <!-- Toast -->
+  <div class="toast" id="toast">تمت الإضافة بنجاح</div>
+
+  <!-- App Header -->
+  <div class="app-bar">
+    <div class="app-brand">
+      <div class="brand-icon">أ</div>
+      <div>
+        <div class="brand-title">أنا</div>
+        <div class="brand-subtitle">إدارة المصروفات الذكية</div>
+      </div>
+    </div>
+    <button class="theme-toggle-btn" id="themeBtn" onclick="toggleTheme()" title="تبديل الوضع">🌙</button>
+  </div>
+
+  <!-- Main View Screens -->
+  <div class="content-area" id="mainContent">
+
+    <!-- HOME TAB -->
+    <div id="tabHome">
+      <div class="summary-card">
+        <div class="summary-header">
+          <span>إجمالي مصروفات الشهر</span>
+          <span class="budget-tag" id="budgetText">الميزانية: 5000 ر.س</span>
+        </div>
+        <div class="total-amount" id="totalText">1470.50 ر.س</div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill" style="width: 29.4%;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; opacity: 0.9;">
+          <span id="remText">المتبقي: 3529.50 ر.س</span>
+          <span id="percentText">29%</span>
+        </div>
+      </div>
+
+      <div class="categories-scroll">
+        <div class="chip active" onclick="filterCat('all', this)">الكل</div>
+        <div class="chip" onclick="filterCat('طعام ومشروبات', this)">🍔 طعام</div>
+        <div class="chip" onclick="filterCat('فواتير وخدمات', this)">⚡ فواتير</div>
+        <div class="chip" onclick="filterCat('مواصلات وتُنقُّل', this)">🚗 مواصلات</div>
+        <div class="chip" onclick="filterCat('صحة وعناية', this)">🏥 صحة</div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; font-size: 14px; color: var(--text-color);">
+        <span>سجل المصروفات</span>
+        <span style="font-size: 12px; color: var(--subtext-color);" id="itemCount">5 عناصر</span>
+      </div>
+
+      <div id="expenseList"></div>
+    </div>
+
+    <!-- STATS TAB -->
+    <div id="tabStats" style="display: none;">
+      <h3 style="color: var(--text-color); margin-top: 0;">تحليل المصروفات</h3>
+      <div style="background: var(--card-bg); padding: 20px; border-radius: 20px; text-align: center;">
+        <div style="width: 140px; height: 140px; border-radius: 50%; background: conic-gradient(#FF7043 0% 38%, #EF5350 38% 68%, #42A5F5 68% 76%, #26A69A 76% 100%); margin: 0 auto 16px auto;"></div>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; font-size: 11px; color: var(--text-color);">
+          <span>🍔 طعام 38%</span>
+          <span>⚡ فواتير 30%</span>
+          <span>🚗 مواصلات 8%</span>
+          <span>🏥 صحة 24%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FAVORITES TAB -->
+    <div id="tabFavs" style="display: none;">
+      <h3 style="color: var(--text-color); margin-top: 0;">❤️ المصروفات المفضلة</h3>
+      <div id="favList"></div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div id="tabSettings" style="display: none;">
+      <h3 style="color: var(--text-color); margin-top: 0;">الإعدادات والتواصل</h3>
+      <div style="background: var(--card-bg); border-radius: 16px; padding: 14px; color: var(--text-color);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <div>
+            <div style="font-weight: bold; font-size: 14px;">الوضع الليلي (Dark Mode)</div>
+            <div style="font-size: 11px; color: var(--subtext-color);">التبديل بين المظهر الفاتح والداكن</div>
+          </div>
+          <input type="checkbox" id="themeSwitch" onchange="toggleTheme()" style="transform: scale(1.3);">
+        </div>
+        <hr style="border: 0; border-top: 1px solid var(--border-color);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; cursor: pointer;" onclick="promptBudget()">
+          <div>
+            <div style="font-weight: bold; font-size: 14px;">الميزانية الشهرية</div>
+            <div style="font-size: 11px; color: var(--subtext-color);" id="setBudgetValue">5000 ر.س</div>
+          </div>
+          <span>✏️</span>
+        </div>
+      </div>
+
+      <h4 style="color: var(--text-color); margin-top: 24px;">الدعم الفني</h4>
+      <div style="background: var(--card-bg); border-radius: 16px; padding: 14px; color: var(--text-color); cursor: pointer;" onclick="openWhatsApp()">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 24px;">💬</span>
+          <div>
+            <div style="font-weight: bold; font-size: 14px;">تواصل معنا عبر واتساب</div>
+            <div style="font-size: 11px; color: var(--subtext-color);">مساعدتك تهمنا في أي وقت</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FAB -->
+  <button class="fab" onclick="openModal()">
+    <span>➕</span> إضافة مصروف
+  </button>
+
+  <!-- Navigation Bar -->
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="switchTab('Home', this)">
+      <span>🏠</span> الرئيسية
+    </button>
+    <button class="nav-item" onclick="switchTab('Stats', this)">
+      <span>📊</span> الإحصائيات
+    </button>
+    <button class="nav-item" onclick="switchTab('Favs', this)">
+      <span>❤️</span> المفضلة
+    </button>
+    <button class="nav-item" onclick="switchTab('Settings', this)">
+      <span>⚙️</span> الإعدادات
+    </button>
+  </div>
+
+  <!-- Modal Sheet -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal-sheet">
+      <h3 style="margin-top:0; color: var(--text-color);">تسجيل مصروف جديد</h3>
+      <div class="form-group">
+        <label>عنوان المصروف</label>
+        <input type="text" id="inpTitle" class="form-control" placeholder="مثال: مشتريات السوبرماركت">
+      </div>
+      <div class="form-group">
+        <label>المبلغ (ر.س)</label>
+        <input type="number" id="inpAmount" class="form-control" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label>التصنيف</label>
+        <select id="inpCat" class="form-control">
+          <option value="طعام ومشروبات">🍔 طعام ومشروبات</option>
+          <option value="فواتير وخدمات">⚡ فواتير وخدمات</option>
+          <option value="مواصلات وتُنقُّل">🚗 مواصلات وتُنقُّل</option>
+          <option value="صحة وعناية">🏥 صحة وعناية</option>
+        </select>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+        <input type="checkbox" id="inpFav">
+        <label for="inpFav" style="font-size: 13px; color: var(--text-color);">إضافة إلى المفضلة</label>
+      </div>
+      <button class="btn-submit" onclick="saveExpense()">حفظ المصروف</button>
+      <button class="btn-submit" style="background: transparent; color: var(--subtext-color); margin-top: 4px;" onclick="closeModal()">إلغاء</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let expenses = [
+    { id: 1, title: 'مشتريات البقالة', amount: 340.50, cat: 'طعام ومشروبات', icon: '🍔', bg: '#FF7043', isFav: true },
+    { id: 2, title: 'فاتورة الكهرباء والماء', amount: 450.00, cat: 'فواتير وخدمات', icon: '⚡', bg: '#EF5350', isFav: true },
+    { id: 3, title: 'بنزين السيارة', amount: 120.00, cat: 'مواصلات وتُنقُّل', icon: '🚗', bg: '#42A5F5', isFav: false },
+    { id: 4, title: 'اشتراك النادي الرياضي', amount: 350.00, cat: 'صحة وعناية', icon: '🏥', bg: '#26A69A', isFav: true },
+    { id: 5, title: 'عشاء مطعم', amount: 210.00, cat: 'طعام ومشروبات', icon: '🍔', bg: '#FF7043', isFav: false },
+  ];
+
+  let budget = 5000;
+  let isDark = false;
+  let activeFilter = 'all';
+
+  function render() {
+    const listEl = document.getElementById('expenseList');
+    const favEl = document.getElementById('favList');
+    listEl.innerHTML = '';
+    favEl.innerHTML = '';
+
+    let total = 0;
+    let filtered = expenses.filter(e => activeFilter === 'all' || e.cat === activeFilter);
+
+    expenses.forEach(e => total += e.amount);
+
+    document.getElementById('totalText').innerText = total.toFixed(2) + ' ر.س';
+    document.getElementById('budgetText').innerText = 'الميزانية: ' + budget + ' ر.س';
+    document.getElementById('setBudgetValue').innerText = budget + ' ر.س';
+    document.getElementById('itemCount').innerText = filtered.length + ' عنصر';
+
+    let rem = Math.max(0, budget - total);
+    let pct = Math.min(100, Math.round((total / budget) * 100));
+    document.getElementById('remText').innerText = 'المتبقي: ' + rem.toFixed(2) + ' ر.س';
+    document.getElementById('percentText').innerText = pct + '%';
+    document.getElementById('progressFill').style.width = pct + '%';
+
+    filtered.forEach(item => {
+      listEl.appendChild(createCard(item));
+    });
+
+    expenses.filter(e => e.isFav).forEach(item => {
+      favEl.appendChild(createCard(item));
+    });
+  }
+
+  function createCard(item) {
+    const div = document.createElement('div');
+    div.className = 'expense-card';
+    div.innerHTML = `
+      <div class="cat-icon" style="background: ${item.bg}22; color: ${item.bg}">${item.icon}</div>
+      <div class="item-info">
+        <div class="item-title">${item.title}</div>
+        <div class="item-sub">${item.cat}</div>
+      </div>
+      <div style="text-align: left;">
+        <div class="item-amount">-${item.amount.toFixed(2)}</div>
+        <button class="fav-btn" onclick="toggleFav(${item.id})">${item.isFav ? '❤️' : '🤍'}</button>
+      </div>
+    `;
+    return div;
+  }
+
+  function toggleFav(id) {
+    let item = expenses.find(e => e.id === id);
+    if (item) {
+      item.isFav = !item.isFav;
+      showToast(item.isFav ? 'تمت الإضافة للمفضلة ❤️' : 'تمت الإزالة من المفضلة');
+      render();
+    }
+  }
+
+  function toggleTheme() {
+    isDark = !isDark;
+    document.body.classList.toggle('dark', isDark);
+    document.getElementById('themeBtn').innerText = isDark ? '☀️' : '🌙';
+    document.getElementById('themeSwitch').checked = isDark;
+    showToast(isDark ? 'تم تفعيل الوضع الليلي 🌙' : 'تم تفعيل الوضع الفاتح ☀️');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  function switchTab(name, btn) {
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    ['Home', 'Stats', 'Favs', 'Settings'].forEach(t => {
+      document.getElementById('tab' + t).style.display = t === name ? 'block' : 'none';
+    });
+  }
+
+  function filterCat(cat, chip) {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    activeFilter = cat;
+    render();
+  }
+
+  function openModal() {
+    document.getElementById('addModal').classList.add('open');
+  }
+  function closeModal() {
+    document.getElementById('addModal').classList.remove('open');
+  }
+
+  function saveExpense() {
+    const title = document.getElementById('inpTitle').value.trim();
+    const amount = parseFloat(document.getElementById('inpAmount').value);
+    const cat = document.getElementById('inpCat').value;
+    const isFav = document.getElementById('inpFav').checked;
+
+    if (!title || !amount || amount <= 0) {
+      showToast('يرجى ملء البيانات بشكل صحيح');
+      return;
+    }
+
+    let bg = '#FF7043', icon = '🍔';
+    if (cat.includes('فواتير')) { bg = '#EF5350'; icon = '⚡'; }
+    if (cat.includes('مواصلات')) { bg = '#42A5F5'; icon = '🚗'; }
+    if (cat.includes('صحة')) { bg = '#26A69A'; icon = '🏥'; }
+
+    expenses.unshift({
+      id: Date.now(),
+      title,
+      amount,
+      cat,
+      icon,
+      bg,
+      isFav
+    });
+
+    closeModal();
+    showToast('تمت إضافة المصروف بنجاح ✨');
+    document.getElementById('inpTitle').value = '';
+    document.getElementById('inpAmount').value = '';
+    render();
+  }
+
+  function promptBudget() {
+    let val = prompt('أدخل قيمة الميزانية الشهرية الجديدة (ر.س):', budget);
+    if (val && !isNaN(val) && val > 0) {
+      budget = parseFloat(val);
+      render();
+      showToast('تمت تحديث الميزانية الشهرية 🎯');
+    }
+  }
+
+  function openWhatsApp() {
+    alert('سيتم فتح الواتساب للتواصل مع الدعم الفني: +966500000000');
+  }
+
+  render();
+</script>
+</body>
+</html>

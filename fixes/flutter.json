@@ -138,5 +138,12 @@
   "error": "undefined_named_parameter",
   "source": "seed",
   "uses": 0
+ },
+ {
+  "old": "FontWeight.extrabold",
+  "new": "FontWeight.w800",
+  "error": "error • Invalid constant value • lib/main.dart:515:33 • invalid_constant",
+  "source": "ai",
+  "uses": 0
  }
 ]

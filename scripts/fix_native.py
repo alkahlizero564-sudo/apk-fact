@@ -1,4 +1,4 @@
-"""Ask AI to fix a Flutter or Python/Flet app that failed to build.
+"""Fix a Flutter or Python/Flet app that failed to build: remembered rules first, then AI.
 
 Usage: python scripts/fix_native.py flutter|python path/to/code path/to/build.log
 """
@@ -7,6 +7,7 @@ import re
 import sys
 from pathlib import Path
 
+import fix_memory
 from gemini_client import call_gemini
 from native_langs import LANGS, clean_deps, gemini_keys, parse_reply, read_deps, reply_format, write_deps
 
@@ -21,9 +22,13 @@ def error_excerpt(log_text):
     return excerpt[-6000:]
 
 
-def fix(lang, code_path, log_text):
+def fix(lang, code_path, log_text, use_memory=True):
+    """Fix code_path for the errors in log_text. With use_memory, remembered rules are applied
+    first (no AI); the AI then fixes what is left and its one-line fixes are remembered."""
     cfg = LANGS[lang]
     code_path = Path(code_path)
+    if use_memory:
+        fix_memory.apply(lang, code_path, log_text)
     # The code file lives in apps/<name>/ (Flutter: apps/<name>/lib/main.dart).
     app_dir = code_path.parent.parent if lang == "flutter" else code_path.parent
     code = code_path.read_text(encoding="utf-8")
@@ -55,6 +60,7 @@ CURRENT {cfg['code_file']}:
     if not fixed:
         raise ValueError("Model returned no code block")
     code_path.write_text(fixed + "\n", encoding="utf-8")
+    fix_memory.learn(lang, code, fixed, log_text)
     if deps is not None:
         write_deps(lang, app_dir, clean_deps(lang, deps))
     print(f"Applied AI fix to {cfg['code_file']}")

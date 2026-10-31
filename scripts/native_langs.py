@@ -1,6 +1,11 @@
 """Shared settings for the native app languages (Flutter and Python/Flet)."""
 
+from pathlib import Path
+
 FLET_VERSION = "1.0.5"
+
+# Shared with generate.js (HTML apps), so every language aims at the same design quality.
+DESIGN_BRIEF = (Path(__file__).resolve().parent / "design_brief.txt").read_text(encoding="utf-8")
 
 LANGS = {
     "flutter": {

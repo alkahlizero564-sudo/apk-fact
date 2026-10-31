@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View, TextInput, Text, TouchableOpacity, StyleSheet,
   ScrollView, ActivityIndicator, Modal, Image, Alert,
 } from "react-native";
 import { WebView } from "react-native-webview";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as SecureStore from "expo-secure-store";
@@ -11,8 +12,9 @@ import { pushFile, pushBase64File, listWorkflowRuns, latestRunId, getFileText, g
 import { REPO } from "../services/config";
 import { linkAppsViaSupabase } from "../services/link";
 import { LANGS, LANG_ORDER, Lang } from "../services/langs";
+import { TEMPLATES, Template } from "../services/templates";
 import { Card, Button } from "../components/ui";
-import { colors, langColors, space, radius, type } from "../theme";
+import { colors, gradient, langColors, space, radius, type } from "../theme";
 
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -128,8 +130,12 @@ function LangPicker({ value, onChange, disabled }: { value: Lang; onChange: (l: 
   );
 }
 
+// A template chosen from the list, applied to the first app box (nonce makes repeated taps re-apply).
+type Preset = { name: string; description: string; lang: Lang; nonce: number };
+
 type BoxProps = {
   title: string;
+  preset?: Preset | null;
   busy: boolean;
   setBusy: (b: boolean) => void;
   onPreview: (name: string) => void;
@@ -138,7 +144,7 @@ type BoxProps = {
   relatedName?: string;
 };
 
-function AppBox({ title, busy, setBusy, onPreview, onNameChange, isSecond, relatedName }: BoxProps) {
+function AppBox({ title, preset, busy, setBusy, onPreview, onNameChange, isSecond, relatedName }: BoxProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [editOpen, setEditOpen] = useState(false);
@@ -150,6 +156,18 @@ function AppBox({ title, busy, setBusy, onPreview, onNameChange, isSecond, relat
   const [lang, setLang] = useState<Lang>("html");
   const [loading, setLoading] = useState<Kind | "paste" | "icon" | "preview" | null>(null);
   const [log, setLog] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!preset) return;
+    setName(preset.name);
+    setDescription(preset.description);
+    setLang(preset.lang);
+    setIconUri(null);
+    setLog([]);
+    if (onNameChange) onNameChange(preset.name);
+    // Only when a new template is chosen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preset?.nonce]);
 
   function addLog(line: string) {
     setLog((prev) => [...prev, line]);
@@ -508,8 +526,39 @@ function AppBox({ title, busy, setBusy, onPreview, onNameChange, isSecond, relat
   );
 }
 
+function TemplateCard({ t, onPress }: { t: Template; onPress: () => void }) {
+  return (
+    <TouchableOpacity
+      style={styles.tplCard}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`قالب ${t.title} بلغة ${LANGS[t.lang].label}`}
+    >
+      <View style={[styles.tplIcon, { backgroundColor: t.color + "22" }]}>
+        <Ionicons name={t.icon} size={24} color={t.color} />
+      </View>
+      <Text style={styles.tplTitle} numberOfLines={1}>
+        {t.title}
+      </Text>
+      <View style={styles.tplLang}>
+        <Ionicons name={LANG_ICONS[t.lang]} size={12} color={langColors[t.lang]} />
+        <Text style={styles.tplLangText}>{LANGS[t.lang].label}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
 export default function CreateScreen() {
   const [busy, setBusy] = useState(false);
+  const [preset, setPreset] = useState<Preset | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const firstBoxY = useRef(0);
+
+  function applyTemplate(t: Template) {
+    if (busy) return;
+    setPreset({ name: t.name, description: t.description, lang: t.lang, nonce: Date.now() });
+    scrollRef.current?.scrollTo({ y: Math.max(firstBoxY.current - space.lg, 0), animated: true });
+  }
   const [firstName, setFirstName] = useState("");
   const [secondName, setSecondName] = useState("");
   const [linking, setLinking] = useState(false);
@@ -578,29 +627,53 @@ export default function CreateScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <View style={styles.hero}>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+          <View style={styles.heroGlow} />
+          <View style={styles.heroBadge}>
+            <Ionicons name="sparkles" size={14} color={colors.primaryText} />
+            <Text style={styles.heroBadgeText}>مصنع التطبيقات بالذكاء الاصطناعي</Text>
+          </View>
           <Text style={styles.heroTitle}>APK Fact</Text>
           <Text style={styles.heroText}>
-            صف تطبيقك، والذكاء الاصطناعي يكتب الكود ويعرض لك معاينة حيّة ويبني لك APK.
+            صف تطبيقك أو اختر قالب، والذكاء الاصطناعي يكتب الكود ويصلّح أخطاءه ويعرض لك معاينة حيّة ويبني لك APK.
           </Text>
           <View style={styles.heroLangs}>
             {LANG_ORDER.map((l) => (
-              <View key={l} style={[styles.heroPill, { borderColor: langColors[l] }]}>
+              <View key={l} style={styles.heroPill}>
                 <Ionicons name={LANG_ICONS[l]} size={14} color={langColors[l]} />
                 <Text style={styles.heroPillText}>{LANGS[l].label}</Text>
               </View>
             ))}
           </View>
-        </View>
+        </LinearGradient>
 
-        <AppBox
-          title="إنشاء التطبيق الأول"
-          busy={busy}
-          setBusy={setBusy}
-          onPreview={openPreview}
-          onNameChange={setFirstName}
-        />
+        <View style={styles.sectionHead}>
+          <Ionicons name="grid-outline" size={20} color={colors.accent} />
+          <Text style={styles.sectionTitle}>ابدأ من قالب</Text>
+        </View>
+        <Text style={styles.sectionHint}>اختر قالب، وبنملأ الاسم والوصف واللغة. تقدر تعدّل عليهم قبل الإنشاء.</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tplRow}
+          style={styles.tplScroll}
+        >
+          {TEMPLATES.map((t) => (
+            <TemplateCard key={t.id} t={t} onPress={() => applyTemplate(t)} />
+          ))}
+        </ScrollView>
+
+        <View onLayout={(e) => (firstBoxY.current = e.nativeEvent.layout.y)}>
+          <AppBox
+            title="إنشاء التطبيق الأول"
+            preset={preset}
+            busy={busy}
+            setBusy={setBusy}
+            onPreview={openPreview}
+            onNameChange={setFirstName}
+          />
+        </View>
 
         <Card style={styles.linkCard}>
           <View style={styles.titleRow}>
@@ -663,15 +736,52 @@ export default function CreateScreen() {
 const styles = StyleSheet.create({
   container: { padding: space.lg, paddingBottom: 96 },
   hero: {
-    backgroundColor: colors.primarySoft,
     borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: colors.infoBorder,
     padding: space.xl,
     marginBottom: space.xl,
+    overflow: "hidden",
   },
-  heroTitle: { ...type.hero, color: colors.text },
-  heroText: { ...type.body, color: colors.infoText, marginTop: space.sm },
+  heroGlow: {
+    position: "absolute",
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    top: -80,
+    end: -60,
+    backgroundColor: "rgba(255,255,255,0.12)",
+  },
+  heroBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: space.xs,
+    paddingVertical: space.xs,
+    paddingHorizontal: space.md,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    marginBottom: space.md,
+  },
+  heroBadgeText: { color: colors.primaryText, fontSize: 12, fontWeight: "700" },
+  heroTitle: { ...type.hero, color: colors.primaryText },
+  heroText: { ...type.body, color: "rgba(255,255,255,0.88)", marginTop: space.sm },
+  sectionHead: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  sectionTitle: { ...type.sectionTitle, color: colors.text },
+  sectionHint: { ...type.hint, color: colors.textMuted, marginTop: space.xs },
+  tplScroll: { marginHorizontal: -space.lg, marginTop: space.md, marginBottom: space.xl },
+  tplRow: { paddingHorizontal: space.lg, gap: space.md },
+  tplCard: {
+    width: 128,
+    padding: space.md,
+    borderRadius: radius.card,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: space.sm,
+  },
+  tplIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  tplTitle: { color: colors.text, fontWeight: "700", fontSize: 14 },
+  tplLang: { flexDirection: "row", alignItems: "center", gap: 4 },
+  tplLangText: { color: colors.textMuted, fontSize: 12, fontWeight: "600" },
   heroLangs: { flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: space.lg },
   heroPill: {
     flexDirection: "row",
@@ -681,9 +791,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingVertical: space.xs,
     paddingHorizontal: space.md,
-    backgroundColor: colors.bg,
+    borderColor: "rgba(255,255,255,0.22)",
+    backgroundColor: "rgba(7,8,14,0.45)",
   },
-  heroPillText: { color: colors.text, fontWeight: "700", fontSize: 13 },
+  heroPillText: { color: colors.primaryText, fontWeight: "700", fontSize: 13 },
   box: { marginBottom: space.xl },
   titleRow: { flexDirection: "row", alignItems: "center", gap: space.sm },
   boxTitle: { ...type.sectionTitle, color: colors.text, marginBottom: space.xs },

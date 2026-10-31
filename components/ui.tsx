@@ -9,7 +9,8 @@ import {
   StyleProp,
   ViewStyle,
 } from "react-native";
-import { colors, space, radius, type } from "../theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { colors, gradient, space, radius, type } from "../theme";
 
 export function Card({
   children,
@@ -54,6 +55,9 @@ export function Button({
         style,
       ]}
     >
+      {isPrimary && (
+        <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      )}
       {loading ? (
         <ActivityIndicator color={isPrimary ? colors.primaryText : colors.infoText} />
       ) : (
@@ -149,14 +153,15 @@ const styles = StyleSheet.create({
   },
 
   button: {
-    minHeight: 48,
+    minHeight: 50,
+    overflow: "hidden",
     borderRadius: radius.button,
     paddingHorizontal: space.lg,
     alignItems: "center",
     justifyContent: "center",
   },
   buttonPrimary: { backgroundColor: colors.primary },
-  buttonPrimaryPressed: { backgroundColor: colors.primaryPressed },
+  buttonPrimaryPressed: { backgroundColor: colors.primaryPressed, transform: [{ scale: 0.98 }] },
   buttonSecondary: {
     backgroundColor: "transparent",
     borderWidth: 1.5,

@@ -40,10 +40,15 @@ const relatedBlock = relatedCode
     `and make the two apps work together as parts of one program.\n`
   : "";
 
+const designBrief = fs.readFileSync(path.join(__dirname, "scripts", "design_brief.txt"), "utf8");
+
 const system =
-  "You are an expert web developer. Output ONE complete, self-contained HTML file " +
-  "(inline CSS and JS), mobile-friendly, with RTL Arabic support when the request is in Arabic. " +
-  "Reply with ONLY the full file inside a single ```html code block. No explanations.";
+  "You are an expert mobile app designer and web developer. Output ONE complete, self-contained HTML file " +
+  "(inline CSS and JS, no external resources), built as a mobile app screen: full-height layout, " +
+  "CSS variables for the palette, prefers-color-scheme for dark mode, localStorage for the user's data, " +
+  "inline SVG or emoji for icons, and RTL Arabic support when the request is in Arabic.\n\n" +
+  designBrief +
+  "\nReply with ONLY the full file inside a single ```html code block. No explanations.";
 
 const prompt = existing
   ? `Here is the current app:\n\`\`\`html\n${existing}\n\`\`\`${relatedBlock}\n\nApply this change and return the FULL updated file:\n${request}`

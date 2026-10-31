@@ -145,5 +145,12 @@
   "error": "error • Invalid constant value • lib/main.dart:515:33 • invalid_constant",
   "source": "ai",
   "uses": 0
+ },
+ {
+  "old": "Icons.store_disabled",
+  "new": "Icons.store_outlined",
+  "error": "error • The getter 'store_disabled' isn't defined for the type 'Icons'. Try importing the library that defines 'store_disabled', correcting the name to the name of an existing getter, or defining a ge",
+  "source": "ai",
+  "uses": 0
  }
 ]

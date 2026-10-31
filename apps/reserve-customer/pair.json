@@ -1,0 +1,133 @@
+{
+ "pair": "reserve",
+ "prefix": "reserve",
+ "lang": "flutter",
+ "push": true,
+ "admins": [
+  "awadaljied8@gmail.com"
+ ],
+ "description": "نظام حجز اللبن من محل ألبان، فيه تطبيقين مربوطين بنفس قاعدة بيانات Supabase:\n\n【تطبيق الزبون】\n1) التسجيل (حساب جديد) عبر Supabase Auth الحقيقي (REST) وما في أي رمز وهمي:\n- الخانات: الاسم الكامل، البريد الإلكتروني، رقم التلفون، العنوان (الحي ورقم البيت)، كلمة المرور، تأكيد كلمة المرور (مع زر إظهار).\n- تحقق: كلها مطلوبة، البريد صحيح، كلمة المرور 6 أحرف أو أكتر، والتأكيد مطابق، ورسالة عربية تحت الخانة الغلط.\n- زر «تأكيد»: POST /auth/v1/signup بالبريد وكلمة المرور، والاسم والتلفون والعنوان في data. لو الرد نجح لكن user.identities فاضية معناها البريد مسجل قبل كده: اعرض «البريد ده مسجّل، سجّل دخول» وحوّل لشاشة الدخول.\n- شاشة الرمز: 6 خانات أرقام، وزر «تحقق»: POST /auth/v1/verify بالنوع signup. وزر «إعادة إرسال الرمز» بعد عداد 60 ثانية: POST /auth/v1/resend.\n- بعد التحقق: أنشئ صف الزبون في جدول الزباين (id = البريد، الاسم، التلفون، العنوان، تاريخ التسجيل) لو ما موجود، وادخل التطبيق.\n2) تسجيل الدخول بالبريد وكلمة المرور: POST /auth/v1/token?grant_type=password. لو الخطأ «Email not confirmed» أرسل resend وافتح شاشة الرمز. وزر «نسيت كلمة المرور» يرسل رمز (recover) وبعده كلمة مرور جديدة.\n3) الشاشة الرئيسية:\n- حالة المحل اليوم (مفتوح/مقفول للحجز).\n- المنتجات من قاعدة البيانات: لبن طازة، لبن رايب، زبادي، جبنة. كل منتج بصورته (إيموجي)، وسعره، والوحدة (رطل/لتر/كيلو)، والكمية المتاحة.\n- الزبون يختار المنتج والكمية، ووقت التوصيل أو الاستلام (صباح/مساء)، وطريقة الاستلام (توصيل للعنوان أو استلام من المحل)، وملاحظة اختيارية، ويضغط «احجز».\n- ما يقدر يحجز لو المحل مقفول أو الكمية ما بتكفي.\n4) «طلباتي»: كل طلباته مع الحالة (قيد الانتظار، مقبول، في الطريق، جاهز للاستلام، اتسلّم، مرفوض) والمبلغ، وزر «إلغاء» للطلب اللي لسه قيد الانتظار.\n5) «حسابي»: الاسم والبريد والتلفون والعنوان، وتعديلهم، وتسجيل خروج.\n\n【تطبيق الإدارة】\n1) دخول بالبريد وكلمة المرور (Supabase Auth)، وأول حساب يسجّل في تطبيق الإدارة يكون المدير، وأي حساب تاني ما يدخل.\n2) لوحة اليوم: عدد الطلبات، الكمية المحجوزة من كل منتج، مجموع المبلغ، وعدد الزباين الجدد اليوم.\n3) «الطلبات» (قائمة الذين حجزوا):\n- كل طلب فيه: اسم الزبون، تلفونه، عنوانه، المنتج والكمية، الوقت، طريقة الاستلام، الملاحظة، المبلغ، والحالة.\n- بحث بالاسم أو التلفون، وفلترة بالحالة وباليوم.\n- أزرار: قبول، في الطريق، جاهز للاستلام، اتسلّم، رفض. وزر اتصال وزر واتساب للزبون.\n4) «الزباين» (الناس المسجلين في تطبيق الزبون):\n- قائمة بكل الزباين: الاسم، البريد، التلفون، العنوان، تاريخ التسجيل، وعدد طلباته.\n- بحث بالاسم أو التلفون.\n- لما تضغط على زبون تفتح صفحته فيها بياناته وكل طلباته السابقة، وزر اتصال وواتساب.\n5) «المنتجات والمحل»: زر كبير «فتح/قفل الحجز»، وإضافة و",
+ "supabase": {
+  "url": "https://jvjtgzewumfecjdpekna.supabase.co",
+  "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE",
+  "ref": "jvjtgzewumfecjdpekna"
+ },
+ "schemaSql": "-- Store settings / store status (open/closed for booking)\ncreate table if not exists public.reserve_store_settings (\n    id bigint generated always as identity primary key,\n    is_booking_open boolean not null default true,\n    closed_reason text,\n    morning_slot_label text not null default 'صباح (6:00 ص - 11:00 ص)',\n    evening_slot_label text not null default 'مساء (4:00 م - 9:00 م)',\n    delivery_fee numeric(10, 2) not null default 0.00,\n    updated_at timestamptz default now()\n);\n\n-- Catalog of dairy products\ncreate table if not exists public.reserve_products (\n    id bigint generated always as identity primary key,\n    name text not null,\n    description text,\n    emoji text not null default '🥛',\n    price numeric(10, 2) not null check (price >= 0),\n    unit text not null check (unit in ('رطل', 'لتر', 'كيلو')),\n    available_quantity numeric(10, 2) not null default 0.00 check (available_quantity >= 0),\n    is_active boolean not null default true,\n    created_at timestamptz default now(),\n    updated_at timestamptz default now()\n);\n\n-- Extended customer details (address details: neighborhood, house number, etc.)\ncreate table if not exists public.reserve_customer_details (\n    customer_id uuid primary key references auth.users(id) on delete cascade,\n    address text not null,\n    registered_at timestamptz default now(),\n    updated_at timestamptz default now()\n);\n\n-- Customer bookings / orders\ncreate table if not exists public.reserve_orders (\n    id bigint generated always as identity primary key,\n    customer_id uuid not null default auth.uid() references auth.users(id) on delete cascade,\n    product_id bigint not null references public.reserve_products(id) on delete restrict,\n    quantity numeric(10, 2) not null check (quantity > 0),\n    unit_price numeric(10, 2) not null check (unit_price >= 0),\n    total_amount numeric(10, 2) not null check (total_amount >= 0),\n    fulfillment_type text not null check (fulfillment_type in ('delivery', 'pickup')), -- توصيل أو استلام من المحل\n    delivery_slot text not null check (delivery_slot in ('morning', 'evening')),     -- صباح أو مساء\n    delivery_address text, -- Address at time of order if fulfillment_type = 'delivery'\n    customer_name text not null,\n    customer_phone text not null,\n    notes text,\n    status text not null default 'pending' check (status in ('pending', 'accepted', 'out_for_delivery', 'ready_for_pickup', 'delivered', 'rejected', 'cancelled')),\n    created_at timestamptz default now(),\n    updated_at timestamptz default now()\n);\n\n-- Enable RLS\nalter table public.reserve_store_settings enable row level security;\nalter table public.reserve_products enable row level security;\nalter table public.reserve_customer_details enable row level security;\nalter table public.reserve_orders enable row level security;\n\n-- Policies for reserve_store_settings\ndrop policy if exists \"Store settings read by authenticated\" on public.reserve_store_settings;\ncreate policy \"Store settings read by authenticated\"\n    on public.reserve_store_settings\n    for select\n    to authenticated\n    using (true);\n\ndrop policy if exists \"Store settings manage by admin\" on public.reserve_store_settings;\ncreate policy \"Store settings manage by admin\"\n    on public.reserve_store_settings\n    for all\n    to authenticated\n    using (public.reserve_is_admin())\n    with check (public.reserve_is_admin());\n\n-- Policies for reserve_products\ndrop policy if exists \"Products read by authenticated\" on public.reserve_products;\ncreate policy \"Products read by authenticated\"\n    on public.reserve_products\n    for select\n    to authenticated\n    using (true);\n\ndrop policy if exists \"Products manage by admin\" on public.reserve_products;\ncreate policy \"Products manage by admin\"\n    on public.reserve_products\n    for all\n    to authenticated\n    using (public.reserve_is_admin())\n    with check (public.reserve_is_admin());\n\n-- Policies for reserve_customer_details\ndrop policy if exists \"Customers manage own details\" on public.reserve_customer_details;\ncreate policy \"Customers manage own details\"\n    on public.reserve_customer_details\n    for all\n    to authenticated\n    using (customer_id = auth.uid() or public.reserve_is_admin())\n    with check (customer_id = auth.uid() or public.reserve_is_admin());\n\n-- Policies for reserve_orders\ndrop policy if exists \"Customer can read own orders\" on public.reserve_orders;\ncreate policy \"Customer can read own orders\"\n    on public.reserve_orders\n    for select\n    to authenticated\n    using (customer_id = auth.uid() or public.reserve_is_admin());\n\ndrop policy if exists \"Customer can insert own orders\" on public.reserve_orders;\ncreate policy \"Customer can insert own orders\"\n    on public.reserve_orders\n    for insert\n    to authenticated\n    with check (\n        customer_id = auth.uid()\n        and (\n            exists (\n                select 1 from public.reserve_store_settings\n                where is_booking_open = true\n            )\n        )\n    );\n\ndrop policy if exists \"Customer can cancel own pending orders\" on public.reserve_orders;\ncreate policy \"Customer can cancel own pending orders\"\n    on public.reserve_orders\n    for update\n    to authenticated\n    using (customer_id = auth.uid() and status = 'pending')\n    with check (customer_id = auth.uid() and status = 'cancelled');\n\ndrop policy if exists \"Admin manage all orders\" on public.reserve_orders;\ncreate policy \"Admin manage all orders\"\n    on public.reserve_orders\n    for all\n    to authenticated\n    using (public.reserve_is_admin())\n    with check (public.reserve_is_admin());\n\n-- Initial default settings\ninsert into public.reserve_store_settings (is_booking_open, morning_slot_label, evening_slot_label, delivery_fee)\nselect true, 'صباح (6:00 ص - 11:00 ص)', 'مساء (4:00 م - 9:00 م)', 0.00\nwhere not exists (select 1 from public.reserve_store_settings);\n\n-- Seed Catalog Products\ninsert into public.reserve_products (name, description, emoji, price, unit, available_quantity, is_active)\nselect 'لبن طازة', 'حليب بقري طازج يومي ممتاز', '🥛', 1000.00, 'رطل', 100.00, true\nwhere not exists (select 1 from public.reserve_products where name = 'لبن طازة');\n\ninsert into public.reserve_products (name, description, emoji, price, unit, available_quantity, is_active)\nselect 'لبن رايب', 'رايب طبيعي مخثر بلدي', '🍶', 1200.00, 'رطل', 50.00, true\nwhere not exists (select 1 from public.reserve_products where name = 'لبن رايب');\n\ninsert into public.reserve_products (name, description, emoji, price, unit, available_quantity, is_active)\nselect 'زبادي', 'زبادي طازج متماسك وغني', '🥣', 1500.00, 'كيلو', 40.00, true\nwhere not exists (select 1 from public.reserve_products where name = 'زبادي');\n\ninsert into public.reserve_products (name, description, emoji, price, unit, available_quantity, is_active)\nselect 'جبنة بيضاء', 'جبنة بلدية طازجة ممتازة', '🧀', 3500.00, 'كيلو', 30.00, true\nwhere not exists (select 1 from public.reserve_products where name = 'جبنة بيضاء');",
+ "contract": {
+  "tables": [
+   {
+    "name": "reserve_store_settings",
+    "purpose": "إدارة حالة المحل (مفتوح أو مقفول للحجز)، مواعيد الفترات الصباحية والمسائية، ورسوم التوصيل",
+    "columns": [
+     "id bigint identity primary key",
+     "is_booking_open boolean not null default true",
+     "closed_reason text",
+     "morning_slot_label text not null",
+     "evening_slot_label text not null",
+     "delivery_fee numeric(10,2) not null default 0.00",
+     "updated_at timestamptz default now()"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "reserve_products",
+    "purpose": "قائمة منتجات الألبان (لبن طازة، رايب، زبادي، جبنة) والأسعار والوحدات والكميات المتاحة",
+    "columns": [
+     "id bigint identity primary key",
+     "name text not null",
+     "description text",
+     "emoji text not null default '🥛'",
+     "price numeric(10,2) not null",
+     "unit text not null (رطل/لتر/كيلو)",
+     "available_quantity numeric(10,2) not null default 0.00",
+     "is_active boolean not null default true",
+     "created_at timestamptz default now()",
+     "updated_at timestamptz default now()"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "reserve_customer_details",
+    "purpose": "تفاصيل إضافية للزبون مثل العنوان السكني المفصل وتاريخ التسجيل",
+    "columns": [
+     "customer_id uuid primary key references auth.users(id)",
+     "address text not null",
+     "registered_at timestamptz default now()",
+     "updated_at timestamptz default now()"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "reserve_orders",
+    "purpose": "حجوزات وطلبات منتجات الألبان مع حالة الطلب وطريقة الاستلام والوقت",
+    "columns": [
+     "id bigint identity primary key",
+     "customer_id uuid not null references auth.users(id)",
+     "product_id bigint not null references reserve_products(id)",
+     "quantity numeric(10,2) not null",
+     "unit_price numeric(10,2) not null",
+     "total_amount numeric(10,2) not null",
+     "fulfillment_type text not null (delivery/pickup)",
+     "delivery_slot text not null (morning/evening)",
+     "delivery_address text",
+     "customer_name text not null",
+     "customer_phone text not null",
+     "notes text",
+     "status text not null default 'pending'",
+     "created_at timestamptz default now()",
+     "updated_at timestamptz default now()"
+    ],
+    "owner": "customer"
+   }
+  ],
+  "events": [
+   {
+    "when": "الزبون ينشئ حجز لبن جديد في تطبيق الزبون",
+    "notify": "admin",
+    "title": "حجز جديد وارد"
+   },
+   {
+    "when": "المدير يوافق على حجز اللبن في تطبيق الإدارة",
+    "notify": "customer",
+    "title": "تم قبول طلبك بنجاح"
+   },
+   {
+    "when": "المدير يغير حالة الطلب إلى في الطريق في تطبيق الإدارة",
+    "notify": "customer",
+    "title": "طلبك في الطريق للتوصيل"
+   },
+   {
+    "when": "المدير يحدد الطلب كجاهز للاستلام من المحل في تطبيق الإدارة",
+    "notify": "customer",
+    "title": "طلبك جاهز للاستلام من المحل"
+   },
+   {
+    "when": "المدير يسلم الطلب ويكتمل في تطبيق الإدارة",
+    "notify": "customer",
+    "title": "تم تسليم الطلب بنجاح"
+   },
+   {
+    "when": "المدير يرفض الطلب في تطبيق الإدارة",
+    "notify": "customer",
+    "title": "تم الاعتذار عن تلبية طلبك"
+   },
+   {
+    "when": "الزبون يلغي طلبه قيد الانتظار في تطبيق الزبون",
+    "notify": "admin",
+    "title": "تم إلغاء حجز من قبل الزبون"
+   }
+  ]
+ },
+ "apps": {
+  "customer": {
+   "name": "reserve-customer",
+   "packageId": "com.generated.app_reserve_customer"
+  },
+  "admin": {
+   "name": "reserve-admin",
+   "packageId": "com.generated.app_reserve_admin"
+  }
+ },
+ "role": "customer",
+ "pushFunction": "reserve-push"
+}

@@ -27,7 +27,7 @@ export const LANGS: Record<Lang, LangInfo> = {
   },
   flutter: {
     label: "Flutter",
-    tools: "Material 3 · provider · http · fl_chart · google_fonts · go_router",
+    tools: "Material 3 · provider · http · fl_chart · go_router · sqflite",
     mainFile: (app) => `apps/${app}/lib/main.dart`,
     requestFile: "request-flutter.txt",
     generateWorkflow: "generate-flutter.yml",

@@ -1,901 +1,448 @@
-import React, { useEffect, useRef, useState } from "react";
-import {
-  View, TextInput, Text, TouchableOpacity, StyleSheet,
-  ScrollView, ActivityIndicator, Modal, Image, Alert,
-} from "react-native";
-import { WebView } from "react-native-webview";
-import { LinearGradient } from "expo-linear-gradient";
+// New app wizard: start -> language -> details -> review, then a live progress timeline.
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
-import * as SecureStore from "expo-secure-store";
-import { pushFile, pushBase64File, listWorkflowRuns, latestRunId, getFileText, getFailureLog } from "../services/github";
-import { REPO } from "../services/config";
-import { linkAppsViaSupabase } from "../services/link";
-import { LANGS, LANG_ORDER, Lang } from "../services/langs";
+import {
+  Button,
+  Card,
+  Chip,
+  Field,
+  IconButton,
+  ListRow,
+  Stepper,
+  Timeline,
+  Banner,
+  useSteps,
+  IconName,
+} from "../components/ui";
+import { AppAvatar, LANG_ICONS, LangBadge } from "../components/appVisuals";
 import { TEMPLATES, Template } from "../services/templates";
-import { Card, Button } from "../components/ui";
-import { colors, gradient, langColors, space, radius, type } from "../theme";
+import { LANGS, LANG_ORDER, Lang } from "../services/langs";
+import { appExists, cleanName, generateApp, listApps, uploadCode, AppInfo } from "../services/appActions";
+import { colors, langColors, space, radius, type } from "../theme";
+import type { RootScreenProps } from "../navigation";
 
-type IconName = React.ComponentProps<typeof Ionicons>["name"];
+type Start = "blank" | "template" | "paste";
 
-const LANG_ICONS: Record<Lang, IconName> = {
-  html: "logo-html5",
-  flutter: "layers-outline",
-  python: "logo-python",
+const STEPS = ["البداية", "اللغة", "التفاصيل", "المراجعة"];
+
+const LANG_PITCH: Record<Lang, string> = {
+  html: "الأسرع في البناء. ممتاز للمتاجر والمنيو والصفحات التعريفية.",
+  flutter: "أداء أصلي وتصميم Material 3 وحركات ناعمة. الأنسب للتطبيقات الكاملة.",
+  python: "منطق قوي وحسابات وبيانات بلغة Python عبر Flet.",
 };
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+// One tap adds (or removes) a feature sentence in the description.
+const IDEAS: { label: string; icon: IconName; text: string }[] = [
+  { label: "وضع ليلي", icon: "moon-outline", text: "زر للتبديل بين الوضع الفاتح والليلي." },
+  { label: "بحث", icon: "search-outline", text: "بحث فوري في كل البيانات." },
+  { label: "مفضلة", icon: "heart-outline", text: "إضافة العناصر للمفضلة وصفحة للمفضلة." },
+  { label: "تسجيل دخول", icon: "person-outline", text: "شاشة تسجيل دخول وإنشاء حساب بسيطة." },
+  { label: "إحصائيات", icon: "stats-chart-outline", text: "شاشة إحصائيات برسوم بيانية بسيطة." },
+  { label: "واتساب", icon: "logo-whatsapp", text: "زر تواصل عبر واتساب." },
+  { label: "تنبيهات", icon: "notifications-outline", text: "رسائل تنبيه داخل التطبيق بعد كل عملية." },
+  { label: "مشاركة", icon: "share-social-outline", text: "زر لمشاركة العنصر مع الآخرين." },
+];
 
-function cleanName(n: string) {
-  return n.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+function toggleIdea(text: string, idea: string) {
+  return text.includes(idea) ? text.replace(idea, "").replace(/\s{2,}/g, " ").trim() : `${text.trim()} ${idea}`.trim();
 }
 
-async function waitForRun(prevId: number, workflow: string = "generate.yml") {
-  const started = Date.now();
-  while (Date.now() - started < 6 * 60 * 1000) {
-    await sleep(5000);
-    const runs = await listWorkflowRuns(REPO, workflow);
-    const run = runs.find((r: any) => r.id > prevId);
-    if (run && run.status === "completed") return run;
-  }
-  return null;
-}
+export default function CreateScreen({ navigation, route }: RootScreenProps<"Create">) {
+  const insets = useSafeAreaInsets();
+  const preset = TEMPLATES.find((t) => t.id === route.params?.templateId);
 
-type Kind = "create" | "edit";
-
-function LogBox({ lines }: { lines: string[] }) {
-  if (lines.length === 0) return null;
-  return (
-    <View style={styles.logBox}>
-      {lines.map((line, i) => (
-        <Text key={i} style={styles.logLine}>{line}</Text>
-      ))}
-    </View>
-  );
-}
-
-function RowButton({
-  label,
-  icon,
-  onPress,
-  disabled,
-  dim,
-  left,
-  right,
-}: {
-  label: string;
-  icon?: IconName;
-  onPress: () => void;
-  disabled?: boolean;
-  dim?: boolean;
-  left?: React.ReactNode;
-  right?: React.ReactNode;
-}) {
-  return (
-    <TouchableOpacity
-      style={[styles.rowBtn, dim && styles.disabled]}
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityRole="button"
-    >
-      {left ?? (icon ? (
-        <View style={styles.rowIcon}>
-          <Ionicons name={icon} size={18} color={colors.infoText} />
-        </View>
-      ) : null)}
-      <Text style={styles.rowBtnText}>{label}</Text>
-      {right}
-    </TouchableOpacity>
-  );
-}
-
-function Chevron({ open }: { open: boolean }) {
-  return <Ionicons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.textMuted} />;
-}
-
-function LangPicker({ value, onChange, disabled }: { value: Lang; onChange: (l: Lang) => void; disabled: boolean }) {
-  return (
-    <View>
-      <View style={styles.langRow} accessibilityRole="radiogroup">
-        {LANG_ORDER.map((l) => {
-          const active = value === l;
-          const tint = langColors[l];
-          return (
-            <TouchableOpacity
-              key={l}
-              style={[styles.langCard, active && { borderColor: tint, backgroundColor: colors.surfaceAlt }]}
-              onPress={() => onChange(l)}
-              disabled={disabled}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: active, disabled }}
-              accessibilityLabel={LANGS[l].label}
-            >
-              <Ionicons name={LANG_ICONS[l]} size={24} color={active ? tint : colors.textMuted} />
-              <Text style={[styles.langText, active && { color: colors.text }]}>{LANGS[l].label}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-      <View style={styles.toolsLine}>
-        <Ionicons name="code-slash-outline" size={14} color={langColors[value]} />
-        <Text style={styles.toolsText}>{LANGS[value].tools}</Text>
-      </View>
-      {LANGS[value].hasAiPreview && (
-        <View style={styles.toolsLine}>
-          <Ionicons name="sparkles-outline" size={14} color={colors.accent} />
-          <Text style={styles.toolsText}>معاينة حيّة بالذكاء الاصطناعي قبل بناء الـ APK</Text>
-        </View>
-      )}
-    </View>
-  );
-}
-
-// A template chosen from the list, applied to the first app box (nonce makes repeated taps re-apply).
-type Preset = { name: string; description: string; lang: Lang; nonce: number };
-
-type BoxProps = {
-  title: string;
-  preset?: Preset | null;
-  busy: boolean;
-  setBusy: (b: boolean) => void;
-  onPreview: (name: string) => void;
-  onNameChange?: (name: string) => void;
-  isSecond?: boolean;
-  relatedName?: string;
-};
-
-function AppBox({ title, preset, busy, setBusy, onPreview, onNameChange, isSecond, relatedName }: BoxProps) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [editOpen, setEditOpen] = useState(false);
-  const [editText, setEditText] = useState("");
-  const [pasteOpen, setPasteOpen] = useState(false);
-  const [pasteText, setPasteText] = useState("");
-  const [iconUri, setIconUri] = useState<string | null>(null);
-  const [useRelated, setUseRelated] = useState(true);
-  const [lang, setLang] = useState<Lang>("html");
-  const [loading, setLoading] = useState<Kind | "paste" | "icon" | "preview" | null>(null);
-  const [log, setLog] = useState<string[]>([]);
+  const [step, setStep] = useState(preset ? 2 : 0);
+  const [start, setStart] = useState<Start>(preset ? "template" : "blank");
+  const [template, setTemplate] = useState<Template | undefined>(preset);
+  const [lang, setLang] = useState<Lang>(preset?.lang ?? "html");
+  const [name, setName] = useState(preset?.name ?? "");
+  const [text, setText] = useState(preset?.description ?? "");
+  const [code, setCode] = useState("");
+  const [related, setRelated] = useState("");
+  const [apps, setApps] = useState<AppInfo[]>([]);
+  const [nameTaken, setNameTaken] = useState<Lang | null>(null);
+  const [phase, setPhase] = useState<"form" | "running" | "done" | "failed">("form");
+  const [error, setError] = useState<string | null>(null);
+  const [genSteps, genReport, genReset] = useSteps([
+    ["send", "إرسال الطلب"],
+    ["ai", "الذكاء الاصطناعي يكتب الكود ويفحص الأخطاء ويصلحها"],
+    ["save", "حفظ التطبيق"],
+  ]);
+  const [pasteSteps, pasteReport, pasteReset] = useSteps([
+    ["upload", "رفع الكود إلى GitHub"],
+    ["send", "طلب معاينة بالذكاء الاصطناعي"],
+    ["ai", "الذكاء الاصطناعي يجهّز المعاينة"],
+  ]);
 
   useEffect(() => {
-    if (!preset) return;
-    setName(preset.name);
-    setDescription(preset.description);
-    setLang(preset.lang);
-    setIconUri(null);
-    setLog([]);
-    if (onNameChange) onNameChange(preset.name);
-    // Only when a new template is chosen.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preset?.nonce]);
+    listApps().then(setApps).catch(() => setApps([]));
+  }, []);
 
-  function addLog(line: string) {
-    setLog((prev) => [...prev, line]);
+  const clean = cleanName(name);
+  useEffect(() => {
+    setNameTaken(null);
+    if (!clean) return;
+    const t = setTimeout(() => appExists(clean).then(setNameTaken).catch(() => {}), 500);
+    return () => clearTimeout(t);
+  }, [clean]);
+
+  function pickTemplate(t: Template) {
+    setTemplate(t);
+    setLang(t.lang);
+    setName(t.name);
+    setText(t.description);
   }
 
-  async function pickIcon() {
-    if (busy) return;
-    const n = cleanName(name);
-    if (!n) {
-      setLog(["❌ اكتب اسم التطبيق بالإنجليزي الأول، وبعدين اختار الأيقونة."]);
-      return;
-    }
+  const nameError = !name.trim()
+    ? null
+    : !clean
+    ? "استخدم حروف إنجليزية وأرقام فقط"
+    : nameTaken
+    ? "الاسم مستخدم لتطبيق موجود. اختر اسم جديد، أو عدّل التطبيق من صفحته."
+    : null;
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-      base64: true,
-    });
-    if (result.canceled || !result.assets || !result.assets[0]) return;
-    const asset = result.assets[0];
-    if (!asset.base64) {
-      setLog(["❌ ما قدرت أقرأ الصورة. جرّب صورة تانية."]);
-      return;
-    }
+  const canNext =
+    step === 0
+      ? start !== "template" || !!template
+      : step === 2
+      ? !!clean && !nameTaken && (start === "paste" ? code.trim().length > 20 : text.trim().length > 10)
+      : true;
 
-    setLog([]);
-    setBusy(true);
-    setLoading("icon");
+  async function submit() {
+    setPhase("running");
+    setError(null);
     try {
-      addLog("⏳ بتترفع الأيقونة على GitHub...");
-      await pushBase64File(REPO, `apps/${n}/icon.png`, asset.base64, `Set icon: ${n}`);
-      setIconUri(asset.uri);
-      addLog(`✅ ارتفعت الأيقونة: apps/${n}/icon.png`);
-      addLog("🎉 المرة الجاية تبني APK للتطبيق ده، بتظهر الأيقونة دي.");
-    } catch (e: any) {
-      addLog(`❌ ${e.message}`);
-    } finally {
-      setLoading(null);
-      setBusy(false);
-    }
-  }
-
-  // Ask the generate workflow to (re)build preview.html from the app's current code.
-  async function makeAiPreview(n: string) {
-    const info = LANGS[lang];
-    const prevId = await latestRunId(REPO, info.generateWorkflow);
-    addLog("✨ الذكاء الاصطناعي بيجهّز معاينة حيّة للكود...");
-    await pushFile(REPO, info.requestFile, `${n}\n@preview\n\n(request id: ${Date.now()})\n`, `Preview: ${n}`);
-    const r = await waitForRun(prevId, info.generateWorkflow);
-    if (!r) {
-      addLog("⚠️ المعاينة أخذت وقت طويل. جرّب زر معاينة بعد شوية.");
-      return;
-    }
-    if (r.conclusion !== "success") {
-      addLog("❌ فشل تجهيز المعاينة.");
-      const tail = await getFailureLog(REPO, r.id);
-      if (tail) addLog(tail);
-      return;
-    }
-    addLog("✅ المعاينة جاهزة. اضغط معاينة تشوفها.");
-  }
-
-  async function regeneratePreview() {
-    if (busy) return;
-    const n = cleanName(name);
-    if (!n) {
-      setLog(["❌ اكتب اسم التطبيق بالإنجليزي الأول."]);
-      return;
-    }
-    setLog([]);
-    setBusy(true);
-    setLoading("preview");
-    try {
-      if (!(await getFileText(REPO, LANGS[lang].mainFile(n)))) {
-        addLog(`❌ ما لقيت كود ${LANGS[lang].label} للتطبيق ده. اعمل إنشاء أو الصق الكود الأول.`);
-        return;
-      }
-      await makeAiPreview(n);
-    } catch (e: any) {
-      addLog(`❌ ${e.message}`);
-    } finally {
-      setLoading(null);
-      setBusy(false);
-    }
-  }
-
-  async function uploadPastedCode() {
-    if (busy) return;
-    const n = cleanName(name);
-    const code = pasteText.trim();
-    if (!n) {
-      setLog(["❌ اكتب اسم التطبيق بالإنجليزي (حروف وأرقام بدون مسافات)."]);
-      return;
-    }
-    if (!code) {
-      setLog(["❌ الصق الكود الأول."]);
-      return;
-    }
-
-    setLog([]);
-    setBusy(true);
-    setLoading("paste");
-    try {
-      addLog("⏳ بيترفع الكود على GitHub...");
-      const target = LANGS[lang].mainFile(n);
-      await pushFile(REPO, target, code + "\n", `Upload code: ${n}`);
-      addLog(`✅ ارتفع الكود: ${target}`);
-      setPasteText("");
-      if (LANGS[lang].hasAiPreview) await makeAiPreview(n);
-      else addLog("🎉 اضغط معاينة تشوفه.");
-    } catch (e: any) {
-      addLog(`❌ ${e.message}`);
-    } finally {
-      setLoading(null);
-      setBusy(false);
-    }
-  }
-
-  async function run(kind: Kind) {
-    if (busy) return;
-    const n = cleanName(name);
-    const text = (kind === "create" ? description : editText).trim();
-    if (!n) {
-      setLog(["❌ اكتب اسم التطبيق بالإنجليزي (حروف وأرقام بدون مسافات)."]);
-      return;
-    }
-    if (!text) {
-      setLog([kind === "create" ? "❌ اكتب الوصف." : "❌ اكتب وصف التعديل."]);
-      return;
-    }
-
-    const info = LANGS[lang];
-    const isNative = lang !== "html";
-    const workflow = info.generateWorkflow;
-    const requestFile = info.requestFile;
-    const mainFile = info.mainFile(n);
-
-    setLog([]);
-    setBusy(true);
-    setLoading(kind);
-    try {
-      if (kind === "edit") {
-        const existing = await getFileText(REPO, mainFile);
-        if (!existing) {
-          addLog("❌ التطبيق ده مش موجود. اعمل إنشاء الأول.");
-          return;
+      if (start === "paste") {
+        pasteReset();
+        await uploadCode(clean, lang, code, pasteReport);
+        if (!LANGS[lang].hasAiPreview) {
+          pasteReport("send", "done", "تطبيقات HTML تُعرض كما هي");
+          pasteReport("ai", "done");
         }
+      } else {
+        genReset();
+        await generateApp({ name: clean, lang, text: text.trim(), kind: "create", related: related || undefined }, genReport);
       }
-
-      const rel = relatedName && useRelated && relatedName !== n ? relatedName : "";
-      if (rel) {
-        let relExists = false;
-        for (const l of LANG_ORDER) {
-          if (await getFileText(REPO, LANGS[l].mainFile(rel))) {
-            relExists = true;
-            break;
-          }
-        }
-        if (relExists) {
-          addLog(`🔗 الذكاء الاصطناعي بيقرأ التطبيق الأول (${rel}) قبل ما يبني.`);
-        } else {
-          addLog(`⚠️ التطبيق الأول (${rel}) ما لقيتو في GitHub، فبيتبني التطبيق ده براهو.`);
-        }
-      }
-
-      const prevId = await latestRunId(REPO, workflow);
-
-      addLog("⏳ بيتم إرسال الطلب...");
-      const relLine = rel ? `@related: ${rel}\n` : "";
-      const model = isNative ? (await SecureStore.getItemAsync("GEMINI_MODEL")) ?? "" : "";
-      const modelLine = model ? `@model: ${model}\n` : "";
-      const content = `${n}\n${relLine}${modelLine}${text}\n\n(request id: ${Date.now()})\n`;
-      await pushFile(REPO, requestFile, content, `${kind === "edit" ? "Edit" : "Create"}: ${n}`);
-      addLog("✅ تم إرسال الطلب.");
-      addLog(kind === "edit" ? "⏳ بيتعدّل الكود... (من نصف دقيقة لأربع دقايق)" : "⏳ بيتولّد الكود... (من نصف دقيقة لأربع دقايق)");
-      if (isNative) addLog("✨ ومعاه معاينة حيّة بالذكاء الاصطناعي.");
-
-      const r = await waitForRun(prevId, workflow);
-      if (!r) {
-        addLog("⚠️ أخذ وقت طويل. جرّب المعاينة بعد شوية.");
-        return;
-      }
-      if (r.conclusion !== "success") {
-        addLog("❌ فشل.");
-        const tail = await getFailureLog(REPO, r.id);
-        if (tail) addLog(tail);
-        return;
-      }
-
-      const code = await getFileText(REPO, mainFile);
-      if (!code) {
-        addLog("⚠️ نجح لكن الملف ما ظهر. جرّب المعاينة بعد شوية.");
-        return;
-      }
-      addLog(kind === "edit" ? `✅ اتعدّل وارتفع: ${mainFile}` : `✅ اتولّد وارتفع: ${mainFile}`);
-      addLog(isNative ? "🎉 اضغط معاينة تشوف المعاينة الحيّة." : "🎉 اضغط معاينة تشوفه.");
-      if (kind === "edit") setEditText("");
+      setPhase("done");
     } catch (e: any) {
-      addLog(`❌ ${e.message}`);
-    } finally {
-      setLoading(null);
-      setBusy(false);
+      setError(e.message);
+      setPhase("failed");
     }
   }
 
-  const hasName = !!cleanName(name);
-
-  return (
-    <Card style={styles.box}>
-      <Text style={styles.boxTitle}>{title}</Text>
-
-      <Text style={styles.label}>اسم التطبيق (إنجليزي)</Text>
-      <TextInput
-        style={styles.input}
-        value={name}
-        onChangeText={(t) => {
-          setName(t);
-          setIconUri(null);
-          if (onNameChange) onNameChange(t);
-        }}
-        placeholder="مثال: shop"
-        placeholderTextColor={colors.textMuted}
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
-      <Text style={styles.hint}>للإنشاء استخدم اسم جديد. للتعديل على تطبيق موجود استخدم زر تعديل الكود.</Text>
-
-      {isSecond && (
-        <TouchableOpacity style={styles.relatedBtn} onPress={() => setUseRelated(!useRelated)}>
-          <Text style={styles.relatedText}>
-            {useRelated ? "✅" : "⬜"} اقرأ التطبيق الأول قبل ما تبني ده (مشروع واحد)
-          </Text>
-          {useRelated && !relatedName && (
-            <Text style={styles.relatedWarn}>اكتب اسم التطبيق الأول في صندوقو فوق عشان يشتغل الربط.</Text>
-          )}
-          {useRelated && !!relatedName && (
-            <Text style={styles.hint}>التطبيق المرتبط: {relatedName}</Text>
-          )}
-        </TouchableOpacity>
-      )}
-
-      <Text style={styles.label}>لغة الكود</Text>
-      <LangPicker value={lang} onChange={setLang} disabled={busy} />
-
-      <Text style={styles.label}>الوصف</Text>
-      <TextInput
-        style={styles.textarea}
-        value={description}
-        onChangeText={setDescription}
-        placeholder="مثال: متجر ملابس فيه سلة مشتريات وقائمة أسعار"
-        placeholderTextColor={colors.textMuted}
-        multiline
-      />
-
-      <Button
-        title="إنشاء ورفع"
-        onPress={() => run("create")}
-        disabled={busy}
-        loading={loading === "create"}
-        style={{ marginTop: space.lg }}
-      />
-
-      <Button
-        title="معاينة"
-        variant="secondary"
-        onPress={() => onPreview(cleanName(name))}
-        disabled={!hasName}
-        style={{ marginTop: space.md }}
-      />
-
-      <View style={styles.tools}>
-        <RowButton
-          label={iconUri ? "تغيير الأيقونة" : "اختيار أيقونة من المعرض"}
-          icon="image-outline"
-          onPress={pickIcon}
-          disabled={busy}
-          dim={busy && loading !== "icon"}
-          left={iconUri ? <Image source={{ uri: iconUri }} style={styles.iconThumb} /> : undefined}
-          right={loading === "icon" ? <ActivityIndicator color={colors.accent} /> : undefined}
-        />
-
-        {LANGS[lang].hasAiPreview && (
-          <RowButton
-            label="معاينة جديدة بالذكاء الاصطناعي"
-            icon="sparkles-outline"
-            onPress={regeneratePreview}
-            disabled={busy}
-            dim={busy && loading !== "preview"}
-            right={loading === "preview" ? <ActivityIndicator color={colors.accent} /> : undefined}
-          />
-        )}
-
-        <RowButton
-          label="تعديل الكود"
-          icon="create-outline"
-          onPress={() => setEditOpen(!editOpen)}
-          right={<Chevron open={editOpen} />}
-        />
-
-        {editOpen && (
-          <View style={styles.editBox}>
-            <Text style={styles.label}>وصف التعديل</Text>
-            <TextInput
-              style={styles.textarea}
-              value={editText}
-              onChangeText={setEditText}
-              placeholder="مثال: غيّر الألوان للأخضر وأضف زر واتساب"
-              placeholderTextColor={colors.textMuted}
-              multiline
-            />
-            <Button
-              title="عدّل وارفع"
-              onPress={() => run("edit")}
-              disabled={busy}
-              loading={loading === "edit"}
-              style={{ marginTop: space.md }}
-            />
-          </View>
-        )}
-
-        <RowButton
-          label="لصق كود جاهز"
-          icon="cloud-upload-outline"
-          onPress={() => setPasteOpen(!pasteOpen)}
-          right={<Chevron open={pasteOpen} />}
-        />
-
-        {pasteOpen && (
-          <View style={styles.editBox}>
-            <Text style={styles.label}>{LANGS[lang].pasteLabel}</Text>
-            <TextInput
-              style={[styles.textarea, styles.codeArea]}
-              value={pasteText}
-              onChangeText={setPasteText}
-              placeholder="الصق الكود هنا"
-              placeholderTextColor={colors.textMuted}
-              multiline
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <Button
-              title="ارفع الكود"
-              onPress={uploadPastedCode}
-              disabled={busy}
-              loading={loading === "paste"}
-              style={{ marginTop: space.md }}
-            />
-          </View>
+  const footerPad = { paddingBottom: insets.bottom + space.md };
+  let footer: React.ReactNode = null;
+  if (phase === "form") {
+    footer = (
+      <View style={[styles.footer, footerPad]}>
+        {step > 0 ? <Button title="رجوع" variant="secondary" onPress={() => setStep(step - 1)} style={{ flex: 1 }} /> : null}
+        {step < 3 ? (
+          <Button title="التالي" icon="arrow-back" onPress={() => setStep(step + 1)} disabled={!canNext} style={{ flex: 2 }} />
+        ) : (
+          <Button title="أنشئ التطبيق" icon="sparkles" onPress={submit} style={{ flex: 2 }} />
         )}
       </View>
-
-      <LogBox lines={log} />
-    </Card>
-  );
-}
-
-function TemplateCard({ t, onPress }: { t: Template; onPress: () => void }) {
-  return (
-    <TouchableOpacity
-      style={styles.tplCard}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`قالب ${t.title} بلغة ${LANGS[t.lang].label}`}
-    >
-      <View style={[styles.tplIcon, { backgroundColor: t.color + "22" }]}>
-        <Ionicons name={t.icon} size={24} color={t.color} />
+    );
+  } else if (phase === "failed") {
+    footer = (
+      <View style={[styles.footer, footerPad]}>
+        <Button title="تعديل" variant="secondary" onPress={() => setPhase("form")} style={{ flex: 1 }} />
+        <Button title="إعادة المحاولة" icon="refresh" onPress={submit} style={{ flex: 2 }} />
       </View>
-      <Text style={styles.tplTitle} numberOfLines={1}>
-        {t.title}
-      </Text>
-      <View style={styles.tplLang}>
-        <Ionicons name={LANG_ICONS[t.lang]} size={12} color={langColors[t.lang]} />
-        <Text style={styles.tplLangText}>{LANGS[t.lang].label}</Text>
+    );
+  } else if (phase === "done") {
+    footer = (
+      <View style={[styles.footer, footerPad]}>
+        <Button title="معاينة" variant="secondary" icon="eye-outline" onPress={() => navigation.navigate("Preview", { name: clean })} style={{ flex: 1 }} />
+        <Button title="افتح التطبيق" icon="arrow-back" onPress={() => navigation.replace("AppDetail", { name: clean, lang })} style={{ flex: 2 }} />
       </View>
-    </TouchableOpacity>
-  );
-}
-
-export default function CreateScreen() {
-  const [busy, setBusy] = useState(false);
-  const [preset, setPreset] = useState<Preset | null>(null);
-  const scrollRef = useRef<ScrollView>(null);
-  const firstBoxY = useRef(0);
-
-  function applyTemplate(t: Template) {
-    if (busy) return;
-    setPreset({ name: t.name, description: t.description, lang: t.lang, nonce: Date.now() });
-    scrollRef.current?.scrollTo({ y: Math.max(firstBoxY.current - space.lg, 0), animated: true });
-  }
-  const [firstName, setFirstName] = useState("");
-  const [secondName, setSecondName] = useState("");
-  const [linking, setLinking] = useState(false);
-  const [linkLog, setLinkLog] = useState<string[]>([]);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewName, setPreviewName] = useState("");
-  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
-  const [previewError, setPreviewError] = useState<string | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-
-  async function openPreview(name: string) {
-    setPreviewName(name);
-    setPreviewHtml(null);
-    setPreviewError(null);
-    setPreviewOpen(true);
-    setPreviewLoading(true);
-    try {
-      const text =
-        (await getFileText(REPO, `apps/${name}/index.html`)) ||
-        (await getFileText(REPO, `apps/${name}/preview.html`));
-      if (!text) throw new Error("التطبيق ده مش موجود لسه. اعمل إنشاء الأول.");
-      setPreviewHtml(text);
-    } catch (e: any) {
-      setPreviewError(e.message);
-    } finally {
-      setPreviewLoading(false);
-    }
-  }
-
-  function askLink() {
-    if (busy) return;
-    const a = cleanName(firstName);
-    const b = cleanName(secondName);
-    if (!a || !b) {
-      setLinkLog(["❌ اكتب اسم التطبيق الأول والتاني في صندوقيهم فوق وتحت."]);
-      return;
-    }
-    Alert.alert(
-      "ربط التطبيقين عبر Supabase",
-      `بيتعمل الآتي:\n• بتتنشأ جداول وصلاحيات في مشروع Supabase بتاعك.\n• بيتعاد كتابة التطبيقين (${a} و${b}) وبيترفعوا على GitHub.\n\nالتطبيقين القدام بيتغيروا. تكمّل؟`,
-      [
-        { text: "إلغاء", style: "cancel" },
-        { text: "ربط", onPress: () => doLink(a, b) },
-      ]
     );
   }
 
-  async function doLink(a: string, b: string) {
-    setLinkLog([]);
-    setBusy(true);
-    setLinking(true);
-    const add = (s: string) => setLinkLog((prev) => [...prev, s]);
-    try {
-      const r = await linkAppsViaSupabase(a, b, add);
-      add("✅ اتعاد كتابة التطبيقين وارتفعوا.");
-      if (r.summary) add(`📝 ${r.summary}`);
-      if (r.tables.length) add(`🗄️ الجداول: ${r.tables.join("، ")}`);
-      add("🎉 اضغط معاينة في كل تطبيق تشوفو.");
-    } catch (e: any) {
-      add(`❌ ${e.message}`);
-    } finally {
-      setLinking(false);
-      setBusy(false);
-    }
-  }
-
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView ref={scrollRef} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-          <View style={styles.heroGlow} />
-          <View style={styles.heroBadge}>
-            <Ionicons name="sparkles" size={14} color={colors.primaryText} />
-            <Text style={styles.heroBadgeText}>مصنع التطبيقات بالذكاء الاصطناعي</Text>
-          </View>
-          <Text style={styles.heroTitle}>APK Fact</Text>
-          <Text style={styles.heroText}>
-            صف تطبيقك أو اختر قالب، والذكاء الاصطناعي يكتب الكود ويصلّح أخطاءه ويعرض لك معاينة حيّة ويبني لك APK.
-          </Text>
-          <View style={styles.heroLangs}>
-            {LANG_ORDER.map((l) => (
-              <View key={l} style={styles.heroPill}>
-                <Ionicons name={LANG_ICONS[l]} size={14} color={langColors[l]} />
-                <Text style={styles.heroPillText}>{LANGS[l].label}</Text>
+    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <View style={[styles.top, { paddingTop: insets.top + space.md }]}>
+        <View style={styles.topRow}>
+          <Text style={styles.topTitle}>{phase === "form" ? "تطبيق جديد" : clean}</Text>
+          <IconButton icon="close" label="إغلاق" onPress={() => navigation.goBack()} />
+        </View>
+        {phase === "form" ? <Stepper steps={STEPS} current={step} /> : null}
+      </View>
+
+      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        {phase !== "form" ? (
+          <>
+            <Card style={styles.summary}>
+              <AppAvatar name={clean} lang={lang} size={56} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.summaryName}>{clean}</Text>
+                <LangBadge lang={lang} />
               </View>
-            ))}
-          </View>
-        </LinearGradient>
-
-        <View style={styles.sectionHead}>
-          <Ionicons name="grid-outline" size={20} color={colors.accent} />
-          <Text style={styles.sectionTitle}>ابدأ من قالب</Text>
-        </View>
-        <Text style={styles.sectionHint}>اختر قالب، وبنملأ الاسم والوصف واللغة. تقدر تعدّل عليهم قبل الإنشاء.</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tplRow}
-          style={styles.tplScroll}
-        >
-          {TEMPLATES.map((t) => (
-            <TemplateCard key={t.id} t={t} onPress={() => applyTemplate(t)} />
-          ))}
-        </ScrollView>
-
-        <View onLayout={(e) => (firstBoxY.current = e.nativeEvent.layout.y)}>
-          <AppBox
-            title="إنشاء التطبيق الأول"
-            preset={preset}
-            busy={busy}
-            setBusy={setBusy}
-            onPreview={openPreview}
-            onNameChange={setFirstName}
-          />
-        </View>
-
-        <Card style={styles.linkCard}>
-          <View style={styles.titleRow}>
-            <Ionicons name="link-outline" size={20} color={colors.infoText} />
-            <Text style={styles.boxTitle}>ربط التطبيقين</Text>
-          </View>
-          <Text style={styles.linkDesc}>
-            يستخدم اسمي التطبيقين المكتوبين فوق وتحت، ولازم يكونوا موجودين. الربط يعيد كتابة التطبيقين.
-          </Text>
-          <Button
-            title="ربط التطبيقين عبر Supabase"
-            onPress={askLink}
-            disabled={busy}
-            loading={linking}
-            style={{ marginTop: space.md }}
-          />
-          <LogBox lines={linkLog} />
-        </Card>
-
-        <AppBox
-          title="إنشاء التطبيق الثاني"
-          busy={busy}
-          setBusy={setBusy}
-          onPreview={openPreview}
-          onNameChange={setSecondName}
-          isSecond
-          relatedName={cleanName(firstName)}
-        />
+            </Card>
+            <Card>
+              <Timeline steps={start === "paste" ? pasteSteps : genSteps} />
+            </Card>
+            {phase === "running" ? (
+              <Banner kind="info" text="خليك هنا. الإنشاء بياخد من نصف دقيقة لأربع دقائق، والكود بيتفحص ويتصلّح تلقائياً." />
+            ) : null}
+            {phase === "done" ? <Banner kind="ok" text="التطبيق جاهز! شوف المعاينة أو افتح صفحته عشان تبنيه وتثبّته." /> : null}
+            {phase === "failed" && error ? <Banner kind="error" text={error} /> : null}
+          </>
+        ) : step === 0 ? (
+          <>
+            <Text style={styles.q}>كيف تحب تبدأ؟</Text>
+            <Card style={{ padding: 0, overflow: "hidden" }}>
+              {(
+                [
+                  ["blank", "من الصفر", "صف فكرتك بكلماتك", "sparkles-outline"],
+                  ["template", "من قالب", `${TEMPLATES.length} فكرة جاهزة تقدر تعدّلها`, "grid-outline"],
+                  ["paste", "عندي كود جاهز", "الصق الكود ونجهّز له معاينة", "code-slash-outline"],
+                ] as [Start, string, string, IconName][]
+              ).map(([key, title, sub, icon], i) => (
+                <ListRow
+                  key={key}
+                  icon={icon}
+                  title={title}
+                  subtitle={sub}
+                  chevron={false}
+                  last={i === 2}
+                  right={
+                    <Ionicons
+                      name={start === key ? "radio-button-on" : "radio-button-off"}
+                      size={22}
+                      color={start === key ? colors.primary : colors.textMuted}
+                    />
+                  }
+                  onPress={() => setStart(key)}
+                />
+              ))}
+            </Card>
+            {start === "template" ? (
+              <View style={[styles.grid, { marginTop: space.md }]}>
+                {TEMPLATES.map((t) => {
+                  const sel = template?.id === t.id;
+                  return (
+                    <Pressable
+                      key={t.id}
+                      onPress={() => pickTemplate(t)}
+                      style={[styles.tpl, sel && { borderColor: t.color, backgroundColor: t.color + "14" }]}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: sel }}
+                    >
+                      <View style={[styles.tplIcon, { backgroundColor: t.color + "24" }]}>
+                        <Ionicons name={t.icon} size={22} color={t.color} />
+                      </View>
+                      <Text style={styles.tplTitle} numberOfLines={1}>
+                        {t.title}
+                      </Text>
+                      <LangBadge lang={t.lang} />
+                      {sel ? (
+                        <View style={styles.tplCheck}>
+                          <Ionicons name="checkmark" size={14} color={colors.bg} />
+                        </View>
+                      ) : null}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : null}
+          </>
+        ) : step === 1 ? (
+          <>
+            <Text style={styles.q}>بأي لغة نكتب التطبيق؟</Text>
+            {LANG_ORDER.map((l) => {
+              const sel = lang === l;
+              return (
+                <Pressable
+                  key={l}
+                  onPress={() => setLang(l)}
+                  style={[styles.langCard, sel && { borderColor: langColors[l], backgroundColor: langColors[l] + "12" }]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: sel }}
+                >
+                  <View style={[styles.langIcon, { backgroundColor: langColors[l] + "22" }]}>
+                    <Ionicons name={LANG_ICONS[l]} size={28} color={langColors[l]} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.langName}>{LANGS[l].label}</Text>
+                    <Text style={styles.langPitch}>{LANG_PITCH[l]}</Text>
+                    <Text style={styles.langTools}>{LANGS[l].tools}</Text>
+                  </View>
+                  <Ionicons name={sel ? "checkmark-circle" : "ellipse-outline"} size={24} color={sel ? langColors[l] : colors.border} />
+                </Pressable>
+              );
+            })}
+            {template && template.lang !== lang ? (
+              <Banner kind="info" text={`القالب مصمم لـ ${LANGS[template.lang].label}، لكن تقدر تبنيه بـ ${LANGS[lang].label}.`} />
+            ) : null}
+          </>
+        ) : step === 2 ? (
+          <>
+            <Field
+              label="اسم التطبيق"
+              icon="at-outline"
+              value={name}
+              onChangeText={setName}
+              placeholder="مثال: myshop"
+              ltr
+              autoCapitalize="none"
+              autoCorrect={false}
+              error={nameError}
+              helper={clean ? `بيتحفظ باسم apps/${clean}` : "حروف إنجليزية صغيرة وأرقام، بدون مسافات"}
+              right={clean && !nameError ? <Ionicons name="checkmark-circle" size={18} color={colors.okText} /> : null}
+            />
+            {start === "paste" ? (
+              <Field
+                label={LANGS[lang].pasteLabel}
+                icon="code-slash-outline"
+                value={code}
+                onChangeText={setCode}
+                placeholder="الصق الكود هنا"
+                multiline
+                ltr
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={{ fontFamily: "monospace", fontSize: 12, minHeight: 220 }}
+                helper={LANGS[lang].hasAiPreview ? "بعد الرفع بنجهّز معاينة حيّة بالذكاء الاصطناعي" : undefined}
+              />
+            ) : (
+              <>
+                <Field
+                  label="وصف التطبيق"
+                  icon="document-text-outline"
+                  value={text}
+                  onChangeText={setText}
+                  placeholder="الشاشات، المميزات، الألوان، الجمهور… كل ما زادت التفاصيل، كان التطبيق أحسن"
+                  multiline
+                  maxLength={2000}
+                  counter
+                />
+                <Text style={styles.subq}>أضف ميزة بضغطة</Text>
+                <View style={styles.chips}>
+                  {IDEAS.map((idea) => (
+                    <Chip
+                      key={idea.label}
+                      label={idea.label}
+                      icon={idea.icon}
+                      selected={text.includes(idea.text)}
+                      onPress={() => setText((t) => toggleIdea(t, idea.text))}
+                    />
+                  ))}
+                </View>
+                {apps.length > 0 ? (
+                  <>
+                    <Text style={styles.subq}>جزء من مشروع؟ (اختياري)</Text>
+                    <Text style={styles.subhint}>الذكاء الاصطناعي بيقرأ التطبيق المختار ويخلي الاثنين متناسقين.</Text>
+                    <View style={styles.chips}>
+                      <Chip label="لا" selected={!related} onPress={() => setRelated("")} />
+                      {apps.map((a) => (
+                        <Chip
+                          key={a.name}
+                          label={a.name}
+                          icon={LANG_ICONS[a.lang]}
+                          tint={langColors[a.lang]}
+                          selected={related === a.name}
+                          onPress={() => setRelated(a.name)}
+                        />
+                      ))}
+                    </View>
+                  </>
+                ) : null}
+              </>
+            )}
+          </>
+        ) : (
+          <>
+            <Card style={styles.summary}>
+              <AppAvatar name={clean} lang={lang} size={64} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.summaryName}>{clean}</Text>
+                <LangBadge lang={lang} />
+              </View>
+            </Card>
+            <Card style={{ padding: 0, overflow: "hidden" }}>
+              <ListRow
+                icon="flag-outline"
+                title="البداية"
+                value={start === "paste" ? "كود جاهز" : start === "template" ? template?.title ?? "قالب" : "من الصفر"}
+              />
+              <ListRow icon={LANG_ICONS[lang]} tint={langColors[lang]} title="اللغة" value={LANGS[lang].label} />
+              {related ? <ListRow icon="link-outline" title="مرتبط بـ" value={related} /> : null}
+              <ListRow
+                icon={start === "paste" ? "code-slash-outline" : "document-text-outline"}
+                title={start === "paste" ? "الكود" : "الوصف"}
+                subtitle={start === "paste" ? `${code.split("\n").length} سطر` : text}
+                onPress={() => setStep(2)}
+                last
+              />
+            </Card>
+            <Banner kind="info" text="بعد الإنشاء: الكود بيتفحص، والأخطاء المعروفة بتتصلّح تلقائياً، والجديدة بالذكاء الاصطناعي." />
+          </>
+        )}
       </ScrollView>
-
-      <Modal visible={previewOpen} animationType="slide" onRequestClose={() => setPreviewOpen(false)}>
-        <View style={{ flex: 1, backgroundColor: colors.bg }}>
-          <View style={styles.modalHead}>
-            <Text style={styles.modalTitle}>{previewName}</Text>
-            <TouchableOpacity
-              onPress={() => setPreviewOpen(false)}
-              hitSlop={8}
-              style={styles.closeBtn}
-              accessibilityRole="button"
-              accessibilityLabel="إغلاق المعاينة"
-            >
-              <Ionicons name="close" size={22} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-          {previewLoading && <ActivityIndicator style={{ marginTop: space.lg }} color={colors.accent} />}
-          {previewError && (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText}>❌ {previewError}</Text>
-            </View>
-          )}
-          {previewHtml && (
-            <WebView originWhitelist={["*"]} source={{ html: previewHtml }} style={{ flex: 1 }} />
-          )}
-        </View>
-      </Modal>
-    </View>
+      {footer}
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: space.lg, paddingBottom: 96 },
-  hero: {
-    borderRadius: radius.card,
-    padding: space.xl,
-    marginBottom: space.xl,
-    overflow: "hidden",
-  },
-  heroGlow: {
-    position: "absolute",
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    top: -80,
-    end: -60,
-    backgroundColor: "rgba(255,255,255,0.12)",
-  },
-  heroBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    gap: space.xs,
-    paddingVertical: space.xs,
-    paddingHorizontal: space.md,
-    borderRadius: radius.pill,
-    backgroundColor: "rgba(255,255,255,0.16)",
-    marginBottom: space.md,
-  },
-  heroBadgeText: { color: colors.primaryText, fontSize: 12, fontWeight: "700" },
-  heroTitle: { ...type.hero, color: colors.primaryText },
-  heroText: { ...type.body, color: "rgba(255,255,255,0.88)", marginTop: space.sm },
-  sectionHead: { flexDirection: "row", alignItems: "center", gap: space.sm },
-  sectionTitle: { ...type.sectionTitle, color: colors.text },
-  sectionHint: { ...type.hint, color: colors.textMuted, marginTop: space.xs },
-  tplScroll: { marginHorizontal: -space.lg, marginTop: space.md, marginBottom: space.xl },
-  tplRow: { paddingHorizontal: space.lg, gap: space.md },
-  tplCard: {
-    width: 128,
+  root: { flex: 1, backgroundColor: colors.bg },
+  top: { paddingHorizontal: space.lg },
+  topRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: space.lg },
+  topTitle: { ...type.screenTitle, fontSize: 24, fontWeight: "800", color: colors.text },
+  body: { paddingHorizontal: space.lg, paddingBottom: space.xxl, gap: space.md },
+  q: { ...type.sectionTitle, fontSize: 20, color: colors.text, textAlign: "right", marginBottom: space.sm },
+  subq: { ...type.label, color: colors.text, textAlign: "right", marginTop: space.sm },
+  subhint: { ...type.hint, color: colors.textMuted, textAlign: "right" },
+  chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: space.sm, marginTop: space.sm, marginBottom: space.md },
+  grid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: space.md },
+  tpl: {
+    width: "47.8%",
     padding: space.md,
+    gap: space.sm,
     borderRadius: radius.card,
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: space.sm,
-  },
-  tplIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  tplTitle: { color: colors.text, fontWeight: "700", fontSize: 14 },
-  tplLang: { flexDirection: "row", alignItems: "center", gap: 4 },
-  tplLangText: { color: colors.textMuted, fontSize: 12, fontWeight: "600" },
-  heroLangs: { flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: space.lg },
-  heroPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space.xs,
-    borderWidth: 1,
-    borderRadius: radius.pill,
-    paddingVertical: space.xs,
-    paddingHorizontal: space.md,
-    borderColor: "rgba(255,255,255,0.22)",
-    backgroundColor: "rgba(7,8,14,0.45)",
-  },
-  heroPillText: { color: colors.primaryText, fontWeight: "700", fontSize: 13 },
-  box: { marginBottom: space.xl },
-  titleRow: { flexDirection: "row", alignItems: "center", gap: space.sm },
-  boxTitle: { ...type.sectionTitle, color: colors.text, marginBottom: space.xs },
-  label: { ...type.label, color: colors.text, marginTop: space.lg, marginBottom: space.sm },
-  hint: { ...type.hint, color: colors.textMuted, marginTop: space.sm },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.field,
-    paddingHorizontal: space.md,
-    minHeight: 46,
-    fontSize: 15,
-    color: colors.text,
-    backgroundColor: colors.field,
-  },
-  textarea: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.field,
-    padding: space.md,
-    minHeight: 96,
-    fontSize: 15,
-    color: colors.text,
-    backgroundColor: colors.field,
-    textAlignVertical: "top",
-  },
-  codeArea: { minHeight: 180, fontFamily: "monospace", fontSize: 12, writingDirection: "ltr", textAlign: "left" },
-  relatedBtn: {
-    marginTop: space.lg,
-    padding: space.md,
-    borderRadius: radius.field,
-    backgroundColor: colors.infoBg,
-    borderWidth: 1,
-    borderColor: colors.infoBorder,
-  },
-  relatedText: { fontWeight: "700", color: colors.infoText, lineHeight: 22 },
-  relatedWarn: { color: colors.warnText, ...type.hint, marginTop: space.xs },
-  langRow: { flexDirection: "row", gap: space.sm },
-  langCard: {
-    flex: 1,
-    alignItems: "center",
-    gap: space.xs,
-    paddingVertical: space.md,
-    borderRadius: radius.field,
     borderWidth: 1.5,
     borderColor: colors.border,
-    backgroundColor: colors.field,
   },
-  langText: { color: colors.textMuted, fontWeight: "700", fontSize: 14 },
-  toolsLine: { flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: space.sm },
-  toolsText: { ...type.hint, color: colors.textMuted, flex: 1 },
-  linkCard: { marginBottom: space.xl, backgroundColor: colors.infoBg, borderColor: colors.infoBorder },
-  linkDesc: { ...type.hint, color: colors.textMuted },
-  tools: { marginTop: space.lg },
-  rowBtn: {
-    flexDirection: "row",
+  tplIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center", alignSelf: "flex-end" },
+  tplTitle: { color: colors.text, fontWeight: "800", fontSize: 14, textAlign: "right" },
+  tplCheck: {
+    position: "absolute",
+    top: space.sm,
+    left: space.sm,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  langCard: {
+    flexDirection: "row-reverse",
     alignItems: "center",
     gap: space.md,
-    minHeight: 52,
-    borderTopWidth: 1,
+    padding: space.lg,
+    borderRadius: radius.card,
+    borderWidth: 1.5,
     borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
-  rowBtnText: { flex: 1, fontSize: 15, fontWeight: "600", color: colors.text },
-  rowIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.primarySoft,
-  },
-  iconThumb: { width: 32, height: 32, borderRadius: 8 },
-  editBox: { paddingBottom: space.md },
-  disabled: { opacity: 0.4 },
-  logBox: {
-    marginTop: space.lg,
-    backgroundColor: colors.field,
-    borderRadius: radius.field,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: space.md,
-  },
-  logLine: { marginBottom: space.xs, fontFamily: "monospace", fontSize: 13, lineHeight: 20, color: colors.text },
-  modalHead: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingTop: 40,
-    paddingBottom: space.md,
+  langIcon: { width: 54, height: 54, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  langName: { fontSize: 18, fontWeight: "900", color: colors.text, textAlign: "right" },
+  langPitch: { ...type.hint, color: colors.text, textAlign: "right", marginTop: 2 },
+  langTools: { fontSize: 11.5, color: colors.textMuted, textAlign: "right", marginTop: 4 },
+  summary: { flexDirection: "row-reverse", alignItems: "center", gap: space.lg },
+  summaryName: { fontSize: 20, fontWeight: "900", color: colors.text, textAlign: "right", marginBottom: 6 },
+  footer: {
+    flexDirection: "row-reverse",
+    gap: space.md,
     paddingHorizontal: space.lg,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
+    paddingTop: space.md,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
-  modalTitle: { flex: 1, ...type.sectionTitle, color: colors.text },
-  closeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surfaceAlt,
-  },
-  errorBox: { backgroundColor: colors.errorBg, borderRadius: radius.field, padding: space.md, margin: space.lg },
-  errorText: { color: colors.errorText, ...type.body },
-}); 
+});

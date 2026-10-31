@@ -1,18 +1,12 @@
-import json
 import os
 import re
 import sys
 from pathlib import Path
 
 from gemini_client import call_gemini
+from native_langs import parse_reply
 
 DEFAULT_MODEL = "gemini-3.8-flash"
-
-
-def parse_json(text):
-    text = text.strip()
-    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text)
-    return json.loads(text)
 
 
 def error_excerpt(log_text):
@@ -39,9 +33,9 @@ def main():
 or a pre-build check found JavaScript errors in index.html (those are always caused by index.html).
 First decide whether the failure is caused by the app's index.html. Gradle, Android SDK, network, plugin or icon problems are NOT caused by it.
 If it IS caused by index.html, fix it with the smallest possible changes, keep the design and behavior the same, and return the complete file.
-Reply with JSON only, with exactly two keys:
-"caused_by_html": true or false
-"index_html": the complete fixed index.html if caused_by_html is true, otherwise an empty string.
+Reply in exactly this format, nothing else:
+1. a first line `CAUSED_BY_HTML: yes` or `CAUSED_BY_HTML: no`
+2. if yes, one ```html code block with the complete fixed index.html
 
 BUILD LOG (errors):
 {errors}
@@ -50,16 +44,15 @@ CURRENT index.html:
 {html}
 """
     try:
-        raw = call_gemini(model, prompt, keys, temperature=0.2)
+        raw = call_gemini(model, prompt, keys, temperature=0.2, json_mode=False)
     except SystemExit as e:
         print(e.code)
         sys.exit(2)
 
-    result = parse_json(raw)
-    if not result.get("caused_by_html"):
+    fixed = parse_reply(raw)[0].get("html", "")
+    if not fixed and re.search(r"CAUSED_BY_HTML:\s*no", raw, re.I):
         print("The failure is not caused by index.html")
         sys.exit(3)
-    fixed = (result.get("index_html") or "").strip()
     if not fixed:
         print("Model returned no code")
         sys.exit(2)

@@ -13,11 +13,12 @@ class GeminiError(Exception):
         self.body = body
 
 
-def _request(model, prompt, key, temperature):
+def _request(model, prompt, key, temperature, json_mode=True):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"responseMimeType": "application/json", "temperature": temperature},
+        "generationConfig": {"responseMimeType": "application/json" if json_mode else "text/plain",
+                             "temperature": temperature},
     }
     req = urllib.request.Request(
         url,
@@ -51,7 +52,7 @@ def _classify(e):
     return "retry"              # 503, timeout, unknown model: next model now
 
 
-def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=3):
+def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=3, json_mode=True):
     models = [model] + [m for m in FALLBACK_MODELS if m != model]
     dead_keys = set()
     dead_pairs = set()
@@ -67,7 +68,7 @@ def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=3):
                 if key in dead_keys or pair in dead_pairs or cooldown.get(pair, 0) > time.time():
                     continue
                 try:
-                    return _request(m, prompt, key, temperature)
+                    return _request(m, prompt, key, temperature, json_mode)
                 except GeminiError as e:
                     last = str(e)
                     kind = _classify(e)

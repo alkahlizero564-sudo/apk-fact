@@ -158,7 +158,7 @@ def main(page: ft.Page):
         priority_chip = ft.Container(
             content=ft.Text(priority, size=11, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
             bgcolor=get_priority_color(priority),
-            padding=ft.padding.only(left=8, top=3, right=8, bottom=3),
+            padding=ft.Padding.only(left=8, top=3, right=8, bottom=3),
             border_radius=10,
         )
 
@@ -173,7 +173,7 @@ def main(page: ft.Page):
             elevation=1,
             shape=ft.RoundedRectangleBorder(radius=12),
             content=ft.Container(
-                padding=ft.padding.only(left=12, top=6, right=12, bottom=6),
+                padding=ft.Padding.only(left=12, top=6, right=12, bottom=6),
                 content=ft.Row(
                     controls=[
                         checkbox,
@@ -218,7 +218,7 @@ def main(page: ft.Page):
                         spacing=8,
                     ),
                     padding=40,
-                    alignment=ft.alignment.CENTER,
+                    alignment=ft.Alignment.CENTER,
                 )
             )
         else:
@@ -253,8 +253,8 @@ def main(page: ft.Page):
         content=ft.Container(
             padding=16,
             gradient=ft.LinearGradient(
-                begin=ft.alignment.TOP_LEFT,
-                end=ft.alignment.BOTTOM_RIGHT,
+                begin=ft.Alignment.TOP_LEFT,
+                end=ft.Alignment.BOTTOM_RIGHT,
                 colors=[ft.Colors.TEAL_50, ft.Colors.TEAL_100],
             ),
             border_radius=16,

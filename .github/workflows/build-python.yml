@@ -48,6 +48,8 @@ jobs:
           OK=0
           for i in $(seq 1 "$MAX_ATTEMPTS"); do
             echo "=== Build attempt $i of $MAX_ATTEMPTS ==="
+            # Apply sure Flet 1.x API fixes to the repo copy (saved with the other fixes).
+            python scripts/check_python.py --fix "$SRC/main.py" || true
             rm -rf "$PROJ" && mkdir -p "$PROJ/assets"
             cp "$SRC/main.py" "$PROJ/main.py"
             if [ -f "$SRC/requirements.txt" ]; then cp "$SRC/requirements.txt" "$PROJ/"; else echo "flet" > "$PROJ/requirements.txt"; fi

@@ -2,6 +2,8 @@ name: generate-python
 
 on:
   push:
+    # Only requests on main: other branches merge main's request files and must not regenerate apps.
+    branches: [main]
     paths:
       - "request-python.txt"
   workflow_dispatch:

@@ -202,11 +202,36 @@ def run_sql(ref, token, sql):
     return _request("POST", f"/projects/{ref}/database/query", token, {"query": sql})
 
 
+def pick_client_key(keys):
+    """The key the apps send as `apikey`: the legacy anon key, or a publishable key (sb_publishable_...)
+    on projects that only have the new API keys. Never a secret / service_role key."""
+    keys = [k for k in keys or [] if isinstance(k, dict) and k.get("api_key")]
+    for test in (
+        lambda k: k.get("name") == "anon" and k.get("type") in (None, "legacy"),
+        lambda k: k.get("type") == "publishable",
+        lambda k: str(k.get("api_key", "")).startswith("sb_publishable_"),
+    ):
+        found = next((k["api_key"] for k in keys if test(k)), None)
+        if found:
+            return found
+    return None
+
+
 def api_keys(ref, token):
     keys = _request("GET", f"/projects/{ref}/api-keys", token) or []
-    anon = next((k["api_key"] for k in keys if k.get("name") == "anon"), None)
+    anon = pick_client_key(keys)
     if not anon:
-        raise RuntimeError("Could not read the project's anon key")
+        # Some projects only list the key values when asked to reveal them.
+        try:
+            anon = pick_client_key(_request("GET", f"/projects/{ref}/api-keys?reveal=true", token) or [])
+        except RuntimeError:
+            anon = None
+    if not anon:
+        seen = ", ".join(f"{k.get('name')}({k.get('type')})" for k in keys if isinstance(k, dict)) or "none"
+        raise RuntimeError(
+            "Could not read the project's anon/publishable key (keys seen: " + seen + "). "
+            "In Supabase > Project Settings > API Keys, make sure a publishable key or the legacy anon key exists."
+        )
     return f"https://{ref}.supabase.co", anon
 
 

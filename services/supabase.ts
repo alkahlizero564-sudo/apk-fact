@@ -67,7 +67,7 @@ export async function getSupabaseClientInfo(): Promise<{ url: string; anonKey: s
   }
 
   const keys = await res.json();
-  const list: any[] = Array.isArray(keys) ? keys : [];
+  const list: any[] = (Array.isArray(keys) ? keys : []).filter((k) => k && k.api_key);
   const key =
     list.find((k) => k.name === "anon") ||
     list.find((k) => k.type === "publishable");

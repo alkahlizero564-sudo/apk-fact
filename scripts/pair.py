@@ -302,6 +302,8 @@ Backend: Supabase.
 Call the REST API directly over HTTPS (no Supabase SDK):
   headers: apikey: SUPABASE_ANON_KEY, Authorization: Bearer <access_token of the signed-in user>,
            Content-Type: application/json, Prefer: return=representation (for insert/update)
+  The key may be a publishable key (sb_publishable_...): send it ONLY as the apikey header, never as
+  "Authorization: Bearer"; before sign-in send no Authorization header at all.
   read:   GET  {url}/rest/v1/<table>?select=*&<column>=eq.<value>&order=created_at.desc
   insert: POST {url}/rest/v1/<table>   update: PATCH {url}/rest/v1/<table>?id=eq.<id>   delete: DELETE …?id=eq.<id>
   rpc:    POST {url}/rest/v1/rpc/<function>  with a JSON body of named arguments

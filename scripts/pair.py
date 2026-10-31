@@ -170,7 +170,16 @@ def google_token(sa):
     from google.auth.transport.requests import Request
     creds = service_account.Credentials.from_service_account_info(
         sa, scopes=["https://www.googleapis.com/auth/cloud-platform", "https://www.googleapis.com/auth/firebase"])
-    creds.refresh(Request())
+    try:
+        creds.refresh(Request())
+    except Exception as e:  # google.auth.exceptions.RefreshError and network errors
+        text = str(e)
+        hint = ""
+        if "account not found" in text or "invalid_grant" in text:
+            hint = (" The Firebase service account key is no longer valid (the key was deleted or the service "
+                    "account removed). In Firebase console > Project settings > Service accounts, press "
+                    "'Generate new private key' and paste the whole new JSON in APK Fact > الإعدادات > Firebase.")
+        raise SystemExit(f"Firebase sign-in failed for {sa.get('client_email', '?')}: {text}.{hint}")
     return creds.token
 
 

@@ -25,6 +25,7 @@ import { testSupabaseConnection } from "../services/supabase";
 import { testGeminiConnection, testClaudeConnection, listGeminiModels, GeminiModel } from "../services/ai";
 import { buildTool, listToolBuilds, ToolRun } from "../services/appActions";
 import { REPO } from "../services/config";
+import { parseServiceAccount } from "../services/pair";
 import { colors, space, radius, type } from "../theme";
 
 type FieldDef = { key: string; label: string; placeholder?: string; secret?: boolean };
@@ -72,14 +73,35 @@ const SERVICES: Service[] = [
     title: "Supabase",
     icon: "server-outline",
     tint: "#34D399",
-    hint: "قاعدة البيانات المشتركة لربط تطبيقين.",
+    hint:
+      "قاعدة البيانات وتسجيل الدخول للتطبيقين المتصلين. بريد الرموز (SMTP) اختياري، لكن بدونه Supabase يرسل رموز " +
+      "قليلة في الساعة ولعناوين فريقك فقط (مثلاً Gmail: smtp.gmail.com، المنفذ 587، وكلمة مرور تطبيق).",
     fields: [
       { key: "SUPABASE_ACCESS_TOKEN", label: "Personal Access Token (من الحساب)", placeholder: "sbp_...", secret: true },
       { key: "SUPABASE_PROJECT_REF", label: "Project Ref (من رابط المشروع)", placeholder: "abcdefghijklmnop" },
+      { key: "SMTP_HOST", label: "SMTP: الخادم (اختياري)", placeholder: "smtp.gmail.com" },
+      { key: "SMTP_PORT", label: "SMTP: المنفذ", placeholder: "587" },
+      { key: "SMTP_USER", label: "SMTP: المستخدم", placeholder: "you@gmail.com" },
+      { key: "SMTP_PASS", label: "SMTP: كلمة المرور", placeholder: "••••", secret: true },
+      { key: "SMTP_FROM", label: "SMTP: عنوان المرسل", placeholder: "you@gmail.com" },
     ],
     test: async () => {
       const r = await testSupabaseConnection();
       return `متصل بمشروع: ${r.name} (${r.status})`;
+    },
+  },
+  {
+    id: "firebase",
+    title: "Firebase (الإشعارات)",
+    icon: "notifications-outline",
+    tint: "#FBBF24",
+    hint:
+      "للإشعارات والتطبيق مقفول. مرة واحدة: افتح console.firebase.google.com وأنشئ مشروع، ثم إعدادات المشروع > " +
+      "حسابات الخدمة > إنشاء مفتاح خاص جديد، وانسخ محتوى ملف JSON كامل هنا. التطبيقات بتتسجل في المشروع تلقائياً.",
+    fields: [{ key: "FIREBASE_SERVICE_ACCOUNT", label: "مفتاح حساب الخدمة (JSON)", placeholder: '{"type": "service_account", ...}', secret: true }],
+    test: async () => {
+      const raw = (await SecureStore.getItemAsync("FIREBASE_SERVICE_ACCOUNT")) ?? "";
+      return `مفتاح صالح لمشروع: ${parseServiceAccount(raw)}`;
     },
   },
   {

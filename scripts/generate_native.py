@@ -103,7 +103,7 @@ def main():
     lang = sys.argv[1]
     cfg = LANGS[lang]
     name, related, model, preview_only, task = parse_request(
-        Path(cfg["request_file"]).read_text(encoding="utf-8"))
+        Path(os.environ.get("REQUEST_FILE") or cfg["request_file"]).read_text(encoding="utf-8"))
     if not name or not (task or preview_only):
         raise SystemExit("Bad request file")
 

@@ -28,6 +28,8 @@ LANGS = {
             "provider", "shared_preferences", "http", "intl",
             "fl_chart", "url_launcher", "flutter_animate", "uuid", "path_provider",
             "sqflite", "go_router", "cached_network_image", "flutter_svg",
+            # Push for connected app pairs (initialized from lib/firebase_config.dart, no Gradle plugin).
+            "firebase_core", "firebase_messaging",
         ],
         "rules": (
             "Write a Flutter app in a single file lib/main.dart, with Material 3 (useMaterial3: true), "

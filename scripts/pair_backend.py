@@ -1,0 +1,245 @@
+"""Supabase backend for a pair of connected apps (customer + admin).
+
+Everything for pair <p> is prefixed with <p>_ so several pairs can share one Supabase project:
+  <p>_profiles        one row per user, role 'customer' | 'admin' (users cannot change their own role)
+  <p>_admins          emails that become admins when they sign up (or right away if they already exist)
+  <p>_device_tokens   FCM tokens, registered with rpc <p>_register_device(token, app)
+  <p>_notifications   a row = a notification to one user (to_user) or to every admin / customer (to_role);
+                      with push enabled, a trigger calls the <p>-push Edge Function which sends it with FCM
+  <p>_is_admin()      helper for row level security policies
+Business tables are designed by the AI on top of these (see pair.py).
+"""
+import json
+import os
+import re
+import urllib.error
+import urllib.request
+
+API = "https://api.supabase.com/v1"
+
+
+def prefix_of(base):
+    return re.sub(r"[^a-z0-9_]", "_", base.lower())
+
+
+def base_sql(p, admin_emails=()):
+    admins = ",".join("('" + e.strip().lower().replace("'", "''") + "')" for e in admin_emails if e.strip())
+    return f"""
+-- APK Fact pair "{p}": accounts, roles, devices and notifications
+create table if not exists public.{p}_admins (email text primary key);
+{"insert into public." + p + "_admins(email) values " + admins + " on conflict do nothing;" if admins else ""}
+
+create table if not exists public.{p}_profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text,
+  full_name text,
+  phone text,
+  role text not null default 'customer' check (role in ('customer', 'admin')),
+  created_at timestamptz not null default now()
+);
+
+create or replace function public.{p}_is_admin() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.{p}_profiles where id = auth.uid() and role = 'admin')
+$$;
+
+create or replace function public.{p}_role_for(mail text) returns text
+language sql stable security definer set search_path = public as $$
+  select case when exists (select 1 from public.{p}_admins a where lower(a.email) = lower(mail)) then 'admin' else 'customer' end
+$$;
+
+create or replace function public.{p}_handle_new_user() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.{p}_profiles (id, email, role) values (new.id, new.email, public.{p}_role_for(new.email))
+  on conflict (id) do nothing;
+  return new;
+end $$;
+
+drop trigger if exists {p}_on_auth_user_created on auth.users;
+create trigger {p}_on_auth_user_created after insert on auth.users
+  for each row execute function public.{p}_handle_new_user();
+
+-- Users that already exist in this project (e.g. the admin) get a profile now.
+insert into public.{p}_profiles (id, email, role)
+  select u.id, u.email, public.{p}_role_for(u.email) from auth.users u
+  on conflict (id) do update set role = case when excluded.role = 'admin' then 'admin' else public.{p}_profiles.role end;
+
+-- Nobody can make themselves admin; only an admin can change roles.
+create or replace function public.{p}_protect_role() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.role is distinct from old.role and not public.{p}_is_admin() and auth.uid() is not null then
+    raise exception 'only an admin can change roles';
+  end if;
+  return new;
+end $$;
+drop trigger if exists {p}_protect_role on public.{p}_profiles;
+create trigger {p}_protect_role before update on public.{p}_profiles
+  for each row execute function public.{p}_protect_role();
+
+alter table public.{p}_profiles enable row level security;
+alter table public.{p}_admins enable row level security;
+drop policy if exists "{p} profiles read" on public.{p}_profiles;
+create policy "{p} profiles read" on public.{p}_profiles for select to authenticated
+  using (id = auth.uid() or public.{p}_is_admin());
+drop policy if exists "{p} profiles update" on public.{p}_profiles;
+create policy "{p} profiles update" on public.{p}_profiles for update to authenticated
+  using (id = auth.uid() or public.{p}_is_admin());
+drop policy if exists "{p} admins manage" on public.{p}_admins;
+create policy "{p} admins manage" on public.{p}_admins for all to authenticated
+  using (public.{p}_is_admin()) with check (public.{p}_is_admin());
+
+create table if not exists public.{p}_device_tokens (
+  token text primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  app text not null check (app in ('customer', 'admin')),
+  platform text not null default 'android',
+  updated_at timestamptz not null default now()
+);
+alter table public.{p}_device_tokens enable row level security;
+drop policy if exists "{p} own devices" on public.{p}_device_tokens;
+create policy "{p} own devices" on public.{p}_device_tokens for all to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- A device can move between accounts, so registration goes through this function.
+create or replace function public.{p}_register_device(device_token text, app_name text, device_platform text default 'android')
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then raise exception 'sign in first'; end if;
+  insert into public.{p}_device_tokens (token, user_id, app, platform, updated_at)
+  values (device_token, auth.uid(), app_name, device_platform, now())
+  on conflict (token) do update set user_id = auth.uid(), app = excluded.app, platform = excluded.platform, updated_at = now();
+end $$;
+
+create table if not exists public.{p}_notifications (
+  id bigint generated always as identity primary key,
+  to_user uuid references auth.users(id) on delete cascade,
+  to_role text check (to_role in ('customer', 'admin')),
+  title text not null,
+  body text not null default '',
+  data jsonb not null default '{{}}',
+  created_by uuid default auth.uid(),
+  read_at timestamptz,
+  created_at timestamptz not null default now(),
+  check (to_user is not null or to_role is not null)
+);
+alter table public.{p}_notifications enable row level security;
+drop policy if exists "{p} notifications read" on public.{p}_notifications;
+create policy "{p} notifications read" on public.{p}_notifications for select to authenticated
+  using (to_user = auth.uid() or created_by = auth.uid()
+         or (to_role = 'admin' and public.{p}_is_admin()) or to_role = 'customer');
+-- Customers can notify the admins (or themselves); admins can notify anyone.
+drop policy if exists "{p} notifications send" on public.{p}_notifications;
+create policy "{p} notifications send" on public.{p}_notifications for insert to authenticated
+  with check (created_by = auth.uid() and (to_role = 'admin' or to_user = auth.uid() or public.{p}_is_admin()));
+drop policy if exists "{p} notifications mark read" on public.{p}_notifications;
+create policy "{p} notifications mark read" on public.{p}_notifications for update to authenticated
+  using (to_user = auth.uid() or (to_role = 'admin' and public.{p}_is_admin()));
+"""
+
+
+def push_sql(p, function_url, secret):
+    """Calls the <p>-push Edge Function for every new notification (pg_net, asynchronous)."""
+    url = function_url.replace("'", "''")
+    sec = secret.replace("'", "''")
+    return f"""
+create table if not exists public.{p}_push_config (id int primary key default 1 check (id = 1), url text not null, secret text not null);
+alter table public.{p}_push_config enable row level security;
+revoke all on public.{p}_push_config from anon, authenticated;
+insert into public.{p}_push_config (id, url, secret) values (1, '{url}', '{sec}')
+  on conflict (id) do update set url = excluded.url, secret = excluded.secret;
+
+create or replace function public.{p}_push_notify() returns trigger
+language plpgsql security definer set search_path = public, extensions as $$
+declare c record;
+begin
+  select url, secret into c from public.{p}_push_config where id = 1;
+  if c.url is not null then
+    perform net.http_post(
+      url := c.url,
+      body := jsonb_build_object('record', to_jsonb(new)),
+      headers := jsonb_build_object('Content-Type', 'application/json', 'x-push-secret', c.secret)
+    );
+  end if;
+  return new;
+end $$;
+drop trigger if exists {p}_push on public.{p}_notifications;
+create trigger {p}_push after insert on public.{p}_notifications
+  for each row execute function public.{p}_push_notify();
+"""
+
+
+def realtime_sql(tables):
+    """Add tables to Supabase Realtime (live updates in the apps) when the publication exists."""
+    stmts = "".join(
+        f"  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = '{t}') "
+        f"then execute 'alter publication supabase_realtime add table public.{t}'; end if;\n"
+        for t in tables
+    )
+    return f"do $$ begin\n if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then\n{stmts} end if;\nend $$;"
+
+
+# ---- Supabase Management API ----
+
+def _request(method, path, token, body=None):
+    req = urllib.request.Request(
+        API + path,
+        data=json.dumps(body).encode() if body is not None else None,
+        method=method,
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json",
+                 "User-Agent": "apk-fact"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            raw = r.read().decode()
+            return json.loads(raw) if raw.strip() else None
+    except urllib.error.HTTPError as e:
+        raise RuntimeError(f"Supabase {method} {path} -> {e.code}: {e.read().decode()[:600]}")
+
+
+def run_sql(ref, token, sql):
+    return _request("POST", f"/projects/{ref}/database/query", token, {"query": sql})
+
+
+def api_keys(ref, token):
+    keys = _request("GET", f"/projects/{ref}/api-keys", token) or []
+    anon = next((k["api_key"] for k in keys if k.get("name") == "anon"), None)
+    if not anon:
+        raise RuntimeError("Could not read the project's anon key")
+    return f"https://{ref}.supabase.co", anon
+
+
+def configure_email_otp(ref, token, smtp=None):
+    """Email sign-in with a 6-digit code: the code is in both the sign-up and the sign-in email."""
+    code_mail = (
+        '<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;text-align:center;padding:24px">'
+        "<h2>رمز الدخول</h2><p>استخدم الرمز ده لتسجيل الدخول:</p>"
+        '<p style="font-size:32px;letter-spacing:8px;font-weight:bold">{{ .Token }}</p>'
+        "<p style=\"color:#888\">الرمز صالح لمدة 10 دقائق. لو ما طلبته، تجاهل الرسالة.</p></div>"
+    )
+    body = {
+        "external_email_enabled": True,
+        "mailer_autoconfirm": False,
+        "mailer_otp_length": 6,
+        "mailer_otp_exp": 600,
+        "mailer_subjects_magic_link": "رمز الدخول",
+        "mailer_templates_magic_link_content": code_mail,
+        "mailer_subjects_confirmation": "رمز تأكيد حسابك",
+        "mailer_templates_confirmation_content": code_mail,
+    }
+    if smtp and smtp.get("host"):
+        body.update({
+            "smtp_host": smtp["host"],
+            "smtp_port": str(smtp.get("port", "587")),
+            "smtp_user": smtp.get("user", ""),
+            "smtp_pass": smtp.get("pass", ""),
+            "smtp_admin_email": smtp.get("from", smtp.get("user", "")),
+            "smtp_sender_name": smtp.get("name", "APK Fact"),
+        })
+    return _request("PATCH", f"/projects/{ref}/config/auth", token, body)
+
+
+def env_smtp():
+    raw = os.environ.get("SUPABASE_SMTP", "").strip()
+    return json.loads(raw) if raw else None

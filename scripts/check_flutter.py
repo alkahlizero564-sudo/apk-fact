@@ -32,7 +32,8 @@ def prepare(app, proj):
     if not orig.exists():
         shutil.copy(proj / "pubspec.yaml", orig)
     shutil.copy(orig, proj / "pubspec.yaml")
-    shutil.copy(app / "lib" / "main.dart", proj / "lib" / "main.dart")
+    for f in (app / "lib").glob("*.dart"):  # main.dart plus helpers such as firebase_config.dart
+        shutil.copy(f, proj / "lib" / f.name)
     deps = read_deps("flutter", app)
     if deps:
         print(f"Adding packages: {' '.join(deps)}", flush=True)

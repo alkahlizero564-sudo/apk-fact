@@ -3,7 +3,8 @@ const path = require("path");
 const { checkHtml } = require("./scripts/check_html");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const lines = fs.readFileSync("request.txt", "utf8").trim().split("\n");
+// REQUEST_FILE lets scripts/pair.py generate the two apps of a pair without touching request.txt.
+const lines = fs.readFileSync(process.env.REQUEST_FILE || "request.txt", "utf8").trim().split("\n");
 const clean = (s) => (s || "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
 const name = clean(lines.shift());
 

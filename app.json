@@ -16,11 +16,7 @@
         "INTERNET",
         "ACCESS_NETWORK_STATE",
         "REQUEST_INSTALL_PACKAGES"
-      ],
-      "navigationBar": {
-        "backgroundColor": "#141A29",
-        "barStyle": "light-content"
-      }
+      ]
     },
     "ios": {
       "bundleIdentifier": "com.yourname.apkfact"
@@ -33,6 +29,10 @@
         "projectId": "10c32177-1c65-4a2b-8e55-1c4bc5cd8d7d"
       }
     },
-    "backgroundColor": "#0B0F1A"
+    "backgroundColor": "#0B0F1A",
+    "androidNavigationBar": {
+      "backgroundColor": "#141A29",
+      "barStyle": "light-content"
+    }
   }
 }

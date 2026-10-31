@@ -35,9 +35,9 @@ export async function testSupabaseConnection(): Promise<{ name: string; status: 
   return { name: data.name, status: data.status };
 }
 
-export async function runSql(query: string): Promise<any> {
+export async function runSql(query: string, projectRef?: string): Promise<any> {
   const token = await getManagementToken();
-  const ref = await getProjectRef();
+  const ref = projectRef || (await getProjectRef());
 
   const res = await fetch(`${MGMT_API}/projects/${ref}/database/query`, {
     method: "POST",

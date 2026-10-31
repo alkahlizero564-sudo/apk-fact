@@ -32,7 +32,8 @@ import {
 import { linkAppsViaSupabase } from "../services/link";
 import { saveToVault, vaultStatus, listVaultApps, VaultApp } from "../services/vault";
 import { LANGS } from "../services/langs";
-import { publishedVersion, PublishedVersion } from "../services/updates";
+import { publishedVersion, PublishedVersion, pairInfo, PairInfo } from "../services/updates";
+import { listAdmins, addAdmin, removeAdmin, AdminAccount } from "../services/pair";
 import { colors, langColors, space, radius, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
 
@@ -51,7 +52,12 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
   const { name, lang } = route.params;
   const info = LANGS[lang];
 
-  const [sheet, setSheet] = useState<null | "edit" | "paste" | "link" | "progress" | "vault" | "label">(null);
+  const [sheet, setSheet] = useState<null | "edit" | "paste" | "link" | "progress" | "vault" | "label" | "admins">(null);
+  const [pair, setPair] = useState<PairInfo | null>(null);
+  const [admins, setAdmins] = useState<AdminAccount[] | null>(null);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminBusy, setAdminBusy] = useState(false);
+  const [adminMsg, setAdminMsg] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [label, setLabel] = useState("");
   const [labelDraft, setLabelDraft] = useState("");
   const [labelBusy, setLabelBusy] = useState(false);
@@ -107,7 +113,44 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
   useEffect(() => {
     loadVault();
     getDisplayName(name).then(setLabel);
+    pairInfo(name).then(setPair);
   }, [name]);
+
+  async function openAdmins() {
+    if (!pair) return;
+    setSheet("admins");
+    setAdminMsg(null);
+    setAdmins(null);
+    try {
+      setAdmins(await listAdmins(pair.prefix, pair.ref));
+    } catch (e: any) {
+      setAdmins([]);
+      setAdminMsg({ kind: "error", text: e.message });
+    }
+  }
+
+  async function changeAdmin(kind: "add" | "remove", email: string) {
+    if (!pair) return;
+    setAdminBusy(true);
+    setAdminMsg(null);
+    try {
+      if (kind === "add") await addAdmin(pair.prefix, pair.ref, email);
+      else await removeAdmin(pair.prefix, pair.ref, email);
+      setAdmins(await listAdmins(pair.prefix, pair.ref));
+      if (kind === "add") setAdminEmail("");
+      setAdminMsg({
+        kind: "ok",
+        text:
+          kind === "add"
+            ? `${email.trim()} بقى حساب إدارة. يسجّل خروج من تطبيق الإدارة ويدخل تاني بنفس البريد.`
+            : `${email} ما عاد حساب إدارة.`,
+      });
+    } catch (e: any) {
+      setAdminMsg({ kind: "error", text: e.message });
+    } finally {
+      setAdminBusy(false);
+    }
+  }
 
   async function saveLabel() {
     setLabelBusy(true);
@@ -349,6 +392,21 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
         </Section>
       ) : null}
 
+      {pair ? (
+        <Section title="التطبيقين المتصلين">
+          <Card style={styles.list}>
+            <ListRow
+              icon="shield-checkmark-outline"
+              tint={colors.accent}
+              title="حسابات الإدارة"
+              subtitle="البريد اللي يدخل تطبيق الإدارة. التغيير فوري بدون بناء جديد"
+              onPress={openAdmins}
+              last
+            />
+          </Card>
+        </Section>
+      ) : null}
+
       <Section title="الخزنة الخاصة">
         <Card style={styles.list}>
           <ListRow
@@ -393,6 +451,43 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
           ))}
         </View>
         <Button title="نفّذ التعديل" icon="sparkles" onPress={startEdit} disabled={editText.trim().length < 3} />
+      </Sheet>
+
+      <Sheet visible={sheet === "admins"} title="حسابات الإدارة" onClose={() => setSheet(null)}>
+        <Text style={styles.sheetText}>
+          أي حد يدخل تطبيق الإدارة ببريد من القائمة دي يكون مدير، والباقي زبائن. لو الشخص دخل قبل كده، يسجّل خروج ويدخل تاني.
+        </Text>
+        {!admins ? (
+          <Banner kind="info" text="بنقرأ القائمة…" />
+        ) : (
+          <Card style={{ padding: 0, overflow: "hidden", marginBottom: space.lg }}>
+            {admins.map((a, i) => (
+              <ListRow
+                key={a.email}
+                icon="person-circle-outline"
+                title={a.email}
+                subtitle={a.signedUp ? "دخل قبل كده" : "لسه ما دخل"}
+                chevron={false}
+                right={
+                  <Button title="إزالة" variant="secondary" onPress={() => changeAdmin("remove", a.email)} disabled={adminBusy} />
+                }
+                last={i === admins.length - 1}
+              />
+            ))}
+          </Card>
+        )}
+        <Field
+          label="إضافة بريد إدارة"
+          icon="mail-outline"
+          value={adminEmail}
+          onChangeText={setAdminEmail}
+          placeholder="name@gmail.com"
+          ltr
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+        <Button title="أضف" icon="add" onPress={() => changeAdmin("add", adminEmail)} loading={adminBusy} disabled={!adminEmail.includes("@")} />
+        {adminMsg ? <Banner kind={adminMsg.kind} text={adminMsg.text} /> : null}
       </Sheet>
 
       <Sheet visible={sheet === "label"} title="اسم التطبيق على الجهاز" onClose={() => setSheet(null)}>

@@ -3,6 +3,7 @@
 import * as SecureStore from "expo-secure-store";
 import { githubApi, latestRunId, listWorkflowRuns, getFailureLog, triggerWorkflow } from "./github";
 import { REPO } from "./config";
+import { runSql } from "./supabase";
 import { setRepoSecret, setRepoVariable } from "./repoSecrets";
 import type { Lang } from "./langs";
 import type { Report } from "./appActions";
@@ -135,4 +136,55 @@ export async function createPair(o: PairOptions, report: Report) {
     }
   }
   throw new Error("أخذ وقت طويل. شوف تطبيقاتي بعد شوية.");
+}
+
+// ---- Admin accounts of a pair (changed live in Supabase; no rebuild needed) ----
+
+export type AdminAccount = { email: string; signedUp: boolean };
+
+const EMAIL_RE = /^[^\s@'"\\;]+@[^\s@'"\\;]+\.[^\s@'"\\;]+$/;
+
+function safePrefix(prefix: string) {
+  if (!/^[a-z][a-z0-9_]{0,40}$/.test(prefix)) throw new Error("بيانات الربط ناقصة في هذا المشروع.");
+  return prefix;
+}
+
+function sqlEmail(email: string) {
+  const e = email.trim().toLowerCase();
+  if (!EMAIL_RE.test(e)) throw new Error("اكتب بريد إلكتروني صحيح.");
+  return `'${e}'`;
+}
+
+export async function listAdmins(prefix: string, ref: string): Promise<AdminAccount[]> {
+  const p = safePrefix(prefix);
+  const rows = await runSql(
+    `select a.email, exists (select 1 from public.${p}_profiles pr where lower(pr.email) = lower(a.email)) as signed_up ` +
+      `from public.${p}_admins a order by a.email;`,
+    ref
+  );
+  return (Array.isArray(rows) ? rows : []).map((r: any) => ({ email: r.email, signedUp: !!r.signed_up }));
+}
+
+export async function addAdmin(prefix: string, ref: string, email: string) {
+  const p = safePrefix(prefix);
+  const e = sqlEmail(email);
+  await runSql(
+    `insert into public.${p}_admins(email) values (${e}) on conflict do nothing; ` +
+      `update public.${p}_profiles set role = 'admin' where lower(email) = ${e};`,
+    ref
+  );
+}
+
+export async function removeAdmin(prefix: string, ref: string, email: string) {
+  const p = safePrefix(prefix);
+  const e = sqlEmail(email);
+  const left = await listAdmins(prefix, ref);
+  if (left.filter((a) => a.email.toLowerCase() !== email.trim().toLowerCase()).length === 0) {
+    throw new Error("لازم يفضل حساب إدارة واحد على الأقل.");
+  }
+  await runSql(
+    `delete from public.${p}_admins where lower(email) = ${e}; ` +
+      `update public.${p}_profiles set role = 'customer' where lower(email) = ${e};`,
+    ref
+  );
 }

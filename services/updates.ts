@@ -11,7 +11,7 @@ import { generateApp, startBuild, waitForBuild, Report } from "./appActions";
 export type Target = { name: string; lang: Lang };
 export type Snapshot = { path: string; content: string }[];
 export type PublishedVersion = { version: number; versionName?: string; notes?: string; at?: string };
-export type PairInfo = { role: "customer" | "admin"; partner: string; lang: Lang };
+export type PairInfo = { role: "customer" | "admin"; partner: string; lang: Lang; prefix: string; ref: string };
 
 const DEPS_FILE: Record<Lang, string | null> = { html: null, flutter: "packages.txt", python: "requirements.txt" };
 
@@ -40,7 +40,9 @@ export async function pairInfo(name: string): Promise<PairInfo | null> {
     const role = st.role === "admin" ? "admin" : "customer";
     const other = role === "admin" ? "customer" : "admin";
     const partner = st.apps?.[other]?.name;
-    return partner ? { role, partner, lang: st.lang as Lang } : null;
+    return partner
+      ? { role, partner, lang: st.lang as Lang, prefix: String(st.prefix ?? ""), ref: String(st.supabase?.ref ?? "") }
+      : null;
   } catch {
     return null;
   }

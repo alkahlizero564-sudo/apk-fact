@@ -79,6 +79,12 @@ const SERVICES: Service[] = [
     fields: [
       { key: "SUPABASE_ACCESS_TOKEN", label: "Personal Access Token (من الحساب)", placeholder: "sbp_...", secret: true },
       { key: "SUPABASE_PROJECT_REF", label: "Project Ref (من رابط المشروع)", placeholder: "abcdefghijklmnop" },
+      {
+        key: "SUPABASE_PUBLISHABLE_KEY",
+        label: "Publishable key (اختياري، من API Keys)",
+        placeholder: "sb_publishable_... أو مفتاح anon",
+        secret: true,
+      },
       { key: "SMTP_HOST", label: "SMTP: الخادم (اختياري)", placeholder: "smtp.gmail.com" },
       { key: "SMTP_PORT", label: "SMTP: المنفذ", placeholder: "587" },
       { key: "SMTP_USER", label: "SMTP: المستخدم", placeholder: "you@gmail.com" },

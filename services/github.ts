@@ -207,6 +207,17 @@ export async function latestRunId(repoFullName: string, workflowFile: string): P
   }
 }
 
+/** The useful part of a failed job log: the lines before "##[error]", without timestamps and cleanup noise. */
+export function errorPart(log: string): string {
+  const lines = log.split("\n").map((l) => l.replace(/^\d{4}-\d\d-\d\dT[\d:.]+Z\s?/, "").trimEnd());
+  const at = lines.findIndex((l) => l.startsWith("##[error]"));
+  if (at < 0) return lines.filter(Boolean).slice(-12).join("\n");
+  const before = lines.slice(Math.max(0, at - 30), at).filter((l) => l && !l.startsWith("##[") && !l.startsWith("[command]"));
+  const tb = before.findIndex((l) => l.startsWith("Traceback") || /error/i.test(l));
+  const part = (tb >= 0 ? before.slice(tb) : before.slice(-10)).filter((l) => !/^\s/.test(l));
+  return [...part.slice(-10), lines[at].replace("##[error]", "")].join("\n");
+}
+
 export async function getFailureLog(repoFullName: string, runId: number): Promise<string> {
   try {
     const token = await getToken();
@@ -221,7 +232,7 @@ export async function getFailureLog(repoFullName: string, runId: number): Promis
       headers: authHeaders(token),
     });
     if (!lr.ok) return "";
-    return (await lr.text()).split("\n").slice(-12).join("\n");
+    return errorPart(await lr.text());
   } catch {
     return "";
   }

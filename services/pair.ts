@@ -56,6 +56,13 @@ async function syncSecrets(push: boolean) {
   if (!token || !ref) throw new Error("أكمل إعداد Supabase من الإعدادات (المفتاح و Project Ref).");
   await setRepoSecret("SUPABASE_ACCESS_TOKEN", token);
   await setRepoVariable("SUPABASE_PROJECT_REF", ref);
+  const publishable = await get("SUPABASE_PUBLISHABLE_KEY");
+  if (publishable) {
+    if (/^sb_secret_/.test(publishable) || /service_role/.test(publishable)) {
+      throw new Error("المفتاح ده سرّي (secret). حط المفتاح العام publishable أو anon، مش السري.");
+    }
+    await setRepoSecret("SUPABASE_PUBLISHABLE_KEY", publishable);
+  }
   const host = await get("SMTP_HOST");
   if (host) {
     await setRepoSecret(

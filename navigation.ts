@@ -6,6 +6,7 @@ export type RootStackParamList = {
   Create: { templateId?: string } | undefined;
   AppDetail: { name: string; lang: Lang };
   Preview: { name: string };
+  Pair: undefined;
   InstantPreview: { templateId?: string; lang?: Lang; description?: string; title?: string; fromWizard?: boolean };
 };
 

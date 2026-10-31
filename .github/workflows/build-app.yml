@@ -66,6 +66,13 @@ jobs:
           npx cap init "$APP" "com.generated.a$PKG" --web-dir www
           npx cap add android
 
+          # Connected apps with push: Capacitor applies Firebase by itself when google-services.json is there.
+          if [ -f "$SRC/google-services.json" ]; then
+            echo "Push notifications: adding @capacitor/push-notifications and google-services.json"
+            npm i @capacitor/push-notifications@6
+            cp "$SRC/google-services.json" android/app/google-services.json
+          fi
+
           if [ -f "$SRC/icon.png" ]; then
             echo "Custom icon found, applying it"
             mkdir -p assets
@@ -85,7 +92,7 @@ jobs:
             rm -rf www
             mkdir www
             cp -r "$SRC"/. www/
-            rm -f www/icon.png
+            rm -f www/icon.png www/google-services.json www/meta.json www/pair.json
             set +e
             (npx cap sync android && cd android && ./gradlew assembleDebug --no-daemon) 2>&1 | tee /tmp/build.log
             STATUS=${PIPESTATUS[0]}

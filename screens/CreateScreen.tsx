@@ -23,7 +23,7 @@ import { appExists, cleanName, generateApp, listApps, uploadCode, AppInfo } from
 import { colors, langColors, space, radius, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
 
-type Start = "blank" | "template" | "paste";
+type Start = "blank" | "template" | "paste" | "pair";
 
 const STEPS = ["البداية", "اللغة", "التفاصيل", "المراجعة"];
 
@@ -199,6 +199,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
                   ["blank", "من الصفر", "صف فكرتك بكلماتك", "sparkles-outline"],
                   ["template", "من قالب", `${TEMPLATES.length} فكرة جاهزة تقدر تعدّلها`, "grid-outline"],
                   ["paste", "عندي كود جاهز", "الصق الكود ونجهّز له معاينة", "code-slash-outline"],
+                  ["pair", "تطبيقين متصلين", "زبون + إدارة على Supabase، دخول برمز البريد وإشعارات", "git-merge-outline"],
                 ] as [Start, string, string, IconName][]
               ).map(([key, title, sub, icon], i) => (
                 <ListRow
@@ -207,7 +208,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
                   title={title}
                   subtitle={sub}
                   chevron={false}
-                  last={i === 2}
+                  last={i === 3}
                   right={
                     <Ionicons
                       name={start === key ? "radio-button-on" : "radio-button-off"}
@@ -215,7 +216,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
                       color={start === key ? colors.primary : colors.textMuted}
                     />
                   }
-                  onPress={() => setStart(key)}
+                  onPress={() => (key === "pair" ? navigation.replace("Pair") : setStart(key))}
                 />
               ))}
             </Card>

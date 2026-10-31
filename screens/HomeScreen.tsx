@@ -58,6 +58,21 @@ export default function HomeScreen() {
         </Pressable>
       </LinearGradient>
 
+      <Pressable
+        onPress={() => nav.navigate("Pair")}
+        style={({ pressed }) => [styles.pairCard, pressed && { transform: [{ scale: 0.98 }] }]}
+        accessibilityRole="button"
+      >
+        <View style={styles.pairIcon}>
+          <Ionicons name="git-merge-outline" size={24} color={colors.accent} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.pairTitle}>تطبيقين متصلين</Text>
+          <Text style={styles.pairText}>زبون + إدارة على Supabase، دخول برمز البريد، وإشعارات حتى والتطبيق مقفول</Text>
+        </View>
+        <Ionicons name="chevron-back" size={18} color={colors.textMuted} />
+      </Pressable>
+
       <View style={styles.stats}>
         {LANG_ORDER.map((l) => (
           <View key={l} style={styles.stat}>
@@ -211,6 +226,20 @@ const styles = StyleSheet.create({
   },
   heroBtnText: { color: colors.primary, fontWeight: "900", fontSize: 16 },
 
+  pairCard: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: space.md,
+    padding: space.lg,
+    borderRadius: radius.card,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.accent + "55",
+    marginBottom: space.lg,
+  },
+  pairIcon: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: colors.accent + "1F" },
+  pairTitle: { fontSize: 16, fontWeight: "900", color: colors.text, textAlign: "right" },
+  pairText: { ...type.hint, color: colors.textMuted, textAlign: "right", marginTop: 2 },
   stats: { flexDirection: "row-reverse", gap: space.sm, marginBottom: space.xl },
   stat: {
     flex: 1,

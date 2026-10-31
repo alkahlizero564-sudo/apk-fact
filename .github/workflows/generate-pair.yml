@@ -1,0 +1,93 @@
+name: generate-pair
+
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: "Project name (the apps become <base>-customer and <base>-admin)"
+        required: true
+      lang:
+        description: "html | flutter | python"
+        required: true
+        default: "flutter"
+      admins:
+        description: "Admin emails, comma separated"
+        required: true
+      push:
+        description: "true to send push notifications (Firebase)"
+        required: true
+        default: "true"
+      description:
+        description: "What the business is and what the apps do"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency: generate-pair
+
+jobs:
+  pair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      SUPABASE_SMTP: ${{ secrets.SUPABASE_SMTP }}
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+      GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+      GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+      AI_PROVIDER: gemini
+      BASE: ${{ inputs.base }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Tools
+        run: |
+          pip install google-auth requests
+          if [ "${{ inputs.lang }}" = "python" ]; then
+            pip install "flet==$(cd scripts && python -c 'from native_langs import FLET_VERSION; print(FLET_VERSION)')"
+          fi
+      - if: inputs.lang == 'flutter'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - if: inputs.push == 'true' && inputs.lang != 'python'
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: "Supabase: tables and roles"
+        env:
+          ADMINS: ${{ inputs.admins }}
+          DESCRIPTION: ${{ inputs.description }}
+          LANG_CHOICE: ${{ inputs.lang }}
+          PUSH: ${{ inputs.push }}
+        run: |
+          printf '%s' "$DESCRIPTION" > "$RUNNER_TEMP/description.txt"
+          python scripts/pair.py backend --base "$BASE" --lang "$LANG_CHOICE" --admins "$ADMINS" --push "$PUSH" --description-file "$RUNNER_TEMP/description.txt"
+      - name: "Supabase: email code login"
+        run: python scripts/pair.py auth --base "$BASE"
+      - name: "Firebase: notifications"
+        run: python scripts/pair.py firebase --base "$BASE"
+      - name: Generate customer app
+        run: python scripts/pair.py generate --base "$BASE" --role customer
+      - name: Generate admin app
+        run: python scripts/pair.py generate --base "$BASE" --role admin
+
+      - name: Save
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add apps fixes
+          git commit -m "Generate connected apps: $BASE" || echo "nothing to commit"
+          git pull --rebase
+          git push

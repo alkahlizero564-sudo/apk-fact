@@ -1,34 +1,15 @@
 // The private vault: a private GitHub repo (apk-fact-vault) that keeps, for every app, its permanent
 // signing key, its source and its details. Build workflows read it (through the VAULT_TOKEN secret and
 // the VAULT_REPO variable) so every APK of an app is signed with the same key and updates install.
-import nacl from "tweetnacl";
-import * as Crypto from "expo-crypto";
 import { githubApi, githubToken, latestRunId, listWorkflowRuns, getFailureLog, triggerWorkflow } from "./github";
 import { REPO } from "./config";
-import { encryptSecret, fromBase64 } from "./sealedBox";
+import { fromBase64 } from "./sealedBox";
+import { checkGithub as check, setRepoSecret, setRepoVariable } from "./repoSecrets";
 import type { Report } from "./appActions";
 
 export const VAULT_NAME = "apk-fact-vault";
 
-nacl.setPRNG((x, n) => {
-  const bytes = Crypto.getRandomBytes(n);
-  for (let i = 0; i < n; i++) x[i] = bytes[i];
-});
-
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-async function check(res: Response, what: string) {
-  if (res.ok) return res;
-  const body = await res.text();
-  if (res.status === 403 || res.status === 404) {
-    throw new Error(
-      `${what}: مفتاح GitHub ما عنده صلاحية كافية (${res.status}). ` +
-        "استخدم Personal Access Token (classic) بصلاحية repo و workflow، أو مفتاح fine-grained بصلاحيات " +
-        "Administration و Contents و Secrets و Variables و Actions."
-    );
-  }
-  throw new Error(`${what} (${res.status}): ${body.slice(0, 200)}`);
-}
 
 export type VaultStatus = { ready: boolean; repo: string | null };
 
@@ -66,29 +47,11 @@ export async function setupVault(report: Report): Promise<string> {
   }
 
   report("secret", "active");
-  const key = await (await check(await githubApi(`/repos/${REPO}/actions/secrets/public-key`), "قراءة مفتاح التشفير")).json();
-  await check(
-    await githubApi(`/repos/${REPO}/actions/secrets/VAULT_TOKEN`, {
-      method: "PUT",
-      body: { encrypted_value: encryptSecret(await githubToken(), key.key), key_id: key.key_id },
-    }),
-    "حفظ مفتاح الخزنة كسرّ مشفّر"
-  );
+  await setRepoSecret("VAULT_TOKEN", await githubToken());
   report("secret", "done", "VAULT_TOKEN مشفّر في أسرار المستودع");
 
   report("variable", "active");
-  const created = await githubApi(`/repos/${REPO}/actions/variables`, {
-    method: "POST",
-    body: { name: "VAULT_REPO", value: repo },
-  });
-  if (created.status === 409) {
-    await check(
-      await githubApi(`/repos/${REPO}/actions/variables/VAULT_REPO`, { method: "PATCH", body: { name: "VAULT_REPO", value: repo } }),
-      "ربط الخزنة"
-    );
-  } else {
-    await check(created, "ربط الخزنة");
-  }
+  await setRepoVariable("VAULT_REPO", repo);
   report("variable", "done", "كل بناء جاي بيتوقّع بمفتاح التطبيق الدائم");
   return repo;
 }

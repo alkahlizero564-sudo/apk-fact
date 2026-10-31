@@ -1,8 +1,8 @@
 {
  "app": "reserve-admin",
- "version": 1,
- "versionName": "1.0.1",
- "apk": "https://github.com/alkahlizero564-sudo/apk-fact/releases/download/app-reserve-admin-41241804650/reserve-admin.apk",
- "notes": "",
- "at": "2026-10-31T21:09:58Z"
+ "version": 2,
+ "versionName": "1.0.2",
+ "apk": "https://github.com/alkahlizero564-sudo/apk-fact/releases/download/app-reserve-admin-41244525164/reserve-admin.apk",
+ "notes": "دخول الإدارة بأي بريد مع رمز الإدارة السري",
+ "at": "2026-10-31T21:43:03Z"
 }

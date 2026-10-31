@@ -9,6 +9,8 @@ import { AppAvatar, LANG_ICONS, LangBadge } from "../components/appVisuals";
 import { LANGS, LANG_ORDER, Lang } from "../services/langs";
 import { appExists } from "../services/appActions";
 import { createPair, pairApps, pairReadiness, PairReadiness } from "../services/pair";
+import DesignStudio from "../components/DesignStudio";
+import { saveApprovedDesign, clearDraft, DesignTarget } from "../services/design";
 import { colors, langColors, space, radius, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
 
@@ -30,9 +32,12 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
   const [push, setPush] = useState(true);
   const [ready, setReady] = useState<PairReadiness | null>(null);
   const [taken, setTaken] = useState(false);
-  const [phase, setPhase] = useState<"form" | "running" | "done" | "failed">("form");
+  const [phase, setPhase] = useState<"form" | "design" | "running" | "done" | "failed">("form");
+  const [designs, setDesigns] = useState<Record<string, string>>({});
+  const [designBusy, setDesignBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [steps, report, reset] = useSteps([
+    ["design", "حفظ التصميم المعتمد للتطبيقين"],
     ["sync", "ربط المفاتيح بعمليات البناء (مشفّرة)"],
     ["backend", "Supabase: الجداول والأدوار والصلاحيات"],
     ["auth", "Supabase: تسجيل الدخول برمز البريد"],
@@ -72,7 +77,11 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
     reset();
     if (!usePush) report("firebase", "done", lang === "python" ? "Python: إشعارات داخل التطبيق فقط" : "الإشعارات مطفية");
     try {
+      report("design", "active");
+      for (const t of designTargets) if (designs[t.key]) await saveApprovedDesign(t.key, designs[t.key]);
+      report("design", "done");
       await createPair({ base: clean, lang, admins: emails.join(","), push: usePush, description: description.trim(), customerName, adminName }, report);
+      designTargets.forEach((t) => clearDraft(t));
       setPhase("done");
     } catch (e: any) {
       setError(e.message);
@@ -81,6 +90,25 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
   }
 
   const apps = pairApps(clean);
+  const designTargets: DesignTarget[] = [
+    {
+      key: apps.customer,
+      label: "تطبيق الزبون",
+      title: customerName.trim() || "تطبيق الزبون",
+      description: description.trim(),
+      lang,
+      role: "customer",
+    },
+    {
+      key: apps.admin,
+      label: "تطبيق الإدارة",
+      title: adminName.trim() || "تطبيق الإدارة",
+      description: description.trim(),
+      lang,
+      role: "admin",
+    },
+  ];
+  const designsReady = designTargets.every((t) => !!designs[t.key]) && !designBusy;
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -95,7 +123,16 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
       </View>
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        {phase !== "form" ? (
+        {phase === "design" ? (
+          <>
+            <Text style={styles.label}>التصميم أولاً</Text>
+            <Text style={styles.subtitle}>
+              ده شكل شاشات التطبيقين قبل أي برمجة أو قاعدة بيانات. بدّل بين الزبون والإدارة، واضغط على الأزرار جوّه
+              التصميم. اكتب أي تعديل والذكاء الاصطناعي بينفّذه. لما يعجبك اضغط «اعتمد التصميم».
+            </Text>
+            <DesignStudio targets={designTargets} onChange={setDesigns} onBusy={setDesignBusy} />
+          </>
+        ) : phase !== "form" ? (
           <>
             <Card style={styles.pairCard}>
               {(["customer", "admin"] as const).map((r) => (
@@ -260,7 +297,21 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
 
       {phase === "form" ? (
         <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
-          <Button title="أنشئ التطبيقين" icon="git-merge-outline" onPress={submit} disabled={!canSubmit} style={{ flex: 1 }} />
+          <Button
+            title="صمّم الواجهات"
+            icon="color-palette-outline"
+            onPress={() => {
+              setDesigns({});
+              setPhase("design");
+            }}
+            disabled={!canSubmit}
+            style={{ flex: 1 }}
+          />
+        </View>
+      ) : phase === "design" ? (
+        <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
+          <Button title="رجوع" variant="secondary" onPress={() => setPhase("form")} disabled={designBusy} style={{ flex: 1 }} />
+          <Button title="اعتمد التصميم وأنشئ التطبيقين" icon="checkmark-done" onPress={submit} disabled={!designsReady} style={{ flex: 2 }} />
         </View>
       ) : null}
     </KeyboardAvoidingView>

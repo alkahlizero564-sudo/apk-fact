@@ -112,6 +112,33 @@ Reply in exactly this format, nothing else:
 """
 
 
+def design_digest(app, limit=6000):
+    """The visible text of an approved design (screens, labels, fields), short enough for a prompt."""
+    path = ROOT / "apps" / app / "design.html"
+    if not path.exists():
+        return ""
+    html = path.read_text(encoding="utf-8")
+    html = re.sub(r"(?is)<(script|style|svg)\b.*?</\1>", " ", html)
+    html = re.sub(r"(?is)<(input|textarea|select)\b([^>]*)>", lambda m: " [field " + " ".join(
+        re.findall(r'(?:placeholder|name|type|aria-label)="([^"]*)"', m.group(2))) + "] ", html)
+    text = re.sub(r"(?s)<[^>]+>", " ", html)
+    text = re.sub(r"[ \t]+", " ", re.sub(r"\s*\n\s*", "\n", text)).strip()
+    return text[:limit]
+
+
+def designs_note(base):
+    parts = []
+    for role in ROLES:
+        d = design_digest(app_name(base, role))
+        if d:
+            parts.append(f"--- {role.upper()} app (approved design: screens, labels and fields) ---\n{d}")
+    if not parts:
+        return ""
+    return ("\nThe owner already approved the design of both apps. The tables must store every piece of data these "
+            "screens show or collect (same names and meaning), so the apps can be built exactly like the design:\n"
+            + "\n".join(parts) + "\n")
+
+
 def cmd_backend(a):
     ref, token = need("SUPABASE_PROJECT_REF"), need("SUPABASE_ACCESS_TOKEN")
     description = Path(a.description_file).read_text(encoding="utf-8").strip()
@@ -125,8 +152,8 @@ def cmd_backend(a):
     run_sql(sb.base_sql(p, admins))
 
     print("Designing the business tables with AI…", flush=True)
-    blocks, _ = parse_reply(call_gemini(MODEL, SCHEMA_PROMPT.format(description=description, p=p), keys(),
-                                        temperature=0.3, json_mode=False))
+    blocks, _ = parse_reply(call_gemini(MODEL, SCHEMA_PROMPT.format(description=description, p=p) + designs_note(a.base),
+                                        keys(), temperature=0.3, json_mode=False))
     sql, contract = blocks.get("sql", ""), json.loads(blocks.get("json") or "{}")
     for attempt in range(4):
         try:

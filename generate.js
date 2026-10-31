@@ -57,6 +57,20 @@ const system =
   designBrief +
   "\nReply with ONLY the full file inside a single ```html code block. No explanations.";
 
+// The design the owner approved in APK Fact (apps/<name>/design.html): build the real app from it.
+function designBlock() {
+  const f = path.join(dir, "design.html");
+  if (!fs.existsSync(f)) return "";
+  return (
+    "\n\nAPPROVED DESIGN - the owner reviewed and approved this clickable design prototype. Build the real app from it " +
+    "so it looks exactly the same (screens, navigation, layout, colors, typography, spacing, icons, texts, components). " +
+    "Remove the prototype's top 'screens' switcher (id apkfact-screens): it was only for reviewing. Make every screen " +
+    "fully functional with real state and stored data:\n```html\n" +
+    fs.readFileSync(f, "utf8").slice(0, 80000) +
+    "\n```\n"
+  );
+}
+
 // Apps of a connected pair: AI updates must keep the shared backend, sign-in and notifications working.
 function pairRules() {
   if (!existing || !fs.existsSync(path.join(dir, "pair.json"))) return "";
@@ -68,7 +82,7 @@ function pairRules() {
 
 const prompt = existing
   ? `Here is the current app:\n\`\`\`html\n${existing}\n\`\`\`${relatedBlock}\n\nApply this change and return the FULL updated file:\n${request}${pairRules()}`
-  : `Create this app:\n${request}${relatedBlock}`;
+  : `Create this app:\n${request}${relatedBlock}${designBlock()}`;
 
 // apps/<name>/meta.json keeps the app's description and every requested change (copied to the vault).
 function recordHistory(kind) {

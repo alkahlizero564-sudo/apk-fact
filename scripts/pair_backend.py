@@ -22,7 +22,24 @@ def prefix_of(base):
     return re.sub(r"[^a-z0-9_]", "_", base.lower())
 
 
+def admin_pin_sql(p):
+    """Admin PIN support (scripts/templates/admin_pin.sql); APK Fact reads the same file to set a PIN."""
+    from pathlib import Path
+    return (Path(__file__).resolve().parent / "templates" / "admin_pin.sql").read_text(encoding="utf-8").replace("{p}", p)
+
+
+def set_pin_sql(p, pin):
+    if not re.fullmatch(r"[A-Za-z0-9]{4,12}", pin or ""):
+        raise ValueError("PIN: 4-12 letters or digits")
+    return (f"insert into public.{p}_admin_secret (id, pin_hash) values (1, extensions.crypt('{pin}', extensions.gen_salt('bf'))) "
+            f"on conflict (id) do update set pin_hash = excluded.pin_hash, updated_at = now();")
+
+
 def base_sql(p, admin_emails=()):
+    return _base_sql(p, admin_emails) + "\n" + admin_pin_sql(p)
+
+
+def _base_sql(p, admin_emails=()):
     admins = ",".join("('" + e.strip().lower().replace("'", "''") + "')" for e in admin_emails if e.strip())
     return f"""
 -- APK Fact pair "{p}": accounts, roles, devices and notifications

@@ -439,7 +439,11 @@ class _AuthGateState extends State<AuthGate> {
     }
 
     if (_userRole != 'admin') {
-      return NotAdminScreen(onLogout: _onLoggedOut);
+      return NotAdminScreen(
+        token: _accessToken!,
+        onLogout: _onLoggedOut,
+        onBecameAdmin: () => setState(() => _userRole = 'admin'),
+      );
     }
 
     return AdminHomeScreen(
@@ -791,9 +795,71 @@ class _AdminAuthScreenState extends State<AdminAuthScreen> {
 // Not Admin Screen
 // -------------------------------------------------------------
 
-class NotAdminScreen extends StatelessWidget {
+class NotAdminScreen extends StatefulWidget {
+  final String token;
   final VoidCallback onLogout;
-  const NotAdminScreen({super.key, required this.onLogout});
+  final VoidCallback onBecameAdmin;
+  const NotAdminScreen({
+    super.key,
+    required this.token,
+    required this.onLogout,
+    required this.onBecameAdmin,
+  });
+
+  @override
+  State<NotAdminScreen> createState() => _NotAdminScreenState();
+}
+
+class _NotAdminScreenState extends State<NotAdminScreen> {
+  final _pinController = TextEditingController();
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _pinController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _claim() async {
+    final pin = _pinController.text.trim();
+    if (pin.isEmpty) {
+      setState(() => _error = 'اكتب رمز الإدارة');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final res = await http.post(
+        Uri.parse('$supabaseUrl/rest/v1/rpc/reserve_claim_admin'),
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': 'Bearer ${widget.token}',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'pin': pin}),
+      );
+      if (!mounted) return;
+      if (res.statusCode == 200 && res.body.trim() == 'true') {
+        widget.onBecameAdmin();
+        return;
+      }
+      setState(() {
+        _busy = false;
+        _error = res.statusCode == 200
+            ? 'رمز الإدارة غير صحيح. بعد 5 محاولات خاطئة يتقفل الحساب ساعة.'
+            : 'تعذّر التحقق (${res.statusCode}). حاول مرة أخرى.';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _error = 'تحقق من الاتصال بالإنترنت';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -801,7 +867,7 @@ class NotAdminScreen extends StatelessWidget {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         body: Center(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
             child: Card(
               shape: RoundedRectangleBorder(
@@ -812,30 +878,61 @@ class NotAdminScreen extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.gpp_bad_rounded,
-                        size: 64, color: Colors.amber),
+                    Icon(Icons.admin_panel_settings_rounded,
+                        size: 64, color: Theme.of(context).colorScheme.primary),
                     const SizedBox(height: 16),
                     const Text(
-                      'هذا الحساب ليس حساب إدارة',
+                      'دخول الإدارة',
                       style: TextStyle(
                           fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'عفواً، لا تملك الصلاحيات الكافية للوصول إلى تطبيق الإدارة.',
+                      'هذا الحساب ليس حساب إدارة بعد. اكتب رمز الإدارة السري لتفعيله.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey),
                     ),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: onLogout,
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: _pinController,
+                      obscureText: true,
+                      keyboardType: TextInputType.visiblePassword,
+                      textAlign: TextAlign.center,
+                      onSubmitted: (_) => _busy ? null : _claim(),
+                      decoration: InputDecoration(
+                        labelText: 'رمز الإدارة',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                    if (_error != null) ...[
+                      const SizedBox(height: 12),
+                      Text(_error!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.red.shade600)),
+                    ],
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: _busy ? null : _claim,
+                        icon: _busy
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.verified_user_outlined),
+                        label: const Text('تفعيل حساب الإدارة'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: widget.onLogout,
                       icon: const Icon(Icons.logout),
                       label: const Text('تسجيل الخروج'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade600,
-                        foregroundColor: Colors.white,
-                      ),
-                    )
+                    ),
                   ],
                 ),
               ),

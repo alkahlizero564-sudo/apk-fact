@@ -246,7 +246,6 @@ class AnaaApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final notifier = Provider.of<AppStateNotifier>(context);
 
-    // Primary Emerald Teal Theme
     const primaryColor = Color(0xFF0D9488);
     const secondaryColor = Color(0xFF14B8A6);
     const accentColor = Color(0xFFF59E0B);
@@ -430,18 +429,21 @@ class _MainShellScreenState extends State<MainShellScreen> {
         index: _currentIndex,
         children: _pages,
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openAddExpenseModal(context),
-        elevation: 4,
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_rounded, size: 26),
-        label: const Text(
-          'إضافة مصروف',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 16.0),
+        child: FloatingActionButton.extended(
+          onPressed: () => _openAddExpenseModal(context),
+          elevation: 6,
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: Colors.white,
+          icon: const Icon(Icons.add_rounded, size: 26),
+          label: const Text(
+            'إضافة مصروف',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          ),
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (idx) => setState(() => _currentIndex = idx),
@@ -598,7 +600,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final remaining = (budget - total).clamp(0.0, double.infinity);
     final progress = (total / (budget > 0 ? budget : 1)).clamp(0.0, 1.0);
 
-    // Dynamic Filter & Sort logic
     List<ExpenseItem> filteredList = notifier.expenses.where((e) {
       final matchesCategory =
           _selectedCategory == null || e.category == _selectedCategory;
@@ -620,9 +621,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final currentMonthName = DateFormat('MMMM yyyy', 'ar').format(DateTime.now());
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
       children: [
-        // Top Greeting Header
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -638,7 +638,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 Text(
-                  'ملخص سريح لنشاطك المالي',
+                  'ملخص سريع لنشاطك المالي',
                   style: TextStyle(
                     fontSize: 12,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
@@ -675,7 +675,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
         const SizedBox(height: 16),
 
-        // Hero Budget Card
         Card(
           elevation: 6,
           shadowColor: theme.colorScheme.primary.withValues(alpha: 0.25),
@@ -827,7 +826,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
         const SizedBox(height: 14),
 
-        // Quick Stats Badges
         Row(
           children: [
             Expanded(
@@ -852,7 +850,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
         const SizedBox(height: 18),
 
-        // Search Bar & Sort Dropdown
         Row(
           children: [
             Expanded(
@@ -933,7 +930,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
         const SizedBox(height: 12),
 
-        // Horizontal Category Chips
         SizedBox(
           height: 38,
           child: ListView(
@@ -990,7 +986,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
         const SizedBox(height: 18),
 
-        // Transactions Header
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -1014,7 +1009,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
         const SizedBox(height: 10),
 
-        // List View or Empty State
         if (filteredList.isEmpty)
           Container(
             padding: const EdgeInsets.all(32),
@@ -1899,7 +1893,6 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
               ),
               const SizedBox(height: 8),
 
-              // Quick Amount Preset Chips
               Row(
                 children: [
                   const Text('إضافة سريعة: ', style: TextStyle(fontSize: 12)),

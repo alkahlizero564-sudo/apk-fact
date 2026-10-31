@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "splash": {
-      "backgroundColor": "#0B0F1A",
+      "backgroundColor": "#07080E",
       "resizeMode": "contain"
     },
     "android": {
@@ -29,9 +29,9 @@
         "projectId": "10c32177-1c65-4a2b-8e55-1c4bc5cd8d7d"
       }
     },
-    "backgroundColor": "#0B0F1A",
+    "backgroundColor": "#07080E",
     "androidNavigationBar": {
-      "backgroundColor": "#141A29",
+      "backgroundColor": "#10121B",
       "barStyle": "light-content"
     }
   }

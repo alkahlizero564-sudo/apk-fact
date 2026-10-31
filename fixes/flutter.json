@@ -1,0 +1,142 @@
+[
+ {
+  "old": "MainAxisAlignment.between",
+  "new": "MainAxisAlignment.spaceBetween",
+  "error": "undefined_enum_constant",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": "MainAxisAlignment.around",
+  "new": "MainAxisAlignment.spaceAround",
+  "error": "undefined_enum_constant",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": "MainAxisAlignment.evenly",
+  "new": "MainAxisAlignment.spaceEvenly",
+  "error": "undefined_enum_constant",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": ".headline1",
+  "new": ".displayLarge",
+  "error": "undefined_getter (Material 2 text style)",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": ".headline2",
+  "new": ".displayMedium",
+  "error": "undefined_getter (Material 2 text style)",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": ".headline3",
+  "new": ".displaySmall",
+  "error": "undefined_getter (Material 2 text style)",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": ".headline4",
+  "new": ".headlineMedium",
+  "error": "undefined_getter (Material 2 text style)",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": ".headline5",
+  "new": ".headlineSmall",
+  "error": "undefined_getter (Material 2 text style)",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": ".headline6",
+  "new": ".titleLarge",
+  "error": "undefined_getter (Material 2 text style)",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": ".subtitle1",
+  "new": ".titleMedium",
+  "error": "undefined_getter (Material 2 text style)",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": ".subtitle2",
+  "new": ".titleSmall",
+  "error": "undefined_getter (Material 2 text style)",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": ".bodyText1",
+  "new": ".bodyLarge",
+  "error": "undefined_getter (Material 2 text style)",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": ".bodyText2",
+  "new": ".bodyMedium",
+  "error": "undefined_getter (Material 2 text style)",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": ".caption",
+  "new": ".bodySmall",
+  "error": "undefined_getter (Material 2 text style)",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": ".overline",
+  "new": ".labelSmall",
+  "error": "undefined_getter (Material 2 text style)",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": "ElevatedButton.styleFrom(primary:",
+  "new": "ElevatedButton.styleFrom(backgroundColor:",
+  "error": "undefined_named_parameter",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": "FilledButton.styleFrom(primary:",
+  "new": "FilledButton.styleFrom(backgroundColor:",
+  "error": "undefined_named_parameter",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": "TextButton.styleFrom(primary:",
+  "new": "TextButton.styleFrom(foregroundColor:",
+  "error": "undefined_named_parameter",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": "OutlinedButton.styleFrom(primary:",
+  "new": "OutlinedButton.styleFrom(foregroundColor:",
+  "error": "undefined_named_parameter",
+  "source": "seed",
+  "uses": 0
+ },
+ {
+  "old": "onPrimary:",
+  "new": "foregroundColor:",
+  "error": "undefined_named_parameter",
+  "source": "seed",
+  "uses": 0
+ }
+]

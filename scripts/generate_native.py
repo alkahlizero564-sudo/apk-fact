@@ -17,9 +17,10 @@ import sys
 import tempfile
 from pathlib import Path
 
+import fix_memory
 from fix_native import fix
 from gemini_client import call_gemini
-from native_langs import LANGS, clean_deps, gemini_keys, parse_reply, read_deps, reply_format, write_deps
+from native_langs import DESIGN_BRIEF, LANGS, clean_deps, gemini_keys, parse_reply, read_deps, reply_format, write_deps
 
 DEFAULT_MODEL = "gemini-3.8-flash"
 HERE = Path(__file__).resolve().parent
@@ -118,6 +119,8 @@ def main():
     deps_text = ", ".join(cfg["allowed_deps"])
     prompt = f"""{cfg['rules'].format(deps=deps_text)}
 
+{DESIGN_BRIEF}
+
 {reply_format([(cfg['fence'], f"the complete {cfg['code_file']}"), ("html", PREVIEW_RULES)])}
 
 App name: {name}
@@ -146,9 +149,20 @@ App name: {name}
     if lang == "python":
         problems = python_problems(code_path)
         if problems:
-            print("Generated code has problems, asking AI to fix them:\n" + problems)
+            print("Generated code has problems:\n" + problems)
+            before = code_path.read_text(encoding="utf-8")
+            used = fix_memory.apply("python", code_path, problems)
+            if used:
+                after = python_problems(code_path)
+                if after and after.count("error:") >= problems.count("error:"):
+                    code_path.write_text(before, encoding="utf-8")
+                    fix_memory.forget("python", used)
+                else:
+                    problems = after
+        if problems:
+            print("Asking AI to fix what is left")
             try:
-                fix("python", code_path, problems)
+                fix("python", code_path, problems, use_memory=False)
             except (Exception, SystemExit) as e:  # keep the generated app; the build step fixes again
                 print(f"Warning: AI fix failed ({e}), the build step will try again")
             still = python_problems(code_path)

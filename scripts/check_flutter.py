@@ -7,7 +7,8 @@ lib/main.dart and packages into it, then:
   1. `dart fix --apply`: Flutter's own automatic fixes (deprecated APIs etc.),
      written back to the app;
   2. `flutter analyze`: compile errors in seconds instead of a full build;
-  3. if errors remain and rounds are left, the AI fixes them (fix_native.py).
+  3. remembered fixes (fix_memory.py) on the reported lines, without AI; kept only if they help;
+  4. if errors remain and rounds are left, the AI fixes them and its fixes are remembered.
 Exits 0 when the code analyzes clean, 1 otherwise.
 """
 import shutil
@@ -15,6 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import fix_memory
 from fix_native import fix
 from native_langs import read_deps
 
@@ -44,6 +46,26 @@ def analyze(proj):
     return code == 0, "\n".join(errors) or out[-4000:]
 
 
+def count_errors(problems):
+    return sum(1 for l in problems.splitlines() if l.startswith("error")) or 1
+
+
+def try_memory(app, proj, code_file, problems):
+    """Apply remembered fixes; keep them only if the analyzer agrees. Returns (clean, problems)."""
+    before = code_file.read_text(encoding="utf-8")
+    used = fix_memory.apply("flutter", code_file, problems)
+    if not used:
+        return False, problems
+    shutil.copy(code_file, proj / "lib" / "main.dart")
+    clean, after = analyze(proj)
+    if clean or count_errors(after) < count_errors(problems):
+        return clean, after
+    code_file.write_text(before, encoding="utf-8")
+    shutil.copy(code_file, proj / "lib" / "main.dart")
+    fix_memory.forget("flutter", used)
+    return False, problems
+
+
 def main():
     args = sys.argv[1:]
     rounds = int(args[args.index("--rounds") + 1]) if "--rounds" in args else 2
@@ -62,6 +84,8 @@ def main():
                 code_file.write_text(after, encoding="utf-8")
                 print("Applied `dart fix` to main.dart", flush=True)
             clean, problems = analyze(proj)
+            if not clean:
+                clean, problems = try_memory(app, proj, code_file, problems)
             if clean:
                 print("Flutter check passed", flush=True)
                 return 0
@@ -69,7 +93,7 @@ def main():
         if r == rounds:
             break
         try:
-            fix("flutter", code_file, problems)
+            fix("flutter", code_file, problems, use_memory=False)
         except SystemExit as e:  # no API key, or every model/key failed: retrying won't help now
             print(f"Warning: AI fix failed ({e})", flush=True)
             break

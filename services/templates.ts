@@ -1,0 +1,139 @@
+import { Ionicons } from "@expo/vector-icons";
+import { Lang } from "./langs";
+
+type IconName = React.ComponentProps<typeof Ionicons>["name"];
+
+export type Template = {
+  id: string;
+  title: string;
+  icon: IconName;
+  color: string;
+  lang: Lang;
+  // Suggested app name (English, used as the folder name) and a detailed description for the AI.
+  name: string;
+  description: string;
+};
+
+// Ready-made starting points. Each description lists screens and features so the AI builds a complete app.
+export const TEMPLATES: Template[] = [
+  {
+    id: "store",
+    title: "متجر إلكتروني",
+    icon: "bag-handle-outline",
+    color: "#F472B6",
+    lang: "html",
+    name: "store",
+    description:
+      "متجر إلكتروني لبيع الملابس. الشاشات: الرئيسية فيها بانر عروض وتصنيفات (رجالي، نسائي، أطفال) ومنتجات مميزة، صفحة المنتج بالصور والمقاسات والألوان والسعر، سلة مشتريات بتعديل الكمية والإجمالي، المفضلة، وصفحة إتمام الطلب بالاسم والعنوان والهاتف. بحث وفلترة حسب السعر.",
+  },
+  {
+    id: "todo",
+    title: "قائمة مهام",
+    icon: "checkbox-outline",
+    color: "#34D399",
+    lang: "flutter",
+    name: "tasks",
+    description:
+      "تطبيق مهام. إضافة مهمة بعنوان وملاحظة وتاريخ استحقاق وأولوية (عالية، متوسطة، منخفضة) وتصنيف. تبويبات: اليوم، القادمة، المنجزة. تعليم المهمة كمنجزة بسحب أو ضغطة، حذف مع تأكيد، عداد للمهام المتبقية وشريط تقدم يومي.",
+  },
+  {
+    id: "notes",
+    title: "ملاحظات",
+    icon: "document-text-outline",
+    color: "#FBBF24",
+    lang: "flutter",
+    name: "notes",
+    description:
+      "تطبيق ملاحظات. عرض الملاحظات كبطاقات ملونة في شبكة، إضافة وتعديل ملاحظة بعنوان ونص ولون، تثبيت الملاحظات المهمة في الأعلى، بحث فوري، وحذف مع تأكيد وإمكانية التراجع.",
+  },
+  {
+    id: "expenses",
+    title: "مصروفاتي",
+    icon: "wallet-outline",
+    color: "#60A5FA",
+    lang: "python",
+    name: "expenses",
+    description:
+      "تطبيق لتتبع المصروفات. إضافة مصروف بالمبلغ والتصنيف (أكل، مواصلات، فواتير، تسوق، أخرى) والتاريخ وملاحظة. الرئيسية تعرض رصيد الشهر وإجمالي المصروفات وقائمة آخر العمليات، وشاشة تقارير بإجمالي كل تصنيف كنسبة مئوية، وتحديد ميزانية شهرية مع تنبيه عند تجاوزها.",
+  },
+  {
+    id: "menu",
+    title: "منيو مطعم",
+    icon: "restaurant-outline",
+    color: "#FB923C",
+    lang: "html",
+    name: "restaurant",
+    description:
+      "تطبيق منيو لمطعم. أقسام: مقبلات، أطباق رئيسية، مشروبات، حلويات. لكل صنف صورة واسم ووصف وسعر وزر إضافة للطلب. سلة الطلب بالكميات والإجمالي، اختيار استلام أو توصيل، وزر إرسال الطلب عبر واتساب.",
+  },
+  {
+    id: "fitness",
+    title: "تمارين ولياقة",
+    icon: "barbell-outline",
+    color: "#F87171",
+    lang: "flutter",
+    name: "fitness",
+    description:
+      "تطبيق تمارين. خطط تمارين حسب المستوى (مبتدئ، متوسط، متقدم)، صفحة التمرين بالخطوات وعدد العدات والمجموعات ومؤقت للراحة، تسجيل التمارين المنجزة، وشاشة إحصائيات بعدد الأيام المتتالية والسعرات التقديرية لكل أسبوع.",
+  },
+  {
+    id: "booking",
+    title: "حجز مواعيد",
+    icon: "calendar-outline",
+    color: "#A78BFA",
+    lang: "html",
+    name: "booking",
+    description:
+      "تطبيق حجز مواعيد لصالون أو عيادة. اختيار الخدمة والسعر والمدة، اختيار اليوم من تقويم والوقت من المواعيد المتاحة، إدخال الاسم ورقم الهاتف، شاشة تأكيد الحجز، وقائمة حجوزاتي مع إلغاء الحجز.",
+  },
+  {
+    id: "quiz",
+    title: "مسابقة أسئلة",
+    icon: "help-circle-outline",
+    color: "#22D3EE",
+    lang: "python",
+    name: "quiz",
+    description:
+      "تطبيق مسابقة أسئلة ثقافية. اختيار التصنيف (تاريخ، علوم، جغرافيا، رياضة)، 10 أسئلة اختيار من متعدد مع مؤقت لكل سؤال، إظهار الإجابة الصحيحة بعد الاختيار، شاشة نتيجة بالنقاط ونسبة الإجابات الصحيحة، وحفظ أعلى نتيجة.",
+  },
+  {
+    id: "habits",
+    title: "عادات يومية",
+    icon: "repeat-outline",
+    color: "#4ADE80",
+    lang: "flutter",
+    name: "habits",
+    description:
+      "تطبيق لبناء العادات. إضافة عادة باسم وأيقونة ولون وأيام التكرار في الأسبوع. الرئيسية تعرض عادات اليوم بعلامة إنجاز، سلسلة الأيام المتتالية لكل عادة، وتقويم شهري يوضح أيام الالتزام.",
+  },
+  {
+    id: "portfolio",
+    title: "ملف شخصي",
+    icon: "person-circle-outline",
+    color: "#94A3B8",
+    lang: "html",
+    name: "portfolio",
+    description:
+      "تطبيق ملف شخصي (بورتفوليو) لمصمم. صورة واسم ونبذة، المهارات بأشرطة تقدم، معرض الأعمال بالصور مع فلترة حسب النوع، الخبرات بخط زمني، وأزرار تواصل (واتساب، بريد، هاتف).",
+  },
+  {
+    id: "students",
+    title: "سجل طلاب",
+    icon: "school-outline",
+    color: "#FCD34D",
+    lang: "python",
+    name: "students",
+    description:
+      "تطبيق لإدارة طلاب فصل. إضافة طالب بالاسم ورقم الهاتف وولي الأمر، تسجيل الحضور اليومي بضغطة، إدخال الدرجات لكل مادة، شاشة الطالب بنسبة الحضور ومعدل الدرجات، وبحث بالاسم.",
+  },
+  {
+    id: "chat",
+    title: "واجهة دردشة",
+    icon: "chatbubbles-outline",
+    color: "#38BDF8",
+    lang: "flutter",
+    name: "chat",
+    description:
+      "واجهة تطبيق دردشة. قائمة المحادثات بالصورة والاسم وآخر رسالة والوقت وعداد غير المقروء، شاشة المحادثة بفقاعات للرسائل المرسلة والمستلمة ووقت كل رسالة وحالة القراءة، حقل كتابة مع زر إرسال، وبحث في المحادثات. بيانات تجريبية واقعية.",
+  },
+];

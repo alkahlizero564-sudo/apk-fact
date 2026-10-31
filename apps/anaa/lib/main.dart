@@ -19,13 +19,13 @@ void main() async {
 }
 
 enum ExpenseCategory {
-  food('طعام ومشروبات', Icons.restaurant_rounded, Color(0xFFFF7043)),
-  shopping('تسوق وتجهيزات', Icons.shopping_bag_rounded, Color(0xFFAB47BC)),
-  transport('مواصلات وتُنقُّل', Icons.directions_car_rounded, Color(0xFF42A5F5)),
-  bills('فواتير وخدمات', Icons.receipt_long_rounded, Color(0xFFEF5350)),
-  health('صحة وعناية', Icons.medical_services_rounded, Color(0xFF26A69A)),
-  entertainment('ترفيه ورحلات', Icons.sports_esports_rounded, Color(0xFFFFA726)),
-  other('مصروفات أخرى', Icons.more_horiz_rounded, Color(0xFF78909C));
+  food('طعام ومشروبات', Icons.restaurant_rounded, Color(0xFFFF6D00)),
+  shopping('تسوق وتجهيزات', Icons.shopping_bag_rounded, Color(0xFF9C27B0)),
+  transport('مواصلات وتُنقُّل', Icons.directions_car_rounded, Color(0xFF0288D1)),
+  bills('فواتير وخدمات', Icons.receipt_long_rounded, Color(0xFFE53935)),
+  health('صحة وعناية', Icons.medical_services_rounded, Color(0xFF00897B)),
+  entertainment('ترفيه ورحلات', Icons.sports_esports_rounded, Color(0xFFFB8C00)),
+  other('مصروفات أخرى', Icons.more_horiz_rounded, Color(0xFF546E7A));
 
   final String title;
   final IconData icon;
@@ -78,6 +78,7 @@ class AppStateNotifier extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.system;
   List<ExpenseItem> _expenses = [];
   double _monthlyBudget = 5000.0;
+  String _userName = 'عبدالله';
 
   AppStateNotifier(this._prefs) {
     _loadFromPrefs();
@@ -87,11 +88,29 @@ class AppStateNotifier extends ChangeNotifier {
   bool get isDarkMode => _themeMode == ThemeMode.dark;
   List<ExpenseItem> get expenses => _expenses;
   double get monthlyBudget => _monthlyBudget;
+  String get userName => _userName;
 
   List<ExpenseItem> get favoriteExpenses =>
       _expenses.where((e) => e.isFavorite).toList();
 
   double get totalSpent => _expenses.fold(0.0, (sum, item) => sum + item.amount);
+
+  double get todaySpent {
+    final now = DateTime.now();
+    return _expenses.where((item) {
+      return item.date.year == now.year &&
+          item.date.month == now.month &&
+          item.date.day == now.day;
+    }).fold(0.0, (sum, item) => sum + item.amount);
+  }
+
+  double get thisWeekSpent {
+    final now = DateTime.now();
+    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    return _expenses.where((item) {
+      return item.date.isAfter(startOfWeek.subtract(const Duration(seconds: 1)));
+    }).fold(0.0, (sum, item) => sum + item.amount);
+  }
 
   void _loadFromPrefs() {
     final themeStr = _prefs.getString('theme_mode') ?? 'system';
@@ -99,6 +118,7 @@ class AppStateNotifier extends ChangeNotifier {
     if (themeStr == 'light') _themeMode = ThemeMode.light;
 
     _monthlyBudget = _prefs.getDouble('monthly_budget') ?? 5000.0;
+    _userName = _prefs.getString('user_name') ?? 'عبدالله';
 
     final String? data = _prefs.getString('expenses_data');
     if (data != null && data.isNotEmpty) {
@@ -119,11 +139,11 @@ class AppStateNotifier extends ChangeNotifier {
     _expenses = [
       ExpenseItem(
         id: '1',
-        title: 'مشتريات البقالة',
+        title: 'مشتريات البقالة الأسبوعية',
         amount: 340.50,
         category: ExpenseCategory.food,
-        date: now.subtract(const Duration(hours: 4)),
-        note: 'خضروات وفاكهة ومستلزمات منزلية',
+        date: now.subtract(const Duration(hours: 2)),
+        note: 'خضار، فواكه، ومستلزمات مطبخ',
         isFavorite: true,
       ),
       ExpenseItem(
@@ -132,20 +152,21 @@ class AppStateNotifier extends ChangeNotifier {
         amount: 450.00,
         category: ExpenseCategory.bills,
         date: now.subtract(const Duration(days: 1)),
-        note: 'فاتورة شهرية',
+        note: 'فاتورة شهر يوليو',
         isFavorite: true,
       ),
       ExpenseItem(
         id: '3',
         title: 'بنزين السيارة',
-        amount: 120.00,
+        amount: 130.00,
         category: ExpenseCategory.transport,
         date: now.subtract(const Duration(days: 2)),
+        note: 'محطة الدريس 95',
       ),
       ExpenseItem(
         id: '4',
-        title: 'عشاء مع الأصدقاء',
-        amount: 210.00,
+        title: 'عشاء مع العائلة',
+        amount: 225.00,
         category: ExpenseCategory.food,
         date: now.subtract(const Duration(days: 3)),
       ),
@@ -154,8 +175,15 @@ class AppStateNotifier extends ChangeNotifier {
         title: 'اشتراك النادي الرياضي',
         amount: 350.00,
         category: ExpenseCategory.health,
-        date: now.subtract(const Duration(days: 5)),
+        date: now.subtract(const Duration(days: 4)),
         isFavorite: true,
+      ),
+      ExpenseItem(
+        id: '6',
+        title: 'تذاكر سينما ومشروبات',
+        amount: 110.00,
+        category: ExpenseCategory.entertainment,
+        date: now.subtract(const Duration(days: 6)),
       ),
     ];
     _saveToPrefs();
@@ -175,6 +203,12 @@ class AppStateNotifier extends ChangeNotifier {
   void setBudget(double budget) {
     _monthlyBudget = budget;
     _prefs.setDouble('monthly_budget', budget);
+    notifyListeners();
+  }
+
+  void setUserName(String name) {
+    _userName = name;
+    _prefs.setString('user_name', name);
     notifyListeners();
   }
 
@@ -213,8 +247,9 @@ class AnaaApp extends StatelessWidget {
     final notifier = Provider.of<AppStateNotifier>(context);
 
     // Primary Emerald Teal Theme
-    const primaryColor = Color(0xFF00897B);
-    const secondaryColor = Color(0xFF00E676);
+    const primaryColor = Color(0xFF0D9488);
+    const secondaryColor = Color(0xFF14B8A6);
+    const accentColor = Color(0xFFF59E0B);
 
     final lightTheme = ThemeData(
       useMaterial3: true,
@@ -224,9 +259,10 @@ class AnaaApp extends StatelessWidget {
         brightness: Brightness.light,
         primary: primaryColor,
         secondary: secondaryColor,
-        surface: const Color(0xFFF8FAF9),
+        tertiary: accentColor,
+        surface: const Color(0xFFF8FAFC),
       ),
-      scaffoldBackgroundColor: const Color(0xFFF4F7F6),
+      scaffoldBackgroundColor: const Color(0xFFF1F5F9),
       cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -237,7 +273,6 @@ class AnaaApp extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      fontFamily: 'Roboto',
     );
 
     final darkTheme = ThemeData(
@@ -246,15 +281,16 @@ class AnaaApp extends StatelessWidget {
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryColor,
         brightness: Brightness.dark,
-        primary: const Color(0xFF26A69A),
+        primary: const Color(0xFF2DD4BF),
         secondary: secondaryColor,
-        surface: const Color(0xFF1E2624),
+        tertiary: accentColor,
+        surface: const Color(0xFF1E293B),
       ),
-      scaffoldBackgroundColor: const Color(0xFF121816),
+      scaffoldBackgroundColor: const Color(0xFF0F172A),
       cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        color: const Color(0xFF1E2624),
+        color: const Color(0xFF1E293B),
       ),
       appBarTheme: const AppBarTheme(
         centerTitle: false,
@@ -266,7 +302,7 @@ class AnaaApp extends StatelessWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: MaterialApp(
-        title: 'أنا - مصروفاتي',
+        title: 'أنا - إدارة المصروفات',
         debugShowCheckedModeBanner: false,
         themeMode: notifier.themeMode,
         theme: lightTheme,
@@ -313,15 +349,27 @@ class _MainShellScreenState extends State<MainShellScreen> {
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.primary.withValues(alpha: 0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  )
+                ],
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.account_balance_wallet_rounded,
-                color: theme.colorScheme.primary,
-                size: 24,
+                color: Colors.white,
+                size: 22,
               ),
             ),
             const SizedBox(width: 12),
@@ -329,17 +377,19 @@ class _MainShellScreenState extends State<MainShellScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'أنا',
+                  'أنَا',
                   style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
                     color: theme.colorScheme.onSurface,
                   ),
                 ),
                 Text(
-                  'إدارة المصروفات الذكية',
+                  'إدارة المصروفات الشخصية',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
@@ -354,19 +404,21 @@ class _MainShellScreenState extends State<MainShellScreen> {
               notifier.toggleTheme();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(notifier.isDarkMode
-                      ? 'تم التفعيل: الوضع الليلي 🌙'
-                      : 'تم التفعيل: الوضع الفاتح ☀️'),
+                  content: Text(
+                    notifier.isDarkMode
+                        ? 'تم تفعيل الوضع الليلي 🌙'
+                        : 'تم تفعيل الوضع الفاتح ☀️',
+                  ),
                   duration: const Duration(seconds: 1),
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               );
             },
             icon: Icon(
               notifier.isDarkMode
-                  ? Icons.wb_sunny_rounded
+                  ? Icons.light_mode_rounded
                   : Icons.dark_mode_rounded,
               color: theme.colorScheme.primary,
             ),
@@ -380,10 +432,10 @@ class _MainShellScreenState extends State<MainShellScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openAddExpenseModal(context),
-        elevation: 3,
+        elevation: 4,
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_rounded, size: 24),
+        icon: const Icon(Icons.add_rounded, size: 26),
         label: const Text(
           'إضافة مصروف',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
@@ -393,26 +445,27 @@ class _MainShellScreenState extends State<MainShellScreen> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (idx) => setState(() => _currentIndex = idx),
-        indicatorColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+        indicatorColor: theme.colorScheme.primary.withValues(alpha: 0.18),
+        elevation: 10,
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
+            icon: Icon(Icons.grid_view_rounded),
+            selectedIcon: Icon(Icons.grid_view_rounded),
             label: 'الرئيسية',
           ),
           NavigationDestination(
-            icon: Icon(Icons.pie_chart_outline_rounded),
-            selectedIcon: Icon(Icons.pie_chart_rounded),
+            icon: Icon(Icons.donut_large_outlined),
+            selectedIcon: Icon(Icons.donut_large_rounded),
             label: 'الإحصائيات',
           ),
           NavigationDestination(
-            icon: Icon(Icons.favorite_border_rounded),
-            selectedIcon: Icon(Icons.favorite_rounded),
+            icon: Icon(Icons.bookmark_border_rounded),
+            selectedIcon: Icon(Icons.bookmark_rounded),
             label: 'المفضلة',
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings_rounded),
+            icon: Icon(Icons.tune_rounded),
+            selectedIcon: Icon(Icons.tune_rounded),
             label: 'الإعدادات',
           ),
         ],
@@ -428,8 +481,11 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+enum SortOption { newest, highest, lowest }
+
 class _HomeScreenState extends State<HomeScreen> {
   ExpenseCategory? _selectedCategory;
+  SortOption _currentSort = SortOption.newest;
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -438,38 +494,206 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 12) return 'صباح الخير ☀️';
+    if (hour >= 12 && hour < 17) return 'مساء الخير 🌤️';
+    return 'مساء الخير ✨';
+  }
+
+  void _showBudgetEditModal(BuildContext context, AppStateNotifier notifier) {
+    final controller =
+        TextEditingController(text: notifier.monthlyBudget.toStringAsFixed(0));
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return Container(
+          padding: EdgeInsets.fromLTRB(
+              20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
+          decoration: BoxDecoration(
+            color: theme.scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'تعديل الميزانية الشهرية',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'المبلغ المحدد (ر.س)',
+                  prefixIcon: const Icon(Icons.savings_rounded),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () {
+                    final val = double.tryParse(controller.text);
+                    if (val != null && val > 0) {
+                      notifier.setBudget(val);
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('تم تحديث الميزانية بنجاح 🎯'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('حفظ الميزانية الجديدة',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final notifier = Provider.of<AppStateNotifier>(context);
     final theme = Theme.of(context);
     final total = notifier.totalSpent;
     final budget = notifier.monthlyBudget;
+    final remaining = (budget - total).clamp(0.0, double.infinity);
     final progress = (total / (budget > 0 ? budget : 1)).clamp(0.0, 1.0);
 
-    final filteredList = notifier.expenses.where((e) {
+    // Dynamic Filter & Sort logic
+    List<ExpenseItem> filteredList = notifier.expenses.where((e) {
       final matchesCategory =
           _selectedCategory == null || e.category == _selectedCategory;
-      final matchesQuery = _searchController.text.isEmpty ||
-          e.title.toLowerCase().contains(_searchController.text.toLowerCase()) ||
-          e.note.toLowerCase().contains(_searchController.text.toLowerCase());
+      final query = _searchController.text.trim().toLowerCase();
+      final matchesQuery = query.isEmpty ||
+          e.title.toLowerCase().contains(query) ||
+          e.note.toLowerCase().contains(query);
       return matchesCategory && matchesQuery;
     }).toList();
 
+    if (_currentSort == SortOption.highest) {
+      filteredList.sort((a, b) => b.amount.compareTo(a.amount));
+    } else if (_currentSort == SortOption.lowest) {
+      filteredList.sort((a, b) => a.amount.compareTo(b.amount));
+    } else {
+      filteredList.sort((a, b) => b.date.compareTo(a.date));
+    }
+
+    final currentMonthName = DateFormat('MMMM yyyy', 'ar').format(DateTime.now());
+
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
       children: [
-        // Monthly Summary Banner Card
+        // Top Greeting Header
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${_getGreeting()}، ${notifier.userName}',
+                  style: TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                Text(
+                  'ملخص سريح لنشاطك المالي',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.calendar_month_rounded,
+                      size: 14, color: theme.colorScheme.primary),
+                  const SizedBox(width: 4),
+                  Text(
+                    currentMonthName,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ).animate().fadeIn(duration: 250.ms),
+
+        const SizedBox(height: 16),
+
+        // Hero Budget Card
         Card(
-          elevation: 4,
-          shadowColor: theme.colorScheme.primary.withValues(alpha: 0.2),
+          elevation: 6,
+          shadowColor: theme.colorScheme.primary.withValues(alpha: 0.25),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               gradient: LinearGradient(
-                colors: [
-                  theme.colorScheme.primary,
-                  theme.colorScheme.primary.withBlue(160),
-                ],
+                colors: notifier.isDarkMode
+                    ? [
+                        const Color(0xFF0D9488),
+                        const Color(0xFF0F766E),
+                        const Color(0xFF115E59),
+                      ]
+                    : [
+                        const Color(0xFF0D9488),
+                        const Color(0xFF14B8A6),
+                        const Color(0xFF0284C7),
+                      ],
                 begin: Alignment.topRight,
                 end: Alignment.bottomLeft,
               ),
@@ -481,138 +705,280 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'إجمالي مصروفات الشهر',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        'الميزانية: ${budget.toStringAsFixed(0)} ر.س',
-                        style: const TextStyle(
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.pie_chart_rounded,
                             color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold),
+                            size: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'المصروف الإجمالي',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    InkWell(
+                      onTap: () => _showBudgetEditModal(context, notifier),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.22),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              'الميزانية: ${budget.toStringAsFixed(0)} ر.س',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.edit,
+                                color: Colors.white, size: 12),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
-                Text(
-                  '${total.toStringAsFixed(2)} ر.س',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.w800,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      total.toStringAsFixed(2),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 34,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'ر.س',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: LinearProgressIndicator(
                     value: progress,
-                    minHeight: 8,
-                    backgroundColor: Colors.white24,
-                    color: progress > 0.9 ? Colors.amberAccent : Colors.white,
+                    minHeight: 10,
+                    backgroundColor: Colors.white.withValues(alpha: 0.25),
+                    color: progress > 0.9
+                        ? const Color(0xFFEF4444)
+                        : progress > 0.75
+                            ? const Color(0xFFF59E0B)
+                            : Colors.white,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'المتبقي: ${(budget - total).clamp(0, double.infinity).toStringAsFixed(2)} ر.س',
-                      style: const TextStyle(
-                          color: Colors.white70, fontSize: 13),
+                      'المتبقي: ${remaining.toStringAsFixed(2)} ر.س',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     Text(
-                      '${(progress * 100).toStringAsFixed(0)}%',
+                      'مستهلك: ${(progress * 100).toStringAsFixed(0)}%',
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13),
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
               ],
             ),
           ),
-        ).animate().fadeIn(duration: 300.ms).slideY(begin: -0.1),
+        ).animate().fadeIn(duration: 300.ms).slideY(begin: -0.05),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 14),
 
-        // Search & Category Filter
-        TextField(
-          controller: _searchController,
-          onChanged: (_) => setState(() {}),
-          decoration: InputDecoration(
-            hintText: 'ابحث في المصروفات...',
-            prefixIcon: const Icon(Icons.search_rounded),
-            suffixIcon: _searchController.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear_rounded),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() {});
-                    },
-                  )
-                : null,
-            filled: true,
-            fillColor: theme.cardTheme.color,
-            contentPadding: const EdgeInsets.symmetric(vertical: 12),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
+        // Quick Stats Badges
+        Row(
+          children: [
+            Expanded(
+              child: _QuickStatCard(
+                title: 'مصروف اليوم',
+                amount: notifier.todaySpent,
+                icon: Icons.today_rounded,
+                color: const Color(0xFF3B82F6),
+              ),
             ),
-          ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _QuickStatCard(
+                title: 'هذا الأسبوع',
+                amount: notifier.thisWeekSpent,
+                icon: Icons.date_range_rounded,
+                color: const Color(0xFF10B981),
+              ),
+            ),
+          ],
+        ).animate().fadeIn(duration: 350.ms),
+
+        const SizedBox(height: 18),
+
+        // Search Bar & Sort Dropdown
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: 'ابحث في المصروفات أو الملاحظات...',
+                  hintStyle: const TextStyle(fontSize: 13),
+                  prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear_rounded, size: 18),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {});
+                          },
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: theme.cardTheme.color,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: theme.cardTheme.color,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: PopupMenuButton<SortOption>(
+                icon: const Icon(Icons.swap_vert_rounded),
+                tooltip: 'ترتيب حسب',
+                onSelected: (option) {
+                  setState(() => _currentSort = option);
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: SortOption.newest,
+                    child: Row(
+                      children: [
+                        Icon(Icons.history_rounded, size: 18),
+                        SizedBox(width: 8),
+                        Text('الأحدث أولاً', style: TextStyle(fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: SortOption.highest,
+                    child: Row(
+                      children: [
+                        Icon(Icons.arrow_upward_rounded, size: 18),
+                        SizedBox(width: 8),
+                        Text('الأعلى سعراً', style: TextStyle(fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: SortOption.lowest,
+                    child: Row(
+                      children: [
+                        Icon(Icons.arrow_downward_rounded, size: 18),
+                        SizedBox(width: 8),
+                        Text('الأقل سعراً', style: TextStyle(fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
 
         const SizedBox(height: 12),
 
-        // Categories horizontal list
+        // Horizontal Category Chips
         SizedBox(
-          height: 40,
+          height: 38,
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: [
               Padding(
-                padding: const EdgeInsets.only(left: 8.0),
+                padding: const EdgeInsets.only(left: 6.0),
                 child: FilterChip(
-                  label: const Text('الكل'),
+                  label: Text('الكل (${notifier.expenses.length})'),
                   selected: _selectedCategory == null,
-                  onSelected: (selected) {
-                    setState(() => _selectedCategory = null);
-                  },
-                  selectedColor: theme.colorScheme.primary.withValues(alpha: 0.2),
+                  onSelected: (_) => setState(() => _selectedCategory = null),
+                  selectedColor: theme.colorScheme.primary.withValues(alpha: 0.18),
                   checkmarkColor: theme.colorScheme.primary,
+                  labelStyle: TextStyle(
+                    fontSize: 12,
+                    fontWeight: _selectedCategory == null
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20)),
                 ),
               ),
               ...ExpenseCategory.values.map((cat) {
+                final count =
+                    notifier.expenses.where((e) => e.category == cat).length;
                 final isSelected = _selectedCategory == cat;
                 return Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
+                  padding: const EdgeInsets.only(left: 6.0),
                   child: FilterChip(
-                    avatar: Icon(cat.icon, size: 16, color: cat.color),
-                    label: Text(cat.title),
+                    avatar: Icon(cat.icon, size: 14, color: cat.color),
+                    label: Text('${cat.title} ($count)'),
                     selected: isSelected,
                     onSelected: (selected) {
                       setState(() {
                         _selectedCategory = selected ? cat : null;
                       });
                     },
-                    selectedColor: cat.color.withValues(alpha: 0.2),
+                    selectedColor: cat.color.withValues(alpha: 0.18),
                     checkmarkColor: cat.color,
+                    labelStyle: TextStyle(
+                      fontSize: 12,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                    ),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20)),
                   ),
@@ -622,15 +988,16 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 18),
 
+        // Transactions Header
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'سجل المصروفات',
+              'سجل العمليات',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: FontWeight.bold,
                 color: theme.colorScheme.onSurface,
               ),
@@ -638,40 +1005,48 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               '${filteredList.length} عنصر',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ],
         ),
 
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
 
+        // List View or Empty State
         if (filteredList.isEmpty)
           Container(
             padding: const EdgeInsets.all(32),
+            margin: const EdgeInsets.only(top: 10),
+            decoration: BoxDecoration(
+              color: theme.cardTheme.color,
+              borderRadius: BorderRadius.circular(20),
+            ),
             alignment: Alignment.center,
             child: Column(
               children: [
                 Icon(
-                  Icons.receipt_long_outlined,
-                  size: 64,
+                  Icons.search_off_rounded,
+                  size: 56,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'لا توجد مصروفات هنا',
+                  'لم يتم العثور على أي مصروفات',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'اضغط على زر الإضافة بالأسفل لتسجيل مصروف جديد',
+                  _searchController.text.isNotEmpty
+                      ? 'حاول البحث بكلمات أخرى أو تغيير الفلتر'
+                      : 'أضف مصروف جديد للبدء بتتبع ميزانيتك بسهولة',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                   textAlign: TextAlign.center,
@@ -688,8 +1063,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 return await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        title: const Text('تأكيد الحذف'),
+                        title: const Text('حذف المصروف'),
                         content: Text('هل أنت تأكد من حذف "${expense.title}"؟'),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
@@ -697,10 +1074,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red),
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                            ),
                             onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text('حذف',
-                                style: TextStyle(color: Colors.white)),
+                            child: const Text('حذف'),
                           ),
                         ],
                       ),
@@ -717,20 +1097,89 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
               background: Container(
-                margin: const EdgeInsets.only(bottom: 12),
+                margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
-                  color: Colors.redAccent,
-                  borderRadius: BorderRadius.circular(20),
+                  color: const Color(0xFFEF4444),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 alignment: Alignment.centerLeft,
-                child: const Icon(Icons.delete_outline_rounded,
-                    color: Colors.white, size: 28),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text('حذف',
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold)),
+                    SizedBox(width: 6),
+                    Icon(Icons.delete_outline_rounded,
+                        color: Colors.white, size: 24),
+                  ],
+                ),
               ),
               child: ExpenseCardItem(expense: expense),
             );
           }),
       ],
+    );
+  }
+}
+
+class _QuickStatCard extends StatelessWidget {
+  final String title;
+  final double amount;
+  final IconData icon;
+  final Color color;
+
+  const _QuickStatCard({
+    required this.title,
+    required this.amount,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${amount.toStringAsFixed(1)} ر.س',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -743,27 +1192,28 @@ class ExpenseCardItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final notifier = Provider.of<AppStateNotifier>(context, listen: false);
     final theme = Theme.of(context);
-    final dateFormat = DateFormat('yyyy/MM/dd - hh:mm a');
+    final dateFormat = DateFormat('yyyy/MM/dd • hh:mm a');
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(14.0),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: expense.category.color.withValues(alpha: 0.15),
+                color: expense.category.color.withValues(alpha: 0.14),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 expense.category.icon,
                 color: expense.category.color,
-                size: 24,
+                size: 22,
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -772,7 +1222,7 @@ class ExpenseCardItem extends StatelessWidget {
                     expense.title,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 15,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -782,35 +1232,34 @@ class ExpenseCardItem extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
+                          color: expense.category.color.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           expense.category.title,
                           style: TextStyle(
-                            fontSize: 11,
-                            color:
-                                theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: expense.category.color,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       Text(
                         dateFormat.format(expense.date),
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 10,
                           color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                         ),
                       ),
                     ],
                   ),
                   if (expense.note.isNotEmpty) ...[
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
                       expense.note,
                       style: TextStyle(
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic,
+                        fontSize: 11,
                         color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                       ),
                       maxLines: 1,
@@ -825,35 +1274,34 @@ class ExpenseCardItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '-${expense.amount.toStringAsFixed(2)}',
-                  style: TextStyle(
+                  '-${expense.amount.toStringAsFixed(2)} ر.س',
+                  style: const TextStyle(
                     fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                    color: Colors.red.shade400,
+                    fontSize: 15,
+                    color: Color(0xFFEF4444),
                   ),
                 ),
-                IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  icon: Icon(
-                    expense.isFavorite
-                        ? Icons.favorite_rounded
-                        : Icons.favorite_border_rounded,
-                    color: expense.isFavorite ? Colors.red : Colors.grey,
-                    size: 20,
-                  ),
-                  onPressed: () {
+                const SizedBox(height: 4),
+                GestureDetector(
+                  onTap: () {
                     notifier.toggleFavorite(expense.id);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(expense.isFavorite
-                            ? 'تمت الإزالة من المفضلة'
-                            : 'تمت الإضافة للمفضلة ❤️'),
+                            ? 'تمت إزالة المصروف من المفضلة'
+                            : 'تمت إضافة المصروف إلى المفضلة ❤️'),
                         duration: const Duration(seconds: 1),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
                   },
+                  child: Icon(
+                    expense.isFavorite
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    color: expense.isFavorite ? Colors.red : Colors.grey.shade400,
+                    size: 18,
+                  ),
                 ),
               ],
             ),
@@ -872,7 +1320,6 @@ class StatsScreen extends StatelessWidget {
     final notifier = Provider.of<AppStateNotifier>(context);
     final theme = Theme.of(context);
 
-    // Group expenses by category
     final Map<ExpenseCategory, double> catTotals = {};
     for (var cat in ExpenseCategory.values) {
       catTotals[cat] = 0.0;
@@ -887,11 +1334,19 @@ class StatsScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         Text(
-          'تحليل المصروفات حسب التصنيف',
+          'الإحصائيات والتحليل',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'توزيع الإنفاق حسب الأقسام والتصنيفات',
+          style: TextStyle(
+            fontSize: 12,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
         const SizedBox(height: 16),
@@ -909,22 +1364,22 @@ class StatsScreen extends StatelessWidget {
               child: Column(
                 children: [
                   SizedBox(
-                    height: 200,
+                    height: 190,
                     child: PieChart(
                       PieChartData(
-                        sectionsSpace: 3,
-                        centerSpaceRadius: 40,
+                        sectionsSpace: 4,
+                        centerSpaceRadius: 42,
                         sections: ExpenseCategory.values.map((cat) {
                           final amount = catTotals[cat] ?? 0;
                           final percentage =
                               total > 0 ? (amount / total) * 100 : 0.0;
                           return PieChartSectionData(
                             color: cat.color,
-                            value: amount == 0 ? 0.1 : amount,
-                            title: percentage > 5
+                            value: amount == 0 ? 0.01 : amount,
+                            title: percentage > 8
                                 ? '${percentage.toStringAsFixed(0)}%'
                                 : '',
-                            radius: 50,
+                            radius: 46,
                             titleStyle: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -937,7 +1392,7 @@ class StatsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Wrap(
-                    spacing: 12,
+                    spacing: 10,
                     runSpacing: 8,
                     children: ExpenseCategory.values.map((cat) {
                       final amount = catTotals[cat] ?? 0;
@@ -946,17 +1401,17 @@ class StatsScreen extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            width: 12,
-                            height: 12,
+                            width: 10,
+                            height: 10,
                             decoration: BoxDecoration(
                               color: cat.color,
                               shape: BoxShape.circle,
                             ),
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 4),
                           Text(
                             '${cat.title}: ${amount.toStringAsFixed(0)} ر.س',
-                            style: const TextStyle(fontSize: 12),
+                            style: const TextStyle(fontSize: 11),
                           ),
                         ],
                       );
@@ -969,14 +1424,14 @@ class StatsScreen extends StatelessWidget {
 
           const SizedBox(height: 20),
           Text(
-            'تفاصيل الأقسام',
+            'تفاصيل القطاعات',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.onSurface,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           ...ExpenseCategory.values.map((cat) {
             final sum = catTotals[cat] ?? 0;
             if (sum == 0) return const SizedBox.shrink();
@@ -990,18 +1445,25 @@ class StatsScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(cat.icon, color: cat.color),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: cat.color.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(cat.icon, color: cat.color, size: 20),
+                        ),
                         const SizedBox(width: 10),
                         Text(
                           cat.title,
                           style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 15),
+                              fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                         const Spacer(),
                         Text(
                           '${sum.toStringAsFixed(2)} ر.س',
                           style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 15),
+                              fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                       ],
                     ),
@@ -1011,7 +1473,8 @@ class StatsScreen extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: percent,
                         minHeight: 6,
-                        backgroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                        backgroundColor:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.08),
                         color: cat.color,
                       ),
                     ),
@@ -1040,7 +1503,7 @@ class FavoritesScreen extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Icon(Icons.favorite_rounded, color: Colors.red),
+            const Icon(Icons.bookmark_rounded, color: Color(0xFFF59E0B)),
             const SizedBox(width: 8),
             Text(
               'المصروفات المفضلة والثابتة',
@@ -1052,40 +1515,44 @@ class FavoritesScreen extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         Text(
-          'يمكنك حفظ الفواتير أو المصروفات المكررة للوصول السريع إليها.',
+          'وصول سريع للمصروفات الدورية والفواتير المكررة.',
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 12,
             color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
         const SizedBox(height: 16),
         if (favorites.isEmpty)
           Container(
-            padding: const EdgeInsets.all(40),
+            padding: const EdgeInsets.all(36),
             alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: theme.cardTheme.color,
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Column(
               children: [
                 Icon(
                   Icons.favorite_border_rounded,
-                  size: 64,
+                  size: 56,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'قائمة المفضلة فارغة',
+                  'قائمة المفضلة فارغة حالياً',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'اضغط على أيقونة القلب في أي مصروف لتضيفه هنا',
+                  'اضغط على أيقونة القلب في أي مصروف لتسجيله هنا كعنصر مفضل',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                   textAlign: TextAlign.center,
@@ -1105,8 +1572,9 @@ class SettingsScreen extends StatelessWidget {
 
   Future<void> _launchWhatsApp(BuildContext context) async {
     const phoneNumber = '+966500000000';
-    const message = 'مرحباً، أود الاستفسار حول تطبيق أنا - مصروفاتي';
-    final url = Uri.parse('https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}');
+    const message = 'مرحباً، أود الاستفسار حول تطبيق أنَا - إدارة المصروفات';
+    final url =
+        Uri.parse('https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}');
 
     try {
       if (await canLaunchUrl(url)) {
@@ -1114,31 +1582,30 @@ class SettingsScreen extends StatelessWidget {
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تعذر فتح واتساب، يرجى التثبيت أو المحاولة لاحقاً')),
+            const SnackBar(
+                content: Text('تعذر فتح تطبيق واتساب حالياً')),
           );
         }
       }
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تعذر الاتصال بـ واتساب')),
+          const SnackBar(content: Text('تعذر الاتصال بالخدمة')),
         );
       }
     }
   }
 
-  void _showBudgetDialog(BuildContext context, AppStateNotifier notifier) {
-    final controller =
-        TextEditingController(text: notifier.monthlyBudget.toStringAsFixed(0));
+  void _showUserNameDialog(BuildContext context, AppStateNotifier notifier) {
+    final controller = TextEditingController(text: notifier.userName);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('تحديد الميزانية الشهرية'),
+        title: const Text('تغيير الاسم الشخصي'),
         content: TextField(
           controller: controller,
-          keyboardType: TextInputType.number,
           decoration: const InputDecoration(
-            labelText: 'المبلع (ر.س)',
+            labelText: 'الاسم',
             border: OutlineInputBorder(),
           ),
         ),
@@ -1149,16 +1616,9 @@ class SettingsScreen extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              final val = double.tryParse(controller.text);
-              if (val != null && val > 0) {
-                notifier.setBudget(val);
+              if (controller.text.trim().isNotEmpty) {
+                notifier.setUserName(controller.text.trim());
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('تم تحديث الميزانية بنجاح 🎯'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
               }
             },
             child: const Text('حفظ'),
@@ -1184,19 +1644,29 @@ class SettingsScreen extends StatelessWidget {
             color: theme.colorScheme.onSurface,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         Card(
           child: Column(
             children: [
+              ListTile(
+                leading: Icon(Icons.person_rounded,
+                    color: theme.colorScheme.primary),
+                title: const Text('اسم المستخدم',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                subtitle: Text(notifier.userName),
+                trailing: const Icon(Icons.edit_rounded, size: 18),
+                onTap: () => _showUserNameDialog(context, notifier),
+              ),
+              const Divider(height: 1),
               SwitchListTile(
                 title: const Text('الوضع الليلي (Dark Mode)',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                 subtitle: const Text('التبديل بين المظهر الفاتح والداكن'),
                 value: notifier.isDarkMode,
                 secondary: Icon(
                   notifier.isDarkMode
                       ? Icons.dark_mode_rounded
-                      : Icons.wb_sunny_rounded,
+                      : Icons.light_mode_rounded,
                   color: theme.colorScheme.primary,
                 ),
                 onChanged: (_) => notifier.toggleTheme(),
@@ -1206,41 +1676,76 @@ class SettingsScreen extends StatelessWidget {
                 leading: Icon(Icons.savings_rounded,
                     color: theme.colorScheme.primary),
                 title: const Text('الميزانية الشهرية',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text('${notifier.monthlyBudget.toStringAsFixed(0)} ر.س'),
-                trailing: const Icon(Icons.edit_rounded, size: 20),
-                onTap: () => _showBudgetDialog(context, notifier),
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                subtitle:
+                    Text('${notifier.monthlyBudget.toStringAsFixed(0)} ر.س'),
+                trailing: const Icon(Icons.edit_rounded, size: 18),
+                onTap: () {
+                  final controller = TextEditingController(
+                      text: notifier.monthlyBudget.toStringAsFixed(0));
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('تحديد الميزانية الشهرية'),
+                      content: TextField(
+                        controller: controller,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'المبلغ (ر.س)',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('إلغاء'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            final val = double.tryParse(controller.text);
+                            if (val != null && val > 0) {
+                              notifier.setBudget(val);
+                              Navigator.pop(ctx);
+                            }
+                          },
+                          child: const Text('حفظ'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
         Text(
           'الدعم والتواصل',
           style: TextStyle(
-            fontSize: 18,
+            fontSize: 16,
             fontWeight: FontWeight.bold,
             color: theme.colorScheme.onSurface,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         Card(
           child: Column(
             children: [
               ListTile(
-                leading: const Icon(Icons.chat_bubble_rounded, color: Colors.green),
+                leading: const Icon(Icons.chat_bubble_rounded,
+                    color: Color(0xFF25D366)),
                 title: const Text('تواصل معنا عبر واتساب',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: const Text('خدمة العملاء والدعم الفني المباشر'),
-                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                subtitle: const Text('المساعدة والدعم الفني السريع'),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                 onTap: () => _launchWhatsApp(context),
               ),
               const Divider(height: 1),
               const ListTile(
                 leading: Icon(Icons.info_outline_rounded, color: Colors.blue),
                 title: Text('عن التطبيق',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text('تطبيق أنا v1.0 - إدارة مصروفاتك بسهولة وأمان'),
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                subtitle: Text('تطبيق أنَا الإصدار 2.0 - محلي 100% وبدون إعلانات'),
               ),
             ],
           ),
@@ -1274,6 +1779,11 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
     super.dispose();
   }
 
+  void _addQuickAmount(double val) {
+    double current = double.tryParse(_amountController.text) ?? 0.0;
+    _amountController.text = (current + val).toStringAsFixed(0);
+  }
+
   void _submit() {
     if (_formKey.currentState!.validate()) {
       final notifier = Provider.of<AppStateNotifier>(context, listen: false);
@@ -1292,10 +1802,10 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('تمت إضافة "${newItem.title}" بنجاح ✨'),
+          content: Text('تم تسجيل "${newItem.title}" بنجاح ✨'),
           behavior: SnackBarBehavior.floating,
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     }
@@ -1309,7 +1819,7 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
     return Container(
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
       ),
       padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomInset),
       child: SingleChildScrollView(
@@ -1321,7 +1831,7 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
             children: [
               Center(
                 child: Container(
-                  width: 40,
+                  width: 38,
                   height: 4,
                   decoration: BoxDecoration(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
@@ -1330,20 +1840,30 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
-                'تسجيل مصروف جديد',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'تسجيل مصروف جديد',
+                    style: TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               TextFormField(
                 controller: _titleController,
+                autofocus: true,
                 decoration: InputDecoration(
-                  labelText: 'عنوان المصروف (مثال: شراء أغراض)',
+                  labelText: 'عنوان المصروف (مثال: عشاء، بنزين...)',
                   prefixIcon: const Icon(Icons.edit_note_rounded),
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14)),
@@ -1363,7 +1883,7 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
                     const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(
                   labelText: 'المبلغ (ر.س)',
-                  prefixIcon: const Icon(Icons.attach_money_rounded),
+                  prefixIcon: const Icon(Icons.payments_rounded),
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
@@ -1377,11 +1897,33 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
+
+              // Quick Amount Preset Chips
+              Row(
+                children: [
+                  const Text('إضافة سريعة: ', style: TextStyle(fontSize: 12)),
+                  const SizedBox(width: 4),
+                  Wrap(
+                    spacing: 6,
+                    children: [10, 50, 100, 200].map((val) {
+                      return ActionChip(
+                        label: Text('+$val', style: const TextStyle(fontSize: 11)),
+                        onPressed: () => _addQuickAmount(val.toDouble()),
+                        visualDensity: VisualDensity.compact,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 14),
 
               const Text(
-                'اختر التصنيف:',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                'اختر التصنيف المناسب:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
               const SizedBox(height: 8),
               Wrap(
@@ -1392,10 +1934,10 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
                   return ChoiceChip(
                     avatar: Icon(
                       cat.icon,
-                      size: 18,
+                      size: 16,
                       color: isSelected ? Colors.white : cat.color,
                     ),
-                    label: Text(cat.title),
+                    label: Text(cat.title, style: const TextStyle(fontSize: 12)),
                     selected: isSelected,
                     selectedColor: cat.color,
                     labelStyle: TextStyle(
@@ -1414,23 +1956,24 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
               TextFormField(
                 controller: _noteController,
                 decoration: InputDecoration(
-                  labelText: 'ملاحظة إضافية (اختياري)',
+                  labelText: 'ملاحظة أو تفاصيل (اختياري)',
                   prefixIcon: const Icon(Icons.notes_rounded),
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('إضافة إلى المفضلة / فواتير مكررة'),
+                title: const Text('حفظ المصروف في القائمة المفضلة',
+                    style: TextStyle(fontSize: 13)),
                 value: _isFavorite,
                 onChanged: (val) => setState(() => _isFavorite = val ?? false),
                 activeColor: theme.colorScheme.primary,
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -1445,8 +1988,8 @@ class _AddExpenseBottomSheetState extends State<AddExpenseBottomSheet> {
                   onPressed: _submit,
                   icon: const Icon(Icons.check_circle_rounded),
                   label: const Text(
-                    'حفظ المصروف',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    'تأكيد وحفظ المصروف',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

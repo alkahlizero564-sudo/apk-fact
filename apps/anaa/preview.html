@@ -3,127 +3,147 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تطبيق أنا - مصروفاتي</title>
+  <title>أنا - إدارة المصروفات الذكية</title>
   <style>
     :root {
-      --bg-color: #F4F7F6;
-      --surface-color: #FFFFFF;
-      --text-color: #1F2937;
-      --subtext-color: #6B7280;
-      --primary: #00897B;
-      --primary-dark: #00695C;
-      --accent: #00E676;
+      --primary: #0D9488;
+      --primary-dark: #0F766E;
+      --bg: #F1F5F9;
+      --surface: #FFFFFF;
+      --text: #0F172A;
+      --subtext: #64748B;
       --card-bg: #FFFFFF;
-      --border-color: #E5E7EB;
-      --red: #EF4444;
+      --border: #E2E8F0;
+      --danger: #EF4444;
     }
-
-    body.dark {
-      --bg-color: #121816;
-      --surface-color: #1E2624;
-      --text-color: #F3F4F6;
-      --subtext-color: #9CA3AF;
-      --card-bg: #1E2624;
-      --border-color: #2D3748;
+    .dark-mode {
+      --primary: #2DD4BF;
+      --primary-dark: #0D9488;
+      --bg: #0F172A;
+      --surface: #1E293B;
+      --text: #F8FAFC;
+      --subtext: #94A3B8;
+      --card-bg: #1E293B;
+      --border: #334155;
     }
-
     * {
       box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      user-select: none;
-    }
-
-    body {
       margin: 0;
       padding: 0;
-      background-color: #0f172a;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    body {
+      background-color: #050B14;
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
+      padding: 16px;
     }
-
-    /* Mobile Container Simulation */
     .phone-container {
-      width: 380px;
-      height: 750px;
-      background-color: var(--bg-color);
+      width: 100%;
+      max-width: 410px;
+      height: 840px;
+      background-color: var(--bg);
+      color: var(--text);
       border-radius: 40px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-      border: 10px solid #1e293b;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       position: relative;
-      overflow: hidden;
-      transition: background-color 0.3s ease;
+      border: 8px solid #1E293B;
+      transition: background-color 0.3s, color 0.3s;
     }
-
     /* App Bar */
     .app-bar {
-      padding: 16px;
+      padding: 16px 20px;
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      background-color: var(--bg-color);
+      align-items: center;
+      background: transparent;
     }
     .app-brand {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
     .brand-icon {
-      width: 36px;
-      height: 36px;
-      background: rgba(0, 137, 123, 0.15);
-      color: var(--primary);
-      border-radius: 10px;
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary), #0284C7);
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: bold;
-      font-size: 18px;
+      color: white;
+      font-size: 20px;
+      box-shadow: 0 4px 10px rgba(13, 148, 136, 0.3);
     }
     .brand-title {
-      font-size: 18px;
-      font-weight: bold;
-      color: var(--text-color);
-      line-height: 1.2;
-    }
-    .brand-subtitle {
-      font-size: 11px;
-      color: var(--subtext-color);
-    }
-    .theme-toggle-btn {
-      background: transparent;
-      border: none;
       font-size: 20px;
-      cursor: pointer;
-      padding: 6px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: var(--subtext);
+    }
+    .theme-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
-      color: var(--primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
     }
 
-    /* Content Area */
-    .content-area {
+    /* Content view */
+    .content-scroll {
       flex: 1;
       overflow-y: auto;
-      padding: 0 16px 80px 16px;
+      padding: 12px 16px 90px 16px;
     }
 
-    /* Banner Card */
-    .summary-card {
-      background: linear-gradient(135deg, var(--primary), #004D40);
-      border-radius: 20px;
-      padding: 20px;
-      color: white;
-      box-shadow: 0 10px 20px rgba(0, 137, 123, 0.2);
-      margin-bottom: 16px;
-    }
-    .summary-header {
+    /* Header Greeting */
+    .greeting-box {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 13px;
+      margin-bottom: 14px;
+    }
+    .month-badge {
+      background: rgba(13, 148, 136, 0.1);
+      color: var(--primary);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid rgba(13, 148, 136, 0.2);
+    }
+
+    /* Hero Card */
+    .hero-card {
+      background: linear-gradient(135deg, #0D9488, #14B8A6, #0284C7);
+      color: white;
+      padding: 20px;
+      border-radius: 24px;
+      box-shadow: 0 10px 25px -5px rgba(13, 148, 136, 0.4);
+      margin-bottom: 14px;
+      position: relative;
+    }
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .hero-title {
+      font-size: 12px;
       opacity: 0.9;
     }
     .budget-tag {
@@ -132,108 +152,180 @@
       border-radius: 12px;
       font-size: 11px;
       font-weight: bold;
+      cursor: pointer;
     }
-    .total-amount {
-      font-size: 30px;
-      font-weight: 800;
-      margin: 10px 0;
+    .hero-amount {
+      font-size: 32px;
+      font-weight: 900;
+      margin: 8px 0;
     }
     .progress-bar {
       height: 8px;
       background: rgba(255, 255, 255, 0.25);
       border-radius: 4px;
       overflow: hidden;
-      margin-bottom: 8px;
+      margin-top: 10px;
     }
     .progress-fill {
       height: 100%;
-      background: #00E676;
-      width: 29%;
+      background: white;
+      width: 48%;
       border-radius: 4px;
-      transition: width 0.3s;
+      transition: width 0.4s ease;
+    }
+    .hero-bottom {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-top: 8px;
+      opacity: 0.9;
     }
 
-    /* Filter Chips */
-    .categories-scroll {
+    /* Quick stats */
+    .quick-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .stat-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    /* Search & Filters */
+    .search-row {
       display: flex;
       gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 8px;
       margin-bottom: 12px;
     }
-    .chip {
+    .search-input {
+      flex: 1;
       background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      color: var(--text-color);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 14px;
+      color: var(--text);
+      outline: none;
+      font-size: 13px;
+    }
+    .sort-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0 12px;
+      border-radius: 14px;
+      cursor: pointer;
+    }
+
+    /* Horizontal Category chips */
+    .chip-scroll {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 14px;
+    }
+    .chip-scroll::-webkit-scrollbar { display: none; }
+    .chip {
+      white-space: nowrap;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--subtext);
       padding: 6px 14px;
       border-radius: 20px;
       font-size: 12px;
-      white-space: nowrap;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
     .chip.active {
-      background: rgba(0, 137, 123, 0.15);
-      border-color: var(--primary);
+      background: rgba(13, 148, 136, 0.15);
       color: var(--primary);
+      border-color: var(--primary);
       font-weight: bold;
     }
 
     /* Expense Item Card */
-    .expense-card {
+    .expense-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .expense-item {
       background: var(--card-bg);
+      border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 14px;
-      margin-bottom: 10px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .item-right {
       display: flex;
       align-items: center;
       gap: 12px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-      transition: transform 0.2s;
     }
-    .cat-icon {
-      width: 42px;
-      height: 42px;
+    .item-cat-icon {
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 18px;
-      flex-shrink: 0;
-    }
-    .item-info {
-      flex: 1;
     }
     .item-title {
+      font-weight: bold;
       font-size: 14px;
-      font-weight: 700;
-      color: var(--text-color);
     }
-    .item-sub {
+    .item-meta {
       font-size: 11px;
-      color: var(--subtext-color);
+      color: var(--subtext);
       margin-top: 2px;
     }
+    .item-left {
+      text-align: left;
+    }
     .item-amount {
-      font-size: 15px;
       font-weight: 800;
-      color: var(--red);
+      color: var(--danger);
+      font-size: 15px;
     }
     .fav-btn {
-      background: none;
-      border: none;
-      font-size: 16px;
+      color: #CBD5E1;
       cursor: pointer;
-      padding: 4px;
+      font-size: 16px;
+      margin-top: 4px;
+    }
+    .fav-btn.active {
+      color: #EF4444;
     }
 
-    /* Bottom Navigation */
-    .bottom-nav {
+    /* Dock Bottom Bar & FAB */
+    .dock-bar {
       position: absolute;
       bottom: 0;
-      width: 100%;
-      height: 65px;
-      background: var(--card-bg);
-      border-top: 1px solid var(--border-color);
+      left: 0;
+      right: 0;
+      height: 70px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
       display: flex;
       justify-content: space-around;
       align-items: center;
@@ -242,36 +334,28 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 2px;
-      color: var(--subtext-color);
+      color: var(--subtext);
       font-size: 10px;
       cursor: pointer;
-      background: none;
-      border: none;
-      flex: 1;
+      gap: 2px;
     }
     .nav-item.active {
       color: var(--primary);
       font-weight: bold;
     }
-    .nav-item span {
-      font-size: 18px;
-    }
-
-    /* Floating Action Button */
     .fab {
       position: absolute;
-      bottom: 32px;
+      bottom: 38px;
       left: 50%;
       transform: translateX(-50%);
       background: var(--primary);
       color: white;
       border: none;
-      padding: 10px 20px;
+      padding: 12px 20px;
       border-radius: 30px;
+      font-size: 14px;
       font-weight: bold;
-      font-size: 13px;
-      box-shadow: 0 8px 16px rgba(0, 137, 123, 0.4);
+      box-shadow: 0 10px 20px rgba(13, 148, 136, 0.4);
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -279,81 +363,65 @@
       z-index: 10;
     }
 
-    /* Toast Notification */
-    .toast {
-      position: absolute;
-      top: 70px;
-      left: 50%;
-      transform: translateX(-50%) translateY(-20px);
-      background: #323232;
-      color: white;
-      padding: 10px 18px;
-      border-radius: 20px;
-      font-size: 12px;
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.3s ease;
-      z-index: 99;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    }
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-
-    /* Modal Sheet */
+    /* Modal Overlay */
     .modal-overlay {
+      display: none;
       position: absolute;
       inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 50;
-      display: none;
+      background: rgba(0,0,0,0.6);
+      z-index: 100;
       align-items: flex-end;
     }
     .modal-overlay.open {
       display: flex;
     }
     .modal-sheet {
-      background: var(--bg-color);
       width: 100%;
-      border-radius: 24px 24px 0 0;
+      background: var(--bg);
+      border-radius: 26px 26px 0 0;
       padding: 20px;
+      box-sizing: border-box;
       max-height: 85%;
       overflow-y: auto;
-      animation: slideUp 0.25s ease-out;
+      animation: slideUp 0.3s ease;
     }
     @keyframes slideUp {
       from { transform: translateY(100%); }
       to { transform: translateY(0); }
     }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
     .form-group {
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
     .form-group label {
       display: block;
       font-size: 12px;
       font-weight: bold;
-      color: var(--text-color);
       margin-bottom: 6px;
     }
-    .form-control {
+    .form-group input {
       width: 100%;
-      padding: 10px 14px;
-      border-radius: 12px;
-      border: 1px solid var(--border-color);
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
       background: var(--card-bg);
-      color: var(--text-color);
-      font-size: 13px;
+      color: var(--text);
+      outline: none;
     }
     .btn-submit {
       width: 100%;
+      padding: 14px;
       background: var(--primary);
       color: white;
       border: none;
-      padding: 12px;
-      border-radius: 14px;
+      border-radius: 16px;
       font-weight: bold;
-      font-size: 14px;
+      font-size: 15px;
       cursor: pointer;
       margin-top: 10px;
     }
@@ -361,321 +429,278 @@
 </head>
 <body>
 
-<div class="phone-container" id="appBody">
-  <!-- Toast -->
-  <div class="toast" id="toast">تمت الإضافة بنجاح</div>
-
+<div class="phone-container" id="phone">
   <!-- App Header -->
   <div class="app-bar">
     <div class="app-brand">
-      <div class="brand-icon">أ</div>
+      <div class="brand-icon">💳</div>
       <div>
-        <div class="brand-title">أنا</div>
-        <div class="brand-subtitle">إدارة المصروفات الذكية</div>
+        <div class="brand-title">أنَا</div>
+        <div class="brand-sub">إدارة المصروفات الشخصية</div>
       </div>
     </div>
-    <button class="theme-toggle-btn" id="themeBtn" onclick="toggleTheme()" title="تبديل الوضع">🌙</button>
+    <button class="theme-btn" onclick="toggleTheme()" id="themeIcon">🌙</button>
   </div>
 
-  <!-- Main View Screens -->
-  <div class="content-area" id="mainContent">
-
-    <!-- HOME TAB -->
-    <div id="tabHome">
-      <div class="summary-card">
-        <div class="summary-header">
-          <span>إجمالي مصروفات الشهر</span>
-          <span class="budget-tag" id="budgetText">الميزانية: 5000 ر.س</span>
-        </div>
-        <div class="total-amount" id="totalText">1470.50 ر.س</div>
-        <div class="progress-bar">
-          <div class="progress-fill" id="progressFill" style="width: 29.4%;"></div>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 11px; opacity: 0.9;">
-          <span id="remText">المتبقي: 3529.50 ر.س</span>
-          <span id="percentText">29%</span>
-        </div>
+  <!-- Main Scrollable Area -->
+  <div class="content-scroll" id="mainContent">
+    <!-- Greeting -->
+    <div class="greeting-box">
+      <div>
+        <h3 style="font-size: 18px;" id="greetingText">مساء الخير ✨، عبدالله</h3>
+        <p style="font-size: 11px; color: var(--subtext);">ملخص سريع لنشاطك المالي اليوم</p>
       </div>
-
-      <div class="categories-scroll">
-        <div class="chip active" onclick="filterCat('all', this)">الكل</div>
-        <div class="chip" onclick="filterCat('طعام ومشروبات', this)">🍔 طعام</div>
-        <div class="chip" onclick="filterCat('فواتير وخدمات', this)">⚡ فواتير</div>
-        <div class="chip" onclick="filterCat('مواصلات وتُنقُّل', this)">🚗 مواصلات</div>
-        <div class="chip" onclick="filterCat('صحة وعناية', this)">🏥 صحة</div>
-      </div>
-
-      <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; font-size: 14px; color: var(--text-color);">
-        <span>سجل المصروفات</span>
-        <span style="font-size: 12px; color: var(--subtext-color);" id="itemCount">5 عناصر</span>
-      </div>
-
-      <div id="expenseList"></div>
+      <div class="month-badge">يوليو 2024</div>
     </div>
 
-    <!-- STATS TAB -->
-    <div id="tabStats" style="display: none;">
-      <h3 style="color: var(--text-color); margin-top: 0;">تحليل المصروفات</h3>
-      <div style="background: var(--card-bg); padding: 20px; border-radius: 20px; text-align: center;">
-        <div style="width: 140px; height: 140px; border-radius: 50%; background: conic-gradient(#FF7043 0% 38%, #EF5350 38% 68%, #42A5F5 68% 76%, #26A69A 76% 100%); margin: 0 auto 16px auto;"></div>
-        <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; font-size: 11px; color: var(--text-color);">
-          <span>🍔 طعام 38%</span>
-          <span>⚡ فواتير 30%</span>
-          <span>🚗 مواصلات 8%</span>
-          <span>🏥 صحة 24%</span>
+    <!-- Hero Card -->
+    <div class="hero-card">
+      <div class="hero-top">
+        <span>📊 المصروف الإجمالي</span>
+        <div class="budget-tag" onclick="editBudget()">الميزانية: <span id="budgetText">5000</span> ر.س ✏️</div>
+      </div>
+      <div class="hero-amount"><span id="totalSpentText">2405.50</span> <span style="font-size: 16px;">ر.س</span></div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 48%;"></div>
+      </div>
+      <div class="hero-bottom">
+        <span>المتبقي: <span id="remainingText">2594.50</span> ر.س</span>
+        <span>مستهلك: <span id="percentText">48%</span></span>
+      </div>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="quick-stats">
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(59,130,246,0.15); color: #3B82F6;">📅</div>
+        <div>
+          <div style="font-size: 10px; color: var(--subtext);">مصروف اليوم</div>
+          <div style="font-size: 13px; font-weight: bold;" id="todaySpentText">340.5 ر.س</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(16,185,129,0.15); color: #10B981;">🗓️</div>
+        <div>
+          <div style="font-size: 10px; color: var(--subtext);">هذا الأسبوع</div>
+          <div style="font-size: 13px; font-weight: bold;" id="weekSpentText">1145.5 ر.س</div>
         </div>
       </div>
     </div>
 
-    <!-- FAVORITES TAB -->
-    <div id="tabFavs" style="display: none;">
-      <h3 style="color: var(--text-color); margin-top: 0;">❤️ المصروفات المفضلة</h3>
-      <div id="favList"></div>
+    <!-- Search & Filters -->
+    <div class="search-row">
+      <input type="text" class="search-input" id="searchInput" placeholder="ابحث في المصروفات..." oninput="renderList()">
+      <button class="sort-btn" onclick="toggleSort()">🔄</button>
     </div>
 
-    <!-- SETTINGS TAB -->
-    <div id="tabSettings" style="display: none;">
-      <h3 style="color: var(--text-color); margin-top: 0;">الإعدادات والتواصل</h3>
-      <div style="background: var(--card-bg); border-radius: 16px; padding: 14px; color: var(--text-color);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <div>
-            <div style="font-weight: bold; font-size: 14px;">الوضع الليلي (Dark Mode)</div>
-            <div style="font-size: 11px; color: var(--subtext-color);">التبديل بين المظهر الفاتح والداكن</div>
-          </div>
-          <input type="checkbox" id="themeSwitch" onchange="toggleTheme()" style="transform: scale(1.3);">
-        </div>
-        <hr style="border: 0; border-top: 1px solid var(--border-color);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; cursor: pointer;" onclick="promptBudget()">
-          <div>
-            <div style="font-weight: bold; font-size: 14px;">الميزانية الشهرية</div>
-            <div style="font-size: 11px; color: var(--subtext-color);" id="setBudgetValue">5000 ر.س</div>
-          </div>
-          <span>✏️</span>
-        </div>
-      </div>
-
-      <h4 style="color: var(--text-color); margin-top: 24px;">الدعم الفني</h4>
-      <div style="background: var(--card-bg); border-radius: 16px; padding: 14px; color: var(--text-color); cursor: pointer;" onclick="openWhatsApp()">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 24px;">💬</span>
-          <div>
-            <div style="font-weight: bold; font-size: 14px;">تواصل معنا عبر واتساب</div>
-            <div style="font-size: 11px; color: var(--subtext-color);">مساعدتك تهمنا في أي وقت</div>
-          </div>
-        </div>
-      </div>
+    <!-- Categories horizontal filter -->
+    <div class="chip-scroll">
+      <div class="chip active" onclick="filterCat('ALL', this)">الكل</div>
+      <div class="chip" onclick="filterCat('FOOD', this)">🍔 طعام</div>
+      <div class="chip" onclick="filterCat('BILLS', this)">🧾 فواتير</div>
+      <div class="chip" onclick="filterCat('TRANSPORT', this)">🚗 مواصلات</div>
+      <div class="chip" onclick="filterCat('HEALTH', this)">🏥 صحة</div>
+      <div class="chip" onclick="filterCat('ENTERTAINMENT', this)">🎮 ترفيه</div>
     </div>
 
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <h4 style="font-size: 15px;">سجل العمليات</h4>
+      <span style="font-size: 11px; color: var(--subtext);" id="countText">4 عناصر</span>
+    </div>
+
+    <!-- Expense List -->
+    <div class="expense-list" id="expenseList"></div>
   </div>
 
   <!-- FAB -->
-  <button class="fab" onclick="openModal()">
-    <span>➕</span> إضافة مصروف
+  <button class="fab" onclick="openAddModal()">
+    <span>➕</span>
+    <span>إضافة مصروف</span>
   </button>
 
   <!-- Navigation Bar -->
-  <div class="bottom-nav">
-    <button class="nav-item active" onclick="switchTab('Home', this)">
-      <span>🏠</span> الرئيسية
-    </button>
-    <button class="nav-item" onclick="switchTab('Stats', this)">
-      <span>📊</span> الإحصائيات
-    </button>
-    <button class="nav-item" onclick="switchTab('Favs', this)">
-      <span>❤️</span> المفضلة
-    </button>
-    <button class="nav-item" onclick="switchTab('Settings', this)">
-      <span>⚙️</span> الإعدادات
-    </button>
-  </div>
-
-  <!-- Modal Sheet -->
-  <div class="modal-overlay" id="addModal">
-    <div class="modal-sheet">
-      <h3 style="margin-top:0; color: var(--text-color);">تسجيل مصروف جديد</h3>
-      <div class="form-group">
-        <label>عنوان المصروف</label>
-        <input type="text" id="inpTitle" class="form-control" placeholder="مثال: مشتريات السوبرماركت">
-      </div>
-      <div class="form-group">
-        <label>المبلغ (ر.س)</label>
-        <input type="number" id="inpAmount" class="form-control" placeholder="0.00">
-      </div>
-      <div class="form-group">
-        <label>التصنيف</label>
-        <select id="inpCat" class="form-control">
-          <option value="طعام ومشروبات">🍔 طعام ومشروبات</option>
-          <option value="فواتير وخدمات">⚡ فواتير وخدمات</option>
-          <option value="مواصلات وتُنقُّل">🚗 مواصلات وتُنقُّل</option>
-          <option value="صحة وعناية">🏥 صحة وعناية</option>
-        </select>
-      </div>
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
-        <input type="checkbox" id="inpFav">
-        <label for="inpFav" style="font-size: 13px; color: var(--text-color);">إضافة إلى المفضلة</label>
-      </div>
-      <button class="btn-submit" onclick="saveExpense()">حفظ المصروف</button>
-      <button class="btn-submit" style="background: transparent; color: var(--subtext-color); margin-top: 4px;" onclick="closeModal()">إلغاء</button>
+  <div class="dock-bar">
+    <div class="nav-item active">
+      <span style="font-size: 18px;">🏠</span>
+      <span>الرئيسية</span>
+    </div>
+    <div class="nav-item">
+      <span style="font-size: 18px;">📊</span>
+      <span>الإحصائيات</span>
+    </div>
+    <div style="width: 50px;"></div>
+    <div class="nav-item">
+      <span style="font-size: 18px;">🔖</span>
+      <span>المفضلة</span>
+    </div>
+    <div class="nav-item">
+      <span style="font-size: 18px;">⚙️</span>
+      <span>الإعدادات</span>
     </div>
   </div>
 
+  <!-- Add Expense Modal -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 style="font-size: 17px;">تسجيل مصروف جديد</h3>
+        <button style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text);" onclick="closeAddModal()">✖</button>
+      </div>
+      <div class="form-group">
+        <label>عنوان المصروف</label>
+        <input type="text" id="addTitle" placeholder="مثال: مشتريات السوبرماركت">
+      </div>
+      <div class="form-group">
+        <label>المبلغ (ر.س)</label>
+        <input type="number" id="addAmount" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label>التصنيف</label>
+        <select id="addCat" style="width: 100%; padding: 12px; border-radius: 14px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text);">
+          <option value="FOOD">🍔 طعام ومشروبات</option>
+          <option value="BILLS">🧾 فواتير وخدمات</option>
+          <option value="TRANSPORT">🚗 مواصلات وتُنقُّل</option>
+          <option value="HEALTH">🏥 صحة وعناية</option>
+          <option value="ENTERTAINMENT">🎮 ترفيه ورحلات</option>
+        </select>
+      </div>
+      <button class="btn-submit" onclick="submitExpense()">حفظ المصروف ✨</button>
+    </div>
+  </div>
 </div>
 
 <script>
+  let budget = 5000;
+  let currentCat = 'ALL';
   let expenses = [
-    { id: 1, title: 'مشتريات البقالة', amount: 340.50, cat: 'طعام ومشروبات', icon: '🍔', bg: '#FF7043', isFav: true },
-    { id: 2, title: 'فاتورة الكهرباء والماء', amount: 450.00, cat: 'فواتير وخدمات', icon: '⚡', bg: '#EF5350', isFav: true },
-    { id: 3, title: 'بنزين السيارة', amount: 120.00, cat: 'مواصلات وتُنقُّل', icon: '🚗', bg: '#42A5F5', isFav: false },
-    { id: 4, title: 'اشتراك النادي الرياضي', amount: 350.00, cat: 'صحة وعناية', icon: '🏥', bg: '#26A69A', isFav: true },
-    { id: 5, title: 'عشاء مطعم', amount: 210.00, cat: 'طعام ومشروبات', icon: '🍔', bg: '#FF7043', isFav: false },
+    { id: '1', title: 'مشتريات البقالة الأسبوعية', amount: 340.50, cat: 'FOOD', icon: '🍔', bg: 'rgba(255,109,0,0.15)', date: 'اليوم • 04:30 م', fav: true },
+    { id: '2', title: 'فاتورة الكهرباء والماء', amount: 450.00, cat: 'BILLS', icon: '🧾', bg: 'rgba(229,57,53,0.15)', date: 'أمس • 10:15 ص', fav: true },
+    { id: '3', title: 'بنزين السيارة 95', amount: 130.00, cat: 'TRANSPORT', icon: '🚗', bg: 'rgba(2,136,209,0.15)', date: 'منذ يومين', fav: false },
+    { id: '4', title: 'اشتراك النادي الرياضي', amount: 350.00, cat: 'HEALTH', icon: '🏥', bg: 'rgba(0,137,123,0.15)', date: 'منذ 4 أيام', fav: false }
   ];
 
-  let budget = 5000;
-  let isDark = false;
-  let activeFilter = 'all';
-
-  function render() {
-    const listEl = document.getElementById('expenseList');
-    const favEl = document.getElementById('favList');
-    listEl.innerHTML = '';
-    favEl.innerHTML = '';
-
-    let total = 0;
-    let filtered = expenses.filter(e => activeFilter === 'all' || e.cat === activeFilter);
-
-    expenses.forEach(e => total += e.amount);
-
-    document.getElementById('totalText').innerText = total.toFixed(2) + ' ر.س';
-    document.getElementById('budgetText').innerText = 'الميزانية: ' + budget + ' ر.س';
-    document.getElementById('setBudgetValue').innerText = budget + ' ر.س';
-    document.getElementById('itemCount').innerText = filtered.length + ' عنصر';
-
-    let rem = Math.max(0, budget - total);
-    let pct = Math.min(100, Math.round((total / budget) * 100));
-    document.getElementById('remText').innerText = 'المتبقي: ' + rem.toFixed(2) + ' ر.س';
-    document.getElementById('percentText').innerText = pct + '%';
-    document.getElementById('progressFill').style.width = pct + '%';
-
-    filtered.forEach(item => {
-      listEl.appendChild(createCard(item));
-    });
-
-    expenses.filter(e => e.isFav).forEach(item => {
-      favEl.appendChild(createCard(item));
-    });
-  }
-
-  function createCard(item) {
-    const div = document.createElement('div');
-    div.className = 'expense-card';
-    div.innerHTML = `
-      <div class="cat-icon" style="background: ${item.bg}22; color: ${item.bg}">${item.icon}</div>
-      <div class="item-info">
-        <div class="item-title">${item.title}</div>
-        <div class="item-sub">${item.cat}</div>
-      </div>
-      <div style="text-align: left;">
-        <div class="item-amount">-${item.amount.toFixed(2)}</div>
-        <button class="fav-btn" onclick="toggleFav(${item.id})">${item.isFav ? '❤️' : '🤍'}</button>
-      </div>
-    `;
-    return div;
-  }
-
-  function toggleFav(id) {
-    let item = expenses.find(e => e.id === id);
-    if (item) {
-      item.isFav = !item.isFav;
-      showToast(item.isFav ? 'تمت الإضافة للمفضلة ❤️' : 'تمت الإزالة من المفضلة');
-      render();
-    }
-  }
-
   function toggleTheme() {
-    isDark = !isDark;
-    document.body.classList.toggle('dark', isDark);
-    document.getElementById('themeBtn').innerText = isDark ? '☀️' : '🌙';
-    document.getElementById('themeSwitch').checked = isDark;
-    showToast(isDark ? 'تم تفعيل الوضع الليلي 🌙' : 'تم تفعيل الوضع الفاتح ☀️');
+    const phone = id('phone');
+    phone.classList.toggle('dark-mode');
+    id('themeIcon').innerText = phone.classList.contains('dark-mode') ? '☀️' : '🌙';
   }
 
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.innerText = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2000);
-  }
+  function id(str) { return document.getElementById(str); }
 
-  function switchTab(name, btn) {
-    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+  function renderList() {
+    const q = id('searchInput').value.toLowerCase();
+    const listEl = id('expenseList');
+    listEl.innerHTML = '';
 
-    ['Home', 'Stats', 'Favs', 'Settings'].forEach(t => {
-      document.getElementById('tab' + t).style.display = t === name ? 'block' : 'none';
+    const filtered = expenses.filter(e => {
+      const matchCat = currentCat === 'ALL' || e.cat === currentCat;
+      const matchQuery = e.title.toLowerCase().includes(q);
+      return matchCat && matchQuery;
     });
-  }
 
-  function filterCat(cat, chip) {
-    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    activeFilter = cat;
-    render();
-  }
+    id('countText').innerText = `${filtered.length} عناصر`;
 
-  function openModal() {
-    document.getElementById('addModal').classList.add('open');
-  }
-  function closeModal() {
-    document.getElementById('addModal').classList.remove('open');
-  }
+    let total = expenses.reduce((sum, item) => sum + item.amount, 0);
+    id('totalSpentText').innerText = total.toFixed(2);
+    let remaining = Math.max(0, budget - total);
+    id('remainingText').innerText = remaining.toFixed(2);
+    let pct = Math.min(100, Math.round((total / budget) * 100));
+    id('percentText').innerText = `${pct}%`;
+    id('progressFill').style.width = `${pct}%`;
 
-  function saveExpense() {
-    const title = document.getElementById('inpTitle').value.trim();
-    const amount = parseFloat(document.getElementById('inpAmount').value);
-    const cat = document.getElementById('inpCat').value;
-    const isFav = document.getElementById('inpFav').checked;
-
-    if (!title || !amount || amount <= 0) {
-      showToast('يرجى ملء البيانات بشكل صحيح');
+    if (filtered.length === 0) {
+      listEl.innerHTML = `
+        <div style="text-align: center; padding: 30px; color: var(--subtext);">
+          <div style="font-size: 40px; margin-bottom: 8px;">🔍</div>
+          <div>لا توجد مصروفات هنا</div>
+        </div>
+      `;
       return;
     }
 
-    let bg = '#FF7043', icon = '🍔';
-    if (cat.includes('فواتير')) { bg = '#EF5350'; icon = '⚡'; }
-    if (cat.includes('مواصلات')) { bg = '#42A5F5'; icon = '🚗'; }
-    if (cat.includes('صحة')) { bg = '#26A69A'; icon = '🏥'; }
-
-    expenses.unshift({
-      id: Date.now(),
-      title,
-      amount,
-      cat,
-      icon,
-      bg,
-      isFav
+    filtered.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'expense-item';
+      div.innerHTML = `
+        <div class="item-right">
+          <div class="item-cat-icon" style="background: ${item.bg}">${item.icon}</div>
+          <div>
+            <div class="item-title">${item.title}</div>
+            <div class="item-meta">${item.date}</div>
+          </div>
+        </div>
+        <div class="item-left">
+          <div class="item-amount">-${item.amount.toFixed(2)} ر.س</div>
+          <div class="fav-btn ${item.fav ? 'active' : ''}" onclick="toggleFav('${item.id}')">♥</div>
+        </div>
+      `;
+      listEl.appendChild(div);
     });
-
-    closeModal();
-    showToast('تمت إضافة المصروف بنجاح ✨');
-    document.getElementById('inpTitle').value = '';
-    document.getElementById('inpAmount').value = '';
-    render();
   }
 
-  function promptBudget() {
-    let val = prompt('أدخل قيمة الميزانية الشهرية الجديدة (ر.س):', budget);
-    if (val && !isNaN(val) && val > 0) {
-      budget = parseFloat(val);
-      render();
-      showToast('تمت تحديث الميزانية الشهرية 🎯');
+  function toggleFav(itemId) {
+    const item = expenses.find(e => e.id === itemId);
+    if (item) {
+      item.fav = !item.fav;
+      renderList();
     }
   }
 
-  function openWhatsApp() {
-    alert('سيتم فتح الواتساب للتواصل مع الدعم الفني: +966500000000');
+  function filterCat(cat, el) {
+    currentCat = cat;
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    renderList();
   }
 
-  render();
+  function editBudget() {
+    const val = prompt('أدخل الميزانية الشهرية الجديدة:', budget);
+    if (val && !isNaN(val) && val > 0) {
+      budget = parseFloat(val);
+      id('budgetText').innerText = budget;
+      renderList();
+    }
+  }
+
+  function openAddModal() { id('addModal').classList.add('open'); }
+  function closeAddModal() { id('addModal').classList.remove('open'); }
+
+  function submitExpense() {
+    const title = id('addTitle').value.trim();
+    const amount = parseFloat(id('addAmount').value);
+    const cat = id('addCat').value;
+
+    if (!title || isNaN(amount) || amount <= 0) {
+      alert('يرجى إدخال عنوان ومبلغ صحيح');
+      return;
+    }
+
+    const icons = {
+      FOOD: '🍔', BILLS: '🧾', TRANSPORT: '🚗', HEALTH: '🏥', ENTERTAINMENT: '🎮'
+    };
+    const bgs = {
+      FOOD: 'rgba(255,109,0,0.15)', BILLS: 'rgba(229,57,53,0.15)', TRANSPORT: 'rgba(2,136,209,0.15)', HEALTH: 'rgba(0,137,123,0.15)', ENTERTAINMENT: 'rgba(251,140,0,0.15)'
+    };
+
+    expenses.unshift({
+      id: Date.now().toString(),
+      title: title,
+      amount: amount,
+      cat: cat,
+      icon: icons[cat] || '💵',
+      bg: bgs[cat] || 'rgba(100,100,100,0.15)',
+      date: 'الآن',
+      fav: false
+    });
+
+    id('addTitle').value = '';
+    id('addAmount').value = '';
+    closeAddModal();
+    renderList();
+  }
+
+  renderList();
 </script>
+
 </body>
 </html>

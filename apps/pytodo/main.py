@@ -1,9 +1,15 @@
 import sqlite3
+import os
 from datetime import datetime
 import flet as ft
 
+def get_db_path():
+    db_dir = os.getenv("FLET_APP_STORAGE_DATA", ".")
+    os.makedirs(db_dir, exist_ok=True)
+    return os.path.join(db_dir, "app.db")
+
 def init_db():
-    conn = sqlite3.connect("pytodo.db")
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS todos (
@@ -18,7 +24,7 @@ def init_db():
     conn.close()
 
 def get_todos():
-    conn = sqlite3.connect("pytodo.db")
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     cursor.execute("SELECT id, title, priority, completed, created_at FROM todos ORDER BY id DESC")
     rows = cursor.fetchall()
@@ -26,7 +32,7 @@ def get_todos():
     return [{"id": r[0], "title": r[1], "priority": r[2], "completed": bool(r[3]), "created_at": r[4]} for r in rows]
 
 def add_todo_db(title, priority):
-    conn = sqlite3.connect("pytodo.db")
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     cursor.execute("INSERT INTO todos (title, priority, completed, created_at) VALUES (?, ?, 0, ?)", (title, priority, now))
@@ -34,21 +40,21 @@ def add_todo_db(title, priority):
     conn.close()
 
 def toggle_todo_db(todo_id, completed):
-    conn = sqlite3.connect("pytodo.db")
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     cursor.execute("UPDATE todos SET completed = ? WHERE id = ?", (1 if completed else 0, todo_id))
     conn.commit()
     conn.close()
 
 def delete_todo_db(todo_id):
-    conn = sqlite3.connect("pytodo.db")
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     cursor.execute("DELETE FROM todos WHERE id = ?", (todo_id,))
     conn.commit()
     conn.close()
 
 def clear_completed_db():
-    conn = sqlite3.connect("pytodo.db")
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     cursor.execute("DELETE FROM todos WHERE completed = 1")
     conn.commit()
@@ -69,14 +75,14 @@ def main(page: ft.Page):
     task_input = ft.TextField(
         hint_text="أضف مهمة جديدة...",
         expand=True,
-        border_radius=12,
+        border_radius=ft.BorderRadius.all(12),
         autofocus=True,
     )
     
     priority_dropdown = ft.Dropdown(
         value="عادي",
         width=100,
-        border_radius=12,
+        border_radius=ft.BorderRadius.all(12),
         options=[
             ft.dropdown.Option("عادي"),
             ft.dropdown.Option("مهم"),
@@ -110,12 +116,12 @@ def main(page: ft.Page):
             return ft.ButtonStyle(
                 color=ft.Colors.WHITE,
                 bgcolor=ft.Colors.TEAL,
-                shape=ft.RoundedRectangleBorder(radius=20),
+                shape=ft.RoundedRectangleBorder(radius=ft.BorderRadius.all(20)),
             )
         else:
             return ft.ButtonStyle(
                 color=ft.Colors.TEAL,
-                shape=ft.RoundedRectangleBorder(radius=20),
+                shape=ft.RoundedRectangleBorder(radius=ft.BorderRadius.all(20)),
             )
 
     btn_all = ft.OutlinedButton("الكل", on_click=lambda _: set_filter("الكل"), style=get_filter_style(True))
@@ -158,8 +164,8 @@ def main(page: ft.Page):
         priority_chip = ft.Container(
             content=ft.Text(priority, size=11, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
             bgcolor=get_priority_color(priority),
-            padding=ft.padding.only(left=8, top=3, right=8, bottom=3),
-            border_radius=10,
+            padding=ft.Padding.only(left=8, top=3, right=8, bottom=3),
+            border_radius=ft.BorderRadius.all(10),
         )
 
         delete_btn = ft.IconButton(
@@ -171,9 +177,9 @@ def main(page: ft.Page):
 
         return ft.Card(
             elevation=1,
-            shape=ft.RoundedRectangleBorder(radius=12),
+            shape=ft.RoundedRectangleBorder(radius=ft.BorderRadius.all(12)),
             content=ft.Container(
-                padding=ft.padding.only(left=12, top=6, right=12, bottom=6),
+                padding=ft.Padding.only(left=12, top=6, right=12, bottom=6),
                 content=ft.Row(
                     controls=[
                         checkbox,
@@ -218,7 +224,7 @@ def main(page: ft.Page):
                         spacing=8,
                     ),
                     padding=40,
-                    alignment=ft.alignment.CENTER,
+                    alignment=ft.Alignment.CENTER,
                 )
             )
         else:
@@ -249,15 +255,15 @@ def main(page: ft.Page):
 
     stats_card = ft.Card(
         elevation=2,
-        shape=ft.RoundedRectangleBorder(radius=16),
+        shape=ft.RoundedRectangleBorder(radius=ft.BorderRadius.all(16)),
         content=ft.Container(
-            padding=16,
+            padding=ft.Padding.all(16),
             gradient=ft.LinearGradient(
-                begin=ft.alignment.TOP_LEFT,
-                end=ft.alignment.BOTTOM_RIGHT,
+                begin=ft.Alignment.TOP_LEFT,
+                end=ft.Alignment.BOTTOM_RIGHT,
                 colors=[ft.Colors.TEAL_50, ft.Colors.TEAL_100],
             ),
-            border_radius=16,
+            border_radius=ft.BorderRadius.all(16),
             content=ft.Row(
                 alignment=ft.MainAxisAlignment.SPACE_AROUND,
                 controls=[
@@ -295,7 +301,7 @@ def main(page: ft.Page):
     add_btn = ft.FilledButton(
         content=ft.Row([ft.Icon(ft.Icons.ADD, size=20), ft.Text("إضافة")], spacing=4),
         on_click=add_task,
-        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12)),
+        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=ft.BorderRadius.all(12))),
     )
 
     input_row = ft.Row(

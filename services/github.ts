@@ -16,6 +16,21 @@ function authHeaders(token: string) {
   };
 }
 
+/** Authenticated GitHub API request (path starts with "/"). */
+export async function githubApi(path: string, init: { method?: string; body?: unknown } = {}) {
+  const token = await getToken();
+  return fetch(`${GITHUB_API}${path}`, {
+    method: init.method ?? "GET",
+    headers: { ...authHeaders(token), ...(init.body !== undefined ? { "Content-Type": "application/json" } : {}) },
+    body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+  });
+}
+
+/** The saved GitHub token itself (used to give the build workflows access to the private vault). */
+export async function githubToken() {
+  return getToken();
+}
+
 export async function testGithubConnection(): Promise<{ login: string }> {
   const token = await getToken();
   const res = await fetch(`${GITHUB_API}/user`, { headers: authHeaders(token) });

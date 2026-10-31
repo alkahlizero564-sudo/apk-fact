@@ -93,6 +93,13 @@ jobs:
           git pull --rebase
           git push
 
+      - name: Sign with the app's permanent key (private vault)
+        env:
+          APP: ${{ inputs.app }}
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+          VAULT_REPO: ${{ vars.VAULT_REPO }}
+        run: python scripts/vault.py --app "$APP" --apk "$APP.apk" --build-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
       - name: Publish APK as a Release
         env:
           GH_TOKEN: ${{ github.token }}

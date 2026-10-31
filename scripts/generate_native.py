@@ -12,8 +12,10 @@ Reads request-flutter.txt / request-python.txt:
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from fix_native import fix
@@ -69,6 +71,23 @@ def python_problems(code_path):
     r = subprocess.run([sys.executable, str(HERE / "check_python.py"), "--fix", str(code_path)],
                        capture_output=True, text=True)
     return "" if r.returncode == 0 else (r.stdout + r.stderr).strip()
+
+
+def check_flutter_app(app_dir):
+    """Analyze (and fix) the Flutter app with the SDK when it is installed; never fails generation."""
+    if not shutil.which("flutter"):
+        print("Flutter SDK not installed here; the build step will check the code")
+        return
+    with tempfile.TemporaryDirectory() as tmp:
+        proj = Path(tmp) / "app"
+        r = subprocess.run(["flutter", "create", "--platforms=android", "--project-name", "app_check", str(proj)],
+                           capture_output=True, text=True)
+        if r.returncode != 0:
+            print("Warning: flutter create failed, the build step will check the code")
+            return
+        r = subprocess.run([sys.executable, str(HERE / "check_flutter.py"), str(app_dir), str(proj), "--rounds", "2"])
+        if r.returncode != 0:
+            print("Warning: still not clean, the build step will try again")
 
 
 def main():
@@ -144,6 +163,8 @@ App name: {name}
             still = python_problems(code_path)
             if still:
                 print("Warning: still not clean, the build step will try again:\n" + still)
+    else:
+        check_flutter_app(base)
 
     print(f"Wrote apps/{name}/{cfg['code_file']}, preview.html and {cfg['deps_file']} ({', '.join(deps) or 'no extra packages'})")
 

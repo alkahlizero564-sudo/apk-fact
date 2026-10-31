@@ -35,7 +35,8 @@ def main():
         sys.exit(2)
     model = os.environ.get("GEMINI_MODEL") or DEFAULT_MODEL
 
-    prompt = f"""An HTML app was wrapped as an Android app (Capacitor) and built with Gradle, and the build failed.
+    prompt = f"""An HTML app is wrapped as an Android app (Capacitor) and built with Gradle. Either the build failed,
+or a pre-build check found JavaScript errors in index.html (those are always caused by index.html).
 First decide whether the failure is caused by the app's index.html. Gradle, Android SDK, network, plugin or icon problems are NOT caused by it.
 If it IS caused by index.html, fix it with the smallest possible changes, keep the design and behavior the same, and return the complete file.
 Reply with JSON only, with exactly two keys:

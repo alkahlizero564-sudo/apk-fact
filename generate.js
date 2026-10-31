@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { checkHtml } = require("./scripts/check_html");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const lines = fs.readFileSync("request.txt", "utf8").trim().split("\n");
@@ -73,7 +74,7 @@ async function post(url, options, label) {
   }
 }
 
-async function callClaude() {
+async function callClaude(userPrompt = prompt) {
   const d = await post(
     "https://api.anthropic.com/v1/messages",
     {
@@ -87,7 +88,7 @@ async function callClaude() {
         model: "claude-sonnet-5-5",
         max_tokens: 16000,
         system,
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: "user", content: userPrompt }],
       }),
     },
     "Claude"
@@ -95,7 +96,7 @@ async function callClaude() {
   return d.content.map((c) => c.text || "").join("");
 }
 
-async function callGemini(key, model) {
+async function callGemini(key, model, userPrompt = prompt) {
   const d = await post(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     {
@@ -103,7 +104,7 @@ async function callGemini(key, model) {
       headers: { "content-type": "application/json", "x-goog-api-key": key },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
       }),
     },
     "Gemini"
@@ -165,7 +166,7 @@ function classifyGemini(e) {
   return "retry"; // 503, timeout, unknown model, bad output: move to the next model now
 }
 
-async function tryGeminiKeys(keys, models, rounds) {
+async function tryGeminiKeys(keys, models, rounds, userPrompt) {
   const deadKeys = new Set();
   const deadPairs = new Set();
   const deadModels = new Set();
@@ -179,7 +180,7 @@ async function tryGeminiKeys(keys, models, rounds) {
         const pair = `${n}|${model}`;
         if (deadKeys.has(key) || deadPairs.has(pair) || (cooldown.get(pair) || 0) > Date.now()) continue;
         try {
-          return { code: extract(await callGemini(key, model)), model };
+          return { code: extract(await callGemini(key, model, userPrompt)), model };
         } catch (e) {
           lastErr = String((e && e.message) || e).replace(/\s+/g, " ").slice(0, 200);
           const kind = classifyGemini(e);
@@ -205,17 +206,38 @@ async function tryGeminiKeys(keys, models, rounds) {
   return { error: lastErr };
 }
 
-async function runProvider(label) {
+async function runProvider(label, userPrompt = prompt) {
   if (label === "Claude") {
     if (!process.env.ANTHROPIC_API_KEY) {
       return { error: "المفتاح ANTHROPIC_API_KEY غير موجود في الأسرار" };
     }
-    return tryProvider(callClaude, "Claude", 3);
+    return tryProvider(() => callClaude(userPrompt), "Claude", 3);
   }
   if (geminiKeys.length === 0) {
     return { error: "المفتاح GEMINI_API_KEY غير موجود في الأسرار" };
   }
-  return tryGeminiKeys(geminiKeys, geminiModels, 3);
+  return tryGeminiKeys(geminiKeys, geminiModels, 3, userPrompt);
+}
+
+// One repair round when the generated app has JavaScript errors; keeps the better version.
+async function repair(code, problems, order) {
+  console.log("الكود فيه أخطاء JavaScript، بنطلب من الذكاء الاصطناعي يصلحها:\n" + problems.join("\n"));
+  const fixPrompt =
+    `This HTML app has JavaScript syntax errors. Fix them with the smallest possible changes, ` +
+    `keep the design and behavior the same, and return the FULL corrected file.\n\nERRORS:\n` +
+    `${problems.join("\n")}\n\nFILE:\n\`\`\`html\n${code}\n\`\`\``;
+  for (const label of order) {
+    const res = await runProvider(label, fixPrompt);
+    if (res.code) {
+      const left = checkHtml(res.code);
+      if (left.length < problems.length) {
+        console.log(left.length ? `اتصلح جزء، باقي: ${left.join(" | ")}` : "اتصلحت أخطاء JavaScript");
+        return res.code;
+      }
+    }
+  }
+  console.log("ما قدرنا نصلح أخطاء JavaScript، بنحفظ الكود زي ما هو");
+  return code;
 }
 
 (async () => {
@@ -225,6 +247,8 @@ async function runProvider(label) {
   for (const label of order) {
     const res = await runProvider(label);
     if (res.code) {
+      const problems = checkHtml(res.code);
+      if (problems.length) res.code = await repair(res.code, problems, order);
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(FILE, res.code);
       console.log(`تم: ${FILE} بواسطة ${label}${res.model ? " (" + res.model + ")" : ""}`);

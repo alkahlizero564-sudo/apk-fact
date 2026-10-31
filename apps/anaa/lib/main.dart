@@ -430,7 +430,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
         children: _pages,
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 16.0),
+        padding: const EdgeInsets.only(bottom: 28.0),
         child: FloatingActionButton.extended(
           onPressed: () => _openAddExpenseModal(context),
           elevation: 6,
@@ -621,7 +621,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final currentMonthName = DateFormat('MMMM yyyy', 'ar').format(DateTime.now());
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 130),
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

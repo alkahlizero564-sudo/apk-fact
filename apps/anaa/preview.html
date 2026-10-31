@@ -9,136 +9,140 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       user-select: none;
     }
 
     :root {
       --primary: #0D9488;
       --primary-light: #14B8A6;
-      --accent: #F59E0B;
-      --bg-color: #F1F5F9;
+      --bg: #F1F5F9;
       --card-bg: #FFFFFF;
-      --text-main: #0F172A;
+      --text: #0F172A;
       --text-muted: #64748B;
-      --border-color: #E2E8F0;
+      --border: #E2E8F0;
+      --shadow: rgba(0, 0, 0, 0.06);
     }
 
-    body.dark-mode {
+    body.dark {
       --primary: #2DD4BF;
       --primary-light: #14B8A6;
-      --accent: #F59E0B;
-      --bg-color: #0F172A;
+      --bg: #0F172A;
       --card-bg: #1E293B;
-      --text-main: #F8FAFC;
+      --text: #F8FAFC;
       --text-muted: #94A3B8;
-      --border-color: #334155;
+      --border: #334155;
+      --shadow: rgba(0, 0, 0, 0.3);
     }
 
     body {
-      background-color: #1E1E1E;
+      background-color: #1e293b;
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      padding: 10px;
+      padding: 12px;
     }
 
-    .phone-mockup {
+    .phone-container {
       width: 100%;
       max-width: 410px;
-      height: 840px;
-      background-color: var(--bg-color);
+      height: 820px;
+      background-color: var(--bg);
       border-radius: 40px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-      border: 10px solid #2A2A2A;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
       position: relative;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      color: var(--text-main);
-      transition: background-color 0.3s ease, color 0.3s ease;
+      border: 8px solid #0f172a;
+      transition: background-color 0.3s ease;
     }
 
-    /* Header */
+    /* Top Header */
     .app-header {
-      padding: 16px 20px 10px;
+      padding: 16px 20px 12px;
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      background: transparent;
+      align-items: center;
+      background: var(--bg);
     }
-    .brand {
+
+    .app-brand {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
+
     .brand-icon {
-      width: 42px;
-      height: 42px;
-      background: linear-gradient(135deg, #0D9488, #14B8A6);
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary), #0284C7);
       border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: white;
       font-size: 20px;
-      box-shadow: 0 4px 10px rgba(13, 148, 136, 0.3);
+      box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
     }
+
     .brand-title {
       font-size: 20px;
       font-weight: 900;
+      color: var(--text);
       line-height: 1.1;
     }
+
     .brand-subtitle {
       font-size: 11px;
       color: var(--text-muted);
     }
 
     .theme-toggle-btn {
-      background: none;
-      border: none;
-      font-size: 22px;
-      cursor: pointer;
-      padding: 8px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
+      border: none;
+      background: var(--card-bg);
       color: var(--primary);
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px var(--shadow);
     }
 
-    /* Content Area */
-    .tab-content {
+    /* Content Pages */
+    .page {
       flex: 1;
       overflow-y: auto;
-      padding: 12px 16px 120px; /* Generous bottom padding for raised FAB */
+      padding: 12px 16px 140px;
       display: none;
     }
-    .tab-content.active {
+
+    .page.active {
       display: block;
     }
 
-    /* Cards */
-    .card {
-      background-color: var(--card-bg);
-      border-radius: 20px;
-      padding: 16px;
-      margin-bottom: 14px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-      transition: background-color 0.3s ease;
-    }
-
-    .hero-card {
+    /* Hero Card */
+    .budget-card {
       background: linear-gradient(135deg, #0D9488, #14B8A6, #0284C7);
-      color: white;
       border-radius: 20px;
       padding: 20px;
-      box-shadow: 0 8px 20px rgba(13, 148, 136, 0.3);
+      color: white;
+      box-shadow: 0 8px 20px rgba(13, 148, 136, 0.25);
       margin-bottom: 14px;
     }
-    .hero-top {
+
+    .budget-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 10px;
     }
+
     .budget-badge {
       background: rgba(255, 255, 255, 0.2);
       padding: 4px 10px;
@@ -147,88 +151,165 @@
       font-weight: bold;
       cursor: pointer;
     }
-    .hero-amount {
+
+    .total-amount {
       font-size: 32px;
       font-weight: 900;
-      margin: 10px 0;
-    }
-    .progress-bar {
-      height: 10px;
-      background: rgba(255, 255, 255, 0.25);
-      border-radius: 5px;
-      overflow: hidden;
-      margin: 12px 0 8px;
-    }
-    .progress-fill {
-      height: 100%;
-      background: white;
-      border-radius: 5px;
-      transition: width 0.3s ease;
     }
 
-    .stats-row {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 14px;
+    .total-currency {
+      font-size: 15px;
+      opacity: 0.8;
+      margin-right: 4px;
     }
-    .stat-badge {
-      flex: 1;
+
+    .progress-bar-bg {
+      height: 10px;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 14px 0 10px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: white;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    .budget-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      opacity: 0.95;
+    }
+
+    /* Quick stats */
+    .quick-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
       background: var(--card-bg);
-      padding: 12px;
       border-radius: 16px;
+      padding: 12px;
       display: flex;
       align-items: center;
       gap: 10px;
+      box-shadow: 0 2px 6px var(--shadow);
     }
 
-    /* Filters & Search */
-    .search-box {
-      width: 100%;
-      padding: 10px 14px;
-      border-radius: 14px;
-      border: 1px solid var(--border-color);
-      background: var(--card-bg);
-      color: var(--text-main);
-      margin-bottom: 12px;
-      font-size: 13px;
-      outline: none;
+    .stat-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
     }
-    .categories-chips {
+
+    .stat-title {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .stat-val {
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--text);
+    }
+
+    /* Search & Filters */
+    .search-box {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 6px var(--shadow);
+    }
+
+    .search-input {
+      border: none;
+      background: transparent;
+      outline: none;
+      width: 100%;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .categories-scroll {
       display: flex;
       gap: 8px;
       overflow-x: auto;
-      padding-bottom: 6px;
-      margin-bottom: 14px;
+      padding-bottom: 4px;
+      margin-bottom: 16px;
+      scrollbar-width: none;
     }
-    .chip {
-      padding: 6px 14px;
+
+    .cat-chip {
       background: var(--card-bg);
+      color: var(--text);
+      padding: 6px 14px;
       border-radius: 20px;
       font-size: 12px;
       white-space: nowrap;
       cursor: pointer;
-      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 6px var(--shadow);
+      border: 1px solid transparent;
+      transition: all 0.2s;
     }
-    .chip.active {
-      background: var(--primary);
-      color: white;
+
+    .cat-chip.active {
+      background: rgba(13, 148, 136, 0.15);
       border-color: var(--primary);
+      color: var(--primary);
       font-weight: bold;
     }
 
-    /* Expense Item */
+    /* Transactions */
+    .section-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--text);
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
     .expense-item {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 6px var(--shadow);
+      transition: transform 0.15s ease;
+    }
+
+    .expense-left {
       display: flex;
       align-items: center;
       gap: 12px;
-      background: var(--card-bg);
-      padding: 14px;
-      border-radius: 16px;
-      margin-bottom: 10px;
     }
-    .cat-icon {
-      width: 40px;
-      height: 40px;
+
+    .expense-icon {
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -236,533 +317,736 @@
       font-size: 18px;
     }
 
-    /* Floating Action Button - RAISED HIGHER (bottom: 82px) */
-    .fab-raised {
+    .expense-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--text);
+    }
+
+    .expense-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .expense-amount {
+      font-size: 15px;
+      font-weight: 800;
+      color: #EF4444;
+      text-align: left;
+    }
+
+    .fav-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 4px;
+    }
+
+    /* Raised Add FAB */
+    .fab-container {
       position: absolute;
-      bottom: 82px;
+      bottom: 80px; /* Raised elevated positioning */
       left: 50%;
       transform: translateX(-50%);
-      background-color: var(--primary);
+      z-index: 100;
+    }
+
+    .add-fab-btn {
+      background: var(--primary);
       color: white;
+      border: none;
       padding: 12px 24px;
       border-radius: 30px;
+      font-size: 15px;
+      font-weight: bold;
       display: flex;
       align-items: center;
       gap: 8px;
-      font-weight: bold;
-      font-size: 14px;
       box-shadow: 0 8px 20px rgba(13, 148, 136, 0.4);
-      border: none;
       cursor: pointer;
-      z-index: 10;
-      transition: transform 0.2s ease, background-color 0.2s ease;
-    }
-    .fab-raised:active {
-      transform: translateX(-50%) scale(0.96);
+      transition: transform 0.2s ease, background-color 0.2s;
     }
 
-    /* Bottom Nav Bar */
+    .add-fab-btn:active {
+      transform: translateX(-50%) scale(0.95);
+    }
+
+    /* Bottom Navbar */
     .bottom-nav {
       position: absolute;
       bottom: 0;
-      left: 0;
-      right: 0;
-      height: 64px;
+      width: 100%;
+      height: 68px;
       background: var(--card-bg);
-      border-top: 1px solid var(--border-color);
       display: flex;
       justify-content: space-around;
       align-items: center;
-      z-index: 5;
+      border-top: 1px solid var(--border);
+      z-index: 90;
     }
+
     .nav-item {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 2px;
-      font-size: 10px;
       color: var(--text-muted);
+      font-size: 11px;
       cursor: pointer;
-      background: none;
-      border: none;
-      width: 25%;
+      gap: 4px;
+      transition: color 0.2s;
     }
+
     .nav-item.active {
       color: var(--primary);
       font-weight: bold;
     }
-    .nav-item span.icon {
-      font-size: 18px;
+
+    .nav-icon {
+      font-size: 20px;
     }
 
-    /* Modal Sheet */
+    /* Bottom Sheet Modal */
     .modal-overlay {
       position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 20;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
       display: none;
       justify-content: flex-end;
       flex-direction: column;
+      animation: fadeIn 0.2s ease-out;
     }
-    .modal-overlay.active {
-      display: flex;
-    }
-    .modal-content {
-      background: var(--bg-color);
-      border-top-left-radius: 24px;
-      border-top-right-radius: 24px;
+
+    .modal-card {
+      background: var(--bg);
+      border-radius: 26px 26px 0 0;
       padding: 20px;
       max-height: 85%;
       overflow-y: auto;
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--text);
     }
 
     .form-group {
-      margin-bottom: 12px;
-    }
-    .form-group label {
-      display: block;
-      font-size: 12px;
-      margin-bottom: 4px;
-      color: var(--text-muted);
-    }
-    .form-group input, .form-group select {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--border-color);
-      background: var(--card-bg);
-      color: var(--text-main);
+      margin-bottom: 14px;
     }
 
-    .btn-submit {
+    .form-label {
+      font-size: 12px;
+      font-weight: bold;
+      color: var(--text);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .form-input {
       width: 100%;
-      padding: 14px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text);
+      outline: none;
+      font-size: 14px;
+    }
+
+    .quick-chips {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .quick-chip {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .cat-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .submit-btn {
+      width: 100%;
       background: var(--primary);
       color: white;
       border: none;
-      border-radius: 14px;
+      padding: 14px;
+      border-radius: 16px;
       font-weight: bold;
+      font-size: 15px;
       cursor: pointer;
       margin-top: 10px;
     }
 
-    /* Toast */
+    /* Toast Notification */
     .toast {
       position: absolute;
-      top: 70px;
+      top: 20px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(15, 23, 42, 0.9);
+      background: #0F172A;
       color: white;
-      padding: 8px 16px;
+      padding: 10px 20px;
       border-radius: 20px;
       font-size: 12px;
+      z-index: 300;
       display: none;
-      z-index: 30;
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      background: var(--card-bg);
+      border-radius: 20px;
+      margin-top: 10px;
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+      opacity: 0.5;
     }
   </style>
 </head>
 <body>
 
-  <div class="phone-mockup" id="phoneMockup">
-    <!-- Header -->
-    <div class="app-header">
-      <div class="brand">
-        <div class="brand-icon">💳</div>
+  <div class="phone-container">
+    <div id="toast" class="toast">تم حفظ التغييرات بنجاح</div>
+
+    <!-- App Header -->
+    <header class="app-header">
+      <div class="app-brand">
+        <div class="brand-icon">👛</div>
         <div>
           <div class="brand-title">أنَا</div>
           <div class="brand-subtitle">إدارة المصروفات الشخصية</div>
         </div>
       </div>
-      <button class="theme-toggle-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
-    </div>
+      <button class="theme-toggle-btn" id="themeBtn" onclick="toggleTheme()" title="تبديل المظهر">🌙</button>
+    </header>
 
-    <!-- Toast Notification -->
-    <div class="toast" id="toast">تم حفظ العملية بنجاح</div>
-
-    <!-- TAB 1: HOME -->
-    <div class="tab-content active" id="tab-home">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+    <!-- Page 1: Home -->
+    <div id="page-home" class="page active">
+      <div class="budget-card">
+        <div class="budget-header">
+          <span style="font-size:13px; opacity:0.9;">📊 المصروف الإجمالي</span>
+          <span class="budget-badge" onclick="editBudget()">الميزانية: <span id="budgetDisplay">5000</span> ر.س ✏️</span>
+        </div>
         <div>
-          <div style="font-weight: bold; font-size: 18px;" id="greetingText">مساء الخير ✨، عبدالله</div>
-          <div style="font-size: 11px; color: var(--text-muted);">ملخص سريع لنشاطك المالي</div>
+          <span class="total-amount" id="totalSpentDisplay">0.00</span>
+          <span class="total-currency">ر.س</span>
         </div>
-        <span style="font-size: 11px; color: var(--primary); font-weight: bold; background: rgba(13, 148, 136, 0.1); padding: 4px 10px; border-radius: 12px;">يوليو 2024</span>
-      </div>
-
-      <!-- Hero Budget -->
-      <div class="hero-card">
-        <div class="hero-top">
-          <span style="font-size: 13px;">المصروف الإجمالي</span>
-          <span class="budget-badge" onclick="openBudgetModal()">الميزانية: <span id="budgetDisplay">5000</span> ر.س ✏️</span>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressFill"></div>
         </div>
-        <div class="hero-amount"><span id="totalSpentDisplay">1605.50</span> <span style="font-size: 14px;">ر.س</span></div>
-        <div class="progress-bar">
-          <div class="progress-fill" id="progressFill" style="width: 32%;"></div>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 11px;">
-          <span>المتبقي: <span id="remainingDisplay">3394.50</span> ر.س</span>
-          <span>مستهلك: <span id="percentDisplay">32</span>%</span>
+        <div class="budget-footer">
+          <span>المتبقي: <span id="remainingDisplay">5000.00</span> ر.س</span>
+          <span id="percentDisplay">0%</span>
         </div>
       </div>
 
-      <!-- Stats row -->
-      <div class="stats-row">
-        <div class="stat-badge">
-          <div style="font-size: 20px; color: #3B82F6;">📅</div>
+      <div class="quick-stats">
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(59, 130, 246, 0.15); color: #3B82F6;">📅</div>
           <div>
-            <div style="font-size: 10px; color: var(--text-muted);">مصروف اليوم</div>
-            <div style="font-weight: bold; font-size: 13px;">340.5 ر.س</div>
+            <div class="stat-title">مصروف اليوم</div>
+            <div class="stat-val" id="todaySpent">0 ر.س</div>
           </div>
         </div>
-        <div class="stat-badge">
-          <div style="font-size: 20px; color: #10B981;">📊</div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: #10B981;">🗓️</div>
           <div>
-            <div style="font-size: 10px; color: var(--text-muted);">هذا الأسبوع</div>
-            <div style="font-weight: bold; font-size: 13px;">1145.5 ر.س</div>
+            <div class="stat-title">هذا الأسبوع</div>
+            <div class="stat-val" id="weekSpent">0 ر.س</div>
           </div>
         </div>
       </div>
 
-      <!-- Search -->
-      <input type="text" class="search-box" id="searchInput" placeholder="ابحث في المصروفات..." oninput="renderExpenses()">
-
-      <!-- Category Filter Chips -->
-      <div class="categories-chips" id="categoryChips">
-        <!-- Rendered JS -->
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="searchInput" class="search-input" placeholder="ابحث في المصروفات..." oninput="renderExpenses()">
       </div>
 
-      <!-- Transactions List -->
-      <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; font-size: 14px;">
+      <div class="categories-scroll" id="categoryChips">
+        <!-- Generated by JS -->
+      </div>
+
+      <div class="section-title">
         <span>سجل العمليات</span>
-        <span style="font-size: 11px; color: var(--text-muted);" id="itemCountDisplay">6 عناصر</span>
+        <span style="font-size: 12px; color: var(--text-muted);" id="itemCount">0 عناصر</span>
       </div>
 
-      <div id="expenseList">
-        <!-- Rendered JS -->
+      <div id="expensesList">
+        <!-- List rendered dynamically -->
       </div>
     </div>
 
-    <!-- TAB 2: STATS -->
-    <div class="tab-content" id="tab-stats">
-      <div style="font-weight: bold; font-size: 18px; margin-bottom: 4px;">الإحصائيات والتحليل</div>
-      <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 14px;">توزيع الإنفاق حسب الأقسام والتصنيفات</div>
+    <!-- Page 2: Stats -->
+    <div id="page-stats" class="page">
+      <div class="section-title" style="margin-top: 8px;">الإحصائيات والتحليل</div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">توزيع الإنفاق حسب الأقسام والتصنيفات</div>
 
-      <div class="card" style="text-align: center;">
-        <div style="width: 140px; height: 140px; border-radius: 50%; background: conic-gradient(#FF6D00 0% 35%, #E53935 35% 60%, #00897B 60% 80%, #0288D1 80% 100%); margin: 10px auto; display: flex; align-items: center; justify-content: center;">
-          <div style="width: 70px; height: 70px; border-radius: 50%; background: var(--card-bg); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px;">1605 ر.س</div>
-        </div>
-        <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; font-size: 11px;">
-          <span>🟠 طعام (35%)</span>
-          <span>🔴 فواتير (25%)</span>
-          <span>🟢 صحة (20%)</span>
-          <span>🔵 مواصلات (20%)</span>
+      <div class="stat-card" style="flex-direction: column; align-items: stretch; padding: 20px; margin-bottom: 16px;">
+        <div style="text-align: center; font-weight: bold; color: var(--text); margin-bottom: 12px;">ملخص الإنفاق حسب الفئات</div>
+        <div id="statsBreakdown">
+          <!-- Populated by JS -->
         </div>
       </div>
     </div>
 
-    <!-- TAB 3: FAVORITES -->
-    <div class="tab-content" id="tab-favorites">
-      <div style="font-weight: bold; font-size: 18px; margin-bottom: 4px;">المصروفات المفضلة والثابتة ⭐️</div>
-      <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 14px;">وصول سريع للمصروفات الدورية والفواتير المكررة</div>
+    <!-- Page 3: Favorites -->
+    <div id="page-favs" class="page">
+      <div class="section-title" style="margin-top: 8px;">
+        <span>⭐ المفضلة والثابتة</span>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">المصروفات والفواتير المكررة والمفضلة لديك</div>
+
       <div id="favoritesList">
-        <!-- Rendered JS -->
+        <!-- Populated by JS -->
       </div>
     </div>
 
-    <!-- TAB 4: SETTINGS -->
-    <div class="tab-content" id="tab-settings">
-      <div style="font-weight: bold; font-size: 18px; margin-bottom: 14px;">الإعدادات والتخصيص</div>
-
-      <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+    <!-- Page 4: Settings -->
+    <div id="page-settings" class="page">
+      <div class="section-title" style="margin-top: 8px;">الإعدادات والتخصيص</div>
+      <div style="background: var(--card-bg); border-radius: 16px; margin-top: 14px; overflow: hidden; box-shadow: 0 2px 6px var(--shadow);">
+        <div style="padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;" onclick="changeName()">
           <div>
-            <div style="font-weight: bold; font-size: 14px;">اسم المستخدم</div>
-            <div style="font-size: 12px; color: var(--text-muted);" id="userNameSetting">عبدالله</div>
+            <div style="font-weight: bold; font-size: 14px; color: var(--text);">اسم المستخدم</div>
+            <div style="font-size: 12px; color: var(--text-muted);" id="usernameDisplay">عبدالله</div>
           </div>
-          <button style="background: none; border: none; cursor: pointer; color: var(--primary);" onclick="changeName()">تعديل ✏️</button>
+          <span>✏️</span>
         </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+        <div style="padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;" onclick="editBudget()">
           <div>
-            <div style="font-weight: bold; font-size: 14px;">الوضع الليلي</div>
-            <div style="font-size: 12px; color: var(--text-muted);">التبديل بين المظهر الفاتح والداكن</div>
+            <div style="font-weight: bold; font-size: 14px; color: var(--text);">الميزانية الشهرية</div>
+            <div style="font-size: 12px; color: var(--text-muted);"><span id="settingsBudget">5000</span> ر.س</div>
           </div>
-          <input type="checkbox" id="themeSwitch" onchange="toggleTheme()">
+          <span>✏️</span>
         </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+        <div style="padding: 16px; display: flex; justify-content: space-between; align-items: center;" onclick="toggleTheme()">
           <div>
-            <div style="font-weight: bold; font-size: 14px;">الميزانية الشهرية</div>
-            <div style="font-size: 12px; color: var(--text-muted);"><span id="budgetSetting">5000</span> ر.س</div>
+            <div style="font-weight: bold; font-size: 14px; color: var(--text);">الوضع الليلي</div>
+            <div style="font-size: 12px; color: var(--text-muted);">التبديل بين الفاتح والداكن</div>
           </div>
-          <button style="background: none; border: none; cursor: pointer; color: var(--primary);" onclick="openBudgetModal()">تعديل ✏️</button>
-        </div>
-      </div>
-
-      <div style="font-weight: bold; font-size: 15px; margin: 16px 0 8px;">الدعم والتواصل</div>
-      <div class="card" style="display: flex; align-items: center; gap: 10px; cursor: pointer;" onclick="showToast('جاري تحويلك إلى واتساب الدعم...')">
-        <span style="font-size: 24px;">💬</span>
-        <div>
-          <div style="font-weight: bold; font-size: 14px;">تواصل معنا عبر واتساب</div>
-          <div style="font-size: 11px; color: var(--text-muted);">المساعدة والدعم الفني السريع</div>
+          <span id="themeSettingIcon">🌙</span>
         </div>
       </div>
     </div>
 
-    <!-- RAISED Floating Action Button -->
-    <button class="fab-raised" onclick="openAddModal()">
-      <span>➕</span>
-      <span>إضافة مصروف</span>
-    </button>
+    <!-- RAISED FLOATING ACTION BUTTON -->
+    <div class="fab-container">
+      <button class="add-fab-btn" onclick="openAddModal()">
+        <span style="font-size: 20px;">＋</span>
+        <span>إضافة مصروف</span>
+      </button>
+    </div>
 
-    <!-- Bottom Nav Bar -->
-    <div class="bottom-nav">
-      <button class="nav-item active" onclick="switchTab('home', this)">
-        <span class="icon">🏠</span>
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+      <div class="nav-item active" onclick="switchTab('home', this)">
+        <div class="nav-icon">🏠</div>
         <span>الرئيسية</span>
-      </button>
-      <button class="nav-item" onclick="switchTab('stats', this)">
-        <span class="icon">📊</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('stats', this)">
+        <div class="nav-icon">📊</div>
         <span>الإحصائيات</span>
-      </button>
-      <button class="nav-item" onclick="switchTab('favorites', this)">
-        <span class="icon">🔖</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('favs', this)">
+        <div class="nav-icon">⭐</div>
         <span>المفضلة</span>
-      </button>
-      <button class="nav-item" onclick="switchTab('settings', this)">
-        <span class="icon">⚙️</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('settings', this)">
+        <div class="nav-icon">⚙️</div>
         <span>الإعدادات</span>
-      </button>
-    </div>
+      </div>
+    </nav>
 
-    <!-- Add Expense Modal -->
-    <div class="modal-overlay" id="addModal">
-      <div class="modal-content">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-          <h3 style="font-size: 17px;">تسجيل مصروف جديد</h3>
-          <button style="background: none; border: none; font-size: 18px; cursor: pointer;" onclick="closeAddModal()">✕</button>
+    <!-- Modal Form Sheet -->
+    <div id="addModal" class="modal-overlay" onclick="closeAddModal(event)">
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-title">تسجيل مصروف جديد</div>
+          <button style="background:none; border:none; font-size: 20px; cursor:pointer; color:var(--text);" onclick="closeAddModal()">✕</button>
         </div>
 
         <div class="form-group">
-          <label>عنوان المصروف</label>
-          <input type="text" id="newTitle" placeholder="مثال: مشتريات بقالة، بنزين...">
+          <label class="form-label">عنوان المصروف</label>
+          <input type="text" id="addTitle" class="form-input" placeholder="مثال: عشاء، بنزين، مشتريات...">
         </div>
 
         <div class="form-group">
-          <label>المبلغ (ر.س)</label>
-          <input type="number" id="newAmount" placeholder="0.00">
+          <label class="form-label">المبلغ (ر.س)</label>
+          <input type="number" id="addAmount" class="form-input" placeholder="0.00">
+          <div class="quick-chips">
+            <span class="quick-chip" onclick="addQuick(10)">+10</span>
+            <span class="quick-chip" onclick="addQuick(50)">+50</span>
+            <span class="quick-chip" onclick="addQuick(100)">+100</span>
+            <span class="quick-chip" onclick="addQuick(200)">+200</span>
+          </div>
         </div>
 
         <div class="form-group">
-          <label>التصنيف</label>
-          <select id="newCategory">
-            <option value="food">طعام ومشروبات</option>
-            <option value="bills">فواتير وخدمات</option>
-            <option value="transport">مواصلات وتُنقُّل</option>
-            <option value="health">صحة وعناية</option>
-            <option value="entertainment">ترفيه ورحلات</option>
-            <option value="shopping">تسوق وتجهيزات</option>
-            <option value="other">مصروفات أخرى</option>
-          </select>
+          <label class="form-label">اختر التصنيف</label>
+          <div class="cat-grid" id="modalCategories">
+            <!-- Populated dynamically -->
+          </div>
         </div>
 
         <div class="form-group">
-          <label>ملاحظة (اختياري)</label>
-          <input type="text" id="newNote" placeholder="ملاحظات إضافية...">
+          <label class="form-label">ملاحظات (اختياري)</label>
+          <input type="text" id="addNote" class="form-input" placeholder="تفاصيل أخرى...">
         </div>
 
-        <button class="btn-submit" onclick="submitExpense()">حفظ المصروف ✨</button>
+        <div class="form-group" style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="addFav" style="width:18px; height:18px;">
+          <label for="addFav" style="font-size:13px; color:var(--text);">حفظ في القائمة المفضلة</label>
+        </div>
+
+        <button class="submit-btn" onclick="submitExpense()">حفظ المصروف ✨</button>
       </div>
     </div>
 
   </div>
 
   <script>
-    let expenses = [
-      { id: 1, title: 'مشتريات البقالة الأسبوعية', amount: 340.5, category: 'food', icon: '🛒', color: '#FF6D00', note: 'خضار وفواكه', isFavorite: true },
-      { id: 2, title: 'فاتورة الكهرباء والماء', amount: 450.0, category: 'bills', icon: '🧾', color: '#E53935', note: 'شهر يوليو', isFavorite: true },
-      { id: 3, title: 'بنزين السيارة', amount: 130.0, category: 'transport', icon: '🚗', color: '#0288D1', note: 'محطة الدريس 95', isFavorite: false },
-      { id: 4, title: 'عشاء مع العائلة', amount: 225.0, category: 'food', icon: '🍔', color: '#FF6D00', note: '', isFavorite: false },
-      { id: 5, title: 'اشتراك النادي الرياضي', amount: 350.0, category: 'health', icon: '🏥', color: '#00897B', note: '', isFavorite: true },
-      { id: 6, title: 'تذاكر سينما ومشروبات', amount: 110.0, category: 'entertainment', icon: '🎮', color: '#FB8C00', note: '', isFavorite: false },
+    const categories = [
+      { id: 'food', title: 'طعام ومشروبات', icon: '🍔', color: '#FF6D00' },
+      { id: 'shopping', title: 'تسوق وتجهيزات', icon: '🛍️', color: '#9C27B0' },
+      { id: 'transport', title: 'مواصلات وتُنقُّل', icon: '🚗', color: '#0288D1' },
+      { id: 'bills', title: 'فواتير وخدمات', icon: '📄', color: '#E53935' },
+      { id: 'health', title: 'صحة وعناية', icon: '🏥', color: '#00897B' },
+      { id: 'entertainment', title: 'ترفيه ورحلات', icon: '🎮', color: '#FB8C00' },
+      { id: 'other', title: 'مصروفات أخرى', icon: '📦', color: '#546E7A' }
     ];
 
     let monthlyBudget = 5000;
-    let selectedCat = 'all';
+    let userName = 'عبدالله';
+    let selectedCatFilter = null;
+    let selectedModalCat = 'food';
+    let isDark = false;
 
-    function init() {
-      renderCategoryChips();
-      renderExpenses();
-    }
-
-    function toggleTheme() {
-      document.body.classList.toggle('dark-mode');
-      const isDark = document.body.classList.contains('dark-mode');
-      document.getElementById('themeBtn').innerText = isDark ? '☀️' : '🌙';
-      document.getElementById('themeSwitch').checked = isDark;
-      showToast(isDark ? 'تم تفعيل الوضع الليلي 🌙' : 'تم تفعيل الوضع الفاتح ☀️');
-    }
-
-    function switchTab(tabId, btn) {
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      document.getElementById('tab-' + tabId).classList.add('active');
-      btn.classList.add('active');
-    }
-
-    function renderCategoryChips() {
-      const cats = [
-        { id: 'all', title: 'الكل' },
-        { id: 'food', title: 'طعام' },
-        { id: 'bills', title: 'فواتير' },
-        { id: 'transport', title: 'مواصلات' },
-        { id: 'health', title: 'صحة' },
-        { id: 'entertainment', title: 'ترفيه' },
-      ];
-      const container = document.getElementById('categoryChips');
-      container.innerHTML = cats.map(c => `
-        <div class="chip ${selectedCat === c.id ? 'active' : ''}" onclick="filterCategory('${c.id}')">${c.title}</div>
-      `).join('');
-    }
-
-    function filterCategory(catId) {
-      selectedCat = catId;
-      renderCategoryChips();
-      renderExpenses();
-    }
-
-    function renderExpenses() {
-      const search = document.getElementById('searchInput').value.toLowerCase();
-      const listContainer = document.getElementById('expenseList');
-      const favContainer = document.getElementById('favoritesList');
-
-      const filtered = expenses.filter(e => {
-        const matchesCat = selectedCat === 'all' || e.category === selectedCat;
-        const matchesSearch = e.title.toLowerCase().includes(search) || e.note.toLowerCase().includes(search);
-        return matchesCat && matchesSearch;
-      });
-
-      const total = expenses.reduce((sum, item) => sum + item.amount, 0);
-      document.getElementById('totalSpentDisplay').innerText = total.toFixed(2);
-      document.getElementById('remainingDisplay').innerText = Math.max(0, monthlyBudget - total).toFixed(2);
-      const percent = Math.min(100, Math.round((total / monthlyBudget) * 100));
-      document.getElementById('percentDisplay').innerText = percent;
-      document.getElementById('progressFill').style.width = percent + '%';
-      document.getElementById('itemCountDisplay').innerText = filtered.length + ' عناصر';
-
-      if (filtered.length === 0) {
-        listContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-muted);">لا توجد نتائج لمصروفاتك</div>`;
-      } else {
-        listContainer.innerHTML = filtered.map(e => `
-          <div class="expense-item">
-            <div class="cat-icon" style="background: ${e.color}20; color: ${e.color};">${e.icon}</div>
-            <div style="flex: 1;">
-              <div style="font-weight: bold; font-size: 14px;">${e.title}</div>
-              <div style="font-size: 11px; color: var(--text-muted);">${e.note || 'مصروف عام'}</div>
-            </div>
-            <div style="text-align: left;">
-              <div style="font-weight: bold; font-size: 14px; color: #EF4444;">-${e.amount.toFixed(2)} ر.س</div>
-              <span style="cursor: pointer; font-size: 12px;" onclick="toggleFavorite(${e.id})">${e.isFavorite ? '❤️' : '🤍'}</span>
-            </div>
-          </div>
-        `).join('');
-      }
-
-      // Render Favorites
-      const favs = expenses.filter(e => e.isFavorite);
-      if (favs.length === 0) {
-        favContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-muted);">لا توجد عناصر مفضلة</div>`;
-      } else {
-        favContainer.innerHTML = favs.map(e => `
-          <div class="expense-item">
-            <div class="cat-icon" style="background: ${e.color}20; color: ${e.color};">${e.icon}</div>
-            <div style="flex: 1;">
-              <div style="font-weight: bold; font-size: 14px;">${e.title}</div>
-              <div style="font-size: 11px; color: var(--text-muted);">${e.note || 'مصروف ثابت'}</div>
-            </div>
-            <div style="font-weight: bold; font-size: 14px; color: #EF4444;">-${e.amount.toFixed(2)} ر.س</div>
-          </div>
-        `).join('');
-      }
-    }
-
-    function toggleFavorite(id) {
-      const item = expenses.find(e => e.id === id);
-      if (item) {
-        item.isFavorite = !item.isFavorite;
-        renderExpenses();
-        showToast(item.isFavorite ? 'تمت الإضافة للمفضلة ❤️' : 'تمت الإزالة من المفضلة');
-      }
-    }
-
-    function openAddModal() {
-      document.getElementById('addModal').classList.add('active');
-    }
-    function closeAddModal() {
-      document.getElementById('addModal').classList.remove('active');
-    }
-
-    function submitExpense() {
-      const title = document.getElementById('newTitle').value.trim();
-      const amount = parseFloat(document.getElementById('newAmount').value);
-      const cat = document.getElementById('newCategory').value;
-      const note = document.getElementById('newNote').value;
-
-      if (!title || !amount || amount <= 0) {
-        alert('يرجى كتابة العنوان والمبلغ بصورة صحيحة');
-        return;
-      }
-
-      expenses.unshift({
-        id: Date.now(),
-        title: title,
-        amount: amount,
-        category: cat,
-        icon: '💵',
-        color: '#0D9488',
-        note: note,
-        isFavorite: false
-      });
-
-      closeAddModal();
-      document.getElementById('newTitle').value = '';
-      document.getElementById('newAmount').value = '';
-      document.getElementById('newNote').value = '';
-      renderExpenses();
-      showToast('تمت إضافة المصروف بنجاح 🎉');
-    }
-
-    function openBudgetModal() {
-      const val = prompt('أدخل الميزانية الشهرية الجديدة (ر.س):', monthlyBudget);
-      if (val && !isNaN(val) && val > 0) {
-        monthlyBudget = parseFloat(val);
-        document.getElementById('budgetDisplay').innerText = monthlyBudget;
-        document.getElementById('budgetSetting').innerText = monthlyBudget;
-        renderExpenses();
-        showToast('تم تحديث الميزانية الشهرية 🎯');
-      }
-    }
-
-    function changeName() {
-      const name = prompt('أدخل اسمك الكريم:', 'عبدالله');
-      if (name) {
-        document.getElementById('greetingText').innerText = 'مساء الخير ✨، ' + name;
-        document.getElementById('userNameSetting').innerText = name;
-        showToast('تم تحديث اسم المستخدم');
-      }
-    }
+    let expenses = [
+      { id: '1', title: 'مشتريات البقالة الأسبوعية', amount: 340.5, category: 'food', date: new Date().toISOString(), note: 'خضار وفواكه', isFavorite: true },
+      { id: '2', title: 'فاتورة الكهرباء والماء', amount: 450, category: 'bills', date: new Date(Date.now() - 86400000).toISOString(), note: 'شهر يوليو', isFavorite: true },
+      { id: '3', title: 'بنزين السيارة', amount: 130, category: 'transport', date: new Date(Date.now() - 172800000).toISOString(), note: 'محطة الدريس 95', isFavorite: false },
+      { id: '4', title: 'عشاء مع العائلة', amount: 225, category: 'food', date: new Date(Date.now() - 259200000).toISOString(), note: '', isFavorite: false }
+    ];
 
     function showToast(msg) {
       const toast = document.getElementById('toast');
       toast.innerText = msg;
       toast.style.display = 'block';
-      setTimeout(() => { toast.style.display = 'none'; }, 2000);
+      setTimeout(() => toast.style.display = 'none', 2000);
     }
 
-    init();
+    function toggleTheme() {
+      isDark = !isDark;
+      document.body.classList.toggle('dark', isDark);
+      document.getElementById('themeBtn').innerText = isDark ? '☀️' : '🌙';
+      document.getElementById('themeSettingIcon').innerText = isDark ? '☀️' : '🌙';
+      showToast(isDark ? 'تم تفعيل الوضع الليلي 🌙' : 'تم تفعيل الوضع الفاتح ☀️');
+    }
+
+    function switchTab(tabId, el) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('page-' + tabId).classList.add('active');
+      el.classList.add('active');
+    }
+
+    function editBudget() {
+      const newB = prompt('أدخل قيمة الميزانية الشهرية الجديدة (ر.س):', monthlyBudget);
+      if (newB && !isNaN(newB) && Number(newB) > 0) {
+        monthlyBudget = Number(newB);
+        updateHeaderAndStats();
+        showToast('تم تحديث الميزانية بنجاح 🎯');
+      }
+    }
+
+    function changeName() {
+      const newN = prompt('أدخل اسمك الشخصي:', userName);
+      if (newN && newN.trim()) {
+        userName = newN.trim();
+        document.getElementById('usernameDisplay').innerText = userName;
+        showToast('تم تحديث الاسم');
+      }
+    }
+
+    function renderCategoryChips() {
+      const container = document.getElementById('categoryChips');
+      let html = `<div class="cat-chip ${selectedCatFilter === null ? 'active' : ''}" onclick="filterCat(null)">الكل (${expenses.length})</div>`;
+      categories.forEach(c => {
+        const count = expenses.filter(e => e.category === c.id).length;
+        html += `<div class="cat-chip ${selectedCatFilter === c.id ? 'active' : ''}" onclick="filterCat('${c.id}')">${c.icon} ${c.title} (${count})</div>`;
+      });
+      container.innerHTML = html;
+    }
+
+    function filterCat(catId) {
+      selectedCatFilter = catId;
+      renderCategoryChips();
+      renderExpenses();
+    }
+
+    function updateHeaderAndStats() {
+      const total = expenses.reduce((s, e) => s + e.amount, 0);
+      const remaining = Math.max(0, monthlyBudget - total);
+      const percent = Math.min(100, Math.round((total / monthlyBudget) * 100));
+
+      document.getElementById('budgetDisplay').innerText = monthlyBudget;
+      document.getElementById('settingsBudget').innerText = monthlyBudget;
+      document.getElementById('totalSpentDisplay').innerText = total.toFixed(2);
+      document.getElementById('remainingDisplay').innerText = remaining.toFixed(2);
+      document.getElementById('percentDisplay').innerText = percent + '%';
+      document.getElementById('progressFill').style.width = percent + '%';
+
+      // Quick stats
+      document.getElementById('todaySpent').innerText = total > 0 ? (expenses[0]?.amount || 0) + ' ر.س' : '0 ر.س';
+      document.getElementById('weekSpent').innerText = total.toFixed(0) + ' ر.س';
+
+      renderStatsBreakdown();
+    }
+
+    function renderExpenses() {
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+      let filtered = expenses.filter(e => {
+        const matchCat = selectedCatFilter === null || e.category === selectedCatFilter;
+        const matchQ = !query || e.title.toLowerCase().includes(query) || e.note.toLowerCase().includes(query);
+        return matchCat && matchQ;
+      });
+
+      document.getElementById('itemCount').innerText = filtered.length + ' عناصر';
+      const container = document.getElementById('expensesList');
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <div style="font-weight:bold; font-size:15px;">لا توجد مصروفات</div>
+            <div style="font-size:12px; margin-top:4px;">جرّب البحث بكلمات أخرى أو أضف عنصر جديد</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(e => {
+        const cat = categories.find(c => c.id === e.category) || categories[6];
+        return `
+          <div class="expense-item">
+            <div class="expense-left">
+              <div class="expense-icon" style="background: ${cat.color}22; color: ${cat.color};">
+                ${cat.icon}
+              </div>
+              <div>
+                <div class="expense-title">${e.title}</div>
+                <div class="expense-sub">
+                  <span style="color:${cat.color}; font-weight:bold;">${cat.title}</span>
+                  ${e.note ? '• ' + e.note : ''}
+                </div>
+              </div>
+            </div>
+            <div style="text-align: left;">
+              <div class="expense-amount">-${e.amount.toFixed(2)} ر.س</div>
+              <button class="fav-btn" onclick="toggleFav('${e.id}')">${e.isFavorite ? '❤️' : '🤍'}</button>
+              <button class="fav-btn" onclick="deleteExpense('${e.id}')">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      renderFavorites();
+    }
+
+    function renderFavorites() {
+      const favs = expenses.filter(e => e.isFavorite);
+      const container = document.getElementById('favoritesList');
+      if (favs.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">⭐</div>
+            <div style="font-weight:bold; font-size:15px;">قائمة المفضلة فارغة</div>
+            <div style="font-size:12px; margin-top:4px;">اضغط على أيقونة القلب في أي مصروف لإضافته هنا</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = favs.map(e => {
+        const cat = categories.find(c => c.id === e.category) || categories[6];
+        return `
+          <div class="expense-item">
+            <div class="expense-left">
+              <div class="expense-icon" style="background: ${cat.color}22;">${cat.icon}</div>
+              <div>
+                <div class="expense-title">${e.title}</div>
+                <div class="expense-sub">${cat.title}</div>
+              </div>
+            </div>
+            <div class="expense-amount">-${e.amount.toFixed(2)} ر.س</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderStatsBreakdown() {
+      const total = expenses.reduce((s, e) => s + e.amount, 0);
+      const container = document.getElementById('statsBreakdown');
+
+      if (total === 0) {
+        container.innerHTML = '<div style="text-align:center; font-size:12px; color:var(--text-muted);">لا تتوفر إحصائيات حالياً</div>';
+        return;
+      }
+
+      container.innerHTML = categories.map(cat => {
+        const sum = expenses.filter(e => e.category === cat.id).reduce((s, e) => s + e.amount, 0);
+        if (sum === 0) return '';
+        const pct = Math.round((sum / total) * 100);
+        return `
+          <div style="margin-bottom: 12px;">
+            <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:bold; color:var(--text); margin-bottom:4px;">
+              <span>${cat.icon} ${cat.title}</span>
+              <span>${sum.toFixed(0)} ر.س (${pct}%)</span>
+            </div>
+            <div style="height:6px; background:var(--border); border-radius:10px; overflow:hidden;">
+              <div style="width:${pct}%; height:100%; background:${cat.color};"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleFav(id) {
+      const item = expenses.find(e => e.id === id);
+      if (item) {
+        item.isFavorite = !item.isFavorite;
+        renderExpenses();
+        showToast(item.isFavorite ? 'تمت الإضافة للمفضلة ❤️' : 'تمت إزالته من المفضلة');
+      }
+    }
+
+    function deleteExpense(id) {
+      if (confirm('هل أنت تأكد من حذف هذا المصروف؟')) {
+        expenses = expenses.filter(e => e.id !== id);
+        renderCategoryChips();
+        renderExpenses();
+        updateHeaderAndStats();
+        showToast('تم حذف المصروف بنجاح');
+      }
+    }
+
+    function openAddModal() {
+      document.getElementById('addModal').style.display = 'flex';
+      renderModalCategories();
+    }
+
+    function closeAddModal(e) {
+      if (!e || e.target.id === 'addModal') {
+        document.getElementById('addModal').style.display = 'none';
+      }
+    }
+
+    function renderModalCategories() {
+      const container = document.getElementById('modalCategories');
+      container.innerHTML = categories.map(c => `
+        <div class="cat-chip ${selectedModalCat === c.id ? 'active' : ''}" onclick="selectModalCat('${c.id}')">
+          ${c.icon} ${c.title}
+        </div>
+      `).join('');
+    }
+
+    function selectModalCat(id) {
+      selectedModalCat = id;
+      renderModalCategories();
+    }
+
+    function addQuick(val) {
+      const input = document.getElementById('addAmount');
+      const cur = Number(input.value) || 0;
+      input.value = cur + val;
+    }
+
+    function submitExpense() {
+      const title = document.getElementById('addTitle').value.trim();
+      const amount = Number(document.getElementById('addAmount').value);
+      const note = document.getElementById('addNote').value.trim();
+      const isFav = document.getElementById('addFav').checked;
+
+      if (!title) {
+        alert('يرجى إدخال عنوان المصروف');
+        return;
+      }
+      if (!amount || amount <= 0) {
+        alert('يرجى إدخال مبلغ صحيح');
+        return;
+      }
+
+      expenses.unshift({
+        id: Date.now().toString(),
+        title: title,
+        amount: amount,
+        category: selectedModalCat,
+        date: new Date().toISOString(),
+        note: note,
+        isFavorite: isFav
+      });
+
+      // Reset form
+      document.getElementById('addTitle').value = '';
+      document.getElementById('addAmount').value = '';
+      document.getElementById('addNote').value = '';
+      document.getElementById('addFav').checked = false;
+
+      closeAddModal();
+      renderCategoryChips();
+      renderExpenses();
+      updateHeaderAndStats();
+      showToast('تم حفظ المصروف بنجاح ✨');
+    }
+
+    // Initialize
+    renderCategoryChips();
+    renderExpenses();
+    updateHeaderAndStats();
   </script>
 </body>
 </html>

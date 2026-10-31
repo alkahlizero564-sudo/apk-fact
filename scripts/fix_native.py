@@ -9,7 +9,7 @@ from pathlib import Path
 
 import fix_memory
 from gemini_client import call_gemini
-from native_langs import LANGS, clean_deps, gemini_keys, parse_reply, read_deps, reply_format, write_deps
+from native_langs import LANGS, rules_for, clean_deps, gemini_keys, parse_reply, read_deps, reply_format, write_deps
 
 DEFAULT_MODEL = "gemini-3.8-flash"
 
@@ -40,7 +40,7 @@ def fix(lang, code_path, log_text, use_memory=True):
     model = os.environ.get("GEMINI_MODEL") or DEFAULT_MODEL
 
     current_deps = read_deps(lang, app_dir)
-    rules = cfg["rules"].format(deps=", ".join(cfg["allowed_deps"]))
+    rules = rules_for(lang)
     prompt = f"""The {cfg['title']} app below failed to build. Fix every error with the smallest possible changes.
 Keep the app's behavior, screens and design the same.
 {rules}

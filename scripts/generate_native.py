@@ -21,7 +21,7 @@ from pathlib import Path
 import fix_memory
 from fix_native import fix
 from gemini_client import call_gemini
-from native_langs import DESIGN_BRIEF, LANGS, clean_deps, gemini_keys, parse_reply, read_deps, reply_format, write_deps
+from native_langs import DESIGN_BRIEF, LANGS, rules_for, clean_deps, gemini_keys, parse_reply, read_deps, reply_format, write_deps
 
 DEFAULT_MODEL = "gemini-3.8-flash"
 HERE = Path(__file__).resolve().parent
@@ -151,7 +151,7 @@ def main():
         return
 
     deps_text = ", ".join(cfg["allowed_deps"])
-    prompt = f"""{cfg['rules'].format(deps=deps_text)}
+    prompt = f"""{rules_for(lang)}
 
 {DESIGN_BRIEF}
 

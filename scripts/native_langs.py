@@ -106,6 +106,13 @@ LANGS = {
 }
 
 
+def rules_for(lang):
+    """The language rules with the allowed packages filled in. Plain replace, not str.format: the Kotlin
+    rules contain code with { } braces."""
+    cfg = LANGS[lang]
+    return cfg["rules"].replace("{deps}", ", ".join(cfg["allowed_deps"]) or "none")
+
+
 def reply_format(blocks):
     """Instructions for a reply made of fenced code blocks and a DEPS line (no JSON to escape)."""
     lines = [f"{i}. one ```{fence} code block with {what}" for i, (fence, what) in enumerate(blocks, start=1)]

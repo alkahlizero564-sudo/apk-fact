@@ -30,6 +30,7 @@ export const langColors = {
   html: "#F06529",
   flutter: "#42A5F5",
   python: "#FFD43B",
+  kotlin: "#A97BFF",
 };
 
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 40 };

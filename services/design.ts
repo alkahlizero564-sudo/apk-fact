@@ -21,6 +21,7 @@ const PLATFORM: Record<Lang, string> = {
   html: "a modern mobile web app (it will ship as a WebView app)",
   flutter: "a Flutter Material 3 app: use Material 3 shapes, components, elevation and motion so the design maps 1:1 to Flutter widgets",
   python: "a Python Flet (Material 3) app: use Material 3 components only, so every element maps to a Flet control",
+  kotlin: "a native Android app in Kotlin with Jetpack Compose Material 3: use Material 3 components, shapes and motion so every element maps 1:1 to a Compose composable",
 };
 
 const DESIGNER = `You are a world-class mobile product designer and senior front-end engineer.

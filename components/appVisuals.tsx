@@ -10,6 +10,7 @@ export const LANG_ICONS: Record<Lang, IconName> = {
   html: "logo-html5",
   flutter: "layers-outline",
   python: "logo-python",
+  kotlin: "logo-android",
 };
 
 export function LangBadge({ lang }: { lang: Lang }) {

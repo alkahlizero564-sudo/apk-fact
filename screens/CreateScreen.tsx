@@ -33,6 +33,7 @@ const LANG_PITCH: Record<Lang, string> = {
   html: "الأسرع في البناء. ممتاز للمتاجر والمنيو والصفحات التعريفية.",
   flutter: "أداء أصلي وتصميم Material 3 وحركات ناعمة. الأنسب للتطبيقات الكاملة.",
   python: "منطق قوي وحسابات وبيانات بلغة Python عبر Flet.",
+  kotlin: "تطبيق أندرويد أصلي 100% بلغة جوجل الرسمية: الأسرع والأخف ووصول كامل لإمكانيات الجهاز.",
 };
 
 // One tap adds (or removes) a feature sentence in the description.

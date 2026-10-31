@@ -17,7 +17,7 @@ DEFAULT_MODEL = "gemini-3.8-flash"
 
 def error_excerpt(log_text):
     lines = log_text.splitlines()
-    picked = [l for l in lines if re.search(r"error|Error|Exception|Failed|failed|FAILURE|Traceback", l)]
+    picked = [l for l in lines if re.search(r"error|Error|Exception|Failed|failed|FAILURE|Traceback|^\s*e: ", l)]
     excerpt = "\n".join(picked[-60:]) if picked else "\n".join(lines[-60:])
     return excerpt[-6000:]
 

@@ -40,6 +40,8 @@ def detect_lang(src):
         return "flutter"
     if (src / "main.py").exists():
         return "python"
+    if (src / "MainActivity.kt").exists():
+        return "kotlin"
     return "html"
 
 

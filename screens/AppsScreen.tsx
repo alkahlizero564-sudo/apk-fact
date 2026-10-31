@@ -71,6 +71,7 @@ export default function AppsScreen() {
           { value: "all", label: "الكل" },
           { value: "html", label: LANGS.html.label },
           { value: "flutter", label: LANGS.flutter.label },
+          { value: "kotlin", label: LANGS.kotlin.label },
           { value: "python", label: LANGS.python.label },
         ]}
       />

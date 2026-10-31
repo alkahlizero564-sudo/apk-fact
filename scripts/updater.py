@@ -94,6 +94,20 @@ def inject_python(proj, app, version):
     main.write_text("".join(lines), encoding="utf-8")
 
 
+def inject_kotlin(proj, app, version):
+    code_dir = proj / "app" / "src" / "main" / "java" / "app" / "main"
+    main = code_dir / "MainActivity.kt"
+    code = main.read_text(encoding="utf-8")
+    if "apkfactCheckForUpdate" in code:
+        return
+    m = re.search(r"super\.onCreate\([^)]*\)", code)
+    if not m:
+        print("No super.onCreate(...) in MainActivity.kt; skipping the update checker")
+        return
+    (code_dir / "ApkFactUpdate.kt").write_text(fill("update_check.kt", app, version), encoding="utf-8")
+    main.write_text(code[:m.end()] + "\n        apkfactCheckForUpdate()" + code[m.end():], encoding="utf-8")
+
+
 def publish(app, version, apk_url):
     notes = (os.environ.get("UPDATE_NOTES") or "").strip()[:500]
     data = {
@@ -114,7 +128,7 @@ def main():
         print(current_version(args[0]) + 1)
     elif cmd == "inject":
         lang, d, app, version = args
-        {"html": inject_html, "flutter": inject_flutter, "python": inject_python}[lang](Path(d), app, int(version))
+        {"html": inject_html, "flutter": inject_flutter, "python": inject_python, "kotlin": inject_kotlin}[lang](Path(d), app, int(version))
         print(f"Update checker added ({lang}, version {version})")
     elif cmd == "publish":
         publish(args[0], int(args[1]), args[2])

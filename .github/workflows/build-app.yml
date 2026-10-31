@@ -112,7 +112,7 @@ jobs:
             mkdir www
             cp -r "$SRC"/. www/
             rm -f www/icon.png www/google-services.json www/meta.json www/pair.json
-            rm -f www/version.json www/contract.txt www/display-name.txt
+            rm -f www/version.json www/contract.txt www/display-name.txt www/design.html
             python "$GITHUB_WORKSPACE/scripts/updater.py" inject html www "$APP" "$VERSION"
             set +e
             (npx cap sync android && cd android && ./gradlew assembleDebug --no-daemon) 2>&1 | tee /tmp/build.log

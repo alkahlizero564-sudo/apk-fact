@@ -156,6 +156,14 @@ App name: {name}
         prompt += pair_edit_rules(name)
     else:
         prompt += f"\nDescription of the app to create:\n{task}\n"
+        design = base / "design.html"
+        if design.exists():
+            prompt += (f"\nAPPROVED DESIGN - the owner reviewed and approved this clickable design prototype. Build the "
+                       f"real {cfg['title']} app so it looks exactly like it: the same screens, navigation, layout, colors, "
+                       f"typography, spacing, corner radius, icons, texts and components (map them to the closest "
+                       f"{cfg['title']} widgets). Ignore the prototype's top 'screens' switcher (id apkfact-screens): it "
+                       f"is only for reviewing. Make every screen fully functional with real state and stored data.\n"
+                       f"```html\n{design.read_text(encoding='utf-8')[:60000]}\n```\n")
 
     blocks, deps = parse_reply(call_gemini(model, prompt, keys, temperature=0.4, json_mode=False))
     code = blocks.get(cfg["fence"], "")

@@ -49,7 +49,7 @@ async function geminiKeys() {
   return keys;
 }
 
-async function callGemini(key: string, model: string, system: string, prompt: string) {
+async function callGemini(key: string, model: string, system: string, prompt: string, temperature = 0.5) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 180000);
   try {
@@ -59,7 +59,7 @@ async function callGemini(key: string, model: string, system: string, prompt: st
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.5 },
+        generationConfig: { temperature },
       }),
       signal: ctrl.signal,
     });
@@ -95,21 +95,29 @@ export async function instantPreview(
     const hit = await cachedPreview(lang, description);
     if (hit) return hit;
   }
+  const html = await askGeminiHtml(systemFor(lang), `App description:\n${description}`, onStatus, "يرسم المعاينة");
+  await AsyncStorage.setItem(key, html).catch(() => {});
+  return html;
+}
+
+/** Asks Gemini (chosen model first, then fallbacks; every key) for one HTML file. */
+export async function askGeminiHtml(
+  system: string,
+  prompt: string,
+  onStatus: (s: string) => void,
+  doing = "يشتغل",
+  temperature = 0.5
+): Promise<string> {
   const keys = await geminiKeys();
   const chosen = (await SecureStore.getItemAsync("GEMINI_MODEL")) || FALLBACK_MODELS[0];
   const models = [chosen, ...FALLBACK_MODELS.filter((m) => m !== chosen)];
-  const system = systemFor(lang);
-  const prompt = `App description:\n${description}`;
-
   let last = "";
   for (let round = 0; round < 2; round++) {
     for (const model of models) {
       for (let k = 0; k < keys.length; k++) {
-        onStatus(`الذكاء الاصطناعي يرسم المعاينة… (${model}${keys.length > 1 ? `، مفتاح ${k + 1}` : ""})`);
+        onStatus(`الذكاء الاصطناعي ${doing}… (${model}${keys.length > 1 ? `، مفتاح ${k + 1}` : ""})`);
         try {
-          const html = extractHtml(await callGemini(keys[k], model, system, prompt));
-          await AsyncStorage.setItem(key, html).catch(() => {});
-          return html;
+          return extractHtml(await callGemini(keys[k], model, system, prompt, temperature));
         } catch (e: any) {
           last = e?.message ?? String(e);
           if (e?.status === 404) break; // model not available: next model
@@ -122,5 +130,5 @@ export async function instantPreview(
       await sleep(8000);
     }
   }
-  throw new Error(`ما قدرنا نجهّز المعاينة: ${last}`);
+  throw new Error(`ما قدرنا نكمّل: ${last}`);
 }

@@ -21,7 +21,7 @@ import {
 } from "../components/ui";
 import { setupVault, vaultStatus, listVaultApps, VaultStatus, VaultApp } from "../services/vault";
 import { testGithubConnection } from "../services/github";
-import { testSupabaseConnection } from "../services/supabase";
+import { testSupabaseConnection, testEmailCode, EmailCodeTest } from "../services/supabase";
 import { testGeminiConnection, testClaudeConnection, listGeminiModels, GeminiModel } from "../services/ai";
 import { buildTool, listToolBuilds, ToolRun } from "../services/appActions";
 import { REPO } from "../services/config";
@@ -179,6 +179,63 @@ function ServiceForm({ service, onSaved }: { service: Service; onSaved: () => vo
         loading={status.kind === "loading"}
       />
       <StatusLine status={status} />
+    </View>
+  );
+}
+
+/** Sends a real sign-in code and shows Supabase's answer, to find out why codes do not arrive. */
+function EmailCodeTester() {
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<EmailCodeTest | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run() {
+    setBusy(true);
+    setResult(null);
+    setError(null);
+    try {
+      setResult(await testEmailCode(email.trim()));
+    } catch (e: any) {
+      setError(e?.message ?? "تعذّر الإرسال");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const reason = !result || result.ok
+    ? ""
+    : /rate limit/i.test(result.reply)
+    ? "وصلت حد الرسائل في الساعة. استنى شوية أو زوّد الحد."
+    : /sending|smtp|mail/i.test(result.reply)
+    ? "Supabase ما قدر يرسل عبر خادم البريد: راجع بيانات SMTP (لـ Gmail لازم «كلمة مرور تطبيق» من 16 حرف، والمنفذ 587)."
+    : "";
+
+  return (
+    <View style={{ marginTop: space.xl }}>
+      <Text style={styles.sheetTitle}>تجربة رمز الدخول بالبريد</Text>
+      <Text style={styles.sheetText}>بنرسل رمز حقيقي لبريدك بنفس طريقة التطبيقات، ونعرض رد Supabase وإعدادات البريد.</Text>
+      <KeyInput label="البريد" placeholder="you@gmail.com" value={email} onChangeText={setEmail} />
+      <Button title="أرسل رمز تجريبي" icon="mail-outline" onPress={run} loading={busy} disabled={!/.+@.+\..+/.test(email.trim())} variant="secondary" />
+      {error ? <Banner kind="error" text={error} /> : null}
+      {result ? (
+        <View style={{ marginTop: space.md, gap: space.sm }}>
+          <Banner
+            kind={result.ok ? "ok" : "error"}
+            text={
+              result.ok
+                ? "Supabase قبل الطلب وسلّم الرسالة لخادم البريد. لو ما وصلت خلال دقيقتين: شوف مجلد Spam/الرسائل غير المرغوبة، وتأكد إن عنوان المرسل هو نفس حساب SMTP."
+                : `رفض Supabase الإرسال (${result.status}). ${reason}`
+            }
+          />
+          {!result.ok ? <Text style={styles.code}>{result.reply}</Text> : null}
+          {result.settings.map((l) => (
+            <Text key={l} style={styles.sheetText}>
+              • {l}
+            </Text>
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -463,6 +520,7 @@ export default function SettingsScreen() {
 
       <Sheet visible={!!service} title={service?.title ?? ""} onClose={() => setOpen(null)}>
         {service ? <ServiceForm service={service} onSaved={loadStatus} /> : null}
+        {service?.id === "supabase" ? <EmailCodeTester /> : null}
       </Sheet>
       <Sheet visible={open === "vault"} title="الخزنة الخاصة" onClose={() => setOpen(null)}>
         <VaultPanel status={vault} onReady={loadStatus} />
@@ -484,4 +542,6 @@ const styles = StyleSheet.create({
   runsHead: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", marginTop: space.xl, marginBottom: space.md },
   runsTitle: { ...type.label, color: colors.text },
   sheetSmall: { ...type.hint, color: colors.textMuted },
+  sheetTitle: { ...type.label, color: colors.text, textAlign: "right", marginBottom: space.sm },
+  code: { fontFamily: "monospace", fontSize: 12, color: colors.text, textAlign: "left", backgroundColor: colors.field, padding: space.md, borderRadius: radius.field },
 });

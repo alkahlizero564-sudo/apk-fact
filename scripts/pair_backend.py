@@ -285,9 +285,12 @@ def configure_email_otp(ref, token, smtp=None):
             "smtp_host": smtp["host"],
             "smtp_port": str(smtp.get("port", "587")),
             "smtp_user": smtp.get("user", ""),
-            "smtp_pass": smtp.get("pass", ""),
+            # Gmail shows app passwords in groups of 4 ("abcd efgh ..."); the spaces are not part of it.
+            "smtp_pass": str(smtp.get("pass", "")).replace(" ", "") if "gmail" in smtp["host"] else smtp.get("pass", ""),
             "smtp_admin_email": smtp.get("from", smtp.get("user", "")),
             "smtp_sender_name": smtp.get("name", "APK Fact"),
+            # Supabase allows only a couple of emails per hour by default; real customers need more.
+            "rate_limit_email_sent": 100,
         })
     return _request("PATCH", f"/projects/{ref}/config/auth", token, body)
 

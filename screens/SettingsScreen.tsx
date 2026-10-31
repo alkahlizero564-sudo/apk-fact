@@ -21,7 +21,7 @@ import {
 } from "../components/ui";
 import { setupVault, vaultStatus, listVaultApps, VaultStatus, VaultApp } from "../services/vault";
 import { testGithubConnection } from "../services/github";
-import { testSupabaseConnection, testEmailCode, EmailCodeTest } from "../services/supabase";
+import { testSupabaseConnection, testEmailCode, EmailCodeTest, applySmtpSettings } from "../services/supabase";
 import { testGeminiConnection, testClaudeConnection, listGeminiModels, GeminiModel } from "../services/ai";
 import { buildTool, listToolBuilds, ToolRun } from "../services/appActions";
 import { REPO } from "../services/config";
@@ -93,7 +93,8 @@ const SERVICES: Service[] = [
     ],
     test: async () => {
       const r = await testSupabaseConnection();
-      return `متصل بمشروع: ${r.name} (${r.status})`;
+      const smtp = await applySmtpSettings();
+      return `متصل بمشروع: ${r.name} (${r.status})` + (smtp ? ` · إعدادات البريد اتطبّقت على المشروع (${smtp})` : "");
     },
   },
   {

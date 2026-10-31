@@ -237,7 +237,18 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
                       <Text style={styles.tplTitle} numberOfLines={1}>
                         {t.title}
                       </Text>
-                      <LangBadge lang={t.lang} />
+<View style={styles.tplFoot}>
+                        <LangBadge lang={t.lang} />
+                        <Pressable
+                          onPress={() => navigation.navigate("InstantPreview", { templateId: t.id, fromWizard: true })}
+                          hitSlop={8}
+                          style={({ pressed }) => [styles.eye, pressed && { opacity: 0.7 }]}
+                          accessibilityRole="button"
+                          accessibilityLabel={`معاينة ${t.title}`}
+                        >
+                          <Ionicons name={t.lang === "html" ? "flash" : "eye-outline"} size={15} color={colors.infoText} />
+                        </Pressable>
+                      </View>
                       {sel ? (
                         <View style={styles.tplCheck}>
                           <Ionicons name="checkmark" size={14} color={colors.bg} />
@@ -318,6 +329,21 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
                   multiline
                   maxLength={2000}
                   counter
+                />
+                <Button
+                  title="معاينة فورية قبل الإنشاء"
+                  icon={lang === "html" ? "flash-outline" : "sparkles-outline"}
+                  variant="secondary"
+                  disabled={text.trim().length < 10}
+                  onPress={() =>
+                    navigation.navigate("InstantPreview", {
+                      lang,
+                      description: text.trim(),
+                      templateId: template && text === template.description ? template.id : undefined,
+                      title: clean || "معاينة فورية",
+                      fromWizard: true,
+                    })
+                  }
                 />
                 <Text style={styles.subq}>أضف ميزة بضغطة</Text>
                 <View style={styles.chips}>
@@ -409,6 +435,15 @@ const styles = StyleSheet.create({
   },
   tplIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center", alignSelf: "flex-end" },
   tplTitle: { color: colors.text, fontWeight: "800", fontSize: 14, textAlign: "right" },
+  tplFoot: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  eye: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primarySoft,
+  },
   tplCheck: {
     position: "absolute",
     top: space.sm,

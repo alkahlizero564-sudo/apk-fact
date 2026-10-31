@@ -107,7 +107,18 @@ export default function HomeScreen() {
               <Text style={styles.tplDesc} numberOfLines={2}>
                 {t.description}
               </Text>
-              <LangBadge lang={t.lang} />
+<View style={styles.tplFoot}>
+                <LangBadge lang={t.lang} />
+                <Pressable
+                  onPress={() => nav.navigate("InstantPreview", { templateId: t.id })}
+                  hitSlop={8}
+                  style={({ pressed }) => [styles.eye, pressed && { opacity: 0.7 }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`معاينة ${t.title}`}
+                >
+                  <Ionicons name={t.lang === "html" ? "flash" : "eye-outline"} size={15} color={colors.infoText} />
+                </Pressable>
+              </View>
             </Pressable>
           ))}
         </View>
@@ -229,4 +240,13 @@ const styles = StyleSheet.create({
   tplIcon: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center", alignSelf: "flex-end" },
   tplTitle: { color: colors.text, fontWeight: "800", fontSize: 15, textAlign: "right" },
   tplDesc: { color: colors.textMuted, fontSize: 12, lineHeight: 17, textAlign: "right" },
+  tplFoot: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  eye: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primarySoft,
+  },
 });

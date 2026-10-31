@@ -9,6 +9,7 @@ Reads request-flutter.txt / request-python.txt:
     @preview        optional, only (re)build preview.html from the current code
     rest            description of the app, or of the change
 """
+import json
 import os
 import re
 import shutil
@@ -59,6 +60,19 @@ def read_app_code(app):
     p = Path("apps") / app / "index.html"
     return p.read_text(encoding="utf-8")[:20000] if p.exists() else ""
 
+
+
+def record_history(base, name, lang, kind, request):
+    """apps/<name>/meta.json keeps the description and every requested change (copied to the vault)."""
+    import datetime
+    path = base / "meta.json"
+    meta = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"name": name, "lang": lang, "history": []}
+    meta.setdefault("history", []).append({
+        "at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "kind": kind,
+        "request": request,
+    })
+    path.write_text(json.dumps(meta, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
 
 def python_problems(code_path):
@@ -142,6 +156,7 @@ App name: {name}
 
     code_path.parent.mkdir(parents=True, exist_ok=True)
     code_path.write_text(code + "\n", encoding="utf-8")
+    record_history(base, name, lang, "edit" if existing else "create", task)
     (base / "preview.html").write_text(preview + "\n", encoding="utf-8")
     deps = clean_deps(lang, deps) or (read_deps(lang, base) if existing else [])
     write_deps(lang, base, deps)

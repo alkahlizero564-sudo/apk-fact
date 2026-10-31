@@ -40,7 +40,13 @@ const relatedBlock = relatedCode
     `and make the two apps work together as parts of one program.\n`
   : "";
 
-const designBrief = fs.readFileSync(path.join(__dirname, "scripts", "design_brief.txt"), "utf8");
+// One design bar for every language, shared with the app and scripts/native_langs.py.
+const designBrief = JSON.parse(
+  fs
+    .readFileSync(path.join(__dirname, "services", "designBrief.ts"), "utf8")
+    .split("export const DESIGN_BRIEF = ")[1]
+    .replace(/;\s*$/, "")
+);
 
 const system =
   "You are an expert mobile app designer and web developer. Output ONE complete, self-contained HTML file " +
@@ -53,6 +59,17 @@ const system =
 const prompt = existing
   ? `Here is the current app:\n\`\`\`html\n${existing}\n\`\`\`${relatedBlock}\n\nApply this change and return the FULL updated file:\n${request}`
   : `Create this app:\n${request}${relatedBlock}`;
+
+// apps/<name>/meta.json keeps the app's description and every requested change (copied to the vault).
+function recordHistory(kind) {
+  const metaFile = path.join(dir, "meta.json");
+  let meta = { name, lang: "html", history: [] };
+  try {
+    meta = { ...meta, ...JSON.parse(fs.readFileSync(metaFile, "utf8")) };
+  } catch {}
+  meta.history.push({ at: new Date().toISOString(), kind, request });
+  fs.writeFileSync(metaFile, JSON.stringify(meta, null, 1) + "\n");
+}
 
 class ApiError extends Error {
   constructor(message, status) {
@@ -256,6 +273,7 @@ async function repair(code, problems, order) {
       if (problems.length) res.code = await repair(res.code, problems, order);
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(FILE, res.code);
+      recordHistory(existing ? "edit" : "create");
       console.log(`تم: ${FILE} بواسطة ${label}${res.model ? " (" + res.model + ")" : ""}`);
       return;
     }

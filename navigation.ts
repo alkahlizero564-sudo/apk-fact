@@ -6,6 +6,7 @@ export type RootStackParamList = {
   Create: { templateId?: string } | undefined;
   AppDetail: { name: string; lang: Lang };
   Preview: { name: string };
+  InstantPreview: { templateId?: string; lang?: Lang; description?: string; title?: string; fromWizard?: boolean };
 };
 
 export type RootScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>;

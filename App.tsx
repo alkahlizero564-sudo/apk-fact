@@ -14,6 +14,7 @@ import SettingsScreen from "./screens/SettingsScreen";
 import CreateScreen from "./screens/CreateScreen";
 import AppDetailScreen from "./screens/AppDetailScreen";
 import PreviewScreen from "./screens/PreviewScreen";
+import InstantPreviewScreen from "./screens/InstantPreviewScreen";
 import { colors, gradient } from "./theme";
 import type { RootStackParamList } from "./navigation";
 
@@ -106,6 +107,11 @@ export default function App() {
             <Stack.Screen name="AppDetail" component={AppDetailScreen} options={{ animation: "slide_from_left" }} />
             <Stack.Screen name="Create" component={CreateScreen} options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
             <Stack.Screen name="Preview" component={PreviewScreen} options={{ presentation: "fullScreenModal", animation: "fade_from_bottom" }} />
+            <Stack.Screen
+              name="InstantPreview"
+              component={InstantPreviewScreen}
+              options={{ presentation: "fullScreenModal", animation: "fade_from_bottom" }}
+            />
           </Stack.Navigator>
         </NavigationContainer>
       </View>

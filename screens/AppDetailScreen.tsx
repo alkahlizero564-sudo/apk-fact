@@ -27,6 +27,7 @@ import {
   Report,
 } from "../services/appActions";
 import { linkAppsViaSupabase } from "../services/link";
+import { saveToVault, vaultStatus, listVaultApps, VaultApp } from "../services/vault";
 import { LANGS } from "../services/langs";
 import { colors, langColors, space, radius, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
@@ -46,7 +47,7 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
   const { name, lang } = route.params;
   const info = LANGS[lang];
 
-  const [sheet, setSheet] = useState<null | "edit" | "paste" | "link" | "progress">(null);
+  const [sheet, setSheet] = useState<null | "edit" | "paste" | "link" | "progress" | "vault">(null);
   const [op, setOp] = useState<Op | null>(null);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
@@ -58,6 +59,14 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
   const [linkTo, setLinkTo] = useState("");
   const [linkLog, setLinkLog] = useState<string[]>([]);
   const [linking, setLinking] = useState(false);
+  const [vault, setVault] = useState<{ ready: boolean; saved?: VaultApp } | null>(null);
+  const [vaultNotes, setVaultNotes] = useState("");
+  const [vaultBusy, setVaultBusy] = useState(false);
+  const [vaultResult, setVaultResult] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  const [vaultSteps, vaultReport, vaultReset] = useSteps([
+    ["send", "طلب الحفظ"],
+    ["save", "حفظ الكود والتفاصيل ومفتاح التوقيع في المستودع الخاص"],
+  ]);
 
   const [genSteps, genReport, genReset] = useSteps([
     ["send", "إرسال طلب التعديل"],
@@ -75,6 +84,37 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
     ["download", "تنزيل الـ APK"],
     ["install", "فتح شاشة التثبيت"],
   ]);
+
+  async function loadVault() {
+    try {
+      const st = await vaultStatus();
+      if (!st.ready || !st.repo) return setVault({ ready: false });
+      const apps = await listVaultApps(st.repo);
+      setVault({ ready: true, saved: apps.find((a) => a.name === name) });
+    } catch {
+      setVault({ ready: false });
+    }
+  }
+
+  useEffect(() => {
+    loadVault();
+  }, [name]);
+
+  async function doVaultSave() {
+    setVaultBusy(true);
+    setVaultResult(null);
+    vaultReset();
+    try {
+      await saveToVault(name, vaultNotes.trim(), vaultReport);
+      setVaultResult({ kind: "ok", text: "اتحفظ التطبيق بكل تفاصيله ومفتاح توقيعه في الخزنة الخاصة." });
+      setVaultNotes("");
+      loadVault();
+    } catch (e: any) {
+      setVaultResult({ kind: "error", text: e.message });
+    } finally {
+      setVaultBusy(false);
+    }
+  }
 
   useEffect(() => {
     listApps()
@@ -257,6 +297,27 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
         </Section>
       ) : null}
 
+      <Section title="الخزنة الخاصة">
+        <Card style={styles.list}>
+          <ListRow
+            icon="shield-checkmark-outline"
+            tint={vault?.saved ? colors.okText : colors.warnText}
+            title="حفظ في الخزنة الخاصة"
+            subtitle={
+              !vault
+                ? "…"
+                : !vault.ready
+                ? "الخزنة غير مجهّزة. جهّزها من الإعدادات"
+                : vault.saved?.savedAt
+                ? `محفوظ · ${new Date(vault.saved.savedAt).toLocaleString("ar-EG")}`
+                : "الكود والتفاصيل ومفتاح التوقيع الدائم"
+            }
+            onPress={() => setSheet("vault")}
+            last
+          />
+        </Card>
+      </Section>
+
       <Section title="منطقة الخطر">
         <Card style={styles.list}>
           <ListRow icon="trash-outline" title="حذف التطبيق" subtitle="يحذف كل ملفاته من GitHub" danger onPress={confirmDelete} last />
@@ -329,6 +390,41 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
             ))}
           </View>
         ) : null}
+      </Sheet>
+
+      <Sheet visible={sheet === "vault"} title="الخزنة الخاصة" onClose={() => setSheet(null)}>
+        <Text style={styles.sheetText}>
+          بنحفظ في مستودعك الخاص: كود التطبيق كامل، وصفه وكل التعديلات، اسم الحزمة، وبصمة ومفتاح التوقيع الدائم (بيتولّد أول مرة).
+        </Text>
+        {vault?.saved?.sha256 ? (
+          <Card style={{ marginBottom: space.lg, padding: 0, overflow: "hidden" }}>
+            <ListRow icon="cube-outline" title="اسم الحزمة" value={vault.saved.packageId} chevron={false} />
+            <ListRow icon="finger-print-outline" title="بصمة التوقيع" subtitle={vault.saved.sha256} chevron={false} last />
+          </Card>
+        ) : null}
+        {vault && !vault.ready ? (
+          <Banner kind="info" text="جهّز الخزنة مرة واحدة من: الإعدادات > الخزنة الخاصة." />
+        ) : (
+          <>
+            <Field
+              label="ملاحظات (اختياري)"
+              icon="create-outline"
+              value={vaultNotes}
+              onChangeText={setVaultNotes}
+              placeholder="مثال: النسخة اللي اتسلّمت للعميل"
+              multiline
+              maxLength={900}
+              counter
+            />
+            <Button title="احفظ الآن" icon="shield-checkmark-outline" onPress={doVaultSave} loading={vaultBusy} />
+          </>
+        )}
+        {vaultBusy || vaultResult ? (
+          <Card style={{ marginTop: space.lg }}>
+            <Timeline steps={vaultSteps} />
+          </Card>
+        ) : null}
+        {vaultResult ? <Banner kind={vaultResult.kind} text={vaultResult.text} /> : null}
       </Sheet>
 
       <Sheet visible={sheet === "progress"} title={progressTitle} onClose={() => setSheet(null)}>

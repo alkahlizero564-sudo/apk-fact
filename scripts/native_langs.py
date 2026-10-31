@@ -4,8 +4,14 @@ from pathlib import Path
 
 FLET_VERSION = "1.0.5"
 
-# Shared with generate.js (HTML apps), so every language aims at the same design quality.
-DESIGN_BRIEF = (Path(__file__).resolve().parent / "design_brief.txt").read_text(encoding="utf-8")
+# One design bar for every language, shared with generate.js and the app (services/designBrief.ts).
+def _design_brief():
+    import json
+    src = (Path(__file__).resolve().parent.parent / "services" / "designBrief.ts").read_text(encoding="utf-8")
+    return json.loads(src.split("export const DESIGN_BRIEF = ", 1)[1].rsplit(";", 1)[0])
+
+
+DESIGN_BRIEF = _design_brief()
 
 LANGS = {
     "flutter": {

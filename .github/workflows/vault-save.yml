@@ -1,0 +1,35 @@
+name: vault-save
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "App folder name under apps/"
+        required: true
+      notes:
+        description: "Optional notes saved with the app"
+        required: false
+        default: ""
+
+jobs:
+  save:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Save the app, its details and its signing key in the private vault
+        env:
+          APP: ${{ inputs.app }}
+          NOTES: ${{ inputs.notes }}
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+          VAULT_REPO: ${{ vars.VAULT_REPO }}
+        run: |
+          if ! [[ "$APP" =~ ^[a-z0-9-]+$ ]]; then echo "bad app name"; exit 1; fi
+          test -d "apps/$APP" || { echo "apps/$APP does not exist"; exit 1; }
+          python scripts/vault.py --app "$APP" --notes "$NOTES" --require

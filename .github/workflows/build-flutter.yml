@@ -37,17 +37,29 @@ jobs:
           GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
         run: |
+          if ! [[ "$APP" =~ ^[a-z0-9-]+$ ]]; then echo "bad app name"; exit 1; fi
+          SRC="$GITHUB_WORKSPACE/apps/$APP"
           PROJ="$RUNNER_TEMP/flutter_app"
           NAME="app_$(echo "$APP" | tr '-' '_')"
-          flutter create --platforms=android --project-name "$NAME" "$PROJ"
+          flutter create --platforms=android --org com.generated --project-name "$NAME" "$PROJ"
           rm -rf "$PROJ/test"
-          cp "apps/$APP/lib/main.dart" "$PROJ/lib/main.dart"
+          cp "$PROJ/pubspec.yaml" "$RUNNER_TEMP/pubspec.orig.yaml"
 
           OK=0
           for i in $(seq 1 "$MAX_ATTEMPTS"); do
             echo "=== Build attempt $i of $MAX_ATTEMPTS ==="
+            # Start every attempt from the (possibly AI-fixed) code and package list in the repo.
+            cp "$SRC/lib/main.dart" "$PROJ/lib/main.dart"
+            cp "$RUNNER_TEMP/pubspec.orig.yaml" "$PROJ/pubspec.yaml"
+            PKGS=""
+            if [ -f "$SRC/packages.txt" ]; then PKGS=$(grep -E '^[a-z0-9_]+$' "$SRC/packages.txt" | tr '\n' ' '); fi
             set +e
-            (cd "$PROJ" && flutter build apk --release) 2>&1 | tee "$RUNNER_TEMP/build.log"
+            (
+              cd "$PROJ" &&
+              if [ -n "$PKGS" ]; then echo "Adding packages: $PKGS" && flutter pub add $PKGS; else flutter pub get; fi &&
+              flutter analyze --no-fatal-infos --no-fatal-warnings lib/main.dart &&
+              flutter build apk --release
+            ) 2>&1 | tee "$RUNNER_TEMP/build.log"
             STATUS=${PIPESTATUS[0]}
             set -e
             if [ "$STATUS" -eq 0 ]; then
@@ -58,7 +70,7 @@ jobs:
               break
             fi
             echo "=== Build failed. Asking AI to fix main.dart ==="
-            python scripts/fix_flutter.py "$PROJ/lib/main.dart" "$RUNNER_TEMP/build.log"
+            python scripts/fix_native.py flutter "$SRC/lib/main.dart" "$RUNNER_TEMP/build.log" || echo "AI fix failed, retrying"
           done
 
           if [ "$OK" -ne 1 ]; then
@@ -67,7 +79,6 @@ jobs:
           fi
 
           cp "$PROJ/build/app/outputs/flutter-apk/app-release.apk" "$GITHUB_WORKSPACE/$APP.apk"
-          cp "$PROJ/lib/main.dart" "apps/$APP/lib/main.dart"
 
       - name: Save fixed code
         env:
@@ -75,7 +86,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add "apps/$APP/lib/main.dart"
+          git add "apps/$APP"
           git commit -m "Auto-fix build errors: $APP" || echo "no code changes"
           git pull --rebase
           git push
@@ -85,6 +96,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           APP: ${{ inputs.app }}
         run: |
-          gh release create "app-$APP-${{ github.run_number }}" "$APP.apk" \
-            --title "$APP #${{ github.run_number }}" \
-            --notes "APK for $APP"
+          gh release create "app-$APP-${{ github.run_id }}" "$APP.apk" \
+            --title "$APP (Flutter) #${{ github.run_number }}" \
+            --notes "APK for $APP (Flutter)"

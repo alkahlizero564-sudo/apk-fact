@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking } from "r
 import { useFocusEffect } from "@react-navigation/native";
 import * as FileSystem from "expo-file-system";
 import * as IntentLauncher from "expo-intent-launcher";
+import { Ionicons } from "@expo/vector-icons";
 import {
   triggerWorkflow,
   listWorkflowRuns,
@@ -11,11 +12,11 @@ import {
   getFailureLog,
   findAppApkAsset,
   getAssetDownloadInfo,
-  getFileText,
 } from "../services/github";
 import { REPO } from "../services/config";
+import { LANGS, Lang, detectLang } from "../services/langs";
 import { Card, Button } from "../components/ui";
-import { colors, space, radius, type } from "../theme";
+import { colors, langColors, space, radius, type } from "../theme";
 
 type Run = { id: number; status: string; conclusion: string | null; createdAt: string; htmlUrl: string };
 
@@ -34,22 +35,14 @@ export default function BuildScreen() {
   const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [runs, setRuns] = useState<Run[]>([]);
-  const [flutterApps, setFlutterApps] = useState<string[]>([]);
+  const [appLangs, setAppLangs] = useState<Record<string, Lang>>({});
 
   const loadApps = useCallback(async () => {
     try {
       const list = await listDir(REPO, "apps");
       setApps(list);
-      const flags = await Promise.all(
-        list.map(async (a: string) => {
-          try {
-            return !!(await getFileText(REPO, `apps/${a}/lib/main.dart`));
-          } catch {
-            return false;
-          }
-        })
-      );
-      setFlutterApps(list.filter((_: string, i: number) => flags[i]));
+      const langs = await Promise.all(list.map((a: string) => detectLang(REPO, a)));
+      setAppLangs(Object.fromEntries(list.map((a: string, i: number) => [a, langs[i]])));
     } catch (e: any) {
       setError(e.message);
     }
@@ -77,12 +70,16 @@ export default function BuildScreen() {
     if (busy) return;
     setBusy(name);
     setError(null);
-    const workflow = flutterApps.includes(name) ? "build-flutter.yml" : "build-app.yml";
+    const workflow = LANGS[appLangs[name] ?? (await detectLang(REPO, name))].buildWorkflow;
     try {
       setStatus("⏳ تجهيز...");
       const prevId = await latestRunId(REPO, workflow);
       await triggerWithRetry(name, workflow);
-      setStatus("⏳ بيتبني التطبيق على GitHub... (من 5 إلى 15 دقيقة، خلّي الأداة مفتوحة)");
+      setStatus(
+        appLangs[name] === "python"
+          ? "⏳ بيتبني تطبيق Python على GitHub... (من 10 إلى 25 دقيقة، خلّي الأداة مفتوحة)"
+          : "⏳ بيتبني التطبيق على GitHub... (من 5 إلى 15 دقيقة، خلّي الأداة مفتوحة)"
+      );
 
       const started = Date.now();
       let run: any = null;
@@ -150,8 +147,8 @@ export default function BuildScreen() {
     <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={styles.container}>
       <View style={styles.headRow}>
         <Text style={styles.section}>تطبيقاتك</Text>
-        <TouchableOpacity onPress={loadApps} hitSlop={8}>
-          <Text style={styles.refreshText}>تحديث ↻</Text>
+        <TouchableOpacity onPress={loadApps} hitSlop={8} style={styles.iconBtn} accessibilityLabel="تحديث">
+          <Ionicons name="refresh" size={20} color={colors.infoText} />
         </TouchableOpacity>
       </View>
 
@@ -161,21 +158,30 @@ export default function BuildScreen() {
         </Card>
       )}
 
-      {apps.map((a) => (
-        <Card key={a} style={styles.appRow}>
-          <Text style={styles.appName} numberOfLines={1}>
-            {a}
-            {flutterApps.includes(a) ? " · Flutter" : ""}
-          </Text>
-          <Button
-            title="ابنِ ونزّل وثبّت"
-            onPress={() => buildApp(a)}
-            disabled={!!busy}
-            loading={busy === a}
-            style={styles.appBtn}
-          />
-        </Card>
-      ))}
+      {apps.map((a) => {
+        const l = appLangs[a];
+        return (
+          <Card key={a} style={styles.appRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.appName} numberOfLines={1}>
+                {a}
+              </Text>
+              {l && (
+                <View style={[styles.badge, { borderColor: langColors[l] }]}>
+                  <Text style={[styles.badgeText, { color: langColors[l] }]}>{LANGS[l].label}</Text>
+                </View>
+              )}
+            </View>
+            <Button
+              title="ابنِ ونزّل وثبّت"
+              onPress={() => buildApp(a)}
+              disabled={!!busy}
+              loading={busy === a}
+              style={styles.appBtn}
+            />
+          </Card>
+        );
+      })}
 
       {status !== "" && (
         <View style={[styles.notice, { backgroundColor: colors.infoBg }]}>
@@ -189,7 +195,10 @@ export default function BuildScreen() {
       )}
 
       <Card style={{ marginTop: space.xl }}>
-        <Text style={styles.section}>بناء الأداة نفسها</Text>
+        <View style={styles.headRow}>
+          <Ionicons name="rocket-outline" size={20} color={colors.accent} />
+          <Text style={[styles.section, { marginStart: space.sm }]}>بناء الأداة نفسها</Text>
+        </View>
         <Text style={[styles.note, { marginTop: space.xs, marginBottom: space.lg }]}>
           ده يبني نسخة جديدة من الأداة (مو من تطبيقاتك). تحتاجه بس لما نغيّر كود الأداة.
         </Text>
@@ -214,17 +223,33 @@ const styles = StyleSheet.create({
   container: { padding: space.lg, paddingBottom: 96 },
   headRow: { flexDirection: "row", alignItems: "center", marginBottom: space.md },
   section: { ...type.sectionTitle, color: colors.text, flex: 1 },
-  refreshText: { color: colors.primary, fontWeight: "600", padding: space.xs },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surfaceAlt,
+  },
   note: { ...type.hint, color: colors.textMuted },
   emptyCard: { alignItems: "center", paddingVertical: space.xl },
   appRow: { flexDirection: "row", alignItems: "center", gap: space.md, marginBottom: space.md, padding: space.md },
-  appName: { flex: 1, fontSize: 16, fontWeight: "700", color: colors.text },
+  appName: { fontSize: 16, fontWeight: "700", color: colors.text },
+  badge: {
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    paddingHorizontal: space.sm,
+    paddingVertical: 2,
+    marginTop: space.xs,
+  },
+  badgeText: { fontSize: 11, fontWeight: "700" },
   appBtn: { minWidth: 150, minHeight: 44 },
   notice: { borderRadius: radius.field, padding: space.md, marginTop: space.md },
   noticeText: { ...type.body },
   errorText: { fontFamily: "monospace", fontSize: 12, lineHeight: 18 },
   refreshBtn: { marginTop: space.md, alignItems: "center", padding: space.sm },
-  refreshBtnText: { color: colors.primary, fontWeight: "600" },
+  refreshBtnText: { color: colors.infoText, fontWeight: "600" },
   runCard: {
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -235,5 +260,5 @@ const styles = StyleSheet.create({
   },
   runStatus: { fontWeight: "700", color: colors.text, marginBottom: space.xs },
   runDate: { color: colors.textMuted, fontSize: 12, marginBottom: space.xs },
-  runLink: { color: colors.primary, fontWeight: "600" },
+  runLink: { color: colors.infoText, fontWeight: "600" },
 });

@@ -5,23 +5,34 @@
     "owner": "aqadas-team",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "splash": {
-      "backgroundColor": "#111111",
+      "backgroundColor": "#0B0F1A",
       "resizeMode": "contain"
     },
     "android": {
       "package": "com.yourname.apkfact",
-      "permissions": ["INTERNET", "ACCESS_NETWORK_STATE", "REQUEST_INSTALL_PACKAGES"]
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "REQUEST_INSTALL_PACKAGES"
+      ],
+      "navigationBar": {
+        "backgroundColor": "#141A29",
+        "barStyle": "light-content"
+      }
     },
     "ios": {
       "bundleIdentifier": "com.yourname.apkfact"
     },
-    "plugins": ["expo-secure-store"],
+    "plugins": [
+      "expo-secure-store"
+    ],
     "extra": {
       "eas": {
         "projectId": "10c32177-1c65-4a2b-8e55-1c4bc5cd8d7d"
       }
-    }
+    },
+    "backgroundColor": "#0B0F1A"
   }
 }

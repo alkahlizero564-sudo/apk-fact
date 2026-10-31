@@ -20,7 +20,7 @@ function systemFor(lang: Lang) {
   const what =
     lang === "html"
       ? "Build the app itself as ONE complete, self-contained HTML file (inline CSS and JS)."
-      : `Build an interactive PREVIEW of a ${lang === "flutter" ? "Flutter (Material 3)" : "Python Flet (Material 3)"} ` +
+      : `Build an interactive PREVIEW of a ${lang === "flutter" ? "Flutter (Material 3)" : lang === "kotlin" ? "native Android Kotlin Jetpack Compose (Material 3)" : "Python Flet (Material 3)"} ` +
         "mobile app as ONE self-contained HTML file (inline CSS and JS) that looks and behaves like that native app: " +
         "Material 3 components, app bar, bottom navigation, cards, FAB, ripple-like pressed states.";
   return (

@@ -1,6 +1,6 @@
 import { getFileText } from "./github";
 
-export type Lang = "html" | "flutter" | "python";
+export type Lang = "html" | "flutter" | "python" | "kotlin";
 
 type LangInfo = {
   label: string;
@@ -45,13 +45,26 @@ export const LANGS: Record<Lang, LangInfo> = {
     hasAiPreview: true,
     pasteLabel: "الكود (main.py كامل بـ Flet)",
   },
+  kotlin: {
+    label: "Kotlin",
+    tools: "Jetpack Compose · Material 3 · Navigation · Coroutines · OkHttp · Coil",
+    mainFile: (app) => `apps/${app}/MainActivity.kt`,
+    requestFile: "request-kotlin.txt",
+    generateWorkflow: "generate-kotlin.yml",
+    buildWorkflow: "build-kotlin.yml",
+    hasAiPreview: true,
+    pasteLabel: "الكود (MainActivity.kt كامل بـ Jetpack Compose)",
+  },
 };
 
-export const LANG_ORDER: Lang[] = ["html", "flutter", "python"];
+export const LANG_ORDER: Lang[] = ["html", "flutter", "kotlin", "python"];
+
+/** Languages a connected pair (customer + admin) can be built in. */
+export const PAIR_LANGS: Lang[] = ["html", "flutter", "python"];
 
 /** Which language an app in apps/<name> is written in. */
 export async function detectLang(repo: string, app: string): Promise<Lang> {
-  for (const lang of ["flutter", "python"] as const) {
+  for (const lang of ["flutter", "kotlin", "python"] as const) {
     try {
       if (await getFileText(repo, LANGS[lang].mainFile(app))) return lang;
     } catch {

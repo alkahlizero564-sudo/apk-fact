@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Button, Card, Chip, Field, IconButton, ListRow, Timeline, Banner, useSteps } from "../components/ui";
 import { AppAvatar, LANG_ICONS, LangBadge } from "../components/appVisuals";
-import { LANGS, LANG_ORDER, Lang } from "../services/langs";
+import { LANGS, PAIR_LANGS, Lang } from "../services/langs";
 import { appExists } from "../services/appActions";
 import { createPair, pairApps, pairReadiness, PairReadiness } from "../services/pair";
 import DesignStudio from "../components/DesignStudio";
@@ -230,7 +230,7 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
 
             <Text style={styles.label}>اللغة</Text>
             <View style={styles.langs}>
-              {LANG_ORDER.map((l) => {
+              {PAIR_LANGS.map((l) => {
                 const sel = lang === l;
                 return (
                   <Pressable

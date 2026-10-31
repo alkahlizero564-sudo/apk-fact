@@ -55,9 +55,9 @@ export function Button({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={isPrimary ? colors.primaryText : colors.primary} />
+        <ActivityIndicator color={isPrimary ? colors.primaryText : colors.infoText} />
       ) : (
-        <Text style={[styles.buttonText, { color: isPrimary ? colors.primaryText : colors.primary }]}>
+        <Text style={[styles.buttonText, { color: isPrimary ? colors.primaryText : colors.infoText }]}>
           {title}
         </Text>
       )}
@@ -89,7 +89,6 @@ export function KeyInput({ label, value, onChangeText, placeholder, secret = fal
           autoCapitalize="none"
           autoCorrect={false}
           textAlign="left"
-          writingDirection="ltr"
           accessibilityLabel={label}
         />
         {secret && (
@@ -159,11 +158,11 @@ const styles = StyleSheet.create({
   buttonPrimary: { backgroundColor: colors.primary },
   buttonPrimaryPressed: { backgroundColor: colors.primaryPressed },
   buttonSecondary: {
-    backgroundColor: colors.surface,
+    backgroundColor: "transparent",
     borderWidth: 1.5,
     borderColor: colors.primary,
   },
-  buttonSecondaryPressed: { backgroundColor: colors.infoBg },
+  buttonSecondaryPressed: { backgroundColor: colors.primarySoft },
   buttonInactive: { opacity: 0.55 },
   buttonText: { fontSize: 16, fontWeight: "700" },
 
@@ -171,7 +170,7 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.surface,
+    backgroundColor: colors.field,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.field,
@@ -182,6 +181,7 @@ const styles = StyleSheet.create({
     minHeight: 46,
     fontSize: 15,
     color: colors.text,
+    writingDirection: "ltr",
   },
   reveal: { paddingStart: space.md, paddingVertical: space.sm },
   revealText: { color: colors.primary, fontWeight: "600", fontSize: 14 },

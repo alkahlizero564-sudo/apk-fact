@@ -183,7 +183,6 @@ function GeminiModelPicker() {
             autoCapitalize="none"
             autoCorrect={false}
             textAlign="left"
-            writingDirection="ltr"
           />
 
           {shown.map((m) => {
@@ -196,7 +195,7 @@ function GeminiModelPicker() {
                 accessibilityRole="radio"
                 accessibilityState={{ selected: active }}
               >
-                <Text style={[styles.radio, active && { color: colors.primary }]}>{active ? "◉" : "○"}</Text>
+                <Text style={[styles.radio, active && { color: colors.accent }]}>{active ? "◉" : "○"}</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.modelId}>{m.id}</Text>
                   <Text style={styles.modelName}>{m.displayName}</Text>
@@ -283,6 +282,8 @@ const styles = StyleSheet.create({
     minHeight: 46,
     fontSize: 15,
     color: colors.text,
+    backgroundColor: colors.field,
+    writingDirection: "ltr",
     marginBottom: space.sm,
   },
   modelRow: {
@@ -294,7 +295,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: colors.border,
   },
-  modelRowActive: { backgroundColor: colors.infoBg, borderRadius: radius.field },
+  modelRowActive: { backgroundColor: colors.primarySoft, borderRadius: radius.field },
   radio: { fontSize: 18, color: colors.textMuted },
   modelId: { fontSize: 14, fontWeight: "600", color: colors.text, textAlign: "left", writingDirection: "ltr" },
   modelName: { fontSize: 12, color: colors.textMuted, textAlign: "left", writingDirection: "ltr" },

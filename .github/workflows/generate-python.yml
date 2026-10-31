@@ -1,0 +1,38 @@
+name: generate-python
+
+on:
+  push:
+    paths:
+      - "request-python.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: generate-python
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Flet (used to check the generated code)
+        run: pip install "flet==$(cd scripts && python -c 'from native_langs import FLET_VERSION; print(FLET_VERSION)')"
+      - name: Generate Python (Flet) app and AI preview
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+          GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+        run: python scripts/generate_native.py python
+      - name: Commit result
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add apps
+          git commit -m "Generate Python app" || echo "nothing to commit"
+          git pull --rebase
+          git push

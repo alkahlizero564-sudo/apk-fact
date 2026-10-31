@@ -1,0 +1,101 @@
+name: build-python
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "App folder name under apps/"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Flet
+        run: |
+          V=$(cd scripts && python -c 'from native_langs import FLET_VERSION; print(FLET_VERSION)')
+          pip install "flet==$V" "flet-cli==$V"
+
+      - name: Build APK with Flet (AI fixes errors and retries)
+        env:
+          APP: ${{ inputs.app }}
+          MAX_ATTEMPTS: "3"
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+          GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+          FLET_CLI_NO_RICH_OUTPUT: "1"
+        run: |
+          if ! [[ "$APP" =~ ^[a-z0-9-]+$ ]]; then echo "bad app name"; exit 1; fi
+          SRC="$GITHUB_WORKSPACE/apps/$APP"
+          PROJ="$RUNNER_TEMP/py_app"
+          NAME="app_$(echo "$APP" | tr '-' '_')"
+          test -f "$SRC/main.py"
+
+          OK=0
+          for i in $(seq 1 "$MAX_ATTEMPTS"); do
+            echo "=== Build attempt $i of $MAX_ATTEMPTS ==="
+            rm -rf "$PROJ" && mkdir -p "$PROJ/assets"
+            cp "$SRC/main.py" "$PROJ/main.py"
+            if [ -f "$SRC/requirements.txt" ]; then cp "$SRC/requirements.txt" "$PROJ/"; else echo "flet" > "$PROJ/requirements.txt"; fi
+            if [ -d "$SRC/assets" ]; then cp -r "$SRC/assets/." "$PROJ/assets/"; fi
+            if [ -f "$SRC/icon.png" ]; then cp "$SRC/icon.png" "$PROJ/assets/icon.png"; fi
+            set +e
+            (
+              python scripts/check_python.py "$PROJ/main.py" &&
+              cd "$PROJ" &&
+              flet build apk --yes --skip-flutter-doctor --project "$NAME" --product "$APP" \
+                --org com.generated -o "$PROJ/out"
+            ) 2>&1 | tee "$RUNNER_TEMP/build.log"
+            STATUS=${PIPESTATUS[0]}
+            set -e
+            if [ "$STATUS" -eq 0 ] && ls "$PROJ"/out/*.apk > /dev/null 2>&1; then
+              OK=1
+              break
+            fi
+            if [ "$i" -eq "$MAX_ATTEMPTS" ]; then
+              break
+            fi
+            echo "=== Build failed. Asking AI to fix main.py ==="
+            python scripts/fix_native.py python "$SRC/main.py" "$RUNNER_TEMP/build.log" || echo "AI fix failed, retrying"
+          done
+
+          if [ "$OK" -ne 1 ]; then
+            echo "Build failed after $MAX_ATTEMPTS attempts"
+            exit 1
+          fi
+
+          cp "$(ls "$PROJ"/out/*.apk | head -1)" "$GITHUB_WORKSPACE/$APP.apk"
+
+      - name: Save fixed code
+        env:
+          APP: ${{ inputs.app }}
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add "apps/$APP"
+          git commit -m "Auto-fix build errors: $APP" || echo "no code changes"
+          git pull --rebase
+          git push
+
+      - name: Publish APK as a Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APP: ${{ inputs.app }}
+        run: |
+          gh release create "app-$APP-${{ github.run_id }}" "$APP.apk" \
+            --title "$APP (Python) #${{ github.run_number }}" \
+            --notes "APK for $APP (Python / Flet)"

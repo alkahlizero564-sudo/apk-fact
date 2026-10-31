@@ -33,7 +33,7 @@ import { linkAppsViaSupabase } from "../services/link";
 import { saveToVault, vaultStatus, listVaultApps, VaultApp } from "../services/vault";
 import { LANGS } from "../services/langs";
 import { publishedVersion, PublishedVersion, pairInfo, PairInfo } from "../services/updates";
-import { listAdmins, addAdmin, removeAdmin, AdminAccount, setAdminPin, hasAdminPin } from "../services/pair";
+import { listAdmins, addAdmin, removeAdmin, AdminAccount, setAdminPin, adminMode, openAdminMode, AdminMode } from "../services/pair";
 import { colors, langColors, space, radius, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
 
@@ -58,7 +58,7 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
   const [adminEmail, setAdminEmail] = useState("");
   const [adminBusy, setAdminBusy] = useState(false);
   const [adminMsg, setAdminMsg] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
-  const [pinSet, setPinSet] = useState<boolean | null>(null);
+  const [mode, setMode] = useState<AdminMode | null>(null);
   const [pin, setPin] = useState("");
   const [label, setLabel] = useState("");
   const [labelDraft, setLabelDraft] = useState("");
@@ -125,7 +125,7 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
     setAdmins(null);
     try {
       setAdmins(await listAdmins(pair.prefix, pair.ref));
-      setPinSet(await hasAdminPin(pair.prefix, pair.ref));
+      setMode(await adminMode(pair.prefix, pair.ref));
     } catch (e: any) {
       setAdmins([]);
       setAdminMsg({ kind: "error", text: e.message });
@@ -139,11 +139,26 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
     try {
       await setAdminPin(pair.prefix, pair.ref, pin.trim());
       setPin("");
-      setPinSet(true);
+      setMode("pin");
       setAdminMsg({
         kind: "ok",
-        text: "اتحفظ رمز الإدارة. ادخل تطبيق الإدارة بأي بريد، واكتب الرمز في شاشة «دخول الإدارة».",
+        text: "اتحفظ رمز الإدارة. الدخول للإدارة بقى يحتاج الرمز في شاشة «دخول الإدارة».",
       });
+    } catch (e: any) {
+      setAdminMsg({ kind: "error", text: e.message });
+    } finally {
+      setAdminBusy(false);
+    }
+  }
+
+  async function makeOpen() {
+    if (!pair) return;
+    setAdminBusy(true);
+    setAdminMsg(null);
+    try {
+      await openAdminMode(pair.prefix, pair.ref);
+      setMode("open");
+      setAdminMsg({ kind: "ok", text: "تمام: أي حد يسجّل في تطبيق الإدارة بيكون مدير، وفي تطبيق الزبون بيكون زبون." });
     } catch (e: any) {
       setAdminMsg({ kind: "error", text: e.message });
     } finally {
@@ -477,7 +492,7 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
 
       <Sheet visible={sheet === "admins"} title="حسابات الإدارة" onClose={() => setSheet(null)}>
         <Text style={styles.sheetText}>
-          أي حد يدخل تطبيق الإدارة ببريد من القائمة دي يكون مدير، والباقي زبائن. لو الشخص دخل قبل كده، يسجّل خروج ويدخل تاني.
+          تحكّم في مين يدخل تطبيق الإدارة كمدير. التغيير فوري في Supabase، بدون بناء جديد.
         </Text>
         {!admins ? (
           <Banner kind="info" text="بنقرأ القائمة…" />
@@ -498,14 +513,36 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
             ))}
           </Card>
         )}
-        <Text style={styles.sheetSubtitle}>رمز الإدارة السري</Text>
-        <Text style={styles.sheetText}>
-          {pinSet
-            ? "الرمز محفوظ. أي بريد يدخل تطبيق الإدارة ويكتب الرمز يصير مدير. تقدر تغيّره هنا."
-            : "حدّد رمز سري (4 إلى 12 حرف إنجليزي أو رقم). بيه تدخل تطبيق الإدارة بأي بريد. الزبائن ما بيعرفوه."}
+        <Text style={styles.sheetSubtitle}>مين يكون مدير؟</Text>
+        <Banner
+          kind={mode === "missing" ? "info" : "ok"}
+          text={
+            mode === "open"
+              ? "الوضع الحالي: أي حد يسجّل في تطبيق الإدارة يكون مدير، وأي حد يسجّل في تطبيق الزبون يكون زبون."
+              : mode === "pin"
+              ? "الوضع الحالي: الدخول للإدارة يحتاج رمز الإدارة السري."
+              : mode === "missing"
+              ? "المشروع ده اتعمل قبل الميزة دي: اختار وضع من تحت عشان يتفعّل."
+              : "…"
+          }
+        />
+        {mode !== "open" ? (
+          <Button
+            title="أي حد يسجّل في تطبيق الإدارة يكون مدير"
+            icon="people-outline"
+            variant="secondary"
+            onPress={makeOpen}
+            loading={adminBusy}
+            style={{ marginTop: space.md }}
+          />
+        ) : null}
+        <Text style={[styles.sheetText, { marginTop: space.lg }]}>
+          {mode === "pin"
+            ? "تقدر تغيّر رمز الإدارة هنا."
+            : "أو حدّد رمز سري (4 إلى 12 حرف إنجليزي أو رقم): وقتها الدخول للإدارة يحتاج الرمز."}
         </Text>
         <Field
-          label={pinSet ? "رمز جديد" : "رمز الإدارة"}
+          label={mode === "pin" ? "رمز جديد" : "رمز الإدارة (اختياري)"}
           icon="key-outline"
           value={pin}
           onChangeText={setPin}
@@ -516,8 +553,9 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
           maxLength={12}
         />
         <Button
-          title={pinSet ? "غيّر الرمز" : "احفظ الرمز"}
+          title={mode === "pin" ? "غيّر الرمز" : "فعّل رمز الإدارة"}
           icon="key-outline"
+          variant="secondary"
           onPress={savePin}
           loading={adminBusy}
           disabled={!/^[A-Za-z0-9]{4,12}$/.test(pin.trim())}

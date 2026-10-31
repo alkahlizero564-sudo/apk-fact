@@ -1,6 +1,9 @@
--- APK Fact pair "{p}": admin PIN. Anyone signed in can become an admin with the secret PIN
--- (set from APK Fact > the app page > حسابات الإدارة). The PIN is stored hashed (bcrypt) in a
--- table that the apps cannot read; 5 wrong tries lock that account out for an hour.
+-- APK Fact pair "{p}": who becomes an admin.
+-- The admin app calls {p}_claim_admin() after sign-in. With no PIN set (the default) everyone who
+-- signs in through the admin app becomes an admin; the customer app never calls it, so its users stay
+-- customers. Optionally the owner sets a secret PIN (APK Fact > app page > حسابات الإدارة): then the
+-- admin app must send it. The PIN is stored hashed (bcrypt) in a table the apps cannot read; 5 wrong
+-- tries lock that account out for an hour.
 create extension if not exists pgcrypto with schema extensions;
 
 create table if not exists public.{p}_admin_secret (
@@ -28,7 +31,7 @@ begin
   return new;
 end $$;
 
-create or replace function public.{p}_claim_admin(pin text) returns boolean
+create or replace function public.{p}_claim_admin(pin text default null) returns boolean
 language plpgsql security definer set search_path = public, extensions as $$
 declare
   me uuid := auth.uid();
@@ -36,11 +39,13 @@ declare
   mail text;
   a public.{p}_admin_attempts;
 begin
-  if me is null or pin is null then return false; end if;
-  select * into a from public.{p}_admin_attempts where uid = me;
-  if found and a.fails >= 5 and a.last_at > now() - interval '1 hour' then return false; end if;
+  if me is null then return false; end if;
   select pin_hash into h from public.{p}_admin_secret where id = 1;
-  if h is null or extensions.crypt(pin, h) <> h then
+  if h is not null then
+    select * into a from public.{p}_admin_attempts where uid = me;
+    if found and a.fails >= 5 and a.last_at > now() - interval '1 hour' then return false; end if;
+  end if;
+  if h is not null and (pin is null or extensions.crypt(pin, h) <> h) then
     insert into public.{p}_admin_attempts as t (uid, fails, last_at) values (me, 1, now())
       on conflict (uid) do update
       set fails = case when t.last_at < now() - interval '1 hour' then 1 else t.fails + 1 end, last_at = now();

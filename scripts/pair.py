@@ -325,10 +325,12 @@ Sign-in with a 6-digit email code (no passwords), on a polished first screen:
   3. When a request returns 401, refresh: POST {url}/auth/v1/token?grant_type=refresh_token body {{"refresh_token": rt}};
      if that fails, go back to sign-in. Provide sign out (forget the session).
   4. After sign-in read the profile: GET {p}_profiles?id=eq.<user.id>  (role is 'customer' or 'admin').
-     {("When role != 'admin' the ADMIN app shows a 'دخول الإدارة' screen: text 'هذا الحساب ليس حساب إدارة بعد', a hidden "
-       "password field 'رمز الإدارة', a button that calls rpc " + p + "_claim_admin {\"pin\": pin} (with the user's token; "
-       "it returns true or false) and on true re-reads the profile and opens the admin home; on false shows "
-       "'رمز الإدارة غير صحيح'; plus a sign out button.") if role == "admin" else "Let the customer fill full_name and phone in a profile screen (PATCH " + p + "_profiles?id=eq.<id>)."}
+     {("The role comes from the app used to sign in: right after a successful sign-in (and at start-up with a saved "
+       "session) the ADMIN app calls rpc " + p + "_claim_admin with an empty JSON body {} (user's token; returns true or "
+       "false), then reads the profile again. If it is still not 'admin' (the owner set a secret admin PIN) show a "
+       "'دخول الإدارة' screen: a hidden field 'رمز الإدارة', a button that calls rpc " + p + "_claim_admin "
+       "{\"pin\": pin} and on true opens the admin home, on false shows 'رمز الإدارة غير صحيح', and a sign out button. "
+       "The CUSTOMER app never calls it.") if role == "admin" else "Let the customer fill full_name and phone in a profile screen (PATCH " + p + "_profiles?id=eq.<id>)."}
 
 Tables (all names start with {p}_; row level security already limits what each user can see):
 {tables}

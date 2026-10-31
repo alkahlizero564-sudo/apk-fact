@@ -189,18 +189,45 @@ export async function removeAdmin(prefix: string, ref: string, email: string) {
   );
 }
 
-/** Sets the secret admin PIN of a pair (installs the PIN functions first; the SQL lives in the repo). */
+async function installAdminSql(p: string, ref: string) {
+  const template = await getFileText(REPO, "scripts/templates/admin_pin.sql");
+  if (!template) throw new Error("ملف صلاحيات الإدارة مش موجود في المستودع.");
+  await runSql(template.split("{p}").join(p), ref);
+}
+
+/** Sets the secret admin PIN of a pair (installs the admin functions first; the SQL lives in the repo). */
 export async function setAdminPin(prefix: string, ref: string, pin: string) {
   const p = safePrefix(prefix);
   if (!/^[A-Za-z0-9]{4,12}$/.test(pin)) throw new Error("رمز الإدارة: من 4 إلى 12 حرف إنجليزي أو رقم.");
-  const template = await getFileText(REPO, "scripts/templates/admin_pin.sql");
-  if (!template) throw new Error("ملف رمز الإدارة مش موجود في المستودع.");
-  await runSql(template.split("{p}").join(p), ref);
+  await installAdminSql(p, ref);
   await runSql(
     `insert into public.${p}_admin_secret (id, pin_hash) values (1, extensions.crypt('${pin}', extensions.gen_salt('bf'))) ` +
       `on conflict (id) do update set pin_hash = excluded.pin_hash, updated_at = now();`,
     ref
   );
+}
+
+/** Open mode: everyone who signs in through the admin app becomes an admin (no PIN). */
+export async function openAdminMode(prefix: string, ref: string) {
+  const p = safePrefix(prefix);
+  await installAdminSql(p, ref);
+  await runSql(`delete from public.${p}_admin_secret;`, ref);
+}
+
+export type AdminMode = "missing" | "open" | "pin";
+
+export async function adminMode(prefix: string, ref: string): Promise<AdminMode> {
+  const p = safePrefix(prefix);
+  const rows = await runSql(
+    `select to_regprocedure('public.${p}_claim_admin(text)') is not null as installed, ` +
+      `(to_regclass('public.${p}_admin_secret') is not null) as has_table;`,
+    ref
+  );
+  const r = Array.isArray(rows) ? rows[0] : null;
+  if (!r?.installed) return "missing";
+  if (!r.has_table) return "open";
+  const n = await runSql(`select count(*)::int as n from public.${p}_admin_secret;`, ref);
+  return Array.isArray(n) && n[0]?.n > 0 ? "pin" : "open";
 }
 
 export async function hasAdminPin(prefix: string, ref: string): Promise<boolean> {

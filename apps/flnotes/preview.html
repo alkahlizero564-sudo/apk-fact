@@ -3,196 +3,261 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ملاحظاتي</title>
+    <title>ملاحظاتي - flnotes</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --md-sys-color-primary: #6750A4;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-primary-container: #EADDFF;
+            --md-sys-color-surface: #FEF7FF;
+            --md-sys-color-on-surface: #1D1B20;
+            --md-sys-color-surface-variant: #E7E0EC;
+            --md-sys-color-on-surface-variant: #49454F;
+            --md-sys-color-outline: #79747E;
+            --md-sys-color-error: #B3261E;
+            --md-sys-color-background: #FEF7FF;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             font-family: 'Cairo', sans-serif;
         }
+
         body {
-            background-color: #f3f4f6;
+            background-color: #f0f2f5;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
         }
+
         .phone-frame {
-            width: 360px;
-            height: 740px;
-            background: #fff;
+            width: 380px;
+            height: 760px;
+            background-color: var(--md-sys-color-background);
             border-radius: 40px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
             position: relative;
-            border: 8px solid #1f2937;
+            border: 8px solid #1e1e1e;
         }
-        .app-bar {
-            background: #fff;
-            padding: 16px 20px;
+
+        app-bar {
+            height: 64px;
+            background-color: var(--md-sys-color-surface);
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #e5e7eb;
-            font-weight: 700;
+            justify-content: space-between;
+            padding: 0 16px;
+            color: var(--md-sys-color-on-surface);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+
+        .app-bar-title {
             font-size: 18px;
-            color: #1f2937;
+            font-weight: 700;
+            flex-grow: 1;
         }
-        .search-bar {
-            display: none;
-            flex: 1;
-            margin-left: 10px;
-        }
-        .search-bar input {
-            width: 100%;
+
+        .search-input {
             border: none;
-            outline: none;
+            background: transparent;
             font-size: 16px;
+            color: var(--md-sys-color-on-surface);
+            width: 100%;
+            outline: none;
             font-family: 'Cairo', sans-serif;
         }
+
         .icon-btn {
             background: none;
             border: none;
             cursor: pointer;
             font-size: 20px;
-            color: #4b5563;
+            padding: 8px;
+            color: var(--md-sys-color-on-surface);
+            border-radius: 50%;
         }
-        .content {
-            flex: 1;
+
+        .icon-btn:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+
+        .content-area {
+            flex-grow: 1;
             overflow-y: auto;
             padding: 16px;
-            background: #fafafa;
+            position: relative;
         }
+
         .note-card {
-            background: #f3f4f6;
+            background-color: var(--md-sys-color-surface-variant);
+            opacity: 0.85;
             border-radius: 16px;
             padding: 16px;
             margin-bottom: 12px;
             cursor: pointer;
             transition: transform 0.2s;
-            position: relative;
         }
+
         .note-card:hover {
             transform: translateY(-2px);
         }
+
         .note-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
         }
+
         .note-title {
-            font-weight: 700;
             font-size: 16px;
-            color: #1f2937;
+            font-weight: 700;
+            color: var(--md-sys-color-on-surface);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 250px;
         }
-        .note-body {
+
+        .note-snippet {
             font-size: 14px;
-            color: #4b5563;
-            margin-bottom: 12px;
+            color: var(--md-sys-color-on-surface-variant);
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            margin-bottom: 12px;
+            line-height: 1.4;
         }
+
         .note-date {
             font-size: 11px;
-            color: #9ca3af;
+            color: var(--md-sys-color-outline);
         }
+
         .delete-btn {
             background: none;
             border: none;
-            color: #ef4444;
+            color: var(--md-sys-color-error);
             cursor: pointer;
             font-size: 16px;
         }
+
         .fab {
             position: absolute;
             bottom: 24px;
             left: 24px;
-            background: #6750A4;
-            color: white;
+            background-color: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-primary);
             padding: 12px 20px;
-            border-radius: 30px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             gap: 8px;
-            box-shadow: 0 4px 12px rgba(103, 80, 164, 0.4);
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            cursor: pointer;
+            border: none;
+            z-index: 20;
         }
-        /* Editor Screen */
+
         .editor-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: #fff;
-            display: none;
-            flex-direction: column;
-            z-index: 10;
-        }
-        .editor-content {
-            padding: 20px;
-            flex: 1;
+            background-color: var(--md-sys-color-background);
+            z-index: 30;
             display: flex;
             flex-direction: column;
+            transform: translateY(100%);
+            transition: transform 0.3s ease-in-out;
         }
+
+        .editor-screen.active {
+            transform: translateY(0);
+        }
+
+        .editor-body {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
         .editor-title-input {
             font-size: 20px;
             font-weight: 700;
             border: none;
+            background: none;
             outline: none;
-            margin-bottom: 10px;
+            width: 100%;
+            margin-bottom: 12px;
+            color: var(--md-sys-color-on-surface);
             font-family: 'Cairo', sans-serif;
         }
-        .editor-body-input {
-            flex: 1;
+
+        .editor-content-input {
+            font-size: 16px;
             border: none;
+            background: none;
             outline: none;
+            width: 100%;
+            flex-grow: 1;
             resize: none;
-            font-size: 15px;
+            color: var(--md-sys-color-on-surface);
             font-family: 'Cairo', sans-serif;
+            line-height: 1.5;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--md-sys-color-outline);
+            gap: 16px;
         }
     </style>
 </head>
 <body>
 
 <div class="phone-frame">
-    <!-- Main Screen -->
-    <div class="app-bar" id="mainAppBar">
-        <span id="appTitle">ملاحظاتي</span>
-        <div class="search-bar" id="searchBarContainer">
-            <input type="text" id="searchInput" placeholder="ابحث في الملاحظات..." oninput="filterNotes(this.value)">
-        </div>
-        <button class="icon-btn" onclick="toggleSearch()" id="searchToggleBtn">🔍</button>
-    </div>
+    <!-- Home Screen -->
+    <app-bar id="mainAppBar">
+        <div class="app-bar-title" id="appBarTitle">ملاحظاتي</div>
+        <button class="icon-btn" id="searchToggleBtn" onclick="toggleSearch()">🔍</button>
+    </app-bar>
 
-    <div class="content" id="notesList">
-        <!-- Notes will be injected here -->
+    <div class="content-area" id="notesListContainer">
+        <!-- Notes inserted via JS -->
     </div>
 
     <button class="fab" onclick="openEditor()">
-        <span>+</span> ملاحظة جديدة
+        <span>➕</span> ملاحظة جديدة
     </button>
 
     <!-- Editor Screen -->
     <div class="editor-screen" id="editorScreen">
-        <div class="app-bar">
-            <button class="icon-btn" onclick="closeEditor()">✕</button>
-            <span id="editorHeaderTitle">ملاحظة جديدة</span>
-            <button class="icon-btn" onclick="saveNote()" style="color: #6750A4; font-weight: bold;">✓</button>
-        </div>
-        <div class="editor-content">
-            <input type="text" id="editTitle" class="editor-title-input" placeholder="العنوان">
-            <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 15px;">
-            <textarea id="editContent" class="editor-body-input" placeholder="اكتب ملاحظتك هنا..."></textarea>
+        <app-bar>
+            <button class="icon-btn" onclick="closeEditor()">←</button>
+            <div class="app-bar-title" id="editorHeaderTitle">ملاحظة جديدة</div>
+            <button class="icon-btn" onclick="saveNote()">✔️</button>
+        </app-bar>
+        <div class="editor-body">
+            <input type="text" id="noteTitleInput" class="editor-title-input" placeholder="العنوان">
+            <hr style="border:0; border-top:1px solid var(--md-sys-color-surface-variant); margin-bottom:12px;">
+            <textarea id="noteContentInput" class="editor-content-input" placeholder="اكتب ملاحظتك هنا..."></textarea>
         </div>
     </div>
 </div>
@@ -203,7 +268,7 @@
             id: '1',
             title: 'مرحباً بك في تطبيق ملاحظاتي',
             content: 'هذا تطبيق ملاحظات حديث وسهل الاستخدام مصمم خصيصاً لك. يمكنك إضافة وتعديل وحذف الملاحظات بسهولة.',
-            updatedAt: '2023/10/25 - 10:30 ص'
+            updatedAt: '2023/10/25 - 10:00 ص'
         },
         {
             id: '2',
@@ -214,102 +279,103 @@
     ];
 
     let currentEditingId = null;
+    let isSearching = false;
+    let searchQuery = '';
 
-    function renderNotes(filteredNotes = notes) {
-        const container = document.getElementById('notesList');
+    function renderNotes() {
+        const container = document.getElementById('notesListContainer');
         container.innerHTML = '';
-        
+
+        const filteredNotes = notes.filter(n => 
+            n.title.includes(searchQuery) || n.content.includes(searchQuery)
+        );
+
         if (filteredNotes.length === 0) {
-            container.innerHTML = '<div style="text-align:center; margin-top: 150px; color: #9ca3af;"><div style="font-size: 40px;">📝</div><p>لا توجد ملاحظات</p></div>';
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div style="font-size: 64px;">📝</div>
+                    <div style="font-size: 18px;">لا توجد ملاحظات مطابقة</div>
+                </div>
+            `;
             return;
         }
 
         filteredNotes.forEach(note => {
             const card = document.createElement('div');
             card.className = 'note-card';
-            card.onclick = () => openEditor(note.id);
             card.innerHTML = `
                 <div class="note-header">
-                    <div class="note-title">${note.title}</div>
-                    <button class="delete-btn" onclick="event.stopPropagation(); deleteNote('${note.id}')">🗑</button>
+                    <div class="note-title">${escapeHtml(note.title)}</div>
+                    <button class="delete-btn" onclick="deleteNote(event, '${note.id}')">🗑️</button>
                 </div>
-                <div class="note-body">${note.content}</div>
+                <div class="note-snippet">${escapeHtml(note.content)}</div>
                 <div class="note-date">${note.updatedAt}</div>
             `;
+            card.onclick = () => openEditor(note);
             container.appendChild(card);
         });
     }
 
     function toggleSearch() {
-        const titleEl = document.getElementById('appTitle');
-        const searchContainer = document.getElementById('searchBarContainer');
-        const btn = document.getElementById('searchToggleBtn');
-        
-        if (searchContainer.style.display === 'block') {
-            searchContainer.style.display = 'none';
-            titleEl.style.display = 'block';
-            btn.innerText = '🔍';
-            renderNotes();
-        } else {
-            titleEl.style.display = 'none';
-            searchContainer.style.display = 'block';
-            btn.innerText = '✕';
+        isSearching = !isSearching;
+        const titleEl = document.getElementById('appBarTitle');
+        const searchBtn = document.getElementById('searchToggleBtn');
+
+        if (isSearching) {
+            titleEl.innerHTML = `<input type="text" class="search-input" id="searchInput" placeholder="ابحث في الملاحظات..." oninput="handleSearch(this.value)" autofocus>`;
+            searchBtn.innerHTML = '✕';
             document.getElementById('searchInput').focus();
-        }
-    }
-
-    function filterNotes(query) {
-        const filtered = notes.filter(n => n.title.includes(query) || n.content.includes(query));
-        renderNotes(filtered);
-    }
-
-    function openEditor(id = null) {
-        currentEditingId = id;
-        const screen = document.getElementById('editorScreen');
-        const titleInput = document.getElementById('editTitle');
-        const contentInput = document.getElementById('editContent');
-        const headerTitle = document.getElementById('editorHeaderTitle');
-
-        if (id) {
-            const note = notes.find(n => n.id === id);
-            titleInput.value = note.title;
-            contentInput.value = note.content;
-            headerTitle.innerText = 'تعديل الملاحظة';
         } else {
-            titleInput.value = '';
-            contentInput.value = '';
-            headerTitle.innerText = 'ملاحظة جديدة';
+            titleEl.innerHTML = 'ملاحظاتي';
+            searchBtn.innerHTML = '🔍';
+            searchQuery = '';
+            renderNotes();
         }
+    }
 
-        screen.style.display = 'flex';
+    function handleSearch(val) {
+        searchQuery = val.trim();
+        renderNotes();
+    }
+
+    function openEditor(note = null) {
+        currentEditingId = note ? note.id : null;
+        document.getElementById('editorHeaderTitle').innerText = note ? 'تعديل الملاحظة' : 'ملاحظة جديدة';
+        document.getElementById('noteTitleInput').value = note ? note.title : '';
+        document.getElementById('noteContentInput').value = note ? note.content : '';
+        document.getElementById('editorScreen').classList.add('active');
     }
 
     function closeEditor() {
-        document.getElementById('editorScreen').style.display = 'none';
+        document.getElementById('editorScreen').classList.remove('active');
     }
 
     function saveNote() {
-        const title = document.getElementById('editTitle').value.trim();
-        const content = document.getElementById('editContent').value.trim();
+        const title = document.getElementById('noteTitleInput').value.trim();
+        const content = document.getElementById('noteContentInput').value.trim();
 
         if (!title && !content) {
             closeEditor();
             return;
         }
 
-        const now = new Date().toLocaleDateString('ar-EG');
+        const formattedDate = new Date().toLocaleDateString('ar-EG', {
+            year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+        });
 
         if (currentEditingId) {
             const note = notes.find(n => n.id === currentEditingId);
-            note.title = title || 'بدون عنوان';
-            note.content = content;
-            note.updatedAt = now;
+            if (note) {
+                note.title = title || 'بدون عنوان';
+                note.content = content;
+                note.updatedAt = formattedDate;
+            }
         } else {
             notes.unshift({
                 id: Date.now().toString(),
                 title: title || 'بدون عنوان',
                 content: content,
-                updatedAt: now
+                updatedAt: formattedDate
             });
         }
 
@@ -317,13 +383,21 @@
         renderNotes();
     }
 
-    function deleteNote(id) {
-        notes = notes.filter(n => n.id !== id);
-        renderNotes();
+    function deleteNote(event, id) {
+        event.stopPropagation();
+        if (confirm('هل أنت متأكد من رغبتك في حذف هذه الملاحظة؟')) {
+            notes = notes.filter(n => n.id !== id);
+            renderNotes();
+        }
+    }
+
+    function escapeHtml(text) {
+        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
 
     // Initial render
     renderNotes();
 </script>
+
 </body>
 </html>

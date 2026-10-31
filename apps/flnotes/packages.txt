@@ -1,5 +1,4 @@
 provider
 intl
-google_fonts
 flutter_animate
 uuid

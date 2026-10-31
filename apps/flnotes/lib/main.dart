@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart' as intl;
@@ -102,7 +101,6 @@ class FlNotesApp extends StatelessWidget {
           seedColor: const Color(0xFF6750A4),
           brightness: Brightness.light,
         ),
-        textTheme: GoogleFonts.cairoTextTheme(ThemeData.light().textTheme),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
@@ -110,7 +108,6 @@ class FlNotesApp extends StatelessWidget {
           seedColor: const Color(0xFFD0BCFF),
           brightness: Brightness.dark,
         ),
-        textTheme: GoogleFonts.cairoTextTheme(ThemeData.dark().textTheme),
       ),
       builder: (context, child) {
         return Directionality(
@@ -131,7 +128,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final bool _isSearching = false;
+  bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -145,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: _isSearching
-            : TextField(
+            ? TextField(
                 controller: _searchController,
                 autofocus: true,
                 decoration: const InputDecoration(
@@ -258,7 +255,7 @@ class NoteCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.between,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
                     child: Text(

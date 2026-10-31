@@ -217,22 +217,49 @@ def pick_client_key(keys):
     return None
 
 
+def _key_list(resp):
+    if isinstance(resp, dict):  # tolerate a wrapped list
+        resp = resp.get("api_keys") or resp.get("keys") or resp.get("data") or []
+    return resp if isinstance(resp, list) else []
+
+
+def _describe(keys):
+    return ", ".join(f"{k.get('name')}({k.get('type') or 'legacy'}{'' if k.get('api_key') else ', no value'})"
+                     for k in keys if isinstance(k, dict)) or "none"
+
+
 def api_keys(ref, token):
-    keys = _request("GET", f"/projects/{ref}/api-keys", token) or []
-    anon = pick_client_key(keys)
-    if not anon:
-        # Some projects only list the key values when asked to reveal them.
+    url = f"https://{ref}.supabase.co"
+    override = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
+    if override and not override.startswith("sb_secret_"):
+        return url, override
+    seen = []
+    for path in (f"/projects/{ref}/api-keys", f"/projects/{ref}/api-keys?reveal=true"):
         try:
-            anon = pick_client_key(_request("GET", f"/projects/{ref}/api-keys?reveal=true", token) or [])
-        except RuntimeError:
-            anon = None
-    if not anon:
-        seen = ", ".join(f"{k.get('name')}({k.get('type')})" for k in keys if isinstance(k, dict)) or "none"
-        raise RuntimeError(
-            "Could not read the project's anon/publishable key (keys seen: " + seen + "). "
-            "In Supabase > Project Settings > API Keys, make sure a publishable key or the legacy anon key exists."
-        )
-    return f"https://{ref}.supabase.co", anon
+            keys = _key_list(_request("GET", path, token))
+        except RuntimeError as e:
+            print(f"Reading API keys failed: {e}", flush=True)
+            continue
+        seen = seen or keys
+        anon = pick_client_key(keys)
+        if anon:
+            return url, anon
+    print(f"API keys of the project: {_describe(seen)}. Creating a publishable key for the apps.", flush=True)
+    try:
+        created = _request("POST", f"/projects/{ref}/api-keys", token,
+                           {"type": "publishable", "name": "apk_fact", "description": "Used by APK Fact apps"})
+        anon = pick_client_key(_key_list(created) or [created])
+        if not anon:
+            anon = pick_client_key(_key_list(_request("GET", f"/projects/{ref}/api-keys", token)))
+        if anon:
+            return url, anon
+    except RuntimeError as e:
+        print(f"Creating a publishable key failed: {e}", flush=True)
+    raise RuntimeError(
+        f"Could not get a publishable/anon key for project {ref} (keys seen: {_describe(seen)}). "
+        "Check that the Supabase access token belongs to the account that owns this project and that the "
+        "project ref is right, or open Supabase > Project Settings > API Keys and create a publishable key."
+    )
 
 
 def configure_email_otp(ref, token, smtp=None):

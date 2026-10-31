@@ -57,8 +57,17 @@ const system =
   designBrief +
   "\nReply with ONLY the full file inside a single ```html code block. No explanations.";
 
+// Apps of a connected pair: AI updates must keep the shared backend, sign-in and notifications working.
+function pairRules() {
+  if (!existing || !fs.existsSync(path.join(dir, "pair.json"))) return "";
+  const r = require("child_process").spawnSync("python3", [path.join(__dirname, "scripts", "pair.py"), "contract", name], {
+    encoding: "utf8",
+  });
+  return r.status === 0 ? r.stdout : "";
+}
+
 const prompt = existing
-  ? `Here is the current app:\n\`\`\`html\n${existing}\n\`\`\`${relatedBlock}\n\nApply this change and return the FULL updated file:\n${request}`
+  ? `Here is the current app:\n\`\`\`html\n${existing}\n\`\`\`${relatedBlock}\n\nApply this change and return the FULL updated file:\n${request}${pairRules()}`
   : `Create this app:\n${request}${relatedBlock}`;
 
 // apps/<name>/meta.json keeps the app's description and every requested change (copied to the vault).

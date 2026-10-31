@@ -1,4 +1,5 @@
 name: Build App APK
+run-name: Build ${{ github.event.inputs.app }}
 
 on:
   workflow_dispatch:
@@ -6,6 +7,10 @@ on:
       app:
         description: "App folder name inside apps/"
         required: true
+      notes:
+        description: "What changed (shown in the installed app's update message)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -36,6 +41,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Pick the version number
+        env:
+          APP: ${{ github.event.inputs.app }}
+        run: |
+          if ! [[ "$APP" =~ ^[a-z0-9-]+$ ]]; then echo "bad app name"; exit 1; fi
+          V=$(python scripts/updater.py next "$APP")
+          echo "VERSION=$V" >> "$GITHUB_ENV"
+          echo "This build is version $V (1.0.$V)"
 
       - name: Wrap HTML as Android app and build (AI fixes errors and retries)
         run: |
@@ -85,6 +99,9 @@ jobs:
           fi
 
           chmod +x android/gradlew
+          # Each build gets a higher version so Android accepts it as an update.
+          sed -i -E "s/versionCode [0-9]+/versionCode $VERSION/; s/versionName \"[^\"]*\"/versionName \"1.0.$VERSION\"/" android/app/build.gradle
+          grep -E "versionCode|versionName" android/app/build.gradle
 
           OK=0
           for i in $(seq 1 "$MAX_ATTEMPTS"); do
@@ -93,6 +110,8 @@ jobs:
             mkdir www
             cp -r "$SRC"/. www/
             rm -f www/icon.png www/google-services.json www/meta.json www/pair.json
+            rm -f www/version.json www/contract.txt
+            python "$GITHUB_WORKSPACE/scripts/updater.py" inject html www "$APP" "$VERSION"
             set +e
             (npx cap sync android && cd android && ./gradlew assembleDebug --no-daemon) 2>&1 | tee /tmp/build.log
             STATUS=${PIPESTATUS[0]}
@@ -147,3 +166,24 @@ jobs:
           gh release create "app-$APP-${{ github.run_number }}" "$APP.apk" \
             --title "$APP #${{ github.run_number }}" \
             --notes "APK for $APP"
+
+      - name: Tell installed copies an update is ready
+        env:
+          APP: ${{ github.event.inputs.app }}
+          TAG: app-${{ github.event.inputs.app }}-${{ github.run_number }}
+          UPDATE_NOTES: ${{ inputs.notes }}
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+          VAULT_REPO: ${{ vars.VAULT_REPO }}
+        run: |
+          if [ -z "$VAULT_TOKEN" ] || [ -z "$VAULT_REPO" ]; then
+            echo "::warning::No private vault: this APK is not signed with a permanent key, so it cannot update installed copies. Set up the vault in APK Fact > الإعدادات."
+            exit 0
+          fi
+          python scripts/updater.py publish "$APP" "$VERSION" "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$TAG/$APP.apk"
+          git add "apps/$APP/version.json"
+          git commit -m "Version $VERSION: $APP" || exit 0
+          for i in 1 2 3 4; do
+            git pull --rebase && git push && exit 0
+            sleep $((i * 5))
+          done
+          exit 1

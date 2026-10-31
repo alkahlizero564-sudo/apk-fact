@@ -163,32 +163,43 @@ async function triggerWithRetry(workflow: string, inputs: Record<string, string>
   }
 }
 
+/** Starts the build of one app; `notes` is the text the installed app shows in its update message. */
+export async function startBuild(name: string, lang: Lang, notes = ""): Promise<number> {
+  const workflow = LANGS[lang].buildWorkflow;
+  const prevId = await latestRunId(REPO, workflow);
+  await triggerWithRetry(workflow, notes ? { app: name, notes: notes.slice(0, 500) } : { app: name });
+  return prevId;
+}
+
+/** Waits for the build of `name` started after `prevId` (several apps can build at the same time). */
+export async function waitForBuild(name: string, lang: Lang, prevId: number) {
+  const workflow = LANGS[lang].buildWorkflow;
+  const started = Date.now();
+  while (Date.now() - started < 50 * 60 * 1000) {
+    await sleep(15000);
+    const runs = await listWorkflowRuns(REPO, workflow);
+    // Runs are named "Build <app>"; older runs without that name still match the first newer run.
+    const r = runs.find((x: any) => x.id > prevId && (x.title === `Build ${name}` || !String(x.title || "").startsWith("Build ")));
+    if (r && r.status === "completed") {
+      if (r.conclusion !== "success") await failWithLog(r.id, `فشل بناء ${name}.`);
+      return r;
+    }
+  }
+  throw new Error(`بناء ${name} أخذ وقت طويل. شوف GitHub Actions.`);
+}
+
 // Steps: start -> build -> download -> install
 export async function buildAndInstall(name: string, lang: Lang, report: Report) {
-  const workflow = LANGS[lang].buildWorkflow;
   report("start", "active");
-  const prevId = await latestRunId(REPO, workflow);
-  await triggerWithRetry(workflow, { app: name });
+  const prevId = await startBuild(name, lang);
   report("start", "done");
 
   report("build", "active");
-  const started = Date.now();
-  let run: any = null;
-  while (Date.now() - started < 40 * 60 * 1000) {
-    await sleep(15000);
-    const r = (await listWorkflowRuns(REPO, workflow)).find((x: any) => x.id > prevId);
-    if (r && r.status === "completed") {
-      run = r;
-      break;
-    }
-  }
-  if (!run) {
+  try {
+    await waitForBuild(name, lang, prevId);
+  } catch (e) {
     report("build", "error");
-    throw new Error("البناء أخذ وقت طويل. جرّب تاني بعد شوية.");
-  }
-  if (run.conclusion !== "success") {
-    report("build", "error");
-    await failWithLog(run.id, "فشل البناء.");
+    throw e;
   }
   report("build", "done");
 

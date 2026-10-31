@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>عوادادة - المصروفات اليومية</title>
+  <style>
+    :root {
+      --primary: #0f766e;
+      --primary-light: #ccfbf1;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+    }
+
+    .dark-mode {
+      --primary: #14b8a6;
+      --primary-light: #134e4a;
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #1e1e24;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* Mobile Phone Simulator Shell */
+    .phone-container {
+      width: 380px;
+      height: 760px;
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 40px;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+      border: 8px solid #334155;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      transition: background-color 0.3s;
+    }
+
+    .header {
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: bold;
+    }
+
+    .icon-badge {
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 8px;
+      border-radius: 12px;
+    }
+
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    /* Balance Card */
+    .balance-card {
+      background: linear-gradient(135deg, #0f766e, #115e59);
+      color: white;
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: 0 10px 15px -3px rgba(15, 118, 110, 0.3);
+      margin-bottom: 16px;
+    }
+
+    .balance-title { font-size: 13px; opacity: 0.9; }
+    .balance-amount { font-size: 28px; font-weight: 800; margin: 6px 0 16px; }
+
+    .balance-stats {
+      display: flex;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 14px;
+      padding: 10px;
+    }
+
+    .stat-box { flex: 1; text-align: center; }
+    .stat-label { font-size: 11px; opacity: 0.8; }
+    .stat-val { font-size: 14px; font-weight: bold; margin-top: 2px; }
+
+    /* Budget Bar */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--primary);
+      width: 45%;
+    }
+
+    /* List Items */
+    .tx-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      background: var(--card-bg);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+
+    .tx-left { display: flex; align-items: center; gap: 12px; }
+    .tx-icon {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      background: #fef3c7; color: #d97706;
+      font-size: 18px;
+    }
+
+    .tx-title { font-weight: bold; font-size: 14px; }
+    .tx-subtitle { font-size: 11px; color: var(--text-muted); }
+    .tx-amount { font-weight: bold; font-size: 15px; }
+    .expense { color: #ef4444; }
+    .income { color: #10b981; }
+
+    /* Nav Bar */
+    .nav-bar {
+      display: flex;
+      justify-content: space-around;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+      padding: 10px 0;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .nav-item.active { color: var(--primary); font-weight: bold; }
+
+    /* FAB */
+    .fab {
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-weight: bold;
+      border: none;
+      box-shadow: 0 4px 12px rgba(15,118,110,0.4);
+      cursor: pointer;
+    }
+
+    /* Modal */
+    .modal {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: var(--card-bg);
+      border-radius: 24px 24px 0 0;
+      padding: 20px;
+      box-shadow: 0 -10px 25px rgba(0,0,0,0.2);
+      display: none;
+    }
+
+    .modal.active { display: block; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 12px; margin-bottom: 4px; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+
+<div class="phone-container" id="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-title">
+      <div class="icon-badge">💰</div>
+      <div>
+        <div style="font-size:15px">عوادادة</div>
+        <div style="font-size:10px; color:var(--text-muted)">مصروفاتي اليومية</div>
+      </div>
+    </div>
+    <button onclick="toggleTheme()" style="border:none; background:none; cursor:pointer; font-size:18px;">🌙</button>
+  </div>
+
+  <!-- Content -->
+  <div class="content" id="main-content">
+    <!-- Balance Card -->
+    <div class="balance-card">
+      <div class="balance-title">إجمالي الرصيد الحالي</div>
+      <div class="balance-amount" id="balance-val">7,824.50 ر.س</div>
+      <div class="balance-stats">
+        <div class="stat-box">
+          <div class="stat-label">الدخل ⬇️</div>
+          <div class="stat-val" id="income-val">8,500 ر.س</div>
+        </div>
+        <div class="stat-box" style="border-right:1px solid rgba(255,255,255,0.2)">
+          <div class="stat-label">المصروفات ⬆️</div>
+          <div class="stat-val" id="expense-val">675.5 ر.س</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly Budget Card -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; font-size:13px;">
+        <span><strong>الميزانية الشهرية</strong></span>
+        <span id="budget-text">675.5 / 5000 ر.س</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="budget-fill"></div>
+      </div>
+    </div>
+
+    <!-- Transactions Section -->
+    <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-weight:bold; font-size:14px;">
+      <span>سجل المعاملات</span>
+    </div>
+
+    <div id="tx-list">
+      <!-- Dynamic list items insert here -->
+    </div>
+  </div>
+
+  <!-- FAB -->
+  <button class="fab" onclick="openModal()">+ إضافة معاملة</button>
+
+  <!-- Modal -->
+  <div class="modal" id="modal">
+    <h3 style="margin-bottom:12px;">إضافة معاملة جديدة</h3>
+    <div class="form-group">
+      <label>عنوان المعاملة</label>
+      <input type="text" id="tx-title" placeholder="مثال: مطعم، وقود">
+    </div>
+    <div class="form-group">
+      <label>المبلغ (ر.س)</label>
+      <input type="number" id="tx-amount" placeholder="0.00">
+    </div>
+    <div class="form-group">
+      <label>النوع</label>
+      <select id="tx-type">
+        <option value="expense">مصروف</option>
+        <option value="income">دخل</option>
+      </select>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:16px;">
+      <button onclick="saveTx()" style="flex:1; background:var(--primary); color:white; padding:10px; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">حفظ</button>
+      <button onclick="closeModal()" style="flex:1; background:var(--border); color:var(--text); padding:10px; border:none; border-radius:8px; cursor:pointer;">إلغاء</button>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation Bar -->
+  <div class="nav-bar">
+    <div class="nav-item active">🏠<br>الرئيسية</div>
+    <div class="nav-item">📊<br>التقارير</div>
+    <div class="nav-item">🎯<br>الأهداف</div>
+    <div class="nav-item">⚙️<br>الإعدادات</div>
+  </div>
+</div>
+
+<script>
+  let transactions = [
+    { title: 'راتب الشهر الحالي', amount: 8500, type: 'income', cat: '💼', date: '2025/05/01' },
+    { title: 'مشتريات السوبرماركت', amount: 345.5, type: 'expense', cat: '🛒', date: '2025/05/02' },
+    { title: 'فاتورة الكهرباء والماء', amount: 210, type: 'expense', cat: '⚡', date: '2025/05/03' },
+    { title: 'وقود السيارة', amount: 120, type: 'expense', cat: '⛽', date: '2025/05/04' }
+  ];
+
+  function render() {
+    const list = document.getElementById('tx-list');
+    list.innerHTML = '';
+
+    let income = 0;
+    let expense = 0;
+
+    transactions.forEach(t => {
+      if(t.type === 'income') income += t.amount;
+      else expense += t.amount;
+
+      const item = document.createElement('div');
+      item.className = 'tx-item';
+      item.innerHTML = `
+        <div class="tx-left">
+          <div class="tx-icon">${t.cat}</div>
+          <div>
+            <div class="tx-title">${t.title}</div>
+            <div class="tx-subtitle">${t.date}</div>
+          </div>
+        </div>
+        <div class="tx-amount ${t.type}">${t.type === 'expense' ? '-' : '+'}${t.amount} ر.س</div>
+      `;
+      list.appendChild(item);
+    });
+
+    const balance = income - expense;
+    document.getElementById('balance-val').innerText = balance.toLocaleString() + ' ر.س';
+    document.getElementById('income-val').innerText = income.toLocaleString() + ' ر.س';
+    document.getElementById('expense-val').innerText = expense.toLocaleString() + ' ر.س';
+
+    const budgetRatio = Math.min((expense / 5000) * 100, 100);
+    document.getElementById('budget-fill').style.width = budgetRatio + '%';
+    document.getElementById('budget-text').innerText = `${expense} / 5000 ر.س`;
+  }
+
+  function toggleTheme() {
+    document.getElementById('app').classList.toggle('dark-mode');
+  }
+
+  function openModal() {
+    document.getElementById('modal').classList.add('active');
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('active');
+  }
+
+  function saveTx() {
+    const title = document.getElementById('tx-title').value;
+    const amount = parseFloat(document.getElementById('tx-amount').value);
+    const type = document.getElementById('tx-type').value;
+
+    if(title && !isNaN(amount)) {
+      transactions.unshift({
+        title,
+        amount,
+        type,
+        cat: type === 'income' ? '💰' : '💸',
+        date: new Date().toLocaleDateString('ar-EG')
+      });
+      render();
+      closeModal();
+    }
+  }
+
+  render();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+provider
+shared_preferences
+intl
+fl_chart
+flutter_animate
+uuid

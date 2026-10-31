@@ -20,6 +20,9 @@ import {
   makeAiPreview,
   uploadCode,
   uploadIcon,
+  getDisplayName,
+  setDisplayName,
+  cleanLabel,
   buildAndInstall,
   deleteApp,
   listApps,
@@ -48,7 +51,10 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
   const { name, lang } = route.params;
   const info = LANGS[lang];
 
-  const [sheet, setSheet] = useState<null | "edit" | "paste" | "link" | "progress" | "vault">(null);
+  const [sheet, setSheet] = useState<null | "edit" | "paste" | "link" | "progress" | "vault" | "label">(null);
+  const [label, setLabel] = useState("");
+  const [labelDraft, setLabelDraft] = useState("");
+  const [labelBusy, setLabelBusy] = useState(false);
   const [op, setOp] = useState<Op | null>(null);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
@@ -100,7 +106,22 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
 
   useEffect(() => {
     loadVault();
+    getDisplayName(name).then(setLabel);
   }, [name]);
+
+  async function saveLabel() {
+    setLabelBusy(true);
+    try {
+      await setDisplayName(name, labelDraft);
+      setLabel(cleanLabel(labelDraft));
+      setSheet(null);
+      Alert.alert("تم", "الاسم الجديد بيظهر تحت الأيقونة من البناء الجاي (ابنِ وثبّت، أو انشر تحديث).");
+    } catch (e: any) {
+      Alert.alert("ما قدرنا نحفظ الاسم", e.message);
+    } finally {
+      setLabelBusy(false);
+    }
+  }
 
   useEffect(() => {
     const unsub = navigation.addListener("focus", () => {
@@ -252,9 +273,9 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
           <AppAvatar name={name} lang={lang} size={76} />
         )}
         <View style={{ flex: 1, gap: 6 }}>
-          <Text style={styles.name}>{name}</Text>
+          <Text style={styles.name}>{label || name}</Text>
           <LangBadge lang={lang} />
-          <Text style={styles.path}>apps/{name}</Text>
+          <Text style={styles.path}>{label ? `${name} · ` : ""}apps/{name}</Text>
         </View>
       </Card>
 
@@ -293,6 +314,16 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
             />
           ) : null}
           <ListRow icon="code-slash-outline" title="لصق كود جاهز" subtitle={info.pasteLabel} onPress={() => setSheet("paste")} />
+          <ListRow
+            icon="text-outline"
+            title="اسم التطبيق على الجهاز"
+            subtitle={label ? "يظهر تحت أيقونة التطبيق" : "اكتب اسم بالعربي يظهر تحت الأيقونة"}
+            value={label || name}
+            onPress={() => {
+              setLabelDraft(label);
+              setSheet("label");
+            }}
+          />
           <ListRow
             icon="image-outline"
             title={iconBusy ? "بيترفع…" : "أيقونة التطبيق"}
@@ -362,6 +393,20 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
           ))}
         </View>
         <Button title="نفّذ التعديل" icon="sparkles" onPress={startEdit} disabled={editText.trim().length < 3} />
+      </Sheet>
+
+      <Sheet visible={sheet === "label"} title="اسم التطبيق على الجهاز" onClose={() => setSheet(null)}>
+        <Field
+          label="الاسم"
+          icon="text-outline"
+          value={labelDraft}
+          onChangeText={setLabelDraft}
+          placeholder="مثال: متجر الورد"
+          maxLength={40}
+          counter
+          helper="بيظهر تحت أيقونة التطبيق بعد التثبيت. اسم المجلد والحزمة ما بيتغيروا."
+        />
+        <Button title="احفظ الاسم" icon="checkmark" onPress={saveLabel} loading={labelBusy} disabled={!cleanLabel(labelDraft)} />
       </Sheet>
 
       <Sheet visible={sheet === "paste"} title="لصق كود جاهز" onClose={() => setSheet(null)}>

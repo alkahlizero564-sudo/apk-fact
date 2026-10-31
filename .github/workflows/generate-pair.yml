@@ -20,6 +20,10 @@ on:
       description:
         description: "What the business is and what the apps do"
         required: true
+      names:
+        description: "Names under the icons: customer name|admin name (can be Arabic)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -84,7 +88,12 @@ jobs:
         run: python scripts/pair.py generate --base "$BASE" --role admin
 
       - name: Save
+        env:
+          NAMES: ${{ inputs.names }}
         run: |
+          C="${NAMES%%|*}"; A="${NAMES#*|}"
+          if [ -n "$C" ]; then python scripts/app_label.py set "$BASE-customer" "$C"; fi
+          if [ -n "$A" ] && [ "$A" != "$NAMES" ]; then python scripts/app_label.py set "$BASE-admin" "$A"; fi
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add apps fixes

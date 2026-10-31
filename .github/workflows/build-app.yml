@@ -79,6 +79,8 @@ jobs:
           rm -f www/icon.png
           npx cap init "$APP" "com.generated.a$PKG" --web-dir www
           npx cap add android
+          # The name under the icon (can be Arabic), from apps/<app>/display-name.txt.
+          python "$GITHUB_WORKSPACE/scripts/app_label.py" android android/app/src/main/res "$APP"
 
           # Connected apps with push: Capacitor applies Firebase by itself when google-services.json is there.
           if [ -f "$SRC/google-services.json" ]; then
@@ -110,7 +112,7 @@ jobs:
             mkdir www
             cp -r "$SRC"/. www/
             rm -f www/icon.png www/google-services.json www/meta.json www/pair.json
-            rm -f www/version.json www/contract.txt
+            rm -f www/version.json www/contract.txt www/display-name.txt
             python "$GITHUB_WORKSPACE/scripts/updater.py" inject html www "$APP" "$VERSION"
             set +e
             (npx cap sync android && cd android && ./gradlew assembleDebug --no-daemon) 2>&1 | tee /tmp/build.log

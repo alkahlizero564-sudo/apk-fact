@@ -132,6 +132,23 @@ export async function uploadCode(name: string, lang: Lang, code: string, report:
   if (LANGS[lang].hasAiPreview) await makeAiPreview(name, lang, report);
 }
 
+/** The name under the app icon on the phone (can be Arabic). Applied by the next build. */
+export function cleanLabel(n: string) {
+  return n.replace(/[<>&"'`\\$@?#%;|{}\[\]\n\r\t]/g, "").replace(/\s+/g, " ").trim().slice(0, 40);
+}
+
+export async function getDisplayName(name: string): Promise<string> {
+  try {
+    return cleanLabel((await getFileText(REPO, `apps/${name}/display-name.txt`)) ?? "");
+  } catch {
+    return "";
+  }
+}
+
+export async function setDisplayName(name: string, label: string) {
+  await pushFile(REPO, `apps/${name}/display-name.txt`, cleanLabel(label) + "\n", `App name: ${name}`);
+}
+
 export async function uploadIcon(name: string, base64: string) {
   await pushBase64File(REPO, `apps/${name}/icon.png`, base64, `Set icon: ${name}`);
 }

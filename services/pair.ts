@@ -9,7 +9,15 @@ import type { Report } from "./appActions";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export type PairOptions = { base: string; lang: Lang; admins: string; push: boolean; description: string };
+export type PairOptions = {
+  base: string;
+  lang: Lang;
+  admins: string;
+  push: boolean;
+  description: string;
+  customerName?: string;
+  adminName?: string;
+};
 
 export function pairApps(base: string) {
   return { customer: `${base}-customer`, admin: `${base}-admin` };
@@ -91,6 +99,7 @@ export async function createPair(o: PairOptions, report: Report) {
     admins: o.admins,
     push: o.push ? "true" : "false",
     description: o.description,
+    names: [o.customerName, o.adminName].map((n) => (n ?? "").replace(/[|]/g, "").trim()).join("|"),
   });
   report("sync", "done");
 

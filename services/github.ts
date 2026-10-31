@@ -130,6 +130,7 @@ export async function listWorkflowRuns(repoFullName: string, workflowFile: strin
     conclusion: r.conclusion,
     createdAt: r.created_at,
     htmlUrl: r.html_url,
+    title: r.display_title as string,
   }));
 }
 

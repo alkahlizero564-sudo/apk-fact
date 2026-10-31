@@ -62,6 +62,14 @@ def read_app_code(app):
 
 
 
+def pair_edit_rules(name):
+    """Contract of a connected pair app, so AI updates keep both apps working together."""
+    if not (Path("apps") / name / "pair.json").exists():
+        return ""
+    r = subprocess.run([sys.executable, str(HERE / "pair.py"), "contract", name], capture_output=True, text=True)
+    return r.stdout if r.returncode == 0 else ""
+
+
 def record_history(base, name, lang, kind, request):
     """apps/<name>/meta.json keeps the description and every requested change (copied to the vault)."""
     import datetime
@@ -145,6 +153,7 @@ App name: {name}
     if existing:
         prompt += (f"\nThis is the CURRENT {cfg['code_file']}. Apply the requested change to it and "
                    f"return the full updated files:\n{existing}\n\nRequested change:\n{task}\n")
+        prompt += pair_edit_rules(name)
     else:
         prompt += f"\nDescription of the app to create:\n{task}\n"
 

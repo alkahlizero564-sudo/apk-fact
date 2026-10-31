@@ -353,7 +353,25 @@ def cmd_generate(a):
     print(f"Generated {name}", flush=True)
 
 
+def edit_rules(app):
+    """Extra instructions for AI edits of one app of a pair, so an update never breaks the connection."""
+    path = ROOT / "apps" / app / "pair.json"
+    if not path.exists():
+        return ""
+    st = json.loads(path.read_text(encoding="utf-8"))
+    return (
+        "\nIMPORTANT: this app is one of a connected pair (customer + admin) that share a Supabase backend. "
+        "Keep the backend URL and key, the email-code sign-in, the table and column names, the device "
+        "registration and the notifications exactly as they work now, unless the requested change is about them. "
+        "If the change needs data the other app also uses, use the existing tables.\n"
+        + contract_text(st, st["role"])
+    )
+
+
 def main():
+    if sys.argv[1:2] == ["contract"]:  # python scripts/pair.py contract APP -> edit rules for a pair app ("" otherwise)
+        print(edit_rules(sys.argv[2]) if len(sys.argv) > 2 else "")
+        return
     ap = argparse.ArgumentParser()
     ap.add_argument("command", choices=["backend", "auth", "firebase", "generate"])
     ap.add_argument("--base", required=True)

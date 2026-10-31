@@ -1,4 +1,5 @@
 name: build-flutter
+run-name: Build ${{ inputs.app }}
 
 on:
   workflow_dispatch:
@@ -6,6 +7,10 @@ on:
       app:
         description: "App folder name under apps/"
         required: true
+      notes:
+        description: "What changed (shown in the installed app's update message)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -28,6 +33,15 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Pick the version number
+        env:
+          APP: ${{ inputs.app }}
+        run: |
+          if ! [[ "$APP" =~ ^[a-z0-9-]+$ ]]; then echo "bad app name"; exit 1; fi
+          V=$(python scripts/updater.py next "$APP")
+          echo "VERSION=$V" >> "$GITHUB_ENV"
+          echo "This build is version $V (1.0.$V)"
+
       - name: Build APK (AI fixes errors and retries)
         env:
           APP: ${{ inputs.app }}
@@ -49,8 +63,9 @@ jobs:
             echo "=== Build attempt $i of $MAX_ATTEMPTS ==="
             # Copy the (possibly fixed) code and packages in, apply dart fix, analyze, AI-fix errors.
             python scripts/check_flutter.py "$SRC" "$PROJ" --rounds 1 || echo "Check not clean, building anyway"
+            python scripts/updater.py inject flutter "$PROJ" "$APP" "$VERSION"
             set +e
-            (cd "$PROJ" && flutter build apk --release) 2>&1 | tee "$RUNNER_TEMP/build.log"
+            (cd "$PROJ" && flutter build apk --release --build-number "$VERSION" --build-name "1.0.$VERSION") 2>&1 | tee "$RUNNER_TEMP/build.log"
             STATUS=${PIPESTATUS[0]}
             set -e
             if [ "$STATUS" -eq 0 ]; then
@@ -97,3 +112,24 @@ jobs:
           gh release create "app-$APP-${{ github.run_id }}" "$APP.apk" \
             --title "$APP (Flutter) #${{ github.run_number }}" \
             --notes "APK for $APP (Flutter)"
+
+      - name: Tell installed copies an update is ready
+        env:
+          APP: ${{ inputs.app }}
+          TAG: app-${{ inputs.app }}-${{ github.run_id }}
+          UPDATE_NOTES: ${{ inputs.notes }}
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+          VAULT_REPO: ${{ vars.VAULT_REPO }}
+        run: |
+          if [ -z "$VAULT_TOKEN" ] || [ -z "$VAULT_REPO" ]; then
+            echo "::warning::No private vault: this APK is not signed with a permanent key, so it cannot update installed copies. Set up the vault in APK Fact > الإعدادات."
+            exit 0
+          fi
+          python scripts/updater.py publish "$APP" "$VERSION" "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$TAG/$APP.apk"
+          git add "apps/$APP/version.json"
+          git commit -m "Version $VERSION: $APP" || exit 0
+          for i in 1 2 3 4; do
+            git pull --rebase && git push && exit 0
+            sleep $((i * 5))
+          done
+          exit 1

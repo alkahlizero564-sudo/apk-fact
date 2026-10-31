@@ -29,6 +29,7 @@ import {
 import { linkAppsViaSupabase } from "../services/link";
 import { saveToVault, vaultStatus, listVaultApps, VaultApp } from "../services/vault";
 import { LANGS } from "../services/langs";
+import { publishedVersion, PublishedVersion } from "../services/updates";
 import { colors, langColors, space, radius, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
 
@@ -59,6 +60,7 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
   const [linkTo, setLinkTo] = useState("");
   const [linkLog, setLinkLog] = useState<string[]>([]);
   const [linking, setLinking] = useState(false);
+  const [published, setPublished] = useState<PublishedVersion | null>(null);
   const [vault, setVault] = useState<{ ready: boolean; saved?: VaultApp } | null>(null);
   const [vaultNotes, setVaultNotes] = useState("");
   const [vaultBusy, setVaultBusy] = useState(false);
@@ -99,6 +101,13 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
   useEffect(() => {
     loadVault();
   }, [name]);
+
+  useEffect(() => {
+    const unsub = navigation.addListener("focus", () => {
+      publishedVersion(name).then(setPublished);
+    });
+    return unsub;
+  }, [navigation, name]);
 
   async function doVaultSave() {
     setVaultBusy(true);
@@ -253,6 +262,18 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
         <Button title="معاينة" icon="eye-outline" variant="secondary" onPress={() => navigation.navigate("Preview", { name })} style={{ flex: 1 }} />
         <Button title="ابنِ وثبّت" icon="download-outline" onPress={startBuild} disabled={running} style={{ flex: 1 }} />
       </View>
+
+      <Card style={[styles.list, styles.updateCard]}>
+        <ListRow
+          icon="cloud-upload-outline"
+          tint={colors.accent}
+          title="تحديث التطبيق"
+          subtitle="غيّر، احذف، أضف بالذكاء الاصطناعي مع معاينة فورية، والتطبيق المثبّت يجيه إشعار بالتحديث"
+          value={published ? `v${published.versionName ?? published.version}` : undefined}
+          onPress={() => navigation.navigate("Update", { name, lang })}
+          last
+        />
+      </Card>
 
       <Section title="تطوير">
         <Card style={styles.list}>
@@ -455,6 +476,7 @@ const styles = StyleSheet.create({
   path: { fontSize: 12, color: colors.textMuted, textAlign: "right", fontFamily: "monospace" },
   actions: { flexDirection: "row-reverse", gap: space.md, marginBottom: space.xl },
   list: { padding: 0, overflow: "hidden" },
+  updateCard: { marginBottom: space.xl, borderColor: colors.accent + "66" },
   chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: space.sm, marginBottom: space.lg },
   sheetText: { ...type.body, color: colors.textMuted, textAlign: "right", marginBottom: space.lg },
   log: { marginTop: space.lg, padding: space.md, borderRadius: radius.field, backgroundColor: colors.field, gap: 4 },

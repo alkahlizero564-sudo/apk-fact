@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>تسبيح - تطبيق الأذكار والمسبحة الإلكترونية</title>
+  <style>
+    /* ==========================================================================
+       MATERIAL 3 DESIGN TOKENS (Android Compose Mapping)
+       ========================================================================== */
+    :root {
+      /* Dynamic Color Tokens - Emerald Serenity Palette (Light) */
+      --md-sys-color-primary: #006B4D;
+      --md-sys-color-on-primary: #FFFFFF;
+      --md-sys-color-primary-container: #83F8C9;
+      --md-sys-color-on-primary-container: #002115;
+      
+      --md-sys-color-secondary: #4D6356;
+      --md-sys-color-on-secondary: #FFFFFF;
+      --md-sys-color-secondary-container: #CFE9D7;
+      --md-sys-color-on-secondary-container: #092015;
+
+      --md-sys-color-tertiary: #835400;
+      --md-sys-color-on-tertiary: #FFFFFF;
+      --md-sys-color-tertiary-container: #FFDDAE;
+      --md-sys-color-on-tertiary-container: #2A1700;
+
+      --md-sys-color-background: #F5FBF6;
+      --md-sys-color-on-background: #171D1A;
+      --md-sys-color-surface: #F5FBF6;
+      --md-sys-color-on-surface: #171D1A;
+      --md-sys-color-surface-variant: #DBE5DD;
+      --md-sys-color-on-surface-variant: #404943;
+      --md-sys-color-outline: #707973;
+      --md-sys-color-outline-variant: #BFC9C1;
+
+      --md-sys-color-surface-container-lowest: #FFFFFF;
+      --md-sys-color-surface-container-low: #EFF5F0;
+      --md-sys-color-surface-container: #E9EFEA;
+      --md-sys-color-surface-container-high: #E3E9E4;
+      --md-sys-color-surface-container-highest: #DDE4DE;
+
+      /* Material Shapes */
+      --md-shape-corner-extra-small: 4px;
+      --md-shape-corner-small: 8px;
+      --md-shape-corner-medium: 12px;
+      --md-shape-corner-large: 16px;
+      --md-shape-corner-extra-large: 28px;
+      --md-shape-corner-full: 9999px;
+
+      /* Elevation / Shadows */
+      --md-elevation-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.12);
+      --md-elevation-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.12);
+      --md-elevation-3: 0px 4px 8px 3px rgba(0, 0, 0, 0.08), 0px 1px 3px 0px rgba(0, 0, 0, 0.14);
+
+      /* Typography Font Stack */
+      --font-family-arabic: 'Segoe UI', Tahoma, 'Noto Sans Arabic', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* Dark Mode Theme Tokens */
+    body.dark-mode {
+      --md-sys-color-primary: #66DBAE;
+      --md-sys-color-on-primary: #003826;
+      --md-sys-color-primary-container: #005239;
+      --md-sys-color-on-primary-container: #83F8C9;
+      
+      --md-sys-color-secondary: #B3CCBC;
+      --md-sys-color-on-secondary: #1F3529;
+      --md-sys-color-secondary-container: #354B3F;
+      --md-sys-color-on-secondary-container: #CFE9D7;
+
+      --md-sys-color-tertiary: #FFBA66;
+      --md-sys-color-on-tertiary: #462A00;
+      --md-sys-color-tertiary-container: #643E00;
+      --md-sys-color-on-tertiary-container: #FFDDAE;
+
+      --md-sys-color-background: #0F1512;
+      --md-sys-color-on-background: #E0E4E0;
+      --md-sys-color-surface: #0F1512;
+      --md-sys-color-on-surface: #E0E4E0;
+      --md-sys-color-surface-variant: #404943;
+      --md-sys-color-on-surface-variant: #BFC9C1;
+      --md-sys-color-outline: #89938C;
+      --md-sys-color-outline-variant: #404943;
+
+      --md-sys-color-surface-container-lowest: #0A0F0D;
+      --md-sys-color-surface-container-low: #171D1A;
+      --md-sys-color-surface-container: #1B211E;
+      --md-sys-color-surface-container-high: #252B28;
+      --md-sys-color-surface-container-highest: #303633;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: var(--font-family-arabic);
+      background-color: #050807;
+      color: var(--md-sys-color-on-background);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ==========================================================================
+       REVIEWER SCREEN SWITCHER BAR (Fixed Top)
+       ========================================================================== */
+    #apkfact-screens {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 48px;
+      background-color: rgba(10, 15, 13, 0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    #apkfact-screens::-webkit-scrollbar { display: none; }
+    #apkfact-screens .tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: #FFBA66;
+      background: rgba(255, 186, 102, 0.15);
+      padding: 3px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      margin-left: 6px;
+    }
+    .screen-pill {
+      background-color: rgba(255, 255, 255, 0.08);
+      color: #DDE4DE;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--md-shape-corner-full);
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+    .screen-pill.active {
+      background-color: #66DBAE;
+      color: #003826;
+      border-color: #66DBAE;
+    }
+
+    /* ==========================================================================
+       MOBILE FRAME CONTAINER (Android 390px Shell)
+       ========================================================================== */
+    .phone-container {
+      margin-top: 56px;
+      margin-bottom: 24px;
+      width: 100%;
+      max-width: 412px;
+      height: 840px;
+      background-color: var(--md-sys-color-background);
+      border-radius: 40px;
+      border: 8px solid #1F2522;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: background-color 0.3s ease;
+    }
+
+    /* Android Status Bar */
+    .status-bar {
+      height: 36px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--md-sys-color-on-surface);
+      z-index: 100;
+    }
+    .status-bar-icons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* App Header / TopAppBar */
+    .top-app-bar {
+      height: 56px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: var(--md-sys-color-surface);
+      color: var(--md-sys-color-on-surface);
+      z-index: 90;
+    }
+    .top-app-bar .title {
+      font-size: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .top-app-bar .actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--md-shape-corner-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--md-sys-color-on-surface-variant);
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .icon-btn:active {
+      background-color: var(--md-sys-color-surface-container-high);
+    }
+
+    /* App Views Slot Container */
+    .app-content {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .view-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow-y: auto;
+      padding: 16px;
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+      scroll-behavior: smooth;
+    }
+    .view-screen.active {
+      display: flex;
+      animation: fadeInCompose 0.25s cubic-bezier(0, 0, 0.2, 1);
+    }
+    @keyframes fadeInCompose {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* ==========================================================================
+       JETPACK COMPOSE MATERIAL 3 COMPONENTS
+       ========================================================================== */
+    
+    /* M3 NavigationBar (Bottom Bar) */
+    .navigation-bar {
+      height: 80px;
+      background-color: var(--md-sys-color-surface-container);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 8px 12px 8px;
+      border-top: 1px solid rgba(0,0,0,0.05);
+      z-index: 100;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--md-sys-color-on-surface-variant);
+      width: 64px;
+    }
+    .nav-icon-wrapper {
+      width: 56px;
+      height: 32px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
+    }
+    .nav-item.active .nav-icon-wrapper {
+      background-color: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+    }
+    .nav-item .label {
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .nav-item.active .label {
+      color: var(--md-sys-color-on-surface);
+      font-weight: 700;
+    }
+
+    /* M3 Cards */
+    .m3-card {
+      background-color: var(--md-sys-color-surface-container-low);
+      border-radius: var(--md-shape-corner-extra-large);
+      padding: 16px;
+      border: 1px solid var(--md-sys-color-outline-variant);
+      transition: all 0.2s ease;
+    }
+    .m3-card.elevated {
+      background-color: var(--md-sys-color-surface-container-lowest);
+      box-shadow: var(--md-elevation-1);
+      border: none;
+    }
+    .m3-card.primary-tint {
+      background-color: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      border: none;
+    }
+
+    /* M3 Chips */
+    .chip-group {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .chip-group::-webkit-scrollbar { display: none; }
+    .m3-chip {
+      height: 36px;
+      border-radius: var(--md-shape-corner-small);
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid var(--md-sys-color-outline);
+      background: transparent;
+      color: var(--md-sys-color-on-surface-variant);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .m3-chip.selected {
+      background-color: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+      border-color: transparent;
+    }
+
+    /* M3 Floating Action Button (FAB) */
+    .m3-fab {
+      height: 56px;
+      padding: 0 20px;
+      border-radius: var(--md-shape-corner-large);
+      background-color: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      border: none;
+      box-shadow: var(--md-elevation-3);
+      cursor: pointer;
+      transition: transform 0.15s, background-color 0.2s;
+    }
+    .m3-fab:active {
+      transform: scale(0.96);
+    }
+
+    /* Buttons */
+    .btn-filled {
+      height: 48px;
+      border-radius: var(--md-shape-corner-full);
+      background-color: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+      border: none;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      width: 100%;
+      transition: opacity 0.2s;
+    }
+    .btn-filled:active { opacity: 0.85; }
+    .btn-outlined {
+      height: 48px;
+      border-radius: var(--md-shape-corner-full);
+      background: transparent;
+      color: var(--md-sys-color-primary);
+      border: 1.5px solid var(--md-sys-color-outline);
+      font-size: 14px;
+      font-weight: 700;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    /* Linear Progress Indicator */
+    .progress-bar-bg {
+      height: 8px;
+      width: 100%;
+      background-color: var(--md-sys-color-surface-container-highest);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background-color: var(--md-sys-color-primary);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    /* M3 Switch Component */
+    .m3-switch {
+      position: relative;
+      width: 52px;
+      height: 32px;
+      appearance: none;
+      background-color: var(--md-sys-color-surface-container-highest);
+      border: 2px solid var(--md-sys-color-outline);
+      border-radius: 16px;
+      outline: none;
+      cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+    .m3-switch:checked {
+      background-color: var(--md-sys-color-primary);
+      border-color: var(--md-sys-color-primary);
+    }
+    .m3-switch::before {
+      content: '';
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: var(--md-sys-color-outline);
+      transition: transform 0.2s, background-color 0.2s;
+    }
+    .m3-switch:checked::before {
+      transform: translateX(-20px);
+      background-color: var(--md-sys-color-on-primary);
+    }
+
+    /* ==========================================================================
+       SCREEN SPECIFIC STYLES
+       ========================================================================== */
+
+    /* SCREEN 1: COUNTER */
+    .counter-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 0 12px 0;
+      position: relative;
+    }
+    .counter-circle-outer {
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--md-sys-color-surface-container-low) 0%, var(--md-sys-color-surface-container-high) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+      cursor: pointer;
+      transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .counter-circle-outer:active {
+      transform: scale(0.94);
+    }
+    .counter-ring-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+    .counter-ring-bg {
+      stroke: var(--md-sys-color-surface-container-highest);
+      stroke-width: 10;
+      fill: none;
+    }
+    .counter-ring-val {
+      stroke: var(--md-sys-color-primary);
+      stroke-width: 10;
+      stroke-linecap: round;
+      fill: none;
+      stroke-dasharray: 691; /* 2 * PI * r (r=110) */
+      stroke-dashoffset: 400;
+      transition: stroke-dashoffset 0.25s cubic-bezier(0, 0, 0.2, 1);
+    }
+    .counter-value {
+      font-size: 54px;
+      font-weight: 800;
+      color: var(--md-sys-color-on-surface);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .counter-target-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--md-sys-color-on-surface-variant);
+      margin-top: 6px;
+    }
+    .counter-dhikr-display {
+      text-align: center;
+      padding: 12px 16px;
+      border-radius: var(--md-shape-corner-large);
+      background-color: var(--md-sys-color-surface-container);
+    }
+    .counter-dhikr-display h2 {
+      font-size: 20px;
+      color: var(--md-sys-color-primary);
+      margin-bottom: 4px;
+    }
+    .counter-dhikr-display p {
+      font-size: 13px;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    /* SCREEN 3: ADHKAR READER */
+    .reader-card {
+      background-color: var(--md-sys-color-surface-container-low);
+      border-radius: var(--md-shape-corner-extra-large);
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      border: 1px solid var(--md-sys-color-outline-variant);
+      position: relative;
+    }
+    .reader-text {
+      font-size: 22px;
+      line-height: 1.8;
+      font-weight: 600;
+      text-align: center;
+      color: var(--md-sys-color-on-surface);
+    }
+    .reader-benefit {
+      font-size: 13px;
+      color: var(--md-sys-color-on-surface-variant);
+      background: var(--md-sys-color-surface-container);
+      padding: 10px 14px;
+      border-radius: var(--md-shape-corner-medium);
+      line-height: 1.5;
+    }
+
+    /* SCREEN 4: STATS GRAPH */
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      height: 140px;
+      padding-top: 20px;
+      gap: 8px;
+    }
+    .bar-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .bar-item {
+      width: 100%;
+      max-width: 28px;
+      background-color: var(--md-sys-color-primary-container);
+      border-radius: 6px 6px 0 0;
+      transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .bar-item.active {
+      background-color: var(--md-sys-color-primary);
+    }
+    .bar-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    /* Android Bottom Sheet Container */
+    .bottom-sheet-overlay {
+      position: absolute;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 200;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      backdrop-filter: blur(2px);
+    }
+    .bottom-sheet-overlay.active {
+      display: flex;
+      animation: sheetFadeIn 0.2s ease-out;
+    }
+    .bottom-sheet {
+      width: 100%;
+      background-color: var(--md-sys-color-surface-container-low);
+      border-radius: 28px 28px 0 0;
+      padding: 12px 20px 32px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: 80%;
+      overflow-y: auto;
+      transform: translateY(0);
+      animation: slideUpSheet 0.25s cubic-bezier(0, 0, 0.2, 1);
+    }
+    .sheet-handle {
+      width: 36px;
+      height: 4px;
+      border-radius: 2px;
+      background-color: var(--md-sys-color-outline-variant);
+      align-self: center;
+      margin-bottom: 8px;
+    }
+    @keyframes slideUpSheet {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    @keyframes sheetFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Skeleton Loading Animator */
+    .skeleton {
+      background: linear-gradient(90deg, 
+        var(--md-sys-color-surface-container) 25%, 
+        var(--md-sys-color-surface-container-high) 50%, 
+        var(--md-sys-color-surface-container) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* SVG Icon stroke fix */
+    svg { stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================================================
+       REVIEWER SCREEN SWITCHER (Fixed Top Header Bar)
+       ========================================================================== -->
+  <div id="apkfact-screens">
+    <span class="tag">Compose Screens</span>
+    <button class="screen-pill active" onclick="switchScreen('screen-counter', this)">1. المسبحة الرئيسية</button>
+    <button class="screen-pill" onclick="switchScreen('screen-adhkar', this)">2. قائمة الأذكار</button>
+    <button class="screen-pill" onclick="switchScreen('screen-reader', this)">3. قارئ الأذكار</button>
+    <button class="screen-pill" onclick="switchScreen('screen-stats', this)">4. الإحصائيات</button>
+    <button class="screen-pill" onclick="switchScreen('screen-settings', this)">5. الإعدادات</button>
+    <button class="screen-pill" onclick="switchScreen('screen-loading', this)">6. حالة التحميل</button>
+    <button class="screen-pill" onclick="switchScreen('screen-empty', this)">7. الشاشة الفارغة</button>
+  </div>
+
+  <!-- ==========================================================================
+       ANDROID DEVICE CONTAINER
+       ========================================================================== -->
+  <div class="phone-container" id="phoneContainer">
+    
+    <!-- Android Top Status Bar -->
+    <div class="status-bar">
+      <span>10:45</span>
+      <div class="status-bar-icons">
+        <svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 20h.01M2 8.82a15 15 0 0 1 20 0M5 12.85a11 11 0 0 1 14 0M8.5 16.5a7 7 0 0 1 7 0"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/></svg>
+      </div>
+    </div>
+
+    <!-- Compose TopAppBar -->
+    <div class="top-app-bar">
+      <div class="title" id="appBarTitle">
+        <svg width="24" height="24" viewBox="0 0 24 24" stroke="var(--md-sys-color-primary)" stroke-width="2.2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        <span>تسبيح</span>
+      </div>
+      <div class="actions">
+        <button class="icon-btn" onclick="toggleTheme()" title="تغيير المظهر">
+          <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        </button>
+        <button class="icon-btn" onclick="openTargetSheet()" title="تحديد الهدف">
+          <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- App Views Content Area -->
+    <div class="app-content">
+
+      <!-- ===================================================================
+           SCREEN 1: MAIN COUNTER VIEW
+           =================================================================== -->
+      <div class="view-screen active" id="screen-counter">
+        
+        <!-- Top Streak Banner -->
+        <div class="m3-card primary-tint" style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="background:rgba(255,255,255,0.2); width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px;">🔥</div>
+            <div>
+              <div style="font-size:14px; font-weight:700;">سلسلة التسبيح اليومي</div>
+              <div style="font-size:12px; opacity:0.9;">7 أيام متتالية من الأذكار</div>
+            </div>
+          </div>
+          <span style="background:var(--md-sys-color-on-primary-container); color:var(--md-sys-color-primary-container); padding:4px 10px; border-radius:var(--md-shape-corner-full); font-size:12px; font-weight:800;">ممتاز</span>
+        </div>
+
+        <!-- Zikr Selector Filter Carousel -->
+        <div class="chip-group">
+          <button class="m3-chip selected" onclick="selectDhikr('سُبْحَانَ اللَّهِ', 33, this)">سُبْحَانَ اللَّهِ (33)</button>
+          <button class="m3-chip" onclick="selectDhikr('الْحَمْدُ لِلَّهِ', 33, this)">الْحَمْدُ لِلَّهِ (33)</button>
+          <button class="m3-chip" onclick="selectDhikr('اللَّهُ أَكْبَرُ', 33, this)">اللَّهُ أَكْبَرُ (33)</button>
+          <button class="m3-chip" onclick="selectDhikr('أَسْتَغْفِرُ اللَّهَ', 100, this)">أَسْتَغْفِرُ اللَّهَ (100)</button>
+          <button class="m3-chip" onclick="selectDhikr('لَا إِلَهَ إِلَّا اللَّهُ', 100, this)">لَا إِلَهَ إِلَّا اللَّهُ (100)</button>
+        </div>
+
+        <!-- Active Zikr Card Header -->
+        <div class="counter-dhikr-display">
+          <h2 id="currentDhikrTitle">سُبْحَانَ اللَّهِ</h2>
+          <p id="currentDhikrSub">فضل الذكر: غراس الجنة وأحب الكلام إلى الله</p>
+        </div>
+
+        <!-- Hero Counter Gauge Component -->
+        <div class="counter-hero">
+          <div class="counter-circle-outer" onclick="incrementCounter()">
+            <svg class="counter-ring-svg" viewBox="0 0 240 240">
+              <circle class="counter-ring-bg" cx="120" cy="120" r="110"/>
+              <circle class="counter-ring-val" id="counterProgressRing" cx="120" cy="120" r="110"/>
+            </svg>
+            <div style="text-align:center;">
+              <div class="counter-value" id="counterVal">14</div>
+              <div class="counter-target-label">الهدف: <span id="counterTargetVal">33</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Counter Quick Controls -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+          <button class="btn-outlined" onclick="resetCounter()" style="font-size:13px; height:42px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            إعادة
+          </button>
+          <button class="btn-outlined" onclick="toggleSound()" id="soundToggleBtn" style="font-size:13px; height:42px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+            صوت: تشغيل
+          </button>
+          <button class="btn-outlined" onclick="openTargetSheet()" style="font-size:13px; height:42px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            تعديل
+          </button>
+        </div>
+
+        <!-- Daily Overall Target Progress -->
+        <div class="m3-card elevated" style="margin-top:4px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-weight:700; font-size:14px;">
+            <span>هدف التسبيح اليومي</span>
+            <span style="color:var(--md-sys-color-primary);" id="totalDailyPercent">65%</span>
+          </div>
+          <div class="progress-bar-bg" style="height:10px; border-radius:5px;">
+            <div class="progress-bar-fill" id="totalDailyFill" style="width: 65%;"></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:12px; color:var(--md-sys-color-on-surface-variant);">
+            <span>تم إنجاز: 650 تسبيحة</span>
+            <span>الهدف: 1000</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===================================================================
+           SCREEN 2: ADHKAR LIBRARY & CATEGORIES VIEW
+           =================================================================== -->
+      <div class="view-screen" id="screen-adhkar">
+        
+        <!-- M3 Search Outlined Box -->
+        <div style="position:relative;">
+          <input type="text" placeholder="ابحث في أذكار حصن المسلم..." style="width:100%; height:48px; border-radius:var(--md-shape-corner-extra-large); border:1px solid var(--md-sys-color-outline); background:var(--md-sys-color-surface-container-low); padding:0 44px 0 16px; color:var(--md-sys-color-on-surface); font-family:inherit; font-size:14px; outline:none;">
+          <svg width="20" height="20" viewBox="0 0 24 24" stroke="var(--md-sys-color-outline)" stroke-width="2" style="position:absolute; right:14px; top:14px;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="chip-group">
+          <button class="m3-chip selected">الكل</button>
+          <button class="m3-chip">أذكار الصباح والمساء</button>
+          <button class="m3-chip">بعد الصلاة</button>
+          <button class="m3-chip">أدعية قرأنية</button>
+          <button class="m3-chip">أذكار النوم</button>
+        </div>
+
+        <!-- Adhkar Categories List Cards -->
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          
+          <!-- Card 1 -->
+          <div class="m3-card" onclick="switchScreen('screen-reader', null)" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:14px;">
+              <div style="width:48px; height:48px; border-radius:var(--md-shape-corner-medium); background:var(--md-sys-color-primary-container); color:var(--md-sys-color-on-primary-container); display:flex; align-items:center; justify-content:center; font-size:20px;">
+                ☀️
+              </div>
+              <div>
+                <div style="font-weight:700; font-size:16px;">أذكار الصباح</div>
+                <div style="font-size:12px; color:var(--md-sys-color-on-surface-variant); margin-top:2px;">24 ذكراً • مكتمل 12/24</div>
+                <div class="progress-bar-bg" style="width:140px; height:4px; margin-top:6px;">
+                  <div class="progress-bar-fill" style="width:50%;"></div>
+                </div>
+              </div>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" stroke="var(--md-sys-color-outline)" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="m3-card" onclick="switchScreen('screen-reader', null)" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:14px;">
+              <div style="width:48px; height:48px; border-radius:var(--md-shape-corner-medium); background:var(--md-sys-color-secondary-container); color:var(--md-sys-color-on-secondary-container); display:flex; align-items:center; justify-content:center; font-size:20px;">
+                🌙
+              </div>
+              <div>
+                <div style="font-weight:700; font-size:16px;">أذكار المساء</div>
+                <div style="font-size:12px; color:var(--md-sys-color-on-surface-variant); margin-top:2px;">20 ذكراً • غير يبدأ بعد</div>
+                <div class="progress-bar-bg" style="width:140px; height:4px; margin-top:6px;">
+                  <div class="progress-bar-fill" style="width:0%;"></div>
+                </div>
+              </div>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" stroke="var(--md-sys-color-outline)" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="m3-card" onclick="switchScreen('screen-reader', null)" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:14px;">
+              <div style="width:48px; height:48px; border-radius:var(--md-shape-corner-medium); background:var(--md-sys-color-tertiary-container); color:var(--md-sys-color-on-tertiary-container); display:flex; align-items:center; justify-content:center; font-size:20px;">
+                🕌
+              </div>
+              <div>
+                <div style="font-weight:700; font-size:16px;">أذكار بعد الصلاة</div>
+                <div style="font-size:12px; color:var(--md-sys-color-on-surface-variant); margin-top:2px;">10 أذكار • مكتمل 100%</div>
+                <div class="progress-bar-bg" style="width:140px; height:4px; margin-top:6px;">
+                  <div class="progress-bar-fill" style="width:100%;"></div>
+                </div>
+              </div>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" stroke="var(--md-sys-color-outline)" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="m3-card" onclick="switchScreen('screen-reader', null)" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:14px;">
+              <div style="width:48px; height:48px; border-radius:var(--md-shape-corner-medium); background:var(--md-sys-color-surface-container-highest); color:var(--md-sys-color-on-surface); display:flex; align-items:center; justify-content:center; font-size:20px;">
+                🛌
+              </div>
+              <div>
+                <div style="font-weight:700; font-size:16px;">أذكار النوم والاستيقاظ</div>
+                <div style="font-size:12px; color:var(--md-sys-color-on-surface-variant); margin-top:2px;">15 ذكراً</div>
+              </div>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" stroke="var(--md-sys-color-outline)" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+          </div>
+
+        </div>
+
+        <!-- Add Custom Adhkar FAB -->
+        <div style="margin-top: auto; display:flex; justify-content:flex-end;">
+          <button class="m3-fab" onclick="openAddCustomSheet()">
+            <svg width="24" height="24" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            ذكر مخصص جديد
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ===================================================================
+           SCREEN 3: ADHKAR READER MODE
+           =================================================================== -->
+      <div class="view-screen" id="screen-reader">
+        
+        <!-- Header status for Reader -->
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-size:12px; font-weight:600; color:var(--md-sys-color-primary);">أذكار الصباح (3 من 24)</div>
+            <div style="font-size:18px; font-weight:700;">آية الكرسي</div>
+          </div>
+          <button class="icon-btn" style="background:var(--md-sys-color-surface-container);">
+            <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+          </button>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div class="progress-bar-bg" style="height:6px;">
+          <div class="progress-bar-fill" style="width: 35%;"></div>
+        </div>
+
+        <!-- Main Reader Box Card -->
+        <div class="reader-card">
+          <div class="reader-text">
+            اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۗ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ...
+          </div>
+          
+          <div class="reader-benefit">
+            <b>الفضل:</b> من قالها حين يصبح أُجير من الجن حتى يمسي، ومن قالها حين يمسي أُجير منهم حتى يصبح.
+          </div>
+        </div>
+
+        <!-- Reader Counter Tap Button -->
+        <div style="display:flex; flex-direction:column; align-items:center; gap:12px; margin-top:8px;">
+          <button class="btn-filled" onclick="readerTap(this)" style="height:64px; border-radius:32px; font-size:18px; box-shadow:var(--md-elevation-2);">
+            <svg width="24" height="24" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            تكرار: <span id="readerCount">1</span> / 1
+          </button>
+          
+          <div style="display:flex; justify-content:space-between; width:100%; margin-top:12px;">
+            <button class="btn-outlined" style="flex:1; margin-left:6px;" onclick="alert('الذكر السابق')">السابق</button>
+            <button class="btn-outlined" style="flex:1; margin-right:6px;" onclick="alert('الذكر التالي')">التالي</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===================================================================
+           SCREEN 4: STATISTICS & ANALYTICS VIEW
+           =================================================================== -->
+      <div class="view-screen" id="screen-stats">
+        
+        <div style="font-size:18px; font-weight:700;">ملخص النشاط والتسبيح</div>
+
+        <!-- Top KPI Grid (3 Stats Cards) -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <div class="m3-card elevated">
+            <div style="font-size:12px; color:var(--md-sys-color-on-surface-variant);">إجمالي التسبيحات</div>
+            <div style="font-size:26px; font-weight:800; color:var(--md-sys-color-primary); margin:4px 0;">14,250</div>
+            <div style="font-size:11px; color:#4CAF50; font-weight:700;">▲ 12% هذا الأسبوع</div>
+          </div>
+          
+          <div class="m3-card elevated">
+            <div style="font-size:12px; color:var(--md-sys-color-on-surface-variant);">الأيام المتتالية</div>
+            <div style="font-size:26px; font-weight:800; color:var(--md-sys-color-tertiary); margin:4px 0;">7 أيام</div>
+            <div style="font-size:11px; color:var(--md-sys-color-on-surface-variant);">أفضل سلسلة: 14 يوم</div>
+          </div>
+        </div>
+
+        <!-- Weekly Activity M3 Bar Chart Card -->
+        <div class="m3-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-weight:700; font-size:15px;">النشاط الأسبوعي</span>
+            <span style="font-size:12px; color:var(--md-sys-color-primary); font-weight:600;">المجموع: 3,400</span>
+          </div>
+          
+          <div class="bar-chart">
+            <div class="bar-col">
+              <div class="bar-item" style="height: 45%;"></div>
+              <span class="bar-label">الأحد</span>
+            </div>
+            <div class="bar-col">
+              <div class="bar-item" style="height: 70%;"></div>
+              <span class="bar-label">الإثنين</span>
+            </div>
+            <div class="bar-col">
+              <div class="bar-item" style="height: 90%;"></div>
+              <span class="bar-label">الثلاثاء</span>
+            </div>
+            <div class="bar-col">
+              <div class="bar-item" style="height: 35%;"></div>
+              <span class="bar-label">الأربعاء</span>
+            </div>
+            <div class="bar-col">
+              <div class="bar-item" style="height: 60%;"></div>
+              <span class="bar-label">الخميس</span>
+            </div>
+            <div class="bar-col">
+              <div class="bar-item active" style="height: 100%;"></div>
+              <span class="bar-label">الجمعة</span>
+            </div>
+            <div class="bar-col">
+              <div class="bar-item" style="height: 50%;"></div>
+              <span class="bar-label">السبت</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Breakdown List Card -->
+        <div class="m3-card">
+          <div style="font-weight:700; font-size:15px; margin-bottom:12px;">الأذكار الأكثر تكراراً</div>
+          
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:600; margin-bottom:4px;">
+                <span>أستغفر الله العظيم</span>
+                <span>5,200 مرة</span>
+              </div>
+              <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:75%;"></div></div>
+            </div>
+
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:600; margin-bottom:4px;">
+                <span>سبحان الله وبحمده</span>
+                <span>3,800 مرة</span>
+              </div>
+              <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:55%;"></div></div>
+            </div>
+
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:600; margin-bottom:4px;">
+                <span>الصلاة على النبي ﷺ</span>
+                <span>2,900 مرة</span>
+              </div>
+              <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:40%;"></div></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===================================================================
+           SCREEN 5: SETTINGS & PREFERENCES VIEW
+           =================================================================== -->
+      <div class="view-screen" id="screen-settings">
+        
+        <div style="font-size:18px; font-weight:700;">إعدادات التطبيق</div>
+
+        <!-- M3 Grouped Settings Cards -->
+        <div class="m3-card" style="padding:8px 16px;">
+          <div style="font-size:12px; font-weight:700; color:var(--md-sys-color-primary); margin:12px 0 8px 0;">التنبيهات والصوت</div>
+          
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--md-sys-color-surface-container-highest);">
+            <div>
+              <div style="font-weight:600; font-size:15px;">صوت النقر</div>
+              <div style="font-size:12px; color:var(--md-sys-color-on-surface-variant);">إصدار صوت خفيف عند كل تسبيحة</div>
+            </div>
+            <input type="checkbox" class="m3-switch" checked>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--md-sys-color-surface-container-highest);">
+            <div>
+              <div style="font-weight:600; font-size:15px;">الاهتزاز (Haptics)</div>
+              <div style="font-size:12px; color:var(--md-sys-color-on-surface-variant);">اهتزاز هادئ عند اكتمال الهدف</div>
+            </div>
+            <input type="checkbox" class="m3-switch" checked>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0;">
+            <div>
+              <div style="font-weight:600; font-size:15px;">تذكير أذكار الصباح والمساء</div>
+              <div style="font-size:12px; color:var(--md-sys-color-on-surface-variant);">إشعارات يومية في وقت الفجر والمغرب</div>
+            </div>
+            <input type="checkbox" class="m3-switch" checked>
+          </div>
+        </div>
+
+        <div class="m3-card" style="padding:8px 16px;">
+          <div style="font-size:12px; font-weight:700; color:var(--md-sys-color-primary); margin:12px 0 8px 0;">المظهر والخط</div>
+          
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--md-sys-color-surface-container-highest);">
+            <div>
+              <div style="font-weight:600; font-size:15px;">الوضع الداكن (Dark Mode)</div>
+              <div style="font-size:12px; color:var(--md-sys-color-on-surface-variant);">تغيير ألوان المظهر</div>
+            </div>
+            <input type="checkbox" class="m3-switch" id="themeSwitch" onchange="toggleTheme()">
+          </div>
+
+          <div style="padding:12px 0;">
+            <div style="font-weight:600; font-size:15px; margin-bottom:8px;">حجم خط الأذكار</div>
+            <input type="range" min="16" max="32" value="22" style="width:100%; accent-color:var(--md-sys-color-primary);">
+          </div>
+        </div>
+
+        <div class="m3-card" style="text-align:center; padding:20px;">
+          <div style="font-size:14px; font-weight:700;">تطبيق تسبيح • إصدار Material 3</div>
+          <div style="font-size:12px; color:var(--md-sys-color-on-surface-variant); margin-top:4px;">تطوير وتصميم بلغة Kotlin & Jetpack Compose</div>
+        </div>
+
+      </div>
+
+      <!-- ===================================================================
+           SCREEN 6: LOADING SKELETON STATE
+           =================================================================== -->
+      <div class="view-screen" id="screen-loading">
+        <div style="font-size:14px; color:var(--md-sys-color-outline);">جاري تحميل الأذكار...</div>
+        
+        <div class="skeleton" style="height: 180px; width:100%; border-radius:24px;"></div>
+        
+        <div style="display:flex; gap:8px;">
+          <div class="skeleton" style="height: 36px; width:90px; border-radius:18px;"></div>
+          <div class="skeleton" style="height: 36px; width:110px; border-radius:18px;"></div>
+          <div class="skeleton" style="height: 36px; width:80px; border-radius:18px;"></div>
+        </div>
+
+        <div class="skeleton" style="height: 80px; width:100%; border-radius:16px;"></div>
+        <div class="skeleton" style="height: 80px; width:100%; border-radius:16px;"></div>
+        <div class="skeleton" style="height: 80px; width:100%; border-radius:16px;"></div>
+      </div>
+
+      <!-- ===================================================================
+           SCREEN 7: EMPTY STATE VIEW
+           =================================================================== -->
+      <div class="view-screen" id="screen-empty" style="justify-content:center; align-items:center; text-align:center; padding:40px 20px;">
+        <div style="width:96px; height:96px; border-radius:50%; background:var(--md-sys-color-surface-container-highest); display:flex; align-items:center; justify-content:center; margin-bottom:16px;">
+          <svg width="48" height="48" viewBox="0 0 24 24" stroke="var(--md-sys-color-outline)" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <h3 style="font-size:20px; font-weight:700; margin-bottom:8px;">لا توجد أذكار مخصصة</h3>
+        <p style="font-size:14px; color:var(--md-sys-color-on-surface-variant); max-width:260px; margin-bottom:24px; line-height:1.5;">
+          لم تقم بإضافة أي أذكار مخصصة بعد. يمكنك إنشاء قائمة الأذكار الخاصة بك وسلسلة أهدافك بسهولة.
+        </p>
+        <button class="btn-filled" style="width:auto;" onclick="openAddCustomSheet()">
+          إضافة ذكر جديد الآن
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Compose NavigationBar (Bottom Nav) -->
+    <div class="navigation-bar">
+      <button class="nav-item active" onclick="switchNav('screen-counter', this)">
+        <div class="nav-icon-wrapper">
+          <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        </div>
+        <span class="label">المسبحة</span>
+      </button>
+
+      <button class="nav-item" onclick="switchNav('screen-adhkar', this)">
+        <div class="nav-icon-wrapper">
+          <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </div>
+        <span class="label">الأذكار</span>
+      </button>
+
+      <button class="nav-item" onclick="switchNav('screen-stats', this)">
+        <div class="nav-icon-wrapper">
+          <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <span class="label">الإحصائيات</span>
+      </button>
+
+      <button class="nav-item" onclick="switchNav('screen-settings', this)">
+        <div class="nav-icon-wrapper">
+          <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </div>
+        <span class="label">الإعدادات</span>
+      </button>
+    </div>
+
+    <!-- ===================================================================
+         M3 BOTTOM SHEET DIALOGS (Interactive Overlay)
+         =================================================================== -->
+    
+    <!-- Target Selector Bottom Sheet -->
+    <div class="bottom-sheet-overlay" id="targetBottomSheet" onclick="closeBottomSheet(event, 'targetBottomSheet')">
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <h3 style="font-size:18px; font-weight:700;">تحديد هدف العداد</h3>
+        <p style="font-size:13px; color:var(--md-sys-color-on-surface-variant);">اختر الهدف المطلوب للذكر الحالي:</p>
+        
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin:8px 0;">
+          <button class="btn-outlined" onclick="setTarget(33)">33 مرة</button>
+          <button class="btn-outlined" onclick="setTarget(100)">100 مرة</button>
+          <button class="btn-outlined" onclick="setTarget(1000)">1000 مرة</button>
+        </div>
+
+        <div style="position:relative;">
+          <input type="number" id="customTargetInput" placeholder="أو أدخل عدداً مخصصاً..." style="width:100%; height:48px; border-radius:12px; border:1px solid var(--md-sys-color-outline); padding:0 16px; background:var(--md-sys-color-surface-container); font-family:inherit;">
+        </div>
+
+        <button class="btn-filled" onclick="setCustomTarget()">حفظ الهدف</button>
+      </div>
+    </div>
+
+    <!-- Add Custom Zikr Bottom Sheet -->
+    <div class="bottom-sheet-overlay" id="addCustomBottomSheet" onclick="closeBottomSheet(event, 'addCustomBottomSheet')">
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <h3 style="font-size:18px; font-weight:700;">إضافة ذكر مخصص جديد</h3>
+        
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div>
+            <label style="font-size:12px; font-weight:700; color:var(--md-sys-color-on-surface-variant);">نص الذكر</label>
+            <input type="text" placeholder="مثال: لا حول ولا قوة إلا بالله" style="width:100%; height:48px; border-radius:12px; border:1px solid var(--md-sys-color-outline); padding:0 16px; background:var(--md-sys-color-surface-container); font-family:inherit; margin-top:4px;">
+          </div>
+
+          <div>
+            <label style="font-size:12px; font-weight:700; color:var(--md-sys-color-on-surface-variant);">الهدف اليومي</label>
+            <input type="number" placeholder="100" style="width:100%; height:48px; border-radius:12px; border:1px solid var(--md-sys-color-outline); padding:0 16px; background:var(--md-sys-color-surface-container); font-family:inherit; margin-top:4px;">
+          </div>
+        </div>
+
+        <button class="btn-filled" onclick="closeBottomSheet(null, 'addCustomBottomSheet'); alert('تمت إضافة الذكر المخصص بنجاح!');">إضافة الذكر</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ==========================================================================
+       INTERACTIVE JAVASCRIPT LOGIC
+       ========================================================================== -->
+  <script>
+    // State Variables
+    let currentCount = 14;
+    let targetCount = 33;
+    let isSoundOn = true;
+
+    // Initialize UI
+    updateCounterDisplay();
+
+    // 1. Switch Screen via Top Reviewer Switcher
+    function switchScreen(screenId, pillEl) {
+      // Update top pills style
+      if (pillEl) {
+        document.querySelectorAll('.screen-pill').forEach(p => p.classList.remove('active'));
+        pillEl.classList.add('active');
+      }
+
+      // Hide all screens
+      document.querySelectorAll('.view-screen').forEach(s => s.classList.remove('active'));
+      
+      // Show target screen
+      const activeScreen = document.getElementById(screenId);
+      if (activeScreen) {
+        activeScreen.classList.add('active');
+      }
+
+      // Update Bottom Nav selection accordingly
+      updateNavHighlight(screenId);
+    }
+
+    // 2. Switch Screen via Bottom Nav Bar
+    function switchNav(screenId, navEl) {
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      navEl.classList.add('active');
+      
+      // Also update reviewer pills
+      const matchingPill = Array.from(document.querySelectorAll('.screen-pill')).find(p => p.getAttribute('onclick').includes(screenId));
+      if (matchingPill) {
+        document.querySelectorAll('.screen-pill').forEach(p => p.classList.remove('active'));
+        matchingPill.classList.add('active');
+      }
+
+      document.querySelectorAll('.view-screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
+    }
+
+    function updateNavHighlight(screenId) {
+      document.querySelectorAll('.nav-item').forEach(item => {
+        const onClickAttr = item.getAttribute('onclick');
+        if (onClickAttr && onClickAttr.includes(screenId)) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+    }
+
+    // 3. Counter Operations
+    function incrementCounter() {
+      currentCount++;
+      if (currentCount > targetCount) {
+        // Goal completion wrap or feedback
+        currentCount = targetCount;
+      }
+      
+      // Audio click simulation if enabled
+      if (isSoundOn && window.AudioContext) {
+        playClickSound();
+      }
+
+      updateCounterDisplay();
+    }
+
+    function resetCounter() {
+      currentCount = 0;
+      updateCounterDisplay();
+    }
+
+    function updateCounterDisplay() {
+      document.getElementById('counterVal').innerText = currentCount;
+      document.getElementById('counterTargetVal').innerText = targetCount;
+      
+      // Update SVG Ring Progress Offset
+      const ring = document.getElementById('counterProgressRing');
+      const maxOffset = 691; // 2 * PI * 110
+      const progress = Math.min(currentCount / targetCount, 1);
+      const strokeOffset = maxOffset - (progress * maxOffset);
+      ring.style.strokeDashoffset = strokeOffset;
+    }
+
+    function selectDhikr(title, target, chipEl) {
+      document.querySelectorAll('.chip-group .m3-chip').forEach(c => c.classList.remove('selected'));
+      chipEl.classList.add('selected');
+      
+      document.getElementById('currentDhikrTitle').innerText = title;
+      targetCount = target;
+      currentCount = 0;
+      updateCounterDisplay();
+    }
+
+    function toggleSound() {
+      isSoundOn = !isSoundOn;
+      document.getElementById('soundToggleBtn').innerText = isSoundOn ? 'صوت: تشغيل' : 'صوت: إيقاف';
+    }
+
+    // Synthetic Web Audio Beep sound for Compose tap action simulation
+    function playClickSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, ctx.currentTime);
+        gain.gain.setValueAtTime(0.05, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.05);
+      } catch(e) {}
+    }
+
+    // 4. Reader Mode Operations
+    let readerVal = 1;
+    function readerTap(btn) {
+      if (readerVal > 0) {
+        readerVal--;
+        document.getElementById('readerCount').innerText = readerVal;
+        if (readerVal === 0) {
+          btn.style.backgroundColor = '#4CAF50';
+          btn.innerText = 'تم الانتهاء ✓';
+        }
+      }
+    }
+
+    // 5. Dark Theme Toggle
+    function toggleTheme() {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      document.getElementById('themeSwitch').checked = isDark;
+    }
+
+    // 6. Bottom Sheet Handlers
+    function openTargetSheet() {
+      document.getElementById('targetBottomSheet').classList.add('active');
+    }
+
+    function openAddCustomSheet() {
+      document.getElementById('addCustomBottomSheet').classList.add('active');
+    }
+
+    function closeBottomSheet(event, sheetId) {
+      if (!event || event.target.classList.contains('bottom-sheet-overlay')) {
+        document.getElementById(sheetId).classList.remove('active');
+      }
+    }
+
+    function setTarget(val) {
+      targetCount = val;
+      updateCounterDisplay();
+      closeBottomSheet(null, 'targetBottomSheet');
+    }
+
+    function setCustomTarget() {
+      const input = document.getElementById('customTargetInput').value;
+      if (input && !isNaN(input) && input > 0) {
+        setTarget(parseInt(input));
+      }
+    }
+  </script>
+</body>
+</html>

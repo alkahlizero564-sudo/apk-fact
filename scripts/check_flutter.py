@@ -70,9 +70,11 @@ def main():
             break
         try:
             fix("flutter", code_file, problems)
-        except (Exception, SystemExit) as e:  # keep the code; the build step tries again
+        except SystemExit as e:  # no API key, or every model/key failed: retrying won't help now
             print(f"Warning: AI fix failed ({e})", flush=True)
             break
+        except Exception as e:  # e.g. an unreadable reply: try again next round
+            print(f"Warning: AI fix failed ({e}), trying again", flush=True)
     return 1
 
 

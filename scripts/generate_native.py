@@ -9,7 +9,6 @@ Reads request-flutter.txt / request-python.txt:
     @preview        optional, only (re)build preview.html from the current code
     rest            description of the app, or of the change
 """
-import json
 import os
 import re
 import shutil
@@ -20,13 +19,13 @@ from pathlib import Path
 
 from fix_native import fix
 from gemini_client import call_gemini
-from native_langs import LANGS, clean_deps, gemini_keys, read_deps, write_deps
+from native_langs import LANGS, clean_deps, gemini_keys, parse_reply, read_deps, reply_format, write_deps
 
 DEFAULT_MODEL = "gemini-3.8-flash"
 HERE = Path(__file__).resolve().parent
 
 PREVIEW_RULES = (
-    "\"preview_html\": one self-contained HTML file (inline CSS and JS, no external resources) that "
+    "the preview: one self-contained HTML file (inline CSS and JS, no external resources) that "
     "imitates this exact app inside a phone-sized layout, with the same screens, texts, colors, icons "
     "(use emoji or inline SVG) and working behavior (navigation, buttons, forms, lists, local state), "
     "so it can be shown in a WebView as a faithful live preview."
@@ -59,11 +58,6 @@ def read_app_code(app):
     p = Path("apps") / app / "index.html"
     return p.read_text(encoding="utf-8")[:20000] if p.exists() else ""
 
-
-def parse_json(text):
-    text = text.strip()
-    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text)
-    return json.loads(text)
 
 
 def python_problems(code_path):
@@ -110,11 +104,11 @@ def main():
     if preview_only:
         if not existing:
             raise SystemExit(f"apps/{name}/{cfg['code_file']} does not exist")
-        prompt = (f"Here is a {cfg['title']} app. Reply with JSON only, with exactly one string key:\n"
+        prompt = (f"Here is a {cfg['title']} app. Reply with exactly one ```html code block with "
                   f"{PREVIEW_RULES}\n\nApp code:\n```{cfg['fence']}\n{existing}\n```\n")
         if task:
             prompt += f"\nNotes from the user about the preview:\n{task}\n"
-        preview = parse_json(call_gemini(model, prompt, keys, temperature=0.3)).get("preview_html", "").strip()
+        preview = parse_reply(call_gemini(model, prompt, keys, temperature=0.3, json_mode=False))[0].get("html", "")
         if not preview:
             raise SystemExit("Model returned no preview_html")
         (base / "preview.html").write_text(preview + "\n", encoding="utf-8")
@@ -124,10 +118,7 @@ def main():
     deps_text = ", ".join(cfg["allowed_deps"])
     prompt = f"""{cfg['rules'].format(deps=deps_text)}
 
-Reply with JSON only, with exactly these keys:
-"{cfg['code_key']}": the complete {cfg['code_file']} as a string.
-"deps": an array with the names of the allowed packages the code uses (can be empty).
-{PREVIEW_RULES}
+{reply_format([(cfg['fence'], f"the complete {cfg['code_file']}"), ("html", PREVIEW_RULES)])}
 
 App name: {name}
 """
@@ -140,16 +131,16 @@ App name: {name}
     else:
         prompt += f"\nDescription of the app to create:\n{task}\n"
 
-    result = parse_json(call_gemini(model, prompt, keys, temperature=0.4))
-    code = str(result.get(cfg["code_key"], "")).strip()
-    preview = str(result.get("preview_html", "")).strip()
+    blocks, deps = parse_reply(call_gemini(model, prompt, keys, temperature=0.4, json_mode=False))
+    code = blocks.get(cfg["fence"], "")
+    preview = blocks.get("html", "")
     if not code or not preview:
-        raise SystemExit(f"Model did not return both {cfg['code_key']} and preview_html")
+        raise SystemExit(f"Model did not return both the {cfg['fence']} code and the html preview")
 
     code_path.parent.mkdir(parents=True, exist_ok=True)
     code_path.write_text(code + "\n", encoding="utf-8")
     (base / "preview.html").write_text(preview + "\n", encoding="utf-8")
-    deps = clean_deps(lang, result.get("deps")) or (read_deps(lang, base) if existing else [])
+    deps = clean_deps(lang, deps) or (read_deps(lang, base) if existing else [])
     write_deps(lang, base, deps)
 
     if lang == "python":

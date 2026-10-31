@@ -2,22 +2,16 @@
 
 Usage: python scripts/fix_native.py flutter|python path/to/code path/to/build.log
 """
-import json
 import os
 import re
 import sys
 from pathlib import Path
 
 from gemini_client import call_gemini
-from native_langs import LANGS, clean_deps, gemini_keys, read_deps, write_deps
+from native_langs import LANGS, clean_deps, gemini_keys, parse_reply, read_deps, reply_format, write_deps
 
 DEFAULT_MODEL = "gemini-3.8-flash"
 
-
-def parse_json(text):
-    text = text.strip()
-    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text)
-    return json.loads(text)
 
 
 def error_excerpt(log_text):
@@ -46,9 +40,7 @@ def fix(lang, code_path, log_text):
 Keep the app's behavior, screens and design the same.
 {rules}
 
-Reply with JSON only, with exactly these keys:
-"{cfg['code_key']}": the complete fixed {cfg['code_file']} as a string.
-"deps": an array with the names of the allowed packages the fixed code uses.
+{reply_format([(cfg['fence'], f"the complete fixed {cfg['code_file']}")])}
 
 BUILD ERRORS:
 {errors}
@@ -58,13 +50,13 @@ PACKAGES CURRENTLY DECLARED: {', '.join(current_deps) or 'none'}
 CURRENT {cfg['code_file']}:
 {code}
 """
-    result = parse_json(call_gemini(model, prompt, keys, temperature=0.2))
-    fixed = str(result.get(cfg["code_key"], "")).strip()
+    blocks, deps = parse_reply(call_gemini(model, prompt, keys, temperature=0.2, json_mode=False))
+    fixed = blocks.get(cfg["fence"], "")
     if not fixed:
-        raise SystemExit("Model returned no code")
+        raise ValueError("Model returned no code block")
     code_path.write_text(fixed + "\n", encoding="utf-8")
-    if "deps" in result:
-        write_deps(lang, app_dir, clean_deps(lang, result.get("deps")))
+    if deps is not None:
+        write_deps(lang, app_dir, clean_deps(lang, deps))
     print(f"Applied AI fix to {cfg['code_file']}")
 
 

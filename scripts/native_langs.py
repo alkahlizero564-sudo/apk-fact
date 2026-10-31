@@ -12,7 +12,9 @@ LANGS = {
         "deps_file": "packages.txt",
         # Well-known, pure-Dart (or federated, no extra setup) pub.dev packages.
         "allowed_deps": [
-            "provider", "shared_preferences", "http", "intl", "google_fonts",
+            # Checked together with `flutter analyze` on Flutter 3.47. google_fonts 9 is left out:
+            # it fails to compile there (TextTheme type mismatch) and needs the network at runtime.
+            "provider", "shared_preferences", "http", "intl",
             "fl_chart", "url_launcher", "flutter_animate", "uuid", "path_provider",
             "sqflite", "go_router", "cached_network_image", "flutter_svg",
         ],
@@ -55,6 +57,42 @@ LANGS = {
         ),
     },
 }
+
+
+def reply_format(blocks):
+    """Instructions for a reply made of fenced code blocks and a DEPS line (no JSON to escape)."""
+    lines = [f"{i}. one ```{fence} code block with {what}" for i, (fence, what) in enumerate(blocks, start=1)]
+    lines.append(f"{len(blocks) + 1}. a last line: `DEPS: ` followed by the allowed packages the code uses, "
+                 "comma separated, or `DEPS: none`")
+    return "Reply in exactly this format, nothing else:\n" + "\n".join(lines)
+
+
+def parse_reply(text):
+    """Return ({fence language: code}, deps list or None) from a reply in reply_format."""
+    import json
+    import re
+
+    blocks = {}
+    for m in re.finditer(r"```([\w+-]*)[ \t]*\n(.*?)\n```", text, re.S):
+        blocks.setdefault(m.group(1).lower(), m.group(2).strip())
+    rest = re.sub(r"```.*?```", "", text, flags=re.S)
+    deps = None
+    m = re.search(r"^\s*`?DEPS:\s*(.*?)`?\s*$", rest, re.M | re.I)
+    if m:
+        value = m.group(1).strip()
+        deps = [] if value.lower() in ("", "none") else [d.strip() for d in value.split(",") if d.strip()]
+    if not blocks:
+        # Older JSON-style reply.
+        try:
+            data = json.loads(re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip()))
+            for key, value in data.items():
+                if key == "deps":
+                    deps = value
+                elif isinstance(value, str):
+                    blocks[{"main_dart": "dart", "main_py": "python", "preview_html": "html"}.get(key, key)] = value
+        except (ValueError, AttributeError):
+            pass
+    return blocks, deps
 
 
 def gemini_keys(environ):

@@ -65,8 +65,8 @@ def parse_json(text):
 
 
 def python_problems(code_path):
-    """Run the Flet static check; returns its error lines, or "" when it passes."""
-    r = subprocess.run([sys.executable, str(HERE / "check_python.py"), str(code_path)],
+    """Run the Flet static check, applying its sure fixes; returns the remaining errors, or "" when clean."""
+    r = subprocess.run([sys.executable, str(HERE / "check_python.py"), "--fix", str(code_path)],
                        capture_output=True, text=True)
     return "" if r.returncode == 0 else (r.stdout + r.stderr).strip()
 

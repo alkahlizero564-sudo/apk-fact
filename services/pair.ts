@@ -1,7 +1,7 @@
 // Two connected apps (customer + admin) on one Supabase backend, with email-code login and push.
 // The phone syncs the needed keys to GitHub secrets, starts generate-pair.yml and follows its steps.
 import * as SecureStore from "expo-secure-store";
-import { githubApi, latestRunId, listWorkflowRuns, getFailureLog, triggerWorkflow } from "./github";
+import { githubApi, latestRunId, listWorkflowRuns, getFailureLog, triggerWorkflow, getFileText } from "./github";
 import { REPO } from "./config";
 import { runSql } from "./supabase";
 import { setRepoSecret, setRepoVariable } from "./repoSecrets";
@@ -187,4 +187,28 @@ export async function removeAdmin(prefix: string, ref: string, email: string) {
       `update public.${p}_profiles set role = 'customer' where lower(email) = ${e};`,
     ref
   );
+}
+
+/** Sets the secret admin PIN of a pair (installs the PIN functions first; the SQL lives in the repo). */
+export async function setAdminPin(prefix: string, ref: string, pin: string) {
+  const p = safePrefix(prefix);
+  if (!/^[A-Za-z0-9]{4,12}$/.test(pin)) throw new Error("رمز الإدارة: من 4 إلى 12 حرف إنجليزي أو رقم.");
+  const template = await getFileText(REPO, "scripts/templates/admin_pin.sql");
+  if (!template) throw new Error("ملف رمز الإدارة مش موجود في المستودع.");
+  await runSql(template.split("{p}").join(p), ref);
+  await runSql(
+    `insert into public.${p}_admin_secret (id, pin_hash) values (1, extensions.crypt('${pin}', extensions.gen_salt('bf'))) ` +
+      `on conflict (id) do update set pin_hash = excluded.pin_hash, updated_at = now();`,
+    ref
+  );
+}
+
+export async function hasAdminPin(prefix: string, ref: string): Promise<boolean> {
+  const p = safePrefix(prefix);
+  try {
+    const rows = await runSql(`select count(*)::int as n from public.${p}_admin_secret;`, ref);
+    return Array.isArray(rows) && rows[0]?.n > 0;
+  } catch {
+    return false;
+  }
 }

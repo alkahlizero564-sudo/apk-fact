@@ -325,7 +325,10 @@ Sign-in with a 6-digit email code (no passwords), on a polished first screen:
   3. When a request returns 401, refresh: POST {url}/auth/v1/token?grant_type=refresh_token body {{"refresh_token": rt}};
      if that fails, go back to sign-in. Provide sign out (forget the session).
   4. After sign-in read the profile: GET {p}_profiles?id=eq.<user.id>  (role is 'customer' or 'admin').
-     {"The ADMIN app must show a clear 'هذا الحساب ليس حساب إدارة' screen with sign out when role != 'admin'." if role == "admin" else "Let the customer fill full_name and phone in a profile screen (PATCH " + p + "_profiles?id=eq.<id>)."}
+     {("When role != 'admin' the ADMIN app shows a 'دخول الإدارة' screen: text 'هذا الحساب ليس حساب إدارة بعد', a hidden "
+       "password field 'رمز الإدارة', a button that calls rpc " + p + "_claim_admin {\"pin\": pin} (with the user's token; "
+       "it returns true or false) and on true re-reads the profile and opens the admin home; on false shows "
+       "'رمز الإدارة غير صحيح'; plus a sign out button.") if role == "admin" else "Let the customer fill full_name and phone in a profile screen (PATCH " + p + "_profiles?id=eq.<id>)."}
 
 Tables (all names start with {p}_; row level security already limits what each user can see):
 {tables}

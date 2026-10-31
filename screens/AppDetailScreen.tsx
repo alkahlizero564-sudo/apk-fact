@@ -33,7 +33,7 @@ import { linkAppsViaSupabase } from "../services/link";
 import { saveToVault, vaultStatus, listVaultApps, VaultApp } from "../services/vault";
 import { LANGS } from "../services/langs";
 import { publishedVersion, PublishedVersion, pairInfo, PairInfo } from "../services/updates";
-import { listAdmins, addAdmin, removeAdmin, AdminAccount } from "../services/pair";
+import { listAdmins, addAdmin, removeAdmin, AdminAccount, setAdminPin, hasAdminPin } from "../services/pair";
 import { colors, langColors, space, radius, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
 
@@ -58,6 +58,8 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
   const [adminEmail, setAdminEmail] = useState("");
   const [adminBusy, setAdminBusy] = useState(false);
   const [adminMsg, setAdminMsg] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  const [pinSet, setPinSet] = useState<boolean | null>(null);
+  const [pin, setPin] = useState("");
   const [label, setLabel] = useState("");
   const [labelDraft, setLabelDraft] = useState("");
   const [labelBusy, setLabelBusy] = useState(false);
@@ -123,9 +125,29 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
     setAdmins(null);
     try {
       setAdmins(await listAdmins(pair.prefix, pair.ref));
+      setPinSet(await hasAdminPin(pair.prefix, pair.ref));
     } catch (e: any) {
       setAdmins([]);
       setAdminMsg({ kind: "error", text: e.message });
+    }
+  }
+
+  async function savePin() {
+    if (!pair) return;
+    setAdminBusy(true);
+    setAdminMsg(null);
+    try {
+      await setAdminPin(pair.prefix, pair.ref, pin.trim());
+      setPin("");
+      setPinSet(true);
+      setAdminMsg({
+        kind: "ok",
+        text: "اتحفظ رمز الإدارة. ادخل تطبيق الإدارة بأي بريد، واكتب الرمز في شاشة «دخول الإدارة».",
+      });
+    } catch (e: any) {
+      setAdminMsg({ kind: "error", text: e.message });
+    } finally {
+      setAdminBusy(false);
     }
   }
 
@@ -476,6 +498,31 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
             ))}
           </Card>
         )}
+        <Text style={styles.sheetSubtitle}>رمز الإدارة السري</Text>
+        <Text style={styles.sheetText}>
+          {pinSet
+            ? "الرمز محفوظ. أي بريد يدخل تطبيق الإدارة ويكتب الرمز يصير مدير. تقدر تغيّره هنا."
+            : "حدّد رمز سري (4 إلى 12 حرف إنجليزي أو رقم). بيه تدخل تطبيق الإدارة بأي بريد. الزبائن ما بيعرفوه."}
+        </Text>
+        <Field
+          label={pinSet ? "رمز جديد" : "رمز الإدارة"}
+          icon="key-outline"
+          value={pin}
+          onChangeText={setPin}
+          placeholder="123456"
+          ltr
+          secret
+          autoCapitalize="none"
+          maxLength={12}
+        />
+        <Button
+          title={pinSet ? "غيّر الرمز" : "احفظ الرمز"}
+          icon="key-outline"
+          onPress={savePin}
+          loading={adminBusy}
+          disabled={!/^[A-Za-z0-9]{4,12}$/.test(pin.trim())}
+        />
+        <Text style={[styles.sheetSubtitle, { marginTop: space.xl }]}>بريد إدارة ثابت (اختياري)</Text>
         <Field
           label="إضافة بريد إدارة"
           icon="mail-outline"
@@ -618,6 +665,7 @@ const styles = StyleSheet.create({
   list: { padding: 0, overflow: "hidden" },
   updateCard: { marginBottom: space.xl, borderColor: colors.accent + "66" },
   chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: space.sm, marginBottom: space.lg },
+  sheetSubtitle: { ...type.label, color: colors.text, textAlign: "right", marginBottom: space.sm },
   sheetText: { ...type.body, color: colors.textMuted, textAlign: "right", marginBottom: space.lg },
   log: { marginTop: space.lg, padding: space.md, borderRadius: radius.field, backgroundColor: colors.field, gap: 4 },
   logLine: { fontSize: 13, color: colors.text, textAlign: "right" },

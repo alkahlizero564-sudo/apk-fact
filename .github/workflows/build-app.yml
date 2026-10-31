@@ -44,6 +44,18 @@ jobs:
           test -f "apps/$APP/index.html"
           PKG=$(echo "$APP" | tr -cd 'a-z0-9')
           SRC="$GITHUB_WORKSPACE/apps/$APP"
+
+          # JavaScript errors don't fail the APK build but leave the app broken: fix them first.
+          for k in 1 2; do
+            if node "$GITHUB_WORKSPACE/scripts/check_html.js" "$SRC/index.html" > /tmp/check.log; then
+              cat /tmp/check.log
+              break
+            fi
+            cat /tmp/check.log
+            echo "=== JavaScript errors found. Asking AI to fix index.html ==="
+            python "$GITHUB_WORKSPACE/scripts/fix_html.py" "$SRC/index.html" /tmp/check.log || echo "AI fix failed, continuing"
+          done
+
           mkdir /tmp/wrap
           cd /tmp/wrap
           npm init -y > /dev/null

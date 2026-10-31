@@ -108,3 +108,35 @@ export async function testEmailCode(email: string): Promise<EmailCodeTest> {
   const reply = (await res.text()).slice(0, 600);
   return { ok: res.ok, status: res.status, reply, settings };
 }
+
+/**
+ * Applies the SMTP fields saved in settings to the Supabase project right away (sign-in code emails),
+ * so changing the sender account does not need the apps to be created again. Returns the host, or null
+ * when no SMTP is set.
+ */
+export async function applySmtpSettings(): Promise<string | null> {
+  const get = async (k: string) => ((await SecureStore.getItemAsync(k)) ?? "").trim();
+  const host = await get("SMTP_HOST");
+  if (!host) return null;
+  const user = await get("SMTP_USER");
+  const rawPass = await get("SMTP_PASS");
+  const body = {
+    smtp_host: host,
+    smtp_port: (await get("SMTP_PORT")) || "587",
+    smtp_user: user,
+    // Gmail shows app passwords in groups of 4 ("abcd efgh ..."); the spaces are not part of it.
+    smtp_pass: /gmail/i.test(host) ? rawPass.replace(/\s+/g, "") : rawPass,
+    smtp_admin_email: (await get("SMTP_FROM")) || user,
+    smtp_sender_name: "APK Fact",
+    rate_limit_email_sent: 100,
+  };
+  const token = await getManagementToken();
+  const ref = await getProjectRef();
+  const res = await fetch(`${MGMT_API}/projects/${ref}/config/auth`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`ما قدرنا نطبّق إعدادات البريد (${res.status}): ${(await res.text()).slice(0, 300)}`);
+  return host;
+}

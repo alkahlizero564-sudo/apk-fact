@@ -35,6 +35,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Pillow (turns the app icon into a real PNG)
+        run: pip install pillow
 
       - name: Pick the version number
         env:

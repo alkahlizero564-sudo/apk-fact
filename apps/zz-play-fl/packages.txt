@@ -1,0 +1,4 @@
+provider
+intl
+flutter_animate
+uuid

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PyTodo - قائمتي</title>
+  <style>
+    :root {
+      --bg-color: #f4f7f6;
+      --card-bg: #ffffff;
+      --text-color: #2d3748;
+      --text-muted: #718096;
+      --primary: #009688;
+      --primary-light: #e6f4f1;
+      --border-color: #e2e8f0;
+      --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+    }
+
+    body.dark {
+      --bg-color: #12181f;
+      --card-bg: #1e293b;
+      --text-color: #f1f5f9;
+      --text-muted: #94a3b8;
+      --primary: #14b8a6;
+      --primary-light: #0f292a;
+      --border-color: #334155;
+      --shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #1a202c;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 10px;
+    }
+
+    .phone-container {
+      width: 100%;
+      max-width: 410px;
+      height: 780px;
+      background-color: var(--bg-color);
+      border-radius: 36px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      border: 8px solid #2d3748;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: background-color 0.3s;
+    }
+
+    .status-bar {
+      height: 28px;
+      padding: 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-color);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .app-header {
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .app-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 22px;
+      font-weight: bold;
+      color: var(--text-color);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 50%;
+      color: var(--text-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    .icon-btn:hover {
+      background-color: rgba(0,0,0,0.05);
+    }
+
+    .text-btn {
+      background: transparent;
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .text-btn:hover {
+      background-color: rgba(239, 68, 68, 0.1);
+    }
+
+    .content {
+      flex: 1;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+    }
+
+    .stats-card {
+      background: var(--primary-light);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      border: 1px solid rgba(0, 150, 136, 0.15);
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .stat-value.total { color: var(--primary); }
+    .stat-value.active { color: #f59e0b; }
+    .stat-value.completed { color: #10b981; }
+
+    .divider-vert {
+      width: 1px;
+      height: 28px;
+      background-color: var(--border-color);
+    }
+
+    .input-section {
+      display: flex;
+      gap: 8px;
+    }
+
+    .task-input {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      background-color: var(--card-bg);
+      color: var(--text-color);
+      outline: none;
+      font-size: 14px;
+    }
+    .task-input:focus {
+      border-color: var(--primary);
+    }
+
+    .priority-select {
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      background-color: var(--card-bg);
+      color: var(--text-color);
+      outline: none;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .add-btn {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 0 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: opacity 0.2s;
+    }
+    .add-btn:hover {
+      opacity: 0.9;
+    }
+
+    .filters-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .filter-btn {
+      padding: 6px 18px;
+      border-radius: 20px;
+      border: 1px solid var(--primary);
+      background: transparent;
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-btn.active {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .todos-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .todo-item {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-color);
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .todo-content {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .checkbox {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      border: 2px solid var(--primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .checkbox.checked {
+      background-color: var(--primary);
+    }
+    .checkbox.checked::after {
+      content: '✓';
+      color: white;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .todo-text {
+      font-size: 14px;
+      color: var(--text-color);
+      font-weight: 500;
+      flex: 1;
+    }
+    .todo-text.completed {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .priority-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 10px;
+      color: white;
+      font-weight: bold;
+    }
+    .priority-عادي { background-color: #60a5fa; }
+    .priority-مهم { background-color: #fb923c; }
+    .priority-عاجل { background-color: #f87171; }
+
+    .delete-btn {
+      color: #ef4444;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      opacity: 0.8;
+      padding: 4px;
+    }
+    .delete-btn:hover { opacity: 1; }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 0;
+      color: var(--text-muted);
+      gap: 10px;
+    }
+    .empty-state svg {
+      width: 56px;
+      height: 56px;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-container" id="phoneContainer">
+    <div class="status-bar">
+      <span>09:41</span>
+      <span>📶 🔋</span>
+    </div>
+
+    <div class="app-header">
+      <div class="app-title">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#009688" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 11l3 3L22 4"></path>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+        </svg>
+        <span>مهامي</span>
+      </div>
+      <div class="header-actions">
+        <button class="text-btn" onclick="clearCompleted()">
+          🧹 مسح المكتملة
+        </button>
+        <button class="icon-btn" onclick="toggleTheme()" id="themeToggleBtn">
+          🌙
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Stats Card -->
+      <div class="stats-card">
+        <div class="stat-item">
+          <span class="stat-label">الجميع</span>
+          <span class="stat-value total" id="totalCount">0</span>
+        </div>
+        <div class="divider-vert"></div>
+        <div class="stat-item">
+          <span class="stat-label">المتبقية</span>
+          <span class="stat-value active" id="activeCount">0</span>
+        </div>
+        <div class="divider-vert"></div>
+        <div class="stat-item">
+          <span class="stat-label">المكتملة</span>
+          <span class="stat-value completed" id="completedCount">0</span>
+        </div>
+      </div>
+
+      <!-- Input section -->
+      <div class="input-section">
+        <input type="text" id="taskInput" class="task-input" placeholder="أضف مهمة جديدة..." onkeypress="handleKeyPress(event)">
+        <select id="prioritySelect" class="priority-select">
+          <option value="عادي">عادي</option>
+          <option value="مهم">مهم</option>
+          <option value="عاجل">عاجل</option>
+        </select>
+        <button class="add-btn" onclick="addTask()">＋ إضافة</button>
+      </div>
+
+      <!-- Filter buttons -->
+      <div class="filters-row">
+        <button class="filter-btn active" onclick="setFilter('all', this)">الكل</button>
+        <button class="filter-btn" onclick="setFilter('active', this)">المتبقية</button>
+        <button class="filter-btn" onclick="setFilter('completed', this)">المكتملة</button>
+      </div>
+
+      <!-- Todos List -->
+      <div class="todos-list" id="todosList"></div>
+    </div>
+  </div>
+
+  <script>
+    let todos = [
+      { id: 1, title: "تجهيز التقرير الأسبوعي", priority: "عاجل", completed: false },
+      { id: 2, title: "قراءة فصل من كتاب جديد", priority: "عادي", completed: true },
+      { id: 3, title: "اجتماع فريق التطوير", priority: "مهم", completed: false }
+    ];
+    let currentFilter = 'all';
+    let isDark = false;
+
+    function toggleTheme() {
+      isDark = !isDark;
+      document.body.classList.toggle('dark', isDark);
+      document.getElementById('themeToggleBtn').innerText = isDark ? '☀️' : '🌙';
+    }
+
+    function addTask() {
+      const input = document.getElementById('taskInput');
+      const priority = document.getElementById('prioritySelect').value;
+      const title = input.value.trim();
+      if (!title) return;
+
+      todos.unshift({
+        id: Date.now(),
+        title: title,
+        priority: priority,
+        completed: false
+      });
+
+      input.value = '';
+      render();
+    }
+
+    function handleKeyPress(e) {
+      if (e.key === 'Enter') addTask();
+    }
+
+    function toggleTodo(id) {
+      todos = todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+      render();
+    }
+
+    function deleteTodo(id) {
+      todos = todos.filter(t => t.id !== id);
+      render();
+    }
+
+    function clearCompleted() {
+      todos = todos.filter(t => !t.completed);
+      render();
+    }
+
+    function setFilter(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      render();
+    }
+
+    function render() {
+      const listEl = document.getElementById('todosList');
+      const totalEl = document.getElementById('totalCount');
+      const activeEl = document.getElementById('activeCount');
+      const completedEl = document.getElementById('completedCount');
+
+      const total = todos.length;
+      const active = todos.filter(t => !t.completed).length;
+      const completed = todos.filter(t => t.completed).length;
+
+      totalEl.innerText = total;
+      activeEl.innerText = active;
+      completedEl.innerText = completed;
+
+      let filtered = todos;
+      if (currentFilter === 'active') filtered = todos.filter(t => !t.completed);
+      if (currentFilter === 'completed') filtered = todos.filter(t => t.completed);
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>لا توجد مهام حالياً</span>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(t => `
+        <div class="todo-item">
+          <div class="todo-content">
+            <div class="checkbox ${t.completed ? 'checked' : ''}" onclick="toggleTodo(${t.id})"></div>
+            <span class="todo-text ${t.completed ? 'completed' : ''}">${t.title}</span>
+          </div>
+          <span class="priority-badge priority-${t.priority}">${t.priority}</span>
+          <button class="delete-btn" onclick="deleteTodo(${t.id})">🗑️</button>
+        </div>
+      `).join('');
+    }
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>

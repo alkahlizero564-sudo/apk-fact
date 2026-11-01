@@ -1,5 +1,5 @@
-anaa
+reserve-customer
 @model: gemini-3.5-flash
-ارفع زر اضافه مصروف لفوق شوية
+أضف شاشة جديدة لـ… الاسم
 
-(request id: 1793468313150)
+(request id: 1793523710299)

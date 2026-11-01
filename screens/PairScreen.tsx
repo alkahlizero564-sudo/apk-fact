@@ -1,5 +1,5 @@
 // Two connected apps (customer + admin) on Supabase, with email-code login and push notifications.
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -10,6 +10,8 @@ import { LANGS, PAIR_LANGS, Lang } from "../services/langs";
 import { appExists } from "../services/appActions";
 import { createPair, pairApps, pairReadiness, PairReadiness } from "../services/pair";
 import DesignStudio from "../components/DesignStudio";
+import UnderstandStudio, { UnderstandHandle } from "../components/UnderstandStudio";
+import { Spec, specText } from "../services/understand";
 import { saveApprovedDesign, clearDraft, DesignTarget } from "../services/design";
 import { colors, langColors, space, radius, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
@@ -32,7 +34,10 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
   const [push, setPush] = useState(true);
   const [ready, setReady] = useState<PairReadiness | null>(null);
   const [taken, setTaken] = useState(false);
-  const [phase, setPhase] = useState<"form" | "design" | "running" | "done" | "failed">("form");
+  const [phase, setPhase] = useState<"form" | "understand" | "design" | "running" | "done" | "failed">("form");
+  const [spec, setSpec] = useState<Spec | null>(null); // the requirements the owner approved for both apps
+  const [understandBusy, setUnderstandBusy] = useState(false);
+  const understandRef = useRef<UnderstandHandle>(null);
   const [designs, setDesigns] = useState<Record<string, string>>({});
   const [designBusy, setDesignBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +85,7 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
       report("design", "active");
       for (const t of designTargets) if (designs[t.key]) await saveApprovedDesign(t.key, designs[t.key]);
       report("design", "done");
-      await createPair({ base: clean, lang, admins: emails.join(","), push: usePush, description: description.trim(), customerName, adminName }, report);
+      await createPair({ base: clean, lang, admins: emails.join(","), push: usePush, description: fullDescription, customerName, adminName }, report);
       designTargets.forEach((t) => clearDraft(t));
       setPhase("done");
     } catch (e: any) {
@@ -90,12 +95,14 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
   }
 
   const apps = pairApps(clean);
+  // The owner's words plus the requirements they approved: the database, the designs and both apps follow it.
+  const fullDescription = spec ? `${description.trim()}\n${specText(spec)}` : description.trim();
   const designTargets: DesignTarget[] = [
     {
       key: apps.customer,
       label: "تطبيق الزبون",
       title: customerName.trim() || "تطبيق الزبون",
-      description: description.trim(),
+      description: fullDescription,
       lang,
       role: "customer",
     },
@@ -103,7 +110,7 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
       key: apps.admin,
       label: "تطبيق الإدارة",
       title: adminName.trim() || "تطبيق الإدارة",
-      description: description.trim(),
+      description: fullDescription,
       lang,
       role: "admin",
     },
@@ -123,7 +130,21 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
       </View>
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        {phase === "design" ? (
+        {phase === "understand" ? (
+          <>
+            <Text style={styles.label}>فهمتك صح؟</Text>
+            <Text style={styles.subtitle}>
+              ده اللي فهمته من فكرتك للنظام كله، وكل بند مكتوب قدامه تبع أي تطبيق (الزبون، الإدارة، أو الاثنين). احذف
+              أي حاجة غلط بـ ✕، جاوب الأسئلة، واكتب أي إضافة أو تصحيح. لما تكون القائمة هي بالضبط اللي في راسك اضغط
+              «تمام، ده اللي أبغاه»، وقاعدة البيانات والتصميم والتطبيقين بيتبنوا عليها بند بند.
+            </Text>
+            <UnderstandStudio
+              ref={understandRef}
+              target={{ title: clean || "نظام الزبون والإدارة", description: description.trim(), lang, pair: true }}
+              onBusy={setUnderstandBusy}
+            />
+          </>
+        ) : phase === "design" ? (
           <>
             <Text style={styles.label}>التصميم أولاً</Text>
             <Text style={styles.subtitle}>
@@ -298,19 +319,37 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
       {phase === "form" ? (
         <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
           <Button
-            title="صمّم الواجهات"
-            icon="color-palette-outline"
+            title="افهم فكرتي"
+            icon="bulb-outline"
             onPress={() => {
+              setSpec(null);
               setDesigns({});
-              setPhase("design");
+              setPhase("understand");
             }}
             disabled={!canSubmit}
             style={{ flex: 1 }}
           />
         </View>
+      ) : phase === "understand" ? (
+        <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
+          <Button title="رجوع" variant="secondary" onPress={() => setPhase("form")} disabled={understandBusy} style={{ flex: 1 }} />
+          <Button
+            title="تمام، ده اللي أبغاه"
+            icon="checkmark"
+            onPress={async () => {
+              const approved = await understandRef.current?.approve();
+              if (!approved) return;
+              setSpec(approved);
+              setDesigns({});
+              setPhase("design");
+            }}
+            disabled={understandBusy}
+            style={{ flex: 2 }}
+          />
+        </View>
       ) : phase === "design" ? (
         <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
-          <Button title="رجوع" variant="secondary" onPress={() => setPhase("form")} disabled={designBusy} style={{ flex: 1 }} />
+          <Button title="رجوع" variant="secondary" onPress={() => setPhase("understand")} disabled={designBusy} style={{ flex: 1 }} />
           <Button title="اعتمد التصميم وأنشئ التطبيقين" icon="checkmark-done" onPress={submit} disabled={!designsReady} style={{ flex: 2 }} />
         </View>
       ) : null}

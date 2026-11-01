@@ -383,7 +383,12 @@ def cmd_generate(a):
     role, lang = a.role, st["lang"]
     name = st["apps"][role]["name"]
     title = "تطبيق الزبون" if role == "customer" else "تطبيق الإدارة"
-    request = f"{title} لهذا المشروع:\n{st['description']}\n{contract_text(st, role)}"
+    mine = "الزبون" if role == "customer" else "الإدارة"
+    other = "الإدارة" if role == "customer" else "الزبون"
+    scope = (f"\n(This is the {mine} app only: build every requirement marked «{mine}:» or «الاثنين:». "
+             f"Items marked «{other}:» belong to the other app and are only context; do not build them here.)\n"
+             if "=== المواصفات" in st["description"] else "")
+    request = f"{title} لهذا المشروع:\n{st['description']}\n{scope}{contract_text(st, role)}"
     with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8") as f:
         related = f"@related: {st['apps']['customer']['name']}\n" if role == "admin" else ""
         f.write(f"{name}\n{related}{request}\n\n(request id: {int(time.time())})\n")

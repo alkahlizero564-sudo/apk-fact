@@ -79,19 +79,30 @@ function parseSpec(text: string): Spec {
 }
 
 /** First understanding of the idea. */
+export type IdeaTarget = { title: string; description: string; lang: Lang; pair?: boolean };
+
+const PAIR_LINE =
+  "This is a SYSTEM of two connected apps sharing one online database: a CUSTOMER app (the people who use the " +
+  "service) and an ADMIN app (the business that manages everything). Start every screen, feature and data item " +
+  "with «الزبون: », «الإدارة: » or «الاثنين: » to say which app it belongs to, and cover both apps fully.\n";
+
+function intro(t: IdeaTarget) {
+  return `App name: ${t.title}\nIt will be built as ${LANG_NAME[t.lang]}.\n${t.pair ? PAIR_LINE : ""}\n`;
+}
+
 export async function understandIdea(
-  t: { title: string; description: string; lang: Lang },
+  t: IdeaTarget,
   onStatus: (s: string) => void
 ): Promise<Spec> {
   const prompt =
-    `App name: ${t.title}\nIt will be built as ${LANG_NAME[t.lang]}.\n\n` +
+    intro(t) +
     `THE OWNER'S IDEA (their exact words, the highest priority):\n${t.description}\n`;
   return askGemini(SYSTEM, prompt, onStatus, "يفهم فكرتك", 0.3, parseSpec);
 }
 
 /** Applies the owner's answers and corrections to the list. */
 export async function refineSpec(
-  t: { title: string; description: string; lang: Lang },
+  t: IdeaTarget,
   spec: Spec,
   answers: { q: string; a: string }[],
   notes: string,
@@ -99,7 +110,7 @@ export async function refineSpec(
 ): Promise<Spec> {
   const current = { ...spec, questions: undefined };
   let prompt =
-    `App name: ${t.title}\nIt will be built as ${LANG_NAME[t.lang]}.\n\n` +
+    intro(t) +
     `THE OWNER'S IDEA (their exact words):\n${t.description}\n\n` +
     `YOUR CURRENT LIST (the owner already removed what they don't want; do not add those back):\n` +
     JSON.stringify(current, null, 1) +

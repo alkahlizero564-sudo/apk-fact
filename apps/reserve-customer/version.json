@@ -1,8 +1,8 @@
 {
  "app": "reserve-customer",
- "version": 1,
- "versionName": "1.0.1",
- "apk": "https://github.com/alkahlizero564-sudo/apk-fact/releases/download/app-reserve-customer-41242661126/reserve-customer.apk",
- "notes": "",
- "at": "2026-10-31T21:19:09Z"
+ "version": 2,
+ "versionName": "1.0.2",
+ "apk": "https://github.com/alkahlizero564-sudo/apk-fact/releases/download/app-reserve-customer-41292073855/reserve-customer.apk",
+ "notes": "أضف شاشة جديدة لـ… الاسم",
+ "at": "2026-11-01T09:17:35Z"
 }

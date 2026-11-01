@@ -11,6 +11,10 @@ on:
         description: "What changed (shown in the installed app's update message)"
         required: false
         default: ""
+      store:
+        description: "true: also build the Google Play file (.aab), signed with the app's permanent key"
+        required: false
+        default: "false"
 
 permissions:
   contents: write
@@ -27,10 +31,12 @@ jobs:
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.10.2"
+          gradle-version: "8.14.3"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Pillow (turns the app icon into a real PNG)
+        run: pip install pillow
 
       - name: Pick the version number
         env:
@@ -79,6 +85,11 @@ jobs:
             exit 1
           fi
           cp "$PROJ/app/build/outputs/apk/release/app-release.apk" "$GITHUB_WORKSPACE/$APP.apk"
+          if [ "${{ inputs.store }}" = "true" ]; then
+            echo "=== Google Play file (.aab) ==="
+            gradle -p "$PROJ" :app:bundleRelease --console=plain
+            cp "$PROJ/app/build/outputs/bundle/release/app-release.aab" "$GITHUB_WORKSPACE/$APP.aab"
+          fi
 
       - name: Save fixed code
         env:
@@ -96,14 +107,17 @@ jobs:
           APP: ${{ inputs.app }}
           VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
           VAULT_REPO: ${{ vars.VAULT_REPO }}
-        run: python scripts/vault.py --app "$APP" --apk "$APP.apk" --build-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+        run: |
+          # The Google Play file (.aab) is signed with the same permanent key; it needs the vault.
+          AAB=(); if [ -f "$APP.aab" ]; then AAB=(--aab "$APP.aab"); fi
+          python scripts/vault.py --app "$APP" --apk "$APP.apk" "${AAB[@]}" --build-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Publish APK as a Release
         env:
           GH_TOKEN: ${{ github.token }}
           APP: ${{ inputs.app }}
         run: |
-          gh release create "app-$APP-${{ github.run_id }}" "$APP.apk" \
+          gh release create "app-$APP-${{ github.run_id }}" "$APP.apk" $( [ -f "$APP.aab" ] && echo "$APP.aab" ) \
             --title "$APP (Kotlin) #${{ github.run_number }}" \
             --notes "APK for $APP (Kotlin / Jetpack Compose)"
 

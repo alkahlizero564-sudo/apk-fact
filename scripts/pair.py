@@ -52,6 +52,7 @@ def app_name(base, role):
 
 
 def package_id(name, lang):
+    # A new pair always starts with the default package names (Firebase registers the apps under them).
     # Must match the build workflows (and scripts/vault.py).
     return "com.generated.a" + re.sub(r"[^a-z0-9]", "", name) if lang == "html" else "com.generated.app_" + name.replace("-", "_")
 

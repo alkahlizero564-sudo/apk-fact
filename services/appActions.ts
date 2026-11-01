@@ -219,11 +219,17 @@ async function triggerWithRetry(workflow: string, inputs: Record<string, string>
   }
 }
 
-/** Starts the build of one app; `notes` is the text the installed app shows in its update message. */
-export async function startBuild(name: string, lang: Lang, notes = ""): Promise<number> {
+/**
+ * Starts the build of one app; `notes` is the text the installed app shows in its update message.
+ * `store` also builds the Google Play file (.aab), signed with the app's permanent key (needs the vault).
+ */
+export async function startBuild(name: string, lang: Lang, notes = "", store = false): Promise<number> {
   const workflow = LANGS[lang].buildWorkflow;
   const prevId = await latestRunId(REPO, workflow);
-  await triggerWithRetry(workflow, notes ? { app: name, notes: notes.slice(0, 500) } : { app: name });
+  const inputs: Record<string, string> = { app: name };
+  if (notes) inputs.notes = notes.slice(0, 500);
+  if (store) inputs.store = "true";
+  await triggerWithRetry(workflow, inputs);
   return prevId;
 }
 
@@ -282,6 +288,63 @@ export async function buildAndInstall(name: string, lang: Lang, report: Report) 
     type: "application/vnd.android.package-archive",
   });
   report("install", "done");
+}
+
+// Steps: start -> build -> file. Returns the link to the signed .aab to upload to Google Play Console.
+export async function buildForStore(name: string, lang: Lang, report: Report): Promise<string> {
+  report("start", "active");
+  const prevId = await startBuild(name, lang, "", true);
+  report("start", "done");
+  report("build", "active");
+  try {
+    await waitForBuild(name, lang, prevId);
+  } catch (e) {
+    report("build", "error");
+    throw e;
+  }
+  report("build", "done");
+  report("file", "active");
+  const aab = await findAppApkAsset(REPO, name, ".aab");
+  if (!aab) {
+    report("file", "error");
+    throw new Error("البناء نجح لكن ما لقيت ملف AAB في الإصدارات.");
+  }
+  report("file", "done", aab.name);
+  return aab.url;
+}
+
+/**
+ * The Android package name (what Google Play knows the app by), apps/<name>/package.txt. Without it the app
+ * keeps the generated default, so installed copies keep updating. Same rules as scripts/app_id.py.
+ */
+const JAVA_WORDS = new Set(
+  ("abstract assert boolean break byte case catch char class const continue default do double else enum extends " +
+    "final finally float for goto if implements import instanceof int interface long native new package private " +
+    "protected public return short static strictfp super switch synchronized this throw throws transient try void " +
+    "volatile while true false null").split(" ")
+);
+
+export function validPackageId(pkg: string) {
+  const parts = pkg.split(".");
+  return parts.length >= 2 && pkg.length <= 100 && parts.every((p) => /^[a-z][a-z0-9_]*$/.test(p) && !JAVA_WORDS.has(p));
+}
+
+export function defaultPackageId(name: string, lang: Lang) {
+  return lang === "html" ? "com.generated.a" + name.replace(/[^a-z0-9]/g, "") : "com.generated.app_" + name.replace(/-/g, "_");
+}
+
+export async function getPackageId(name: string, lang: Lang): Promise<{ id: string; custom: boolean }> {
+  try {
+    const t = ((await getFileText(REPO, `apps/${name}/package.txt`)) ?? "").trim();
+    if (t && validPackageId(t)) return { id: t, custom: true };
+  } catch {}
+  return { id: defaultPackageId(name, lang), custom: false };
+}
+
+export async function setPackageId(name: string, pkg: string) {
+  const p = pkg.trim().toLowerCase();
+  if (!validPackageId(p)) throw new Error("اسم الحزمة غير صحيح.");
+  await pushFile(REPO, `apps/${name}/package.txt`, p + "\n", `Package name: ${name}`);
 }
 
 export type ToolRun = { id: number; status: string; conclusion: string | null; createdAt: string; htmlUrl: string };

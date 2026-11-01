@@ -11,6 +11,10 @@ on:
         description: "What changed (shown in the installed app's update message)"
         required: false
         default: ""
+      store:
+        description: "true: also build the Google Play file (.aab), signed with the app's permanent key"
+        required: false
+        default: "false"
 
 permissions:
   contents: write
@@ -31,12 +35,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - uses: actions/setup-python@v5
         with:
@@ -78,11 +82,14 @@ jobs:
           mkdir /tmp/wrap
           cd /tmp/wrap
           npm init -y > /dev/null
-          npm i @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @capacitor/assets@3
+          # Capacitor 8: Android SDK 36, which Google Play requires for new apps and updates.
+          npm i @capacitor/core@8 @capacitor/cli@8 @capacitor/android@8 @capacitor/assets@3
           mkdir www
           cp -r "$SRC"/. www/
           rm -f www/icon.png
-          npx cap init "$APP" "com.generated.a$PKG" --web-dir www
+          APP_ID=$(python "$GITHUB_WORKSPACE/scripts/app_id.py" get "$APP" html)
+          echo "Package name: $APP_ID"
+          npx cap init "$APP" "$APP_ID" --web-dir www
           npx cap add android
           # The name under the icon (can be Arabic), from apps/<app>/display-name.txt.
           python "$GITHUB_WORKSPACE/scripts/app_label.py" android android/app/src/main/res "$APP"
@@ -92,7 +99,7 @@ jobs:
           # Connected apps with push: Capacitor applies Firebase by itself when google-services.json is there.
           if [ -f "$SRC/google-services.json" ]; then
             echo "Push notifications: adding @capacitor/push-notifications and google-services.json"
-            npm i @capacitor/push-notifications@6
+            npm i @capacitor/push-notifications@8
             cp "$SRC/google-services.json" android/app/google-services.json
           fi
 
@@ -108,6 +115,9 @@ jobs:
           fi
 
           chmod +x android/gradlew
+          # A release build (not a debug one); signed with the app's permanent key from the vault after the build.
+          sed -i "s/minifyEnabled false/minifyEnabled false\n            signingConfig signingConfigs.debug/" android/app/build.gradle
+          grep -n "signingConfig" android/app/build.gradle
           # Each build gets a higher version so Android accepts it as an update.
           sed -i -E "s/versionCode [0-9]+/versionCode $VERSION/; s/versionName \"[^\"]*\"/versionName \"1.0.$VERSION\"/" android/app/build.gradle
           grep -E "versionCode|versionName" android/app/build.gradle
@@ -122,7 +132,7 @@ jobs:
             rm -f www/version.json www/contract.txt www/display-name.txt www/design.html
             python "$GITHUB_WORKSPACE/scripts/updater.py" inject html www "$APP" "$VERSION"
             set +e
-            (npx cap sync android && cd android && ./gradlew assembleDebug --no-daemon) 2>&1 | tee /tmp/build.log
+            (npx cap sync android && cd android && ./gradlew assembleRelease --no-daemon) 2>&1 | tee /tmp/build.log
             STATUS=${PIPESTATUS[0]}
             set -e
             if [ "$STATUS" -eq 0 ]; then
@@ -150,7 +160,13 @@ jobs:
             exit 1
           fi
 
-          cp android/app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/$APP.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/$APP.apk"
+
+          if [ "${{ github.event.inputs.store }}" = "true" ]; then
+            echo "=== Google Play file (.aab) ==="
+            (cd android && ./gradlew bundleRelease --no-daemon)
+            cp android/app/build/outputs/bundle/release/app-release.aab "$GITHUB_WORKSPACE/$APP.aab"
+          fi
 
       - name: Save fixed code
         run: |
@@ -166,13 +182,16 @@ jobs:
           APP: ${{ github.event.inputs.app }}
           VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
           VAULT_REPO: ${{ vars.VAULT_REPO }}
-        run: python scripts/vault.py --app "$APP" --apk "$APP.apk" --build-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+        run: |
+          # The Google Play file (.aab) is signed with the same permanent key; it needs the vault.
+          AAB=(); if [ -f "$APP.aab" ]; then AAB=(--aab "$APP.aab"); fi
+          python scripts/vault.py --app "$APP" --apk "$APP.apk" "${AAB[@]}" --build-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Publish APK as a Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "app-$APP-${{ github.run_number }}" "$APP.apk" \
+          gh release create "app-$APP-${{ github.run_number }}" "$APP.apk" $( [ -f "$APP.aab" ] && echo "$APP.aab" ) \
             --title "$APP #${{ github.run_number }}" \
             --notes "APK for $APP"
 

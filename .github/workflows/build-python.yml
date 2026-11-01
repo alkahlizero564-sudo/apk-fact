@@ -11,6 +11,10 @@ on:
         description: "What changed (shown in the installed app's update message)"
         required: false
         default: ""
+      store:
+        description: "true: also build the Google Play file (.aab), signed with the app's permanent key"
+        required: false
+        default: "false"
 
 permissions:
   contents: write
@@ -60,6 +64,8 @@ jobs:
           test -f "$SRC/main.py"
           LABEL=$(python scripts/app_label.py get "$APP")
           echo "App name on the phone: $LABEL"
+          APP_ID=$(python scripts/app_id.py get "$APP" python)
+          echo "Package name: $APP_ID"
           PERMS=$(python scripts/perms.py flet "$APP")
           echo "Android permissions: $PERMS"
 
@@ -79,8 +85,8 @@ jobs:
               python scripts/check_python.py "$PROJ/main.py" &&
               cd "$PROJ" &&
               flet build apk --yes --skip-flutter-doctor --project "$NAME" --product "$LABEL" \
-                --org com.generated --build-number "$VERSION" --build-version "1.0.$VERSION" -o "$PROJ/out" \
-                --android-permissions $PERMS
+                --org com.generated --bundle-id "$APP_ID" --build-number "$VERSION" --build-version "1.0.$VERSION" \
+                -o "$PROJ/out" --android-permissions $PERMS
             ) 2>&1 | tee "$RUNNER_TEMP/build.log"
             STATUS=${PIPESTATUS[0]}
             set -e
@@ -102,6 +108,14 @@ jobs:
 
           cp "$(ls "$PROJ"/out/*.apk | head -1)" "$GITHUB_WORKSPACE/$APP.apk"
 
+          if [ "${{ inputs.store }}" = "true" ]; then
+            echo "=== Google Play file (.aab) ==="
+            (cd "$PROJ" && flet build aab --yes --skip-flutter-doctor --project "$NAME" --product "$LABEL" \
+              --org com.generated --bundle-id "$APP_ID" --build-number "$VERSION" --build-version "1.0.$VERSION" \
+              -o "$PROJ/out_aab" --android-permissions $PERMS)
+            cp "$(ls "$PROJ"/out_aab/*.aab | head -1)" "$GITHUB_WORKSPACE/$APP.aab"
+          fi
+
       - name: Save fixed code
         env:
           APP: ${{ inputs.app }}
@@ -118,14 +132,17 @@ jobs:
           APP: ${{ inputs.app }}
           VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
           VAULT_REPO: ${{ vars.VAULT_REPO }}
-        run: python scripts/vault.py --app "$APP" --apk "$APP.apk" --build-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+        run: |
+          # The Google Play file (.aab) is signed with the same permanent key; it needs the vault.
+          AAB=(); if [ -f "$APP.aab" ]; then AAB=(--aab "$APP.aab"); fi
+          python scripts/vault.py --app "$APP" --apk "$APP.apk" "${AAB[@]}" --build-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Publish APK as a Release
         env:
           GH_TOKEN: ${{ github.token }}
           APP: ${{ inputs.app }}
         run: |
-          gh release create "app-$APP-${{ github.run_id }}" "$APP.apk" \
+          gh release create "app-$APP-${{ github.run_id }}" "$APP.apk" $( [ -f "$APP.aab" ] && echo "$APP.aab" ) \
             --title "$APP (Python) #${{ github.run_number }}" \
             --notes "APK for $APP (Python / Flet)"
 

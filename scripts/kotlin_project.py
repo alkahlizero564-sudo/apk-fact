@@ -19,8 +19,32 @@ CODE_REL = Path("app/src/main/java/app/main")
 
 
 def package_id(app):
-    # Must match scripts/vault.py and the other native builds.
-    return "com.generated.app_" + app.replace("-", "_")
+    # apps/<app>/package.txt or the default; same as scripts/vault.py and the other builds.
+    sys.path.insert(0, str(HERE))
+    import app_id
+    return app_id.get(app, "kotlin") if re.fullmatch(r"[a-z0-9-]+", app) else app_id.default(app, "kotlin")
+
+
+def launcher_png(src, dest):
+    """The icon as a real 192x192 PNG: icons picked on the phone are often JPEG files named icon.png, which
+    Android's resource compiler rejects ("file failed to compile")."""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        from PIL import Image
+        with Image.open(src) as im:
+            im = im.convert("RGBA")
+            side = min(im.size)
+            left, top = (im.width - side) // 2, (im.height - side) // 2
+            im.crop((left, top, left + side, top + side)).resize((192, 192), Image.LANCZOS).save(dest, "PNG")
+        return True
+    except ImportError:
+        if src.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n":
+            shutil.copy(src, dest)
+            return True
+        print("Warning: icon.png is not a PNG and Pillow is not installed; using the default icon")
+    except Exception as e:  # unreadable image: build with the default icon instead of failing
+        print(f"Warning: icon could not be used ({e}); using the default icon")
+    return False
 
 
 def prepare(app_dir, proj, app, version=1):
@@ -57,9 +81,7 @@ def prepare(app_dir, proj, app, version=1):
     manifest = proj / "app" / "src" / "main" / "AndroidManifest.xml"
     xml = manifest.read_text(encoding="utf-8")
     icon = app_dir / "icon.png"
-    if icon.exists():
-        (res / "mipmap-xxxhdpi").mkdir(parents=True, exist_ok=True)
-        shutil.copy(icon, res / "mipmap-xxxhdpi" / "ic_launcher.png")
+    if icon.exists() and launcher_png(icon, res / "mipmap-xxxhdpi" / "ic_launcher.png"):
         if "android:icon" not in xml:
             xml = xml.replace('android:label="@string/app_name"',
                               'android:icon="@mipmap/ic_launcher"\n        android:label="@string/app_name"', 1)

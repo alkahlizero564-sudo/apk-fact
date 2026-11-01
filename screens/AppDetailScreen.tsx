@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Alert, Image } from "react-native";
+import { View, Text, StyleSheet, Alert, Image, Linking, Share } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import {
   Screen,
@@ -24,6 +24,10 @@ import {
   setDisplayName,
   cleanLabel,
   buildAndInstall,
+  buildForStore,
+  getPackageId,
+  setPackageId,
+  validPackageId,
   deleteApp,
   listApps,
   AppInfo,
@@ -38,7 +42,7 @@ import { listAdmins, addAdmin, removeAdmin, AdminAccount, setAdminPin, adminMode
 import { colors, langColors, space, radius, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
 
-type Op = "edit" | "aiPreview" | "paste" | "build";
+type Op = "edit" | "aiPreview" | "paste" | "build" | "store";
 
 const EDIT_IDEAS = [
   "غيّر الألوان لدرجات أهدأ",
@@ -53,7 +57,7 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
   const { name, lang } = route.params;
   const info = LANGS[lang];
 
-  const [sheet, setSheet] = useState<null | "edit" | "paste" | "link" | "progress" | "vault" | "label" | "admins">(null);
+  const [sheet, setSheet] = useState<null | "edit" | "paste" | "link" | "progress" | "vault" | "label" | "admins" | "pkg">(null);
   const [pair, setPair] = useState<PairInfo | null>(null);
   const [admins, setAdmins] = useState<AdminAccount[] | null>(null);
   const [adminEmail, setAdminEmail] = useState("");
@@ -64,6 +68,10 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
   const [label, setLabel] = useState("");
   const [labelDraft, setLabelDraft] = useState("");
   const [labelBusy, setLabelBusy] = useState(false);
+  const [pkg, setPkg] = useState<{ id: string; custom: boolean } | null>(null);
+  const [pkgDraft, setPkgDraft] = useState("");
+  const [pkgBusy, setPkgBusy] = useState(false);
+  const [aabUrl, setAabUrl] = useState("");
   const [op, setOp] = useState<Op | null>(null);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
@@ -101,6 +109,11 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
     ["download", "تنزيل الـ APK"],
     ["install", "فتح شاشة التثبيت"],
   ]);
+  const [storeSteps, storeReport, storeReset] = useSteps([
+    ["start", "تجهيز البناء"],
+    ["build", "بناء نسخة Google Play وتوقيعها بمفتاح التطبيق الدائم"],
+    ["file", "ملف Google Play (AAB)"],
+  ]);
 
   async function loadVault() {
     try {
@@ -116,6 +129,7 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
   useEffect(() => {
     loadVault();
     getDisplayName(name).then(setLabel);
+    getPackageId(name, lang).then(setPkg);
     pairInfo(name).then(setPair);
   }, [name]);
 
@@ -239,7 +253,7 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
     setRunning(true);
     setSheet("progress");
     try {
-      await fn(kind === "build" ? buildReport : kind === "edit" ? genReport : prevReport);
+      await fn(kind === "build" ? buildReport : kind === "store" ? storeReport : kind === "edit" ? genReport : prevReport);
       setResult({ kind: "ok", text: done });
     } catch (e: any) {
       setResult({ kind: "error", text: e.message });
@@ -343,9 +357,38 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
     }
   }
 
-  const progressSteps = op === "build" ? buildSteps : op === "edit" ? genSteps : prevSteps;
+  async function startStore() {
+    if (!vault?.ready) {
+      Alert.alert("الخزنة الخاصة غير مجهّزة", "ملف Google Play لازم يتوقّع بمفتاح التطبيق الدائم. جهّز الخزنة من الإعدادات الأول.");
+      return;
+    }
+    if (!(await confirmPermissions([{ name, lang }]))) return;
+    storeReset();
+    setAabUrl("");
+    runOp(
+      "store",
+      async (r) => setAabUrl(await buildForStore(name, lang, r)),
+      "ملف AAB جاهز وموقّع بمفتاح التطبيق الدائم. نزّله وارفعه في Google Play Console (إصدار جديد)."
+    );
+  }
+
+  async function savePkg() {
+    setPkgBusy(true);
+    try {
+      await setPackageId(name, pkgDraft);
+      setPkg({ id: pkgDraft.trim().toLowerCase(), custom: true });
+      setSheet(null);
+      Alert.alert("تم", "اسم الحزمة الجديد بيتطبّق من البناء الجاي.");
+    } catch (e: any) {
+      Alert.alert("ما قدرنا نحفظ اسم الحزمة", e.message);
+    } finally {
+      setPkgBusy(false);
+    }
+  }
+
+  const progressSteps = op === "build" ? buildSteps : op === "store" ? storeSteps : op === "edit" ? genSteps : prevSteps;
   const progressTitle =
-    op === "build" ? "بناء وتثبيت" : op === "edit" ? "تعديل بالذكاء الاصطناعي" : op === "paste" ? "رفع الكود" : "معاينة جديدة";
+    op === "build" ? "بناء وتثبيت" : op === "store" ? "ملف Google Play" : op === "edit" ? "تعديل بالذكاء الاصطناعي" : op === "paste" ? "رفع الكود" : "معاينة جديدة";
 
   return (
     <Screen title={name} subtitle={info.tools} onBack={() => navigation.goBack()}>
@@ -412,6 +455,39 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
             title={iconBusy ? "بيترفع…" : "أيقونة التطبيق"}
             subtitle="اختيار صورة من المعرض"
             onPress={iconBusy ? undefined : pickIcon}
+            last
+          />
+        </Card>
+      </Section>
+
+      <Section title="Google Play">
+        <Card style={styles.list}>
+          <ListRow
+            icon="cube-outline"
+            title="اسم الحزمة"
+            subtitle={
+              pair
+                ? "التطبيقين المتصلين مسجّلين بالاسم ده في الإشعارات، فما بيتغيّر"
+                : pkg?.custom
+                ? "الاسم اللي اخترته. ما بيتغيّر بعد النشر على Google Play"
+                : "اسم تلقائي. اختار اسم باسم صاحب التطبيق قبل أول نشر على Google Play"
+            }
+            value={pkg?.id}
+            onPress={
+              pair
+                ? undefined
+                : () => {
+                    setPkgDraft(pkg?.custom ? pkg.id : "");
+                    setSheet("pkg");
+                  }
+            }
+          />
+          <ListRow
+            icon="logo-google-playstore"
+            tint={colors.accent}
+            title="ملف Google Play (AAB)"
+            subtitle="نسخة إصدار موقّعة بمفتاح التطبيق الدائم، جاهزة للرفع على Google Play Console"
+            onPress={running ? undefined : startStore}
             last
           />
         </Card>
@@ -592,6 +668,39 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
         <Button title="احفظ الاسم" icon="checkmark" onPress={saveLabel} loading={labelBusy} disabled={!cleanLabel(labelDraft)} />
       </Sheet>
 
+      <Sheet visible={sheet === "pkg"} title="اسم الحزمة" onClose={() => setSheet(null)}>
+        <Text style={styles.sheetText}>
+          ده الاسم اللي Google Play بيعرف بيه التطبيق، والزبون بيشوفه في رابط المتجر. اكتبه بالإنجليزي مفصول بنقاط، زي
+          اسم موقع بالعكس: com.اسم_الشركة.اسم_التطبيق
+        </Text>
+        <Field
+          label="اسم الحزمة"
+          icon="cube-outline"
+          value={pkgDraft}
+          onChangeText={setPkgDraft}
+          placeholder="com.alwardshop.app"
+          ltr
+          autoCapitalize="none"
+          autoCorrect={false}
+          error={pkgDraft.trim() && !validPackageId(pkgDraft.trim().toLowerCase()) ? "حروف إنجليزية صغيرة وأرقام و _ ، جزئين أو أكتر مفصولين بنقطة، وكل جزء يبدأ بحرف" : null}
+        />
+        {published ? (
+          <Banner
+            kind="error"
+            text="التطبيق ده عنده نسخ مثبّتة. لو غيّرت اسم الحزمة، الجوال بيعتبره تطبيق جديد، والنسخ القديمة ما بيوصلها التحديث."
+          />
+        ) : null}
+        <Banner kind="info" text="بعد ما تنشر التطبيق على Google Play ما تقدر تغيّر اسم الحزمة أبداً." />
+        <Button
+          title="احفظ اسم الحزمة"
+          icon="checkmark"
+          onPress={savePkg}
+          loading={pkgBusy}
+          disabled={!validPackageId(pkgDraft.trim().toLowerCase())}
+          style={{ marginTop: space.md }}
+        />
+      </Sheet>
+
       <Sheet visible={sheet === "paste"} title="لصق كود جاهز" onClose={() => setSheet(null)}>
         <Field
           label={info.pasteLabel}
@@ -680,7 +789,13 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
         <Timeline steps={progressSteps} />
         {running ? <Banner kind="info" text="تقدر تقفل النافذة، والعملية بتكمل. خلّي التطبيق مفتوح." /> : null}
         {result ? <Banner kind={result.kind} text={result.text} /> : null}
-        {result?.kind === "ok" && op !== "build" ? (
+        {result?.kind === "ok" && op === "store" && aabUrl ? (
+          <View style={{ flexDirection: "row-reverse", gap: space.sm, marginTop: space.md }}>
+            <Button title="نزّل الملف" icon="download-outline" onPress={() => Linking.openURL(aabUrl)} style={{ flex: 1 }} />
+            <Button title="شارك الرابط" icon="share-social-outline" variant="secondary" onPress={() => Share.share({ message: aabUrl })} style={{ flex: 1 }} />
+          </View>
+        ) : null}
+        {result?.kind === "ok" && op !== "build" && op !== "store" ? (
           <Button
             title="افتح المعاينة"
             icon="eye-outline"

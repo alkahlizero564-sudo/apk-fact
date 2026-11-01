@@ -46,10 +46,10 @@ def detect_lang(src):
 
 
 def package_id(app, lang):
-    # Must match what the build workflows use.
-    if lang == "html":
-        return "com.generated.a" + re.sub(r"[^a-z0-9]", "", app)
-    return "com.generated.app_" + app.replace("-", "_")
+    # The same name the builds use (apps/<app>/package.txt or the default).
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import app_id
+    return app_id.get(app, lang)
 
 
 def ensure_key(d, app):
@@ -98,6 +98,24 @@ def sign(apk, ks, info):
     print(f"Signed {apk.name} with the permanent key of the app (SHA-256 {info['sha256'][:23]}…)")
 
 
+def sign_aab(aab, ks, info):
+    """Google Play upload: the .aab signed (jarsigner) with the app's permanent key; old signatures removed."""
+    import zipfile
+    aab = Path(aab)
+    with tempfile.TemporaryDirectory() as tmp:
+        clean = Path(tmp) / "clean.aab"
+        sig = re.compile(r"META-INF/([^/]+\.(SF|RSA|DSA|EC)|MANIFEST\.MF)$", re.I)
+        with zipfile.ZipFile(aab) as zin, zipfile.ZipFile(clean, "w", zipfile.ZIP_DEFLATED) as zout:
+            for item in zin.infolist():
+                if not sig.match(item.filename):
+                    zout.writestr(item, zin.read(item.filename))
+        run(["jarsigner", "-keystore", str(ks), "-storetype", "PKCS12", "-storepass", info["storePassword"],
+             "-keypass", info["keyPassword"], "-sigalg", "SHA256withRSA", "-digestalg", "SHA-256", str(clean), info["alias"]])
+        run(["jarsigner", "-verify", str(clean)])
+        shutil.copy(clean, aab)
+    print(f"Signed {aab.name} for Google Play with the permanent key of the app (SHA-256 {info['sha256'][:23]}…)")
+
+
 def write_index(vault):
     apps = []
     for f in sorted((vault / "apps").glob("*/app.json")):
@@ -132,6 +150,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--app", required=True)
     ap.add_argument("--apk")
+    ap.add_argument("--aab", help="also sign this Google Play bundle (needs the vault)")
     ap.add_argument("--notes", default="")
     ap.add_argument("--build-url", default="")
     ap.add_argument("--require", action="store_true", help="fail instead of warning when the vault is not set up")
@@ -142,7 +161,7 @@ def main():
 
     token, repo = os.environ.get("VAULT_TOKEN", ""), os.environ.get("VAULT_REPO", "")
     url = os.environ.get("VAULT_URL") or (f"https://x-access-token:{token}@github.com/{repo}.git" if token and repo else "")
-    if not url and args.require:
+    if not url and (args.require or args.aab):
         raise SystemExit("الخزنة الخاصة غير مجهّزة. افتح APK Fact > الإعدادات > الخزنة الخاصة واضغط تجهيز.")
     if not url:
         print("::warning::Private vault not set up (open APK Fact > Settings > الخزنة الخاصة). "
@@ -157,6 +176,8 @@ def main():
         ks, info = ensure_key(d, app)
         if args.apk:
             sign(args.apk, ks, info)
+        if args.aab:
+            sign_aab(args.aab, ks, info)
 
         lang = detect_lang(src)
         if src.exists():

@@ -36,6 +36,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Pillow (turns the app icon into real PNGs)
+        run: pip install pillow
 
       - name: Pick the version number
         env:
@@ -64,6 +66,8 @@ jobs:
           # The name under the icon (can be Arabic), from apps/<app>/display-name.txt.
           python scripts/app_label.py android "$PROJ/android/app/src/main/res" "$APP"
           python scripts/app_label.py manifest "$PROJ/android/app/src/main/AndroidManifest.xml"
+          # The app icon (apps/<app>/icon.png) in every Android size; flutter create only has Flutter's own.
+          python scripts/app_icon.py android "$PROJ/android/app/src/main/res" "$APP"
           # Package name (apps/<app>/package.txt or the default) and Android SDK 36 for Google Play.
           python scripts/app_id.py gradle "$(ls "$PROJ"/android/app/build.gradle* | head -1)" "$APP" flutter
           # Android permissions (INTERNET too: release builds don't have it by default).

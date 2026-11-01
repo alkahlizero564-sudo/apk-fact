@@ -8,10 +8,11 @@ import { Button, Card, Chip, Field, IconButton, ListRow, Timeline, Banner, useSt
 import { AppAvatar, LANG_ICONS, LangBadge } from "../components/appVisuals";
 import { LANGS, PAIR_LANGS, Lang } from "../services/langs";
 import { appExists } from "../services/appActions";
-import { createPair, pairApps, pairReadiness, PairReadiness } from "../services/pair";
+import { createPair, pairApps, pairReadiness, PairReadiness, setAdminPin } from "../services/pair";
 import DesignStudio from "../components/DesignStudio";
 import UnderstandStudio, { UnderstandHandle } from "../components/UnderstandStudio";
 import { Spec, specText } from "../services/understand";
+import { emailLoginWanted } from "../services/login";
 import { saveApprovedDesign, clearDraft, DesignTarget } from "../services/design";
 import { colors, langColors, space, radius, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
@@ -29,6 +30,7 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
   const [lang, setLang] = useState<Lang>("flutter");
   const [description, setDescription] = useState("");
   const [admins, setAdmins] = useState("");
+  const [pin, setPin] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [adminName, setAdminName] = useState("");
   const [push, setPush] = useState(true);
@@ -45,7 +47,7 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
     ["design", "حفظ التصميم المعتمد للتطبيقين"],
     ["sync", "ربط المفاتيح بعمليات البناء (مشفّرة)"],
     ["backend", "Supabase: الجداول والأدوار والصلاحيات"],
-    ["auth", "Supabase: تسجيل الدخول برمز البريد"],
+    ["auth", "Supabase: تسجيل الدخول"],
     ["firebase", "Firebase: الإشعارات"],
     ["customer", "إنشاء تطبيق الزبون"],
     ["admin", "إنشاء تطبيق الإدارة"],
@@ -71,10 +73,18 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
   }, [clean, baseValid]);
 
   const usePush = push && lang !== "python";
+  // The owner decides sign-in in the description (services/login.ts, same rule in scripts/pair.py).
+  const login = emailLoginWanted(description);
   const emails = admins.split(/[,\s]+/).filter(Boolean);
   const emailsValid = emails.length > 0 && emails.every((e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
+  const pinValid = /^[A-Za-z0-9]{4,12}$/.test(pin.trim());
   const canSubmit =
-    !!ready?.supabase && (!usePush || ready.firebase) && baseValid && !taken && description.trim().length > 20 && emailsValid;
+    !!ready?.supabase &&
+    (!usePush || ready.firebase) &&
+    baseValid &&
+    !taken &&
+    description.trim().length > 20 &&
+    (login ? emailsValid : pinValid);
 
   async function submit() {
     setPhase("running");
@@ -85,7 +95,12 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
       report("design", "active");
       for (const t of designTargets) if (designs[t.key]) await saveApprovedDesign(t.key, designs[t.key]);
       report("design", "done");
-      await createPair({ base: clean, lang, admins: emails.join(","), push: usePush, description: fullDescription, customerName, adminName }, report);
+      await createPair(
+        { base: clean, lang, admins: login ? emails.join(",") : "-", push: usePush, description: fullDescription, customerName, adminName },
+        report
+      );
+      // No sign-in: the admin app is opened with the admin PIN (anyone could install it).
+      if (!login) await setAdminPin(clean.replace(/[^a-z0-9_]/g, "_"), "", pin.trim());
       designTargets.forEach((t) => clearDraft(t));
       setPhase("done");
     } catch (e: any) {
@@ -96,7 +111,8 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
 
   const apps = pairApps(clean);
   // The owner's words plus the requirements they approved: the database, the designs and both apps follow it.
-  const fullDescription = spec ? `${description.trim()}\n${specText(spec)}` : description.trim();
+  const fullDescription =
+    (spec ? `${description.trim()}\n${specText(spec)}` : description.trim()) + `\nLOGIN: ${login ? "email" : "none"}`;
   const designTargets: DesignTarget[] = [
     {
       key: apps.customer,
@@ -287,18 +303,42 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
               ))}
             </View>
 
-            <Field
-              label="إيميل الإدارة"
-              icon="shield-outline"
-              value={admins}
-              onChangeText={setAdmins}
-              placeholder="owner@example.com"
-              ltr
-              autoCapitalize="none"
-              keyboardType="email-address"
-              error={admins && !emailsValid ? "اكتب إيميل صحيح (أو أكتر، مفصولين بفاصلة)" : null}
-              helper="أي حد يسجّل دخول بالإيميل ده يصير مدير تلقائياً. الباقي زبائن."
+            <Banner
+              kind="info"
+              text={
+                login
+                  ? "تسجيل الدخول: بالبريد الإلكتروني ورمز من 6 أرقام (لأنك كتبته في الوصف)."
+                  : "بدون تسجيل دخول: الزبون يفتح التطبيق ويستخدمه على طول. لو تبغى دخول بالبريد اكتب «تسجيل دخول بالبريد» في الوصف."
+              }
             />
+            {login ? (
+              <Field
+                label="إيميل الإدارة"
+                icon="shield-outline"
+                value={admins}
+                onChangeText={setAdmins}
+                placeholder="owner@example.com"
+                ltr
+                autoCapitalize="none"
+                keyboardType="email-address"
+                error={admins && !emailsValid ? "اكتب إيميل صحيح (أو أكتر، مفصولين بفاصلة)" : null}
+                helper="أي حد يسجّل دخول بالإيميل ده يصير مدير تلقائياً. الباقي زبائن."
+              />
+            ) : (
+              <Field
+                label="رمز الإدارة (PIN)"
+                icon="keypad-outline"
+                value={pin}
+                onChangeText={setPin}
+                placeholder="مثال: 4821"
+                ltr
+                secret
+                autoCapitalize="none"
+                maxLength={12}
+                error={pin && !pinValid ? "من 4 إلى 12 حرف إنجليزي أو رقم" : null}
+                helper="تطبيق الإدارة بيطلبه مرة واحدة على كل جهاز، عشان ما يدخل الإدارة غيرك. تقدر تغيّره بعدين من صفحة التطبيق."
+              />
+            )}
 
             <Pressable
               onPress={() => lang !== "python" && setPush((p) => !p)}

@@ -312,6 +312,12 @@ def configure_email_otp(ref, token, smtp=None):
     return _request("PATCH", f"/projects/{ref}/config/auth", token, body)
 
 
+def configure_anonymous(ref, token):
+    """Apps without a sign-in screen: each install gets an invisible (anonymous) account, so row level
+    security still keeps every customer's data apart."""
+    return _request("PATCH", f"/projects/{ref}/config/auth", token, {"external_anonymous_users_enabled": True})
+
+
 def env_smtp():
     raw = os.environ.get("SUPABASE_SMTP", "").strip()
     return json.loads(raw) if raw else None

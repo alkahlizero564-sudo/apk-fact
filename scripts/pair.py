@@ -139,13 +139,28 @@ def designs_note(base):
             + "\n".join(parts) + "\n")
 
 
+# The owner decides in the description whether the apps have email sign-in (same rule as services/login.ts).
+LOGIN_NO = re.compile(r"(بدون|بلا|من غير|ما في|مافي|ما يحتاج|لا يحتاج|مش محتاج|ما فيه|without|no)\s+(أي\s+|اي\s+)?(تسجيل|login|log in|sign)", re.I)
+LOGIN_YES = re.compile(r"تسجيل\s*(ال)?دخول|دخول\s*(بال)?(بريد|ايميل|إيميل)|login|log ?in|sign ?in|sign ?up|إنشاء حساب|انشاء حساب|"
+                       r"حساب جديد|كلمة\s*(ال)?(مرور|سر)|password|رمز\s*(ال)?تحقق|\botp\b", re.I)
+
+
+def email_login_wanted(text):
+    m = re.search(r"^LOGIN:\s*(email|none)\s*$", text or "", re.M)
+    if m:
+        return m.group(1) == "email"
+    return not LOGIN_NO.search(text or "") and bool(LOGIN_YES.search(text or ""))
+
+
 def cmd_backend(a):
     ref, token = need("SUPABASE_PROJECT_REF"), need("SUPABASE_ACCESS_TOKEN")
     description = Path(a.description_file).read_text(encoding="utf-8").strip()
     p = sb.prefix_of(a.base)
-    admins = [e.strip() for e in a.admins.split(",") if e.strip()]
-    if not admins:
+    login = "email" if email_login_wanted(description) else "none"
+    admins = [e.strip() for e in a.admins.split(",") if "@" in e]
+    if login == "email" and not admins:
         raise SystemExit("Add at least one admin email")
+    print("Sign-in: " + ("email code" if login == "email" else "none (no sign-in screen; admin app uses the admin PIN)"), flush=True)
     url, anon = (os.environ.get("PAIR_TEST_URL"), "test-anon") if os.environ.get("PAIR_TEST_PSQL") else sb.api_keys(ref, token)
 
     print("Creating accounts, roles, devices and notifications tables…", flush=True)
@@ -173,7 +188,7 @@ def cmd_backend(a):
     run_sql(sb.realtime_sql(tables + [f"{p}_notifications"]))
     save_state(a.base, {
         "pair": a.base, "prefix": p, "lang": a.lang, "push": a.push == "true" and a.lang != "python",
-        "admins": admins, "description": description,
+        "admins": admins, "description": description, "login": login,
         "supabase": {"url": url, "anonKey": anon, "ref": ref},
         "schemaSql": sql, "contract": contract,
         "apps": {r: {"name": app_name(a.base, r), "packageId": package_id(app_name(a.base, r), a.lang)} for r in ROLES},
@@ -183,6 +198,10 @@ def cmd_backend(a):
 
 def cmd_auth(a):
     ref, token = need("SUPABASE_PROJECT_REF"), need("SUPABASE_ACCESS_TOKEN")
+    if load_state(a.base).get("login") == "none":
+        sb.configure_anonymous(ref, token)
+        print("No sign-in screen: each install gets an invisible account", flush=True)
+        return
     sb.configure_email_otp(ref, token, sb.env_smtp())
     if not sb.env_smtp():
         print("::warning::No custom SMTP set: Supabase's built-in mailer sends only a few emails per hour and only "
@@ -328,6 +347,37 @@ def contract_text(st, role):
         ),
         "python": "",
     }[lang]
+    email_signin = f"""Sign-in with a 6-digit email code (no passwords), on a polished first screen:
+  1. email field -> POST {url}/auth/v1/otp  body {{"email": email, "create_user": true}}  (headers: apikey only)
+     then show a 6-digit code input with a resend button (60 s cooldown) and "check your inbox" text.
+  2. POST {url}/auth/v1/verify  body {{"type": "email", "email": email, "token": code}}
+     -> {{access_token, refresh_token, expires_in, user: {{id, email}}}}. Save the session on the device.
+  3. When a request returns 401, refresh: POST {url}/auth/v1/token?grant_type=refresh_token body {{"refresh_token": rt}};
+     if that fails, go back to sign-in. Provide sign out (forget the session).
+  4. After sign-in read the profile: GET {p}_profiles?id=eq.<user.id>  (role is 'customer' or 'admin').
+     {("The role comes from the app used to sign in: right after a successful sign-in (and at start-up with a saved "
+       "session) the ADMIN app calls rpc " + p + "_claim_admin with an empty JSON body {} (user's token; returns true or "
+       "false), then reads the profile again. If it is still not 'admin' (the owner set a secret admin PIN) show a "
+       "'دخول الإدارة' screen: a hidden field 'رمز الإدارة', a button that calls rpc " + p + "_claim_admin "
+       "{\"pin\": pin} and on true opens the admin home, on false shows 'رمز الإدارة غير صحيح', and a sign out button. "
+       "The CUSTOMER app never calls it.") if role == "admin" else "Let the customer fill full_name and phone in a profile screen (PATCH " + p + "_profiles?id=eq.<id>)."}"""
+    no_signin = (
+        "No sign-in screen: the owner did not ask for one, so never show email, password, code or account screens.\n"
+        f"  1. On first launch create an invisible session: POST {url}/auth/v1/signup  body {{}}  (headers: apikey only)\n"
+        "     -> {access_token, refresh_token, expires_in, user: {id}}. Save it on the device and reuse it on every launch.\n"
+        f"  2. When a request returns 401, refresh: POST {url}/auth/v1/token?grant_type=refresh_token body {{\"refresh_token\": rt}};\n"
+        "     if that fails, create a new invisible session as in step 1.\n"
+        f"  3. Read the profile: GET {p}_profiles?id=eq.<user.id>  (role is 'customer' or 'admin'). "
+        + ("Right after the session is ready (and at start-up) the ADMIN app calls rpc " + p + "_claim_admin with an "
+           "empty JSON body {} (returns true or false), then reads the profile again. If it is still not 'admin', show "
+           "a 'دخول الإدارة' screen with a hidden field 'رمز الإدارة' and a button that calls rpc " + p + "_claim_admin "
+           "{\"pin\": pin}; on true open the admin home and never ask again on this device, on false show 'رمز الإدارة "
+           "غير صحيح'. The CUSTOMER app never calls it." if role == "admin" else
+           "When the customer creates a record that needs their name or phone, ask for them in that form (and keep them "
+           "with PATCH " + p + "_profiles?id=eq.<id> so the next time they are filled in).")
+        + "\n  Wherever these rules say 'after sign-in', it means 'after the session is ready'."
+    )
+    signin = no_signin if st.get("login") == "none" else email_signin
     return f"""
 === CONNECTED PAIR CONTRACT (follow exactly) ===
 This is the {role.upper()} app of a pair; the {other} app is built separately against the SAME backend.
@@ -344,20 +394,7 @@ Call the REST API directly over HTTPS (no Supabase SDK):
   insert: POST {url}/rest/v1/<table>   update: PATCH {url}/rest/v1/<table>?id=eq.<id>   delete: DELETE …?id=eq.<id>
   rpc:    POST {url}/rest/v1/rpc/<function>  with a JSON body of named arguments
 
-Sign-in with a 6-digit email code (no passwords), on a polished first screen:
-  1. email field -> POST {url}/auth/v1/otp  body {{"email": email, "create_user": true}}  (headers: apikey only)
-     then show a 6-digit code input with a resend button (60 s cooldown) and "check your inbox" text.
-  2. POST {url}/auth/v1/verify  body {{"type": "email", "email": email, "token": code}}
-     -> {{access_token, refresh_token, expires_in, user: {{id, email}}}}. Save the session on the device.
-  3. When a request returns 401, refresh: POST {url}/auth/v1/token?grant_type=refresh_token body {{"refresh_token": rt}};
-     if that fails, go back to sign-in. Provide sign out (forget the session).
-  4. After sign-in read the profile: GET {p}_profiles?id=eq.<user.id>  (role is 'customer' or 'admin').
-     {("The role comes from the app used to sign in: right after a successful sign-in (and at start-up with a saved "
-       "session) the ADMIN app calls rpc " + p + "_claim_admin with an empty JSON body {} (user's token; returns true or "
-       "false), then reads the profile again. If it is still not 'admin' (the owner set a secret admin PIN) show a "
-       "'دخول الإدارة' screen: a hidden field 'رمز الإدارة', a button that calls rpc " + p + "_claim_admin "
-       "{\"pin\": pin} and on true opens the admin home, on false shows 'رمز الإدارة غير صحيح', and a sign out button. "
-       "The CUSTOMER app never calls it.") if role == "admin" else "Let the customer fill full_name and phone in a profile screen (PATCH " + p + "_profiles?id=eq.<id>)."}
+{signin}
 
 Tables (all names start with {p}_; row level security already limits what each user can see):
 {tables}
@@ -409,7 +446,7 @@ def edit_rules(app):
     st = json.loads(path.read_text(encoding="utf-8"))
     return (
         "\nIMPORTANT: this app is one of a connected pair (customer + admin) that share a Supabase backend. "
-        "Keep the backend URL and key, the email-code sign-in, the table and column names, the device "
+        "Keep the backend URL and key, the sign-in (or no sign-in) as it is, the table and column names, the device "
         "registration and the notifications exactly as they work now, unless the requested change is about them. "
         "If the change needs data the other app also uses, use the existing tables.\n"
         + contract_text(st, st["role"])

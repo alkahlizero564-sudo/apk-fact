@@ -100,7 +100,7 @@ function recordHistory(kind) {
   fs.writeFileSync(metaFile, JSON.stringify(meta, null, 1) + "\n");
 }
 
-// Android permissions the request asks for and the code uses (apps/<name>/perms.txt), see scripts/perms.py.
+// Android permissions the description asks for (apps/<name>/perms.txt), see scripts/perms.py.
 function savePermissions() {
   const tmp = path.join(require("os").tmpdir(), `request-${process.pid}.txt`);
   try {

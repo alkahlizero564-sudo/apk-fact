@@ -237,7 +237,7 @@ App name: {name}
     (base / "preview.html").write_text(preview + "\n", encoding="utf-8")
     deps = clean_deps(lang, deps) or (read_deps(lang, base) if existing else [])
     write_deps(lang, base, deps)
-    try:  # Android permissions the request asks for and the code uses (apps/<name>/perms.txt)
+    try:  # Android permissions the description asks for (apps/<name>/perms.txt)
         import perms
         perms.save(name, task)
     except Exception as e:

@@ -35,6 +35,7 @@ import {
 } from "../services/updates";
 import { colors, space, radius, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
+import { confirmPermissions } from "../services/permissionPrompt";
 
 type Stage = "write" | "working" | "review" | "publishing" | "done";
 
@@ -161,6 +162,8 @@ export default function UpdateScreen({ navigation, route }: RootScreenProps<"Upd
 
   async function publish() {
     const ts = applied;
+    // A permission the code uses but the description did not mention: ask the owner first.
+    if (!(await confirmPermissions(ts))) return;
     setError(null);
     setStage("publishing");
     resetSteps(ts.map((t) => [`build:${t.name}`, `بناء الإصدار الجديد من ${roleLabel(t.name)} (مع إصلاح الأخطاء تلقائياً)`]));

@@ -23,9 +23,6 @@ import {
   getDisplayName,
   setDisplayName,
   cleanLabel,
-  PERMISSIONS,
-  getPermissions,
-  setPermissions,
   buildAndInstall,
   deleteApp,
   listApps,
@@ -33,6 +30,7 @@ import {
   Report,
 } from "../services/appActions";
 import { linkAppsViaSupabase } from "../services/link";
+import { confirmPermissions } from "../services/permissionPrompt";
 import { saveToVault, vaultStatus, listVaultApps, VaultApp } from "../services/vault";
 import { LANGS } from "../services/langs";
 import { publishedVersion, PublishedVersion, pairInfo, PairInfo } from "../services/updates";
@@ -55,7 +53,7 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
   const { name, lang } = route.params;
   const info = LANGS[lang];
 
-  const [sheet, setSheet] = useState<null | "edit" | "paste" | "link" | "progress" | "vault" | "label" | "admins" | "perms">(null);
+  const [sheet, setSheet] = useState<null | "edit" | "paste" | "link" | "progress" | "vault" | "label" | "admins">(null);
   const [pair, setPair] = useState<PairInfo | null>(null);
   const [admins, setAdmins] = useState<AdminAccount[] | null>(null);
   const [adminEmail, setAdminEmail] = useState("");
@@ -66,9 +64,6 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
   const [label, setLabel] = useState("");
   const [labelDraft, setLabelDraft] = useState("");
   const [labelBusy, setLabelBusy] = useState(false);
-  const [perms, setPerms] = useState<string[]>([]);
-  const [permsDraft, setPermsDraft] = useState<string[]>([]);
-  const [permsBusy, setPermsBusy] = useState(false);
   const [op, setOp] = useState<Op | null>(null);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
@@ -121,7 +116,6 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
   useEffect(() => {
     loadVault();
     getDisplayName(name).then(setLabel);
-    getPermissions(name).then(setPerms);
     pairInfo(name).then(setPair);
   }, [name]);
 
@@ -210,20 +204,6 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
     }
   }
 
-  async function savePerms() {
-    setPermsBusy(true);
-    try {
-      await setPermissions(name, permsDraft);
-      setPerms(permsDraft);
-      setSheet(null);
-      Alert.alert("تم", "الصلاحيات بتنضاف للتطبيق من البناء الجاي (ابنِ وثبّت، أو انشر تحديث).");
-    } catch (e: any) {
-      Alert.alert("ما قدرنا نحفظ الصلاحيات", e.message);
-    } finally {
-      setPermsBusy(false);
-    }
-  }
-
   useEffect(() => {
     const unsub = navigation.addListener("focus", () => {
       publishedVersion(name).then(setPublished);
@@ -300,7 +280,9 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
     ).then(() => setPasteText(""));
   }
 
-  function startBuild() {
+  async function startBuild() {
+    // A permission the code uses but the description did not mention: ask the owner first.
+    if (!(await confirmPermissions([{ name, lang }]))) return;
     buildReset();
     runOp("build", (r) => buildAndInstall(name, lang, r), "اكتمل. اضغط تثبيت في شاشة أندرويد.");
   }
@@ -423,20 +405,6 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
             onPress={() => {
               setLabelDraft(label);
               setSheet("label");
-            }}
-          />
-          <ListRow
-            icon="key-outline"
-            title="صلاحيات أندرويد"
-            subtitle={
-              perms.length
-                ? PERMISSIONS.filter((p) => perms.includes(p.key)).map((p) => p.label).join("، ")
-                : "الكاميرا، الموقع، الإشعارات… تنضاف تلقائياً من طلبك ومن الكود"
-            }
-            value={perms.length ? String(perms.length) : undefined}
-            onPress={() => {
-              setPermsDraft(perms);
-              setSheet("perms");
             }}
           />
           <ListRow
@@ -622,28 +590,6 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
           helper="بيظهر تحت أيقونة التطبيق بعد التثبيت. اسم المجلد والحزمة ما بيتغيروا."
         />
         <Button title="احفظ الاسم" icon="checkmark" onPress={saveLabel} loading={labelBusy} disabled={!cleanLabel(labelDraft)} />
-      </Sheet>
-
-      <Sheet visible={sheet === "perms"} title="صلاحيات أندرويد" onClose={() => setSheet(null)}>
-        <Text style={styles.sheetText}>
-          اختار الصلاحيات اللي التطبيق يحتاجها. الصلاحيات اللي طلبتها في الوصف واللي الكود بيستخدمها بتنضاف تلقائياً
-          حتى لو ما اخترتها، والتطبيق بيطلب الإذن من المستخدم وقت الحاجة.
-        </Text>
-        <View style={styles.chips}>
-          {PERMISSIONS.map((p) => {
-            const on = permsDraft.includes(p.key);
-            return (
-              <Chip
-                key={p.key}
-                label={p.label}
-                icon={on ? "checkmark-circle" : "add-circle-outline"}
-                selected={on}
-                onPress={() => setPermsDraft((d) => (on ? d.filter((k) => k !== p.key) : [...d, p.key]))}
-              />
-            );
-          })}
-        </View>
-        <Button title="احفظ الصلاحيات" icon="checkmark" onPress={savePerms} loading={permsBusy} />
       </Sheet>
 
       <Sheet visible={sheet === "paste"} title="لصق كود جاهز" onClose={() => setSheet(null)}>

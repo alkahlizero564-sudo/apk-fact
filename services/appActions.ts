@@ -18,6 +18,7 @@ import {
 } from "./github";
 import { REPO } from "./config";
 import { LANGS, LANG_ORDER, Lang, detectLang } from "./langs";
+import PERM_RULES from "./permissions.json";
 
 export type StepState = "pending" | "active" | "done" | "error";
 export type Report = (step: string, state: StepState, detail?: string) => void;
@@ -147,6 +148,44 @@ export async function getDisplayName(name: string): Promise<string> {
 
 export async function setDisplayName(name: string, label: string) {
   await pushFile(REPO, `apps/${name}/display-name.txt`, cleanLabel(label) + "\n", `App name: ${name}`);
+}
+
+/**
+ * Android permissions (apps/<name>/perms.txt) = the ones the owner approved. Generation saves the ones the
+ * description asks for; before a build the app asks the owner about any other permission the code uses.
+ * Rules shared with scripts/perms.py in services/permissions.json.
+ */
+export const PERMISSIONS: { key: string; label: string }[] = PERM_RULES.keys.map((k) => ({ key: k.key, label: k.label }));
+
+export function permissionLabels(keys: string[]) {
+  return keys.map((k) => PERMISSIONS.find((p) => p.key === k)?.label ?? k).join("، ");
+}
+
+export async function getPermissions(name: string): Promise<string[]> {
+  try {
+    const text = (await getFileText(REPO, `apps/${name}/perms.txt`)) ?? "";
+    const words: string[] = text.toUpperCase().match(/[A-Z_]+/g) ?? [];
+    return PERMISSIONS.map((p) => p.key).filter((k) => words.includes(k));
+  } catch {
+    return [];
+  }
+}
+
+/** The permissions the app's code uses that the owner has not approved yet. */
+export async function neededPermissions(name: string, lang: Lang): Promise<string[]> {
+  const file = LANGS[lang].mainFile(name);
+  const rules = (PERM_RULES.code as Record<string, Record<string, string>>)[file.slice(`apps/${name}/`.length)] ?? {};
+  const code = (await getFileText(REPO, file)) ?? "";
+  const have = await getPermissions(name);
+  return Object.entries(rules)
+    .filter(([key, rx]) => !have.includes(key) && new RegExp(rx).test(code))
+    .map(([key]) => key);
+}
+
+export async function approvePermissions(name: string, add: string[]) {
+  const have = await getPermissions(name);
+  const keys = PERMISSIONS.map((p) => p.key).filter((k) => have.includes(k) || add.includes(k));
+  await pushFile(REPO, `apps/${name}/perms.txt`, keys.map((k) => k + "\n").join("") || "\n", `Permissions: ${name}`);
 }
 
 export async function uploadIcon(name: string, base64: string) {

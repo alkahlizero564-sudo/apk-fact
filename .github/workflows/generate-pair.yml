@@ -54,6 +54,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - if: inputs.lang == 'html'
+        name: Browser for the HTML runtime check
+        run: |
+          npm i --no-save --no-package-lock --prefix "$RUNNER_TEMP/pw" playwright-core@1.48.2 > /dev/null || echo "playwright-core not installed: only the syntax check will run"
+          echo "NODE_PATH=$RUNNER_TEMP/pw/node_modules" >> "$GITHUB_ENV"
       - name: Tools
         run: |
           pip install google-auth requests

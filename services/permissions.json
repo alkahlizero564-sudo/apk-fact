@@ -1,0 +1,162 @@
+{
+ "_doc": "Android permissions of generated apps. Used by scripts/perms.py (builds, generation) and services/appActions.ts (the check before a build). Regexes are case-insensitive and must work in both Python and JavaScript.",
+ "always": [
+  "INTERNET",
+  "ACCESS_NETWORK_STATE"
+ ],
+ "keys": [
+  {
+   "key": "CAMERA",
+   "label": "الكاميرا",
+   "android": [
+    "CAMERA"
+   ]
+  },
+  {
+   "key": "LOCATION",
+   "label": "الموقع",
+   "android": [
+    "ACCESS_FINE_LOCATION",
+    "ACCESS_COARSE_LOCATION"
+   ]
+  },
+  {
+   "key": "BACKGROUND_LOCATION",
+   "label": "الموقع في الخلفية",
+   "android": [
+    "ACCESS_FINE_LOCATION",
+    "ACCESS_COARSE_LOCATION",
+    "ACCESS_BACKGROUND_LOCATION"
+   ]
+  },
+  {
+   "key": "MICROPHONE",
+   "label": "الميكروفون",
+   "android": [
+    "RECORD_AUDIO",
+    "MODIFY_AUDIO_SETTINGS"
+   ]
+  },
+  {
+   "key": "NOTIFICATIONS",
+   "label": "الإشعارات",
+   "android": [
+    "POST_NOTIFICATIONS"
+   ]
+  },
+  {
+   "key": "STORAGE",
+   "label": "الصور والملفات",
+   "android": [
+    "READ_MEDIA_IMAGES",
+    "READ_MEDIA_VIDEO",
+    "READ_EXTERNAL_STORAGE"
+   ]
+  },
+  {
+   "key": "VIBRATE",
+   "label": "الاهتزاز",
+   "android": [
+    "VIBRATE"
+   ]
+  },
+  {
+   "key": "CALL_PHONE",
+   "label": "الاتصال المباشر",
+   "android": [
+    "CALL_PHONE"
+   ]
+  },
+  {
+   "key": "SMS",
+   "label": "الرسائل",
+   "android": [
+    "SEND_SMS"
+   ]
+  },
+  {
+   "key": "CONTACTS",
+   "label": "جهات الاتصال",
+   "android": [
+    "READ_CONTACTS"
+   ]
+  },
+  {
+   "key": "BLUETOOTH",
+   "label": "البلوتوث",
+   "android": [
+    "BLUETOOTH_CONNECT",
+    "BLUETOOTH_SCAN"
+   ]
+  },
+  {
+   "key": "WAKE_LOCK",
+   "label": "إبقاء الشاشة مضيئة",
+   "android": [
+    "WAKE_LOCK"
+   ]
+  },
+  {
+   "key": "BIOMETRIC",
+   "label": "البصمة",
+   "android": [
+    "USE_BIOMETRIC"
+   ]
+  }
+ ],
+ "request": {
+  "CAMERA": "كاميرا|كاميره|تصوير|التقاط صور|مسح (?:ال)?باركود|باركود|كيو ?آر|\\bqr\\b|camera|barcode|scan|كشاف|فلاش|flashlight|torch",
+  "LOCATION": "الموقع الجغرافي|موقعي|موقع المستخدم|تحديد الموقع|خريطة|خرائط|\\bgps\\b|location|geolocation|\\bmaps?\\b|قبلة|qibla",
+  "MICROPHONE": "ميكروفون|مايك|تسجيل (?:ال)?صوت|تسجيل صوتي|ملاحظات صوتية|بحث صوتي|microphone|voice (?:note|record|search)|record audio|speech",
+  "NOTIFICATIONS": "إشعار|اشعار|تنبيه|تذكير|منبه|notification|reminder|alarm",
+  "STORAGE": "رفع (?:ال)?صور|اختيار صور|من المعرض|الاستديو|الاستوديو|ملفات|upload|gallery|pick (?:a )?(?:photo|image|file)",
+  "VIBRATE": "اهتزاز|هزاز|vibrat|haptic",
+  "CALL_PHONE": "اتصال مباشر|زر اتصال|اتصال بالرقم|phone call|call button",
+  "SMS": "رسالة نصية|رسائل نصية|\\bsms\\b",
+  "CONTACTS": "جهات الاتصال|contacts",
+  "BLUETOOTH": "بلوتوث|bluetooth",
+  "WAKE_LOCK": "إبقاء الشاشة|ابقاء الشاشة|الشاشة مضيئة|keep (?:the )?screen on|wake ?lock",
+  "BIOMETRIC": "بصمة|البصمة|fingerprint|biometric|face ?id"
+ },
+ "code": {
+  "index.html": {
+   "CAMERA": "getUserMedia\\s*\\(\\s*\\{[^}]*video|\\bcapture\\s*=|BarcodeDetector|\\btorch\\b",
+   "MICROPHONE": "getUserMedia\\s*\\(\\s*\\{[^}]*audio|MediaRecorder|SpeechRecognition",
+   "LOCATION": "navigator\\.geolocation",
+   "NOTIFICATIONS": "Notification\\.requestPermission|new Notification\\s*\\(|showNotification|PushNotifications",
+   "VIBRATE": "navigator\\.vibrate",
+   "STORAGE": "type\\s*=\\s*[\\\"']?file\\b",
+   "WAKE_LOCK": "wakeLock"
+  },
+  "lib/main.dart": {
+   "CAMERA": "ImageSource\\.camera|package:camera/|mobile_scanner",
+   "LOCATION": "package:geolocator|package:location/",
+   "MICROPHONE": "package:record/|speech_to_text",
+   "NOTIFICATIONS": "firebase_messaging|flutter_local_notifications",
+   "STORAGE": "image_picker|file_picker",
+   "VIBRATE": "HapticFeedback|package:vibration",
+   "BIOMETRIC": "local_auth"
+  },
+  "main.py": {
+   "CAMERA": "\\bCamera\\s*\\(|plyer\\.camera|ft\\.Camera",
+   "LOCATION": "Geolocator|plyer\\.gps|flet_geolocator",
+   "MICROPHONE": "AudioRecorder|flet_audio_recorder",
+   "NOTIFICATIONS": "plyer\\.notification",
+   "STORAGE": "FilePicker",
+   "VIBRATE": "HapticFeedback|vibrat"
+  },
+  "MainActivity.kt": {
+   "CAMERA": "Manifest\\.permission\\.CAMERA|TakePicture|CameraX|androidx\\.camera",
+   "LOCATION": "ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION|LocationManager|FusedLocation",
+   "MICROPHONE": "RECORD_AUDIO|MediaRecorder|SpeechRecognizer",
+   "NOTIFICATIONS": "POST_NOTIFICATIONS|NotificationCompat|NotificationManager",
+   "VIBRATE": "Vibrator|VibrationEffect",
+   "STORAGE": "GetContent|PickVisualMedia|OpenDocument",
+   "CALL_PHONE": "ACTION_CALL\\b",
+   "SMS": "SmsManager",
+   "CONTACTS": "ContactsContract",
+   "WAKE_LOCK": "WakeLock|FLAG_KEEP_SCREEN_ON",
+   "BIOMETRIC": "BiometricPrompt"
+  }
+ }
+}

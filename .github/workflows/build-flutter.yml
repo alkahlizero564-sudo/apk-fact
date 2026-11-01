@@ -60,6 +60,8 @@ jobs:
           # The name under the icon (can be Arabic), from apps/<app>/display-name.txt.
           python scripts/app_label.py android "$PROJ/android/app/src/main/res" "$APP"
           python scripts/app_label.py manifest "$PROJ/android/app/src/main/AndroidManifest.xml"
+          # Android permissions (INTERNET too: release builds don't have it by default).
+          python scripts/perms.py manifest "$APP" "$PROJ/android/app/src/main/AndroidManifest.xml"
 
           OK=0
           for i in $(seq 1 "$MAX_ATTEMPTS"); do

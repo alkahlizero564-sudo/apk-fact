@@ -64,6 +64,8 @@ def prepare(app_dir, proj, app, version=1):
             xml = xml.replace('android:label="@string/app_name"',
                               'android:icon="@mipmap/ic_launcher"\n        android:label="@string/app_name"', 1)
     manifest.write_text(xml, encoding="utf-8")
+    import perms  # the Android permissions the owner approved (perms.txt)
+    perms.manifest(app, manifest)
     return code_dir / "MainActivity.kt"
 
 

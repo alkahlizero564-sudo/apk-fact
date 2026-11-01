@@ -30,6 +30,7 @@ import {
   Report,
 } from "../services/appActions";
 import { linkAppsViaSupabase } from "../services/link";
+import { confirmPermissions } from "../services/permissionPrompt";
 import { saveToVault, vaultStatus, listVaultApps, VaultApp } from "../services/vault";
 import { LANGS } from "../services/langs";
 import { publishedVersion, PublishedVersion, pairInfo, PairInfo } from "../services/updates";
@@ -279,7 +280,9 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
     ).then(() => setPasteText(""));
   }
 
-  function startBuild() {
+  async function startBuild() {
+    // A permission the code uses but the description did not mention: ask the owner first.
+    if (!(await confirmPermissions([{ name, lang }]))) return;
     buildReset();
     runOp("build", (r) => buildAndInstall(name, lang, r), "اكتمل. اضغط تثبيت في شاشة أندرويد.");
   }

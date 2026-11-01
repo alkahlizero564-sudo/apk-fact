@@ -1,4 +1,4 @@
-"""Create a pair of connected apps (customer + admin) on Supabase, with email-code login and push.
+"""Create a pair of connected apps (customer + admin) on Supabase, with the sign-in the owner chose, and push.
 
 Run as separate workflow steps (generate-pair.yml), sharing state in apps/<base>-customer/pair.json:
   python scripts/pair.py backend  --base B --lang L --admins "a@x.com,b@y.com" --push true --description-file F
@@ -139,28 +139,57 @@ def designs_note(base):
             + "\n".join(parts) + "\n")
 
 
-# The owner decides in the description whether the apps have email sign-in (same rule as services/login.ts).
+# The owner decides sign-in in the description (same rules as services/login.ts). APK Fact adds the apps the owner
+# picked as "LOGIN: customer=<mode> admin=<mode>"; modes: none, code, password, password_code.
+MODES = ("none", "code", "password", "password_code")
 LOGIN_NO = re.compile(r"(بدون|بلا|من غير|ما في|مافي|ما يحتاج|لا يحتاج|مش محتاج|ما فيه|without|no)\s+(أي\s+|اي\s+)?(تسجيل|login|log in|sign)", re.I)
 LOGIN_YES = re.compile(r"تسجيل\s*(ال)?دخول|دخول\s*(بال)?(بريد|ايميل|إيميل)|login|log ?in|sign ?in|sign ?up|إنشاء حساب|انشاء حساب|"
                        r"حساب جديد|كلمة\s*(ال)?(مرور|سر)|password|رمز\s*(ال)?تحقق|\botp\b", re.I)
+LOGIN_PASSWORD = re.compile(r"كلمة\s*(ال)?(مرور|سر)|باسورد|password", re.I)
+LOGIN_CODE = re.compile(r"(رمز|كود)\s*(ال)?(تحقق|تأكيد|دخول)|(رمز|كود)\s*من\s*(6|٦|ستة|سته)|(رمز|كود)\s*(يوصل|يجي|بالبريد|على البريد)|"
+                        r"\botp\b|verification code|one.time code", re.I)
 
 
-def email_login_wanted(text):
-    m = re.search(r"^LOGIN:\s*(email|none)\s*$", text or "", re.M)
+def login_from_text(text):
+    text = text or ""
+    if LOGIN_NO.search(text) or not LOGIN_YES.search(text):
+        return "none"
+    pwd, code = bool(LOGIN_PASSWORD.search(text)), bool(LOGIN_CODE.search(text))
+    return "password_code" if pwd and code else "password" if pwd else "code"
+
+
+def login_modes(text):
+    """{"customer": mode, "admin": mode} from the LOGIN line, else the same mode for both apps from the words."""
+    m = re.search(r"^LOGIN:(.*)$", text or "", re.M)
     if m:
-        return m.group(1) == "email"
-    return not LOGIN_NO.search(text or "") and bool(LOGIN_YES.search(text or ""))
+        pairs = dict(re.findall(r"(customer|admin)=(\w+)", m.group(1)))
+        if pairs:
+            return {r: pairs.get(r) if pairs.get(r) in MODES else "none" for r in ROLES}
+        one = m.group(1).strip()
+        mode = "code" if one == "email" else one if one in MODES else "none"
+        return {r: mode for r in ROLES}
+    mode = login_from_text(text)
+    return {r: mode for r in ROLES}
+
+
+def state_login(st):
+    """Sign-in of each app; pairs created before this choice existed use email codes."""
+    v = st.get("login")
+    if isinstance(v, dict):
+        return {r: v.get(r, "code") for r in ROLES}
+    return {r: ("none" if v == "none" else "code") for r in ROLES}
 
 
 def cmd_backend(a):
     ref, token = need("SUPABASE_PROJECT_REF"), need("SUPABASE_ACCESS_TOKEN")
     description = Path(a.description_file).read_text(encoding="utf-8").strip()
     p = sb.prefix_of(a.base)
-    login = "email" if email_login_wanted(description) else "none"
+    login = login_modes(description)
     admins = [e.strip() for e in a.admins.split(",") if "@" in e]
-    if login == "email" and not admins:
+    if login["admin"] != "none" and not admins:
         raise SystemExit("Add at least one admin email")
-    print("Sign-in: " + ("email code" if login == "email" else "none (no sign-in screen; admin app uses the admin PIN)"), flush=True)
+    print(f"Sign-in: customer app {login['customer']}, admin app {login['admin']}"
+          + (" (admin app opens with the admin PIN)" if login["admin"] == "none" else ""), flush=True)
     url, anon = (os.environ.get("PAIR_TEST_URL"), "test-anon") if os.environ.get("PAIR_TEST_PSQL") else sb.api_keys(ref, token)
 
     print("Creating accounts, roles, devices and notifications tables…", flush=True)
@@ -198,15 +227,18 @@ def cmd_backend(a):
 
 def cmd_auth(a):
     ref, token = need("SUPABASE_PROJECT_REF"), need("SUPABASE_ACCESS_TOKEN")
-    if load_state(a.base).get("login") == "none":
+    modes = set(state_login(load_state(a.base)).values())
+    if "none" in modes:
         sb.configure_anonymous(ref, token)
-        print("No sign-in screen: each install gets an invisible account", flush=True)
+        print("Apps without sign-in: each install gets an invisible account", flush=True)
+    if modes == {"none"}:
         return
-    sb.configure_email_otp(ref, token, sb.env_smtp())
+    # Only "password" signs up without a code; any app that confirms the email with a code needs confirmation on.
+    sb.configure_email_otp(ref, token, sb.env_smtp(), autoconfirm=modes.isdisjoint({"code", "password_code"}))
     if not sb.env_smtp():
         print("::warning::No custom SMTP set: Supabase's built-in mailer sends only a few emails per hour and only "
               "to your team's addresses. Add SMTP in APK Fact > الإعدادات > Supabase for real customers.")
-    print("Email sign-in with a 6-digit code is on", flush=True)
+    print("Email sign-in is on: " + ", ".join(f"{r} {m}" for r, m in state_login(load_state(a.base)).items()), flush=True)
 
 
 # ---------------- firebase ----------------
@@ -323,6 +355,63 @@ def cmd_firebase(a):
 
 # ---------------- generate ----------------
 
+def signin_rules(st, role):
+    """How THIS app signs in: the mode the owner picked for it (none, code, password, password_code)."""
+    p, url = st["prefix"], st["supabase"]["url"]
+    mode = state_login(st)[role]
+    refresh = (f"When a request returns 401, refresh: POST {url}/auth/v1/token?grant_type=refresh_token body "
+               '{"refresh_token": rt}; ')
+    if role == "admin":
+        after = ("Right after the session is ready (and at start-up with a saved session) the ADMIN app calls rpc "
+                 f"{p}_claim_admin with an empty JSON body {{}} (user's token; returns true or false), then reads the "
+                 "profile again. If it is still not 'admin', show a 'دخول الإدارة' screen with a hidden field 'رمز "
+                 f"الإدارة' and a button that calls rpc {p}_claim_admin {{\"pin\": pin}}; on true open the admin home "
+                 "(and never ask again on this device), on false show 'رمز الإدارة غير صحيح'.")
+    else:
+        after = ("The CUSTOMER app never calls " + p + "_claim_admin. " +
+                 ("When the customer creates a record that needs their name or phone, ask for them in that form and keep "
+                  f"them with PATCH {p}_profiles?id=eq.<id> so they are filled in next time." if mode == "none" else
+                  f"Let the customer fill full_name and phone in a profile screen (PATCH {p}_profiles?id=eq.<id>)."))
+    profile = f"Read the profile: GET {p}_profiles?id=eq.<user.id>  (role is 'customer' or 'admin'). {after}"
+    session = "-> {access_token, refresh_token, expires_in, user: {id, email}}. Save the session on the device."
+    if mode == "none":
+        return (
+            "No sign-in screen in THIS app: the owner did not ask for one, so never show email, password, code or account screens.\n"
+            f"  1. On first launch create an invisible session: POST {url}/auth/v1/signup  body {{}}  (headers: apikey only)\n"
+            "     -> {access_token, refresh_token, expires_in, user: {id}}. Save it on the device and reuse it on every launch.\n"
+            f"  2. {refresh}if that fails, create a new invisible session as in step 1.\n"
+            f"  3. {profile}\n"
+            "  Wherever these rules say 'after sign-in', it means 'after the session is ready'.")
+    if mode == "code":
+        return (
+            "Sign-in with the email and a 6-digit code (no passwords), on a polished first screen:\n"
+            f"  1. email field -> POST {url}/auth/v1/otp  body {{\"email\": email, \"create_user\": true}}  (headers: apikey only)\n"
+            "     then show a 6-digit code input with a resend button (60 s cooldown) and 'check your inbox' text.\n"
+            f"  2. POST {url}/auth/v1/verify  body {{\"type\": \"email\", \"email\": email, \"token\": code}}\n"
+            f"     {session}\n"
+            f"  3. {refresh}if that fails, go back to sign-in. Provide sign out (forget the session).\n"
+            f"  4. After sign-in: {profile}")
+    confirm = mode == "password_code"
+    return (
+        "Sign-in with the email and a password (polished screens; Arabic messages under each wrong field):\n"
+        f"  1. 'حساب جديد': email, password (6+ characters, with show/hide), confirm password -> POST {url}/auth/v1/signup "
+        "body {\"email\": email, \"password\": password}  (headers: apikey only).\n"
+        + (f"     The owner wants the email confirmed with a code: show a 6-digit code input (resend after 60 s: POST "
+           f"{url}/auth/v1/resend body {{\"type\": \"signup\", \"email\": email}}), then POST {url}/auth/v1/verify body "
+           f"{{\"type\": \"signup\", \"email\": email, \"token\": code}} {session}\n"
+           if confirm else
+           f"     The reply already has the session (no email code): {session}\n"
+           "     If the reply has no access_token, sign in right away with step 2.\n")
+        + f"  2. 'تسجيل الدخول': POST {url}/auth/v1/token?grant_type=password body {{\"email\": email, \"password\": password}} "
+        f"{session}" + (" If the error says the email is not confirmed, resend the code and open the code screen." if confirm else "")
+        + "\n"
+        f"  3. 'نسيت كلمة المرور': POST {url}/auth/v1/recover body {{\"email\": email}}, then a 6-digit code input -> POST "
+        f"{url}/auth/v1/verify body {{\"type\": \"recovery\", \"email\": email, \"token\": code}} (gives a session), then a "
+        f"new password -> PUT {url}/auth/v1/user body {{\"password\": new}} with the session token.\n"
+        f"  4. {refresh}if that fails, go back to sign-in. Provide sign out (forget the session).\n"
+        f"  5. After sign-in: {profile}")
+
+
 def contract_text(st, role):
     p, url, anon = st["prefix"], st["supabase"]["url"], st["supabase"]["anonKey"]
     lang, push = st["lang"], st["push"]
@@ -347,37 +436,7 @@ def contract_text(st, role):
         ),
         "python": "",
     }[lang]
-    email_signin = f"""Sign-in with a 6-digit email code (no passwords), on a polished first screen:
-  1. email field -> POST {url}/auth/v1/otp  body {{"email": email, "create_user": true}}  (headers: apikey only)
-     then show a 6-digit code input with a resend button (60 s cooldown) and "check your inbox" text.
-  2. POST {url}/auth/v1/verify  body {{"type": "email", "email": email, "token": code}}
-     -> {{access_token, refresh_token, expires_in, user: {{id, email}}}}. Save the session on the device.
-  3. When a request returns 401, refresh: POST {url}/auth/v1/token?grant_type=refresh_token body {{"refresh_token": rt}};
-     if that fails, go back to sign-in. Provide sign out (forget the session).
-  4. After sign-in read the profile: GET {p}_profiles?id=eq.<user.id>  (role is 'customer' or 'admin').
-     {("The role comes from the app used to sign in: right after a successful sign-in (and at start-up with a saved "
-       "session) the ADMIN app calls rpc " + p + "_claim_admin with an empty JSON body {} (user's token; returns true or "
-       "false), then reads the profile again. If it is still not 'admin' (the owner set a secret admin PIN) show a "
-       "'دخول الإدارة' screen: a hidden field 'رمز الإدارة', a button that calls rpc " + p + "_claim_admin "
-       "{\"pin\": pin} and on true opens the admin home, on false shows 'رمز الإدارة غير صحيح', and a sign out button. "
-       "The CUSTOMER app never calls it.") if role == "admin" else "Let the customer fill full_name and phone in a profile screen (PATCH " + p + "_profiles?id=eq.<id>)."}"""
-    no_signin = (
-        "No sign-in screen: the owner did not ask for one, so never show email, password, code or account screens.\n"
-        f"  1. On first launch create an invisible session: POST {url}/auth/v1/signup  body {{}}  (headers: apikey only)\n"
-        "     -> {access_token, refresh_token, expires_in, user: {id}}. Save it on the device and reuse it on every launch.\n"
-        f"  2. When a request returns 401, refresh: POST {url}/auth/v1/token?grant_type=refresh_token body {{\"refresh_token\": rt}};\n"
-        "     if that fails, create a new invisible session as in step 1.\n"
-        f"  3. Read the profile: GET {p}_profiles?id=eq.<user.id>  (role is 'customer' or 'admin'). "
-        + ("Right after the session is ready (and at start-up) the ADMIN app calls rpc " + p + "_claim_admin with an "
-           "empty JSON body {} (returns true or false), then reads the profile again. If it is still not 'admin', show "
-           "a 'دخول الإدارة' screen with a hidden field 'رمز الإدارة' and a button that calls rpc " + p + "_claim_admin "
-           "{\"pin\": pin}; on true open the admin home and never ask again on this device, on false show 'رمز الإدارة "
-           "غير صحيح'. The CUSTOMER app never calls it." if role == "admin" else
-           "When the customer creates a record that needs their name or phone, ask for them in that form (and keep them "
-           "with PATCH " + p + "_profiles?id=eq.<id> so the next time they are filled in).")
-        + "\n  Wherever these rules say 'after sign-in', it means 'after the session is ready'."
-    )
-    signin = no_signin if st.get("login") == "none" else email_signin
+    signin = signin_rules(st, role)
     return f"""
 === CONNECTED PAIR CONTRACT (follow exactly) ===
 This is the {role.upper()} app of a pair; the {other} app is built separately against the SAME backend.

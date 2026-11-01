@@ -6,11 +6,10 @@ import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { Button, Card, Chip, Field, Banner, IconButton } from "./ui";
-import { Spec, ListKey, LIST_TITLES, understandIdea, refineSpec, permLabel } from "../services/understand";
-import { Lang } from "../services/langs";
+import { Spec, ListKey, LIST_TITLES, understandIdea, refineSpec, permLabel, IdeaTarget } from "../services/understand";
 import { colors, space, radius, type } from "../theme";
 
-type Target = { title: string; description: string; lang: Lang };
+type Target = IdeaTarget;
 export type UnderstandHandle = { approve: () => Promise<Spec | null> };
 
 function hash(s: string) {
@@ -19,7 +18,7 @@ function hash(s: string) {
   return (h >>> 0).toString(36);
 }
 // The list survives closing APK Fact; it belongs to one name + language + description.
-const cacheKey = (t: Target) => `understand:${hash(`${t.lang}|${t.title}|${t.description}`)}`;
+const cacheKey = (t: Target) => `understand:${hash(`${t.lang}|${t.pair ? "pair|" : ""}${t.title}|${t.description}`)}`;
 
 const ICONS: Record<ListKey, React.ComponentProps<typeof Ionicons>["name"]> = {
   screens: "phone-portrait-outline",
@@ -75,7 +74,7 @@ const UnderstandStudio = forwardRef<UnderstandHandle, { target: Target; onBusy?:
           else understand();
         })
         .catch(() => understand());
-    }, [target.title, target.description, target.lang]);
+    }, [target.title, target.description, target.lang, target.pair]);
 
     const answerList = () =>
       (spec?.questions ?? [])

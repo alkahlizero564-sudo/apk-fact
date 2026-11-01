@@ -1,15 +1,18 @@
-// Two connected apps (customer + admin) on Supabase, with email-code login and push notifications.
-import React, { useCallback, useEffect, useState } from "react";
+// Two connected apps (customer + admin) on Supabase, with the sign-in the owner wrote in the description, and push notifications.
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Button, Card, Chip, Field, IconButton, ListRow, Timeline, Banner, useSteps } from "../components/ui";
+import { Button, Card, Chip, Field, IconButton, ListRow, Timeline, Banner, Sheet, useSteps } from "../components/ui";
 import { AppAvatar, LANG_ICONS, LangBadge } from "../components/appVisuals";
 import { LANGS, PAIR_LANGS, Lang } from "../services/langs";
 import { appExists } from "../services/appActions";
-import { createPair, pairApps, pairReadiness, PairReadiness } from "../services/pair";
+import { createPair, pairApps, pairReadiness, PairReadiness, setAdminPin } from "../services/pair";
 import DesignStudio from "../components/DesignStudio";
+import UnderstandStudio, { UnderstandHandle } from "../components/UnderstandStudio";
+import { Spec, specText } from "../services/understand";
+import { loginFromText, loginLine, LOGIN_LABELS, PairLogin } from "../services/login";
 import { saveApprovedDesign, clearDraft, DesignTarget } from "../services/design";
 import { colors, langColors, space, radius, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
@@ -27,12 +30,18 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
   const [lang, setLang] = useState<Lang>("flutter");
   const [description, setDescription] = useState("");
   const [admins, setAdmins] = useState("");
+  const [pin, setPin] = useState("");
+  const [loginSheet, setLoginSheet] = useState(false);
+  const [loginApps, setLoginApps] = useState<"" | "customer" | "admin" | "both">("");
   const [customerName, setCustomerName] = useState("");
   const [adminName, setAdminName] = useState("");
   const [push, setPush] = useState(true);
   const [ready, setReady] = useState<PairReadiness | null>(null);
   const [taken, setTaken] = useState(false);
-  const [phase, setPhase] = useState<"form" | "design" | "running" | "done" | "failed">("form");
+  const [phase, setPhase] = useState<"form" | "understand" | "design" | "running" | "done" | "failed">("form");
+  const [spec, setSpec] = useState<Spec | null>(null); // the requirements the owner approved for both apps
+  const [understandBusy, setUnderstandBusy] = useState(false);
+  const understandRef = useRef<UnderstandHandle>(null);
   const [designs, setDesigns] = useState<Record<string, string>>({});
   const [designBusy, setDesignBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +49,7 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
     ["design", "حفظ التصميم المعتمد للتطبيقين"],
     ["sync", "ربط المفاتيح بعمليات البناء (مشفّرة)"],
     ["backend", "Supabase: الجداول والأدوار والصلاحيات"],
-    ["auth", "Supabase: تسجيل الدخول برمز البريد"],
+    ["auth", "Supabase: تسجيل الدخول"],
     ["firebase", "Firebase: الإشعارات"],
     ["customer", "إنشاء تطبيق الزبون"],
     ["admin", "إنشاء تطبيق الإدارة"],
@@ -66,10 +75,19 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
   }, [clean, baseValid]);
 
   const usePush = push && lang !== "python";
+  // The owner decides sign-in in the description (services/login.ts, same rules in scripts/pair.py): whether
+  // there is one and how (code / password). When there is, the sign-in sheet asks which app gets it.
+  const mode = loginFromText(description);
+  const pairLogin: PairLogin = {
+    customer: mode !== "none" && (loginApps === "customer" || loginApps === "both") ? mode : "none",
+    admin: mode !== "none" && (loginApps === "admin" || loginApps === "both") ? mode : "none",
+  };
   const emails = admins.split(/[,\s]+/).filter(Boolean);
   const emailsValid = emails.length > 0 && emails.every((e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
+  const pinValid = /^[A-Za-z0-9]{4,12}$/.test(pin.trim());
+  const loginReady = (mode === "none" || !!loginApps) && (pairLogin.admin !== "none" ? emailsValid : pinValid);
   const canSubmit =
-    !!ready?.supabase && (!usePush || ready.firebase) && baseValid && !taken && description.trim().length > 20 && emailsValid;
+    !!ready?.supabase && (!usePush || ready.firebase) && baseValid && !taken && description.trim().length > 20;
 
   async function submit() {
     setPhase("running");
@@ -80,7 +98,20 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
       report("design", "active");
       for (const t of designTargets) if (designs[t.key]) await saveApprovedDesign(t.key, designs[t.key]);
       report("design", "done");
-      await createPair({ base: clean, lang, admins: emails.join(","), push: usePush, description: description.trim(), customerName, adminName }, report);
+      await createPair(
+        {
+          base: clean,
+          lang,
+          admins: pairLogin.admin !== "none" ? emails.join(",") : "-",
+          push: usePush,
+          description: fullDescription,
+          customerName,
+          adminName,
+        },
+        report
+      );
+      // Admin app without sign-in: it opens with the admin PIN (anyone could install it).
+      if (pairLogin.admin === "none") await setAdminPin(clean.replace(/[^a-z0-9_]/g, "_"), "", pin.trim());
       designTargets.forEach((t) => clearDraft(t));
       setPhase("done");
     } catch (e: any) {
@@ -90,12 +121,19 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
   }
 
   const apps = pairApps(clean);
+  // What the owner chose in the sign-in sheet, so the understood list matches it.
+  const loginNote =
+    `${description.trim()}\n\nتسجيل الدخول (اختيار صاحب التطبيق): تطبيق الزبون: ${LOGIN_LABELS[pairLogin.customer]}، ` +
+    `تطبيق الإدارة: ${LOGIN_LABELS[pairLogin.admin]}${pairLogin.admin === "none" ? " (يفتح برمز الإدارة)" : ""}.`;
+  // The owner's words plus the requirements they approved: the database, the designs and both apps follow it.
+  const fullDescription =
+    (spec ? `${description.trim()}\n${specText(spec)}` : description.trim()) + `\n${loginLine(pairLogin)}`;
   const designTargets: DesignTarget[] = [
     {
       key: apps.customer,
       label: "تطبيق الزبون",
       title: customerName.trim() || "تطبيق الزبون",
-      description: description.trim(),
+      description: fullDescription,
       lang,
       role: "customer",
     },
@@ -103,7 +141,7 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
       key: apps.admin,
       label: "تطبيق الإدارة",
       title: adminName.trim() || "تطبيق الإدارة",
-      description: description.trim(),
+      description: fullDescription,
       lang,
       role: "admin",
     },
@@ -123,7 +161,21 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
       </View>
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        {phase === "design" ? (
+        {phase === "understand" ? (
+          <>
+            <Text style={styles.label}>فهمتك صح؟</Text>
+            <Text style={styles.subtitle}>
+              ده اللي فهمته من فكرتك للنظام كله، وكل بند مكتوب قدامه تبع أي تطبيق (الزبون، الإدارة، أو الاثنين). احذف
+              أي حاجة غلط بـ ✕، جاوب الأسئلة، واكتب أي إضافة أو تصحيح. لما تكون القائمة هي بالضبط اللي في راسك اضغط
+              «تمام، ده اللي أبغاه»، وقاعدة البيانات والتصميم والتطبيقين بيتبنوا عليها بند بند.
+            </Text>
+            <UnderstandStudio
+              ref={understandRef}
+              target={{ title: clean || "نظام الزبون والإدارة", description: loginNote, lang, pair: true }}
+              onBusy={setUnderstandBusy}
+            />
+          </>
+        ) : phase === "design" ? (
           <>
             <Text style={styles.label}>التصميم أولاً</Text>
             <Text style={styles.subtitle}>
@@ -266,18 +318,11 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
               ))}
             </View>
 
-            <Field
-              label="إيميل الإدارة"
-              icon="shield-outline"
-              value={admins}
-              onChangeText={setAdmins}
-              placeholder="owner@example.com"
-              ltr
-              autoCapitalize="none"
-              keyboardType="email-address"
-              error={admins && !emailsValid ? "اكتب إيميل صحيح (أو أكتر، مفصولين بفاصلة)" : null}
-              helper="أي حد يسجّل دخول بالإيميل ده يصير مدير تلقائياً. الباقي زبائن."
-            />
+            <Text style={styles.namesHint}>
+              {mode === "none"
+                ? "تسجيل الدخول: ما ذكرته في الوصف، فالتطبيقين بدون تسجيل دخول. لو تبغاه اكتبه في الوصف (مثلاً: تسجيل دخول بالبريد ورمز تحقق، أو بكلمة مرور)."
+                : `تسجيل الدخول من وصفك: ${LOGIN_LABELS[mode]}. بعد «افهم فكرتي» بتختار لأي تطبيق.`}
+            </Text>
 
             <Pressable
               onPress={() => lang !== "python" && setPush((p) => !p)}
@@ -298,27 +343,105 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
       {phase === "form" ? (
         <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
           <Button
-            title="صمّم الواجهات"
-            icon="color-palette-outline"
-            onPress={() => {
-              setDesigns({});
-              setPhase("design");
-            }}
+            title="افهم فكرتي"
+            icon="bulb-outline"
+            onPress={() => setLoginSheet(true)}
             disabled={!canSubmit}
             style={{ flex: 1 }}
           />
         </View>
+      ) : phase === "understand" ? (
+        <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
+          <Button title="رجوع" variant="secondary" onPress={() => setPhase("form")} disabled={understandBusy} style={{ flex: 1 }} />
+          <Button
+            title="تمام، ده اللي أبغاه"
+            icon="checkmark"
+            onPress={async () => {
+              const approved = await understandRef.current?.approve();
+              if (!approved) return;
+              setSpec(approved);
+              setDesigns({});
+              setPhase("design");
+            }}
+            disabled={understandBusy}
+            style={{ flex: 2 }}
+          />
+        </View>
       ) : phase === "design" ? (
         <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
-          <Button title="رجوع" variant="secondary" onPress={() => setPhase("form")} disabled={designBusy} style={{ flex: 1 }} />
+          <Button title="رجوع" variant="secondary" onPress={() => setPhase("understand")} disabled={designBusy} style={{ flex: 1 }} />
           <Button title="اعتمد التصميم وأنشئ التطبيقين" icon="checkmark-done" onPress={submit} disabled={!designsReady} style={{ flex: 2 }} />
         </View>
       ) : null}
+      <Sheet visible={loginSheet} title="تسجيل الدخول" onClose={() => setLoginSheet(false)}>
+        {mode !== "none" ? (
+          <>
+            <Text style={styles.sheetText}>
+              كتبت في الوصف تسجيل دخول ({LOGIN_LABELS[mode]}). تبغاه لأي تطبيق؟
+            </Text>
+            <View style={[styles.chips, { marginTop: 0, marginBottom: space.md }]}>
+              {(
+                [
+                  ["customer", `التطبيق الأول: ${customerName.trim() || "الزبون"}`],
+                  ["admin", `التطبيق الثاني: ${adminName.trim() || "الإدارة"}`],
+                  ["both", "الاثنين"],
+                ] as const
+              ).map(([k, l]) => (
+                <Chip key={k} label={l} selected={loginApps === k} onPress={() => setLoginApps(k)} />
+              ))}
+            </View>
+          </>
+        ) : (
+          <Text style={styles.sheetText}>
+            وصفك ما فيه تسجيل دخول، فالتطبيقين بيفتحوا على طول بدون تسجيل دخول. لو تبغاه، ارجع واكتبه في الوصف.
+          </Text>
+        )}
+        {mode !== "none" && pairLogin.admin !== "none" ? (
+          <Field
+            label="بريد الإدارة"
+            icon="shield-outline"
+            value={admins}
+            onChangeText={setAdmins}
+            placeholder="owner@example.com"
+            ltr
+            autoCapitalize="none"
+            keyboardType="email-address"
+            error={admins && !emailsValid ? "اكتب بريد صحيح (أو أكتر، مفصولين بفاصلة)" : null}
+            helper="اللي يسجّل دخول بالبريد ده في تطبيق الإدارة يصير مدير."
+          />
+        ) : mode === "none" || loginApps ? (
+          <Field
+            label="رمز الإدارة (PIN)"
+            icon="keypad-outline"
+            value={pin}
+            onChangeText={setPin}
+            placeholder="مثال: 4821"
+            ltr
+            secret
+            autoCapitalize="none"
+            maxLength={12}
+            error={pin && !pinValid ? "من 4 إلى 12 حرف إنجليزي أو رقم" : null}
+            helper="تطبيق الإدارة بدون تسجيل دخول، فبيطلب الرمز ده مرة واحدة على كل جهاز عشان ما يدخل الإدارة غيرك."
+          />
+        ) : null}
+        <Button
+          title="تم"
+          icon="checkmark"
+          disabled={!loginReady}
+          onPress={() => {
+            setLoginSheet(false);
+            setSpec(null);
+            setDesigns({});
+            setPhase("understand");
+          }}
+        />
+      </Sheet>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  sheetText: { ...type.body, color: colors.textMuted, textAlign: "right", marginBottom: space.md },
   root: { flex: 1, backgroundColor: colors.bg },
   top: { paddingHorizontal: space.lg, paddingBottom: space.md },
   topRow: { flexDirection: "row-reverse", alignItems: "center", gap: space.md },

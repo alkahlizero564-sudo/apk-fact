@@ -279,8 +279,9 @@ def api_keys(ref, token):
     )
 
 
-def configure_email_otp(ref, token, smtp=None):
-    """Email sign-in with a 6-digit code: the code is in both the sign-up and the sign-in email."""
+def configure_email_otp(ref, token, smtp=None, autoconfirm=False):
+    """Email sign-in: the 6-digit code is in both the sign-up and the sign-in email. autoconfirm: sign-ups with
+    a password need no code (only when no app of the pair confirms emails with a code)."""
     code_mail = (
         '<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;text-align:center;padding:24px">'
         "<h2>رمز الدخول</h2><p>استخدم الرمز ده لتسجيل الدخول:</p>"
@@ -289,7 +290,7 @@ def configure_email_otp(ref, token, smtp=None):
     )
     body = {
         "external_email_enabled": True,
-        "mailer_autoconfirm": False,
+        "mailer_autoconfirm": bool(autoconfirm),
         "mailer_otp_length": 6,
         "mailer_otp_exp": 600,
         "mailer_subjects_magic_link": "رمز الدخول",
@@ -310,6 +311,12 @@ def configure_email_otp(ref, token, smtp=None):
             "rate_limit_email_sent": 100,
         })
     return _request("PATCH", f"/projects/{ref}/config/auth", token, body)
+
+
+def configure_anonymous(ref, token):
+    """Apps without a sign-in screen: each install gets an invisible (anonymous) account, so row level
+    security still keeps every customer's data apart."""
+    return _request("PATCH", f"/projects/{ref}/config/auth", token, {"external_anonymous_users_enabled": True})
 
 
 def env_smtp():

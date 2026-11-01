@@ -107,6 +107,23 @@ def check_flutter_app(app_dir):
             print("Warning: still not clean, the build step will try again")
 
 
+def missing_requirements(model, keys, cfg, task, code, is_edit):
+    """Ask the AI which concrete requirements of the owner's request the code does not implement."""
+    what = "the CHANGE the owner asked for" if is_edit else "the owner's request"
+    prompt = (f"You review a {cfg['title']} app against {what}. List every concrete requirement in it (features, "
+              "screens, fields, buttons, texts, names, numbers, rules) that the code does NOT implement, or "
+              "implements differently from what was asked. Ignore style details the owner did not mention. "
+              'Reply with JSON only: {"missing": ["..."]} (an empty list when everything is done).\n\n'
+              f"OWNER'S REQUEST:\n{task}\n\nCODE:\n```{cfg['fence']}\n{code}\n```\n")
+    try:
+        text = call_gemini(model, prompt, keys, temperature=0.1, json_mode=True)
+        data = json.loads(re.sub(r"^[^{]*|[^}]*$", "", text))
+        return [m.strip() for m in data.get("missing", []) if isinstance(m, str) and m.strip()][:15]
+    except Exception as e:
+        print(f"Request check skipped ({e})")
+        return []
+
+
 def check_kotlin_app(app_dir, name):
     """Compile (and fix) the Kotlin app with Gradle when it is installed; never fails generation."""
     if not shutil.which("gradle"):
@@ -182,6 +199,26 @@ App name: {name}
     preview = blocks.get("html", "")
     if not code or not preview:
         raise SystemExit(f"Model did not return both the {cfg['fence']} code and the html preview")
+
+    # Make sure the app does everything the owner asked; one more round adds what is missing.
+    missing = missing_requirements(model, keys, cfg, task, code, bool(existing))
+    if missing:
+        print("Missing from the request:\n- " + "\n- ".join(missing), flush=True)
+        retry = (f"{prompt}\n\nYour previous answer is below, but it does not do all of what the owner asked. "
+                 f"Missing or different:\n- " + "\n- ".join(missing) +
+                 f"\n\nReturn the complete files again with ALL of these implemented exactly as asked, keeping "
+                 f"everything else.\n\nPREVIOUS {cfg['code_file']}:\n```{cfg['fence']}\n{code}\n```\n")
+        try:
+            blocks2, deps2 = parse_reply(call_gemini(model, retry, keys, temperature=0.3, json_mode=False))
+            if blocks2.get(cfg["fence"]):
+                code = blocks2[cfg["fence"]]
+                preview = blocks2.get("html") or preview
+                deps = deps2 if deps2 is not None else deps
+                print("Added what was missing", flush=True)
+        except Exception as e:  # keep the first version
+            print(f"Warning: could not add the missing parts ({e})")
+    else:
+        print("Request check: everything asked for is implemented", flush=True)
 
     code_path.parent.mkdir(parents=True, exist_ok=True)
     code_path.write_text(code + "\n", encoding="utf-8")

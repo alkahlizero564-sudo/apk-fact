@@ -42,6 +42,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Browser for the HTML runtime check
+        run: |
+          npm i --no-save --no-package-lock --prefix "$RUNNER_TEMP/pw" playwright-core@1.48.2 > /dev/null || echo "playwright-core not installed: only the syntax check will run"
+          echo "NODE_PATH=$RUNNER_TEMP/pw/node_modules" >> "$GITHUB_ENV"
+
       - name: Pick the version number
         env:
           APP: ${{ github.event.inputs.app }}
@@ -81,6 +86,8 @@ jobs:
           npx cap add android
           # The name under the icon (can be Arabic), from apps/<app>/display-name.txt.
           python "$GITHUB_WORKSPACE/scripts/app_label.py" android android/app/src/main/res "$APP"
+          # Android permissions: the ones chosen in APK Fact (perms.txt) and the ones the code uses.
+          python "$GITHUB_WORKSPACE/scripts/perms.py" manifest "$APP" android/app/src/main/AndroidManifest.xml
 
           # Connected apps with push: Capacitor applies Firebase by itself when google-services.json is there.
           if [ -f "$SRC/google-services.json" ]; then

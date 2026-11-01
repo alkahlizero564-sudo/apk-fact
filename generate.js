@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { checkHtml } = require("./scripts/check_html");
+const { checkHtmlFull } = require("./scripts/check_html");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // REQUEST_FILE lets scripts/pair.py generate the two apps of a pair without touching request.txt.
@@ -56,6 +56,10 @@ const system =
   "CSS variables for the palette, prefers-color-scheme for dark mode, localStorage for the user's data, " +
   "inline SVG or emoji for icons, and RTL Arabic support when the request is in Arabic.\n\n" +
   designBrief +
+  "\nDevice features: when the owner asks for the camera, location, microphone, notifications, photos/files, " +
+  "vibration, calls or SMS, really implement them with the web APIs (getUserMedia, <input type=file capture>, " +
+  "navigator.geolocation, Notification, navigator.vibrate, tel:/sms: links). The Android permissions are added " +
+  "automatically; ask right before the feature is used and show a clear message with a retry when refused.\n" +
   "\nReply with ONLY the full file inside a single ```html code block. No explanations.";
 
 // The design the owner approved in APK Fact (apps/<name>/design.html): build the real app from it.
@@ -94,6 +98,22 @@ function recordHistory(kind) {
   } catch {}
   meta.history.push({ at: new Date().toISOString(), kind, request });
   fs.writeFileSync(metaFile, JSON.stringify(meta, null, 1) + "\n");
+}
+
+// Android permissions the request asks for and the code uses (apps/<name>/perms.txt), see scripts/perms.py.
+function savePermissions() {
+  const tmp = path.join(require("os").tmpdir(), `request-${process.pid}.txt`);
+  try {
+    fs.writeFileSync(tmp, request);
+    const r = require("child_process").spawnSync("python3", [path.join(__dirname, "scripts", "perms.py"), "save", name, tmp], {
+      encoding: "utf8",
+    });
+    console.log((r.stdout || r.stderr || "").trim());
+  } catch (e) {
+    console.log(`Permissions not saved: ${e.message}`);
+  } finally {
+    fs.rmSync(tmp, { force: true });
+  }
 }
 
 class ApiError extends Error {
@@ -267,25 +287,40 @@ async function runProvider(label, userPrompt = prompt) {
   return tryGeminiKeys(geminiKeys, geminiModels, 3, userPrompt);
 }
 
-// One repair round when the generated app has JavaScript errors; keeps the better version.
+// Up to 3 repair rounds when the generated app has JavaScript errors (syntax, or errors thrown when it runs and
+// its buttons are pressed); keeps the version with the fewest errors.
 async function repair(code, problems, order) {
-  console.log("الكود فيه أخطاء JavaScript، بنطلب من الذكاء الاصطناعي يصلحها:\n" + problems.join("\n"));
-  const fixPrompt =
-    `This HTML app has JavaScript syntax errors. Fix them with the smallest possible changes, ` +
-    `keep the design and behavior the same, and return the FULL corrected file.\n\nERRORS:\n` +
-    `${problems.join("\n")}\n\nFILE:\n\`\`\`html\n${code}\n\`\`\``;
-  for (const label of order) {
-    const res = await runProvider(label, fixPrompt);
-    if (res.code) {
-      const left = checkHtml(res.code);
-      if (left.length < problems.length) {
+  let best = { code, problems };
+  let hist = [];
+  for (let round = 1; round <= 3 && best.problems.length; round++) {
+    console.log(`الكود فيه أخطاء JavaScript (محاولة إصلاح ${round} من 3):\n` + best.problems.join("\n"));
+    const fixPrompt =
+      `This HTML app has JavaScript errors, found by checking its code and by running it headless and pressing ` +
+      `its buttons. Fix them with the smallest possible changes, keep the design, texts and behavior the same, and ` +
+      `return the FULL corrected file.\nHints: a ReferenceError means a function or variable is missing or ` +
+      `misspelled: define it at the top level of the script (not inside another function) with exactly the name ` +
+      `the HTML uses; "Cannot read properties of null" means an element id that does not exist or a script that ` +
+      `runs before the element exists; wrap JSON.parse/localStorage reads in try/catch with a default.\n\nERRORS:\n` +
+      `${best.problems.join("\n")}` +
+      (hist.length ? `\n\nA previous fix attempt still had these (try another way):\n${hist.join("\n")}` : "") +
+      `\n\nFILE:\n\`\`\`html\n${best.code}\n\`\`\``;
+    let improved = false;
+    for (const label of order) {
+      const res = await runProvider(label, fixPrompt);
+      if (!res.code) continue;
+      const left = await checkHtmlFull(res.code);
+      if (left.length < best.problems.length) {
         console.log(left.length ? `اتصلح جزء، باقي: ${left.join(" | ")}` : "اتصلحت أخطاء JavaScript");
-        return res.code;
+        best = { code: res.code, problems: left };
+        improved = true;
+        break;
       }
+      hist = left.slice(0, 4);
     }
+    if (!improved) break;
   }
-  console.log("ما قدرنا نصلح أخطاء JavaScript، بنحفظ الكود زي ما هو");
-  return code;
+  if (best.problems.length) console.log("ما قدرنا نصلح كل أخطاء JavaScript، بنحفظ أفضل نسخة");
+  return best.code;
 }
 
 // Checks that the app does everything the owner asked; when something is missing, one more round adds it.
@@ -337,11 +372,12 @@ async function completeRequirements(code, order) {
     const res = await runProvider(label);
     if (res.code) {
       res.code = await completeRequirements(res.code, order);
-      const problems = checkHtml(res.code);
+      const problems = await checkHtmlFull(res.code);
       if (problems.length) res.code = await repair(res.code, problems, order);
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(FILE, res.code);
       recordHistory(existing ? "edit" : "create");
+      savePermissions();
       console.log(`تم: ${FILE} بواسطة ${label}${res.model ? " (" + res.model + ")" : ""}`);
       return;
     }

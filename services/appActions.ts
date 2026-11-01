@@ -149,6 +149,38 @@ export async function setDisplayName(name: string, label: string) {
   await pushFile(REPO, `apps/${name}/display-name.txt`, cleanLabel(label) + "\n", `App name: ${name}`);
 }
 
+/** Android permissions (apps/<name>/perms.txt). The build also adds the ones the code uses; see scripts/perms.py. */
+export const PERMISSIONS: { key: string; label: string }[] = [
+  { key: "CAMERA", label: "الكاميرا" },
+  { key: "LOCATION", label: "الموقع" },
+  { key: "BACKGROUND_LOCATION", label: "الموقع في الخلفية" },
+  { key: "MICROPHONE", label: "الميكروفون" },
+  { key: "NOTIFICATIONS", label: "الإشعارات" },
+  { key: "STORAGE", label: "الصور والملفات" },
+  { key: "VIBRATE", label: "الاهتزاز" },
+  { key: "CALL_PHONE", label: "الاتصال المباشر" },
+  { key: "SMS", label: "الرسائل" },
+  { key: "CONTACTS", label: "جهات الاتصال" },
+  { key: "BLUETOOTH", label: "البلوتوث" },
+  { key: "WAKE_LOCK", label: "إبقاء الشاشة مضيئة" },
+  { key: "BIOMETRIC", label: "البصمة" },
+];
+
+export async function getPermissions(name: string): Promise<string[]> {
+  try {
+    const text = (await getFileText(REPO, `apps/${name}/perms.txt`)) ?? "";
+    const words: string[] = text.toUpperCase().match(/[A-Z_]+/g) ?? [];
+    return PERMISSIONS.map((p) => p.key).filter((k) => words.includes(k));
+  } catch {
+    return [];
+  }
+}
+
+export async function setPermissions(name: string, keys: string[]) {
+  const text = PERMISSIONS.map((p) => p.key).filter((k) => keys.includes(k)).map((k) => k + "\n").join("");
+  await pushFile(REPO, `apps/${name}/perms.txt`, text || "\n", `Permissions: ${name}`);
+}
+
 export async function uploadIcon(name: string, base64: string) {
   await pushBase64File(REPO, `apps/${name}/icon.png`, base64, `Set icon: ${name}`);
 }

@@ -34,6 +34,15 @@ PREVIEW_RULES = (
 )
 
 
+# The build adds the Android permissions the request asks for and the code uses (scripts/perms.py).
+PERMISSIONS_RULE = (
+    "Device features: when the owner asks for the camera, location, microphone, notifications, photos/files, "
+    "vibration, calls or SMS, really implement them (not a placeholder). The Android permissions are added to "
+    "the manifest automatically; ask for the permission at runtime right before the feature is used, and show "
+    "a clear message with a retry when the user refuses. Never ask for permissions the app does not use."
+)
+
+
 def parse_request(text):
     lines = text.splitlines()
     name = re.sub(r"[^a-z0-9-]", "", lines[0].strip().lower())
@@ -172,6 +181,8 @@ def main():
 
 {DESIGN_BRIEF}
 
+{PERMISSIONS_RULE}
+
 {reply_format([(cfg['fence'], f"the complete {cfg['code_file']}"), ("html", PREVIEW_RULES)])}
 
 App name: {name}
@@ -226,6 +237,11 @@ App name: {name}
     (base / "preview.html").write_text(preview + "\n", encoding="utf-8")
     deps = clean_deps(lang, deps) or (read_deps(lang, base) if existing else [])
     write_deps(lang, base, deps)
+    try:  # Android permissions the request asks for and the code uses (apps/<name>/perms.txt)
+        import perms
+        perms.save(name, task)
+    except Exception as e:
+        print(f"Warning: permissions not saved ({e})")
 
     if lang == "python":
         problems = python_problems(code_path)

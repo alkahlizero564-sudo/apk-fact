@@ -11,7 +11,7 @@ DEFAULT_MODEL = "gemini-3.8-flash"
 
 def error_excerpt(log_text):
     lines = log_text.splitlines()
-    picked = [l for l in lines if re.search(r"error|Error|Exception|Failed|failed|FAILURE|What went wrong", l)]
+    picked = [l for l in lines if re.search(r"runtime:|error|Error|Exception|Failed|failed|FAILURE|What went wrong", l)]
     excerpt = "\n".join(picked[-60:]) if picked else "\n".join(lines[-60:])
     return excerpt[-6000:]
 
@@ -30,7 +30,11 @@ def main():
     model = os.environ.get("GEMINI_MODEL") or DEFAULT_MODEL
 
     prompt = f"""An HTML app is wrapped as an Android app (Capacitor) and built with Gradle. Either the build failed,
-or a pre-build check found JavaScript errors in index.html (those are always caused by index.html).
+or a pre-build check found JavaScript errors in index.html (those are always caused by index.html). The check
+also runs the app headless and presses its buttons: lines starting with "runtime:" are errors thrown while the
+app ran (a ReferenceError means a function/variable is missing or misspelled: define it at the top level of the
+script, not inside another function; "Cannot read properties of null" means an element id that does not exist
+or a script that runs before the element is created; JSON.parse needs try/catch with a default).
 First decide whether the failure is caused by the app's index.html. Gradle, Android SDK, network, plugin or icon problems are NOT caused by it.
 If it IS caused by index.html, fix it with the smallest possible changes, keep the design and behavior the same, and return the complete file.
 Reply in exactly this format, nothing else:

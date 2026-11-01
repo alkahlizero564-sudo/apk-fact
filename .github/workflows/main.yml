@@ -14,6 +14,10 @@ on:
 permissions:
   contents: write
 
+# The public updates repo (APK Fact > الإعدادات > الخصوصية): APKs and version.json for installed apps.
+env:
+  UPDATES_REPO: ${{ vars.UPDATES_REPO }}
+
 jobs:
   build:
     name: Build APK locally
@@ -52,7 +56,6 @@ jobs:
       - name: Publish APK as a Release
         env:
           GH_TOKEN: ${{ github.token }}
+          UPDATES_TOKEN: ${{ secrets.UPDATES_TOKEN }}
         run: |
-          gh release create "apk-${{ github.run_number }}" app.apk \
-            --title "APK #${{ github.run_number }}" \
-            --notes "Built from ${{ github.sha }}"
+          python3 scripts/updates_repo.py release "apk-${{ github.run_number }}" "APK #${{ github.run_number }}" "Built from ${{ github.sha }}" app.apk

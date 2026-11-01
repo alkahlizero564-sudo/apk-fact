@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, StyleSheet, Pressable, Linking } from "react-native";
+import { View, Text, StyleSheet, Pressable, Linking, Alert } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import * as SecureStore from "expo-secure-store";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,6 +25,7 @@ import { testSupabaseConnection, testEmailCode, EmailCodeTest, applySmtpSettings
 import { testGeminiConnection, testClaudeConnection, listGeminiModels, GeminiModel } from "../services/ai";
 import { buildTool, listToolBuilds, ToolRun } from "../services/appActions";
 import { REPO } from "../services/config";
+import { privacyStatus, setupUpdatesRepo, makeRepoPrivate, appsWithInstalls, PrivacyStatus } from "../services/privacy";
 import { parseServiceAccount } from "../services/pair";
 import { colors, space, radius, type } from "../theme";
 
@@ -448,11 +449,107 @@ ${(a.sha256 ?? "").slice(0, 23)}…`}
   );
 }
 
+function PrivacyPanel({ status, onChange }: { status: PrivacyStatus | null; onChange: () => void }) {
+  const [steps, report, reset] = useSteps([
+    ["repo", "إنشاء مستودع عام للتحديثات apk-fact-updates (بدون كود)"],
+    ["secret", "حفظ مفتاح الوصول كسرّ مشفّر"],
+    ["variable", "ربطه بعمليات البناء"],
+  ]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function setup() {
+    setBusy(true);
+    setError(null);
+    reset();
+    try {
+      await setupUpdatesRepo(report);
+      onChange();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function goPrivate() {
+    setBusy(true);
+    setError(null);
+    let installed: string[] = [];
+    try {
+      installed = await appsWithInstalls();
+    } catch {}
+    setBusy(false);
+    Alert.alert(
+      "تخلّي apk-fact خاص؟",
+      "• كود كل التطبيقات ووصفها وسجلات البناء بتبقى مخفية، ما يشوفها غيرك.\n" +
+        "• GitHub بيدي المستودعات الخاصة حوالي 2000 دقيقة بناء مجانية في الشهر (تقريباً 50 تطبيق بإنشائه وبنائه)، والزيادة بفلوس قليلة على كل دقيقة.\n" +
+        (installed.length
+          ? `• التطبيقات المثبّتة حالياً (${installed.join("، ")}) محتاجة بناء جديد وتثبيته مرة واحدة يدوياً، وبعدها التحديثات بتوصلها عادي.\n`
+          : "") +
+        "• تقدر ترجّعه عام من GitHub في أي وقت.",
+      [
+        { text: "إلغاء", style: "cancel" },
+        {
+          text: "خلّيه خاص",
+          style: "destructive",
+          onPress: async () => {
+            setBusy(true);
+            try {
+              await makeRepoPrivate();
+              onChange();
+            } catch (e: any) {
+              setError(e.message);
+            } finally {
+              setBusy(false);
+            }
+          },
+        },
+      ]
+    );
+  }
+
+  return (
+    <View>
+      <Text style={styles.sheetText}>
+        مستودع apk-fact فيه كود تطبيقات زباينك ووصفها وسجلات بنائها. لما يبقى خاص، ما يشوفها غيرك. التطبيقات المثبّتة
+        بتاخد تحديثاتها من مستودع عام صغير اسمه apk-fact-updates، وده فيه ملفات APK/AAB ورقم الإصدار بس، بدون أي كود.
+      </Text>
+      {!status ? (
+        <Banner kind="info" text="بنقرأ الحالة…" />
+      ) : (
+        <>
+          <Banner
+            kind={status.updatesReady ? "ok" : "info"}
+            text={status.updatesReady ? `1. مستودع التحديثات جاهز: ${status.updatesRepo}` : "1. مستودع التحديثات لسه ما اتجهّز"}
+          />
+          <Banner
+            kind={status.repoPrivate ? "ok" : "info"}
+            text={status.repoPrivate ? "2. apk-fact خاص: كود الزباين مخفي ✔" : "2. apk-fact لسه عام: أي حد يقدر يشوف الكود"}
+          />
+          {!status.updatesReady ? (
+            <Button title="جهّز مستودع التحديثات" icon="cloud-upload-outline" onPress={setup} loading={busy} style={{ marginTop: space.md }} />
+          ) : !status.repoPrivate ? (
+            <Button title="خلّي apk-fact خاص" icon="lock-closed-outline" onPress={goPrivate} loading={busy} style={{ marginTop: space.md }} />
+          ) : null}
+        </>
+      )}
+      {steps.some((st) => st.state !== "pending") ? (
+        <Card style={{ marginTop: space.lg }}>
+          <Timeline steps={steps} />
+        </Card>
+      ) : null}
+      {error ? <Banner kind="error" text={error} /> : null}
+    </View>
+  );
+}
+
 export default function SettingsScreen() {
   const [configured, setConfigured] = useState<Record<string, boolean>>({});
   const [model, setModel] = useState("");
   const [open, setOpen] = useState<string | null>(null);
   const [vault, setVault] = useState<VaultStatus | null>(null);
+  const [privacy, setPrivacy] = useState<PrivacyStatus | null>(null);
 
   const loadStatus = useCallback(async () => {
     const entries = await Promise.all(
@@ -461,6 +558,7 @@ export default function SettingsScreen() {
     setConfigured(Object.fromEntries(entries));
     setModel((await SecureStore.getItemAsync(GEMINI_MODEL_KEY)) ?? "");
     vaultStatus().then(setVault).catch(() => setVault({ ready: false, repo: null }));
+    privacyStatus().then(setPrivacy).catch(() => setPrivacy(null));
   }, []);
 
   useFocusEffect(
@@ -505,6 +603,24 @@ export default function SettingsScreen() {
         </Card>
       </Section>
 
+      <Section title="الخصوصية">
+        <Card style={styles.list}>
+          <ListRow
+            icon="lock-closed-outline"
+            tint={privacy?.repoPrivate ? colors.okText : colors.warnText}
+            title="خصوصية أكواد الزباين"
+            subtitle={
+              privacy?.repoPrivate
+                ? "apk-fact خاص · التحديثات من مستودع عام بدون كود"
+                : "apk-fact عام حالياً: كود التطبيقات ووصفها ظاهر لأي حد"
+            }
+            right={<View style={[styles.dot, { backgroundColor: privacy?.repoPrivate ? colors.okText : colors.border }]} />}
+            onPress={() => setOpen("privacy")}
+            last
+          />
+        </Card>
+      </Section>
+
       <Section title="الذكاء الاصطناعي">
         <Card style={styles.list}>
           <ListRow icon="hardware-chip-outline" tint={colors.accent} title="نموذج Gemini" value={model || "تلقائي"} onPress={() => setOpen("model")} last />
@@ -525,6 +641,9 @@ export default function SettingsScreen() {
       </Sheet>
       <Sheet visible={open === "vault"} title="الخزنة الخاصة" onClose={() => setOpen(null)}>
         <VaultPanel status={vault} onReady={loadStatus} />
+      </Sheet>
+      <Sheet visible={open === "privacy"} title="الخصوصية" onClose={() => setOpen(null)}>
+        <PrivacyPanel status={privacy} onChange={loadStatus} />
       </Sheet>
       <Sheet visible={open === "model"} title="نموذج Gemini" onClose={() => setOpen(null)}>
         <ModelPicker onChange={setModel} />

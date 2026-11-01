@@ -19,6 +19,10 @@ on:
 permissions:
   contents: write
 
+# The public updates repo (APK Fact > الإعدادات > الخصوصية): APKs and version.json for installed apps.
+env:
+  UPDATES_REPO: ${{ vars.UPDATES_REPO }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -140,11 +144,10 @@ jobs:
       - name: Publish APK as a Release
         env:
           GH_TOKEN: ${{ github.token }}
+          UPDATES_TOKEN: ${{ secrets.UPDATES_TOKEN }}
           APP: ${{ inputs.app }}
         run: |
-          gh release create "app-$APP-${{ github.run_id }}" "$APP.apk" $( [ -f "$APP.aab" ] && echo "$APP.aab" ) \
-            --title "$APP (Python) #${{ github.run_number }}" \
-            --notes "APK for $APP (Python / Flet)"
+          python scripts/updates_repo.py release "app-$APP-${{ github.run_id }}" "$APP (Python) #${{ github.run_number }}" "APK for $APP (Python / Flet)" "$APP.apk" $( [ -f "$APP.aab" ] && echo "$APP.aab" )
 
       - name: Tell installed copies an update is ready
         env:
@@ -153,16 +156,21 @@ jobs:
           UPDATE_NOTES: ${{ inputs.notes }}
           VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
           VAULT_REPO: ${{ vars.VAULT_REPO }}
+          GH_TOKEN: ${{ github.token }}
+          UPDATES_TOKEN: ${{ secrets.UPDATES_TOKEN }}
         run: |
           if [ -z "$VAULT_TOKEN" ] || [ -z "$VAULT_REPO" ]; then
             echo "::warning::No private vault: this APK is not signed with a permanent key, so it cannot update installed copies. Set up the vault in APK Fact > الإعدادات."
             exit 0
           fi
-          python scripts/updater.py publish "$APP" "$VERSION" "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$TAG/$APP.apk"
+          python scripts/updater.py publish "$APP" "$VERSION" "$(python scripts/updates_repo.py base "$TAG")/$APP.apk"
           git add "apps/$APP/version.json"
-          git commit -m "Version $VERSION: $APP" || exit 0
-          for i in 1 2 3 4; do
-            git pull --rebase && git push && exit 0
-            sleep $((i * 5))
-          done
-          exit 1
+          if git commit -m "Version $VERSION: $APP"; then
+            for i in 1 2 3 4 5; do
+              git pull --rebase && git push && break
+              [ "$i" -eq 5 ] && exit 1
+              sleep $((i * 5))
+            done
+          fi
+          # Installed copies read version.json from the public updates repo when apk-fact is private.
+          python scripts/updates_repo.py mirror "$APP"

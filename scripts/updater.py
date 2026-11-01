@@ -2,7 +2,7 @@
 
 Every build gets a version number (1, 2, 3, ...). The build copies a small update checker into the app
 (it is not part of the app's code in the repo, so the AI never has to write it). When the app opens it
-reads apps/<app>/version.json from this public repo; if a newer version is published there it shows
+reads apps/<app>/version.json from the public updates repo (or this repo while it is public); if a newer version is published there it shows
 "تحديث جديد متوفر" and the button downloads the new APK, which installs over the old one because every
 build of an app is signed with the same permanent key (private vault).
 
@@ -27,7 +27,8 @@ def manifest_path(app):
 
 
 def manifest_url(app):
-    repo = os.environ.get("GITHUB_REPOSITORY") or "alkahlizero564-sudo/apk-fact"
+    # The public updates repo when apk-fact is private (scripts/updates_repo.py), else this repo.
+    repo = os.environ.get("UPDATES_REPO") or os.environ.get("GITHUB_REPOSITORY") or "alkahlizero564-sudo/apk-fact"
     branch = os.environ.get("MANIFEST_BRANCH") or "main"
     return f"https://raw.githubusercontent.com/{repo}/{branch}/apps/{app}/version.json"
 

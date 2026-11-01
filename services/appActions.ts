@@ -19,6 +19,7 @@ import {
 import { REPO } from "./config";
 import { LANGS, LANG_ORDER, Lang, detectLang } from "./langs";
 import PERM_RULES from "./permissions.json";
+import { filesRepo } from "./privacy";
 
 export type StepState = "pending" | "active" | "done" | "error";
 export type Report = (step: string, state: StepState, detail?: string) => void;
@@ -266,12 +267,13 @@ export async function buildAndInstall(name: string, lang: Lang, report: Report) 
   report("build", "done");
 
   report("download", "active");
-  const asset = await findAppApkAsset(REPO, name);
+  const files = await filesRepo(); // the public updates repo once apk-fact is private
+  const asset = await findAppApkAsset(files, name);
   if (!asset) {
     report("download", "error");
     throw new Error("ما لقيت ملف APK في الإصدارات.");
   }
-  const info = await getAssetDownloadInfo(REPO, asset.id);
+  const info = await getAssetDownloadInfo(files, asset.id);
   const dest = FileSystem.cacheDirectory + `${name}.apk`;
   const dl = await FileSystem.downloadAsync(info.url, dest, { headers: info.headers });
   if (dl.status !== 200) {
@@ -304,7 +306,7 @@ export async function buildForStore(name: string, lang: Lang, report: Report): P
   }
   report("build", "done");
   report("file", "active");
-  const aab = await findAppApkAsset(REPO, name, ".aab");
+  const aab = await findAppApkAsset(await filesRepo(), name, ".aab");
   if (!aab) {
     report("file", "error");
     throw new Error("البناء نجح لكن ما لقيت ملف AAB في الإصدارات.");

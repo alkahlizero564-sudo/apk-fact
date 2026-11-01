@@ -108,6 +108,21 @@ export async function askGeminiHtml(
   doing = "يشتغل",
   temperature = 0.5
 ): Promise<string> {
+  return askGemini(system, prompt, onStatus, doing, temperature, extractHtml);
+}
+
+/**
+ * Asks Gemini (chosen model first, then fallbacks; every key). `parse` turns the reply into the result;
+ * when it throws (bad reply), the next model/key is tried.
+ */
+export async function askGemini<T = string>(
+  system: string,
+  prompt: string,
+  onStatus: (s: string) => void,
+  doing = "يشتغل",
+  temperature = 0.5,
+  parse: (text: string) => T = (t) => t as unknown as T
+): Promise<T> {
   const keys = await geminiKeys();
   const chosen = (await SecureStore.getItemAsync("GEMINI_MODEL")) || FALLBACK_MODELS[0];
   const models = [chosen, ...FALLBACK_MODELS.filter((m) => m !== chosen)];
@@ -117,7 +132,7 @@ export async function askGeminiHtml(
       for (let k = 0; k < keys.length; k++) {
         onStatus(`الذكاء الاصطناعي ${doing}… (${model}${keys.length > 1 ? `، مفتاح ${k + 1}` : ""})`);
         try {
-          return extractHtml(await callGemini(keys[k], model, system, prompt, temperature));
+          return parse(await callGemini(keys[k], model, system, prompt, temperature));
         } catch (e: any) {
           last = e?.message ?? String(e);
           if (e?.status === 404) break; // model not available: next model

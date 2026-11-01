@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0B0F17">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>تطبيق تضريبات - حاسبة صفقات التداول واستخراج أرقام الشارت الفعلي (OCR)</title>
+  <title>تطبيق تضريبات - حاسبة صفقات التداول وتحليل الشارت بالذكاء الاصطناعي (Gemini Vision)</title>
   <style>
     /* ==========================================
        DESIGN TOKENS & RESET
@@ -24,16 +24,19 @@
       --text-subtle: #64748B;
       
       --buy-color: #10B981;
-      --buy-glow: rgba(16, 185, 129, 0.18);
+      --buy-glow: rgba(16, 185, 129, 0.2);
       --buy-border: rgba(16, 185, 129, 0.45);
       
       --sell-color: #EF4444;
-      --sell-glow: rgba(239, 68, 68, 0.18);
+      --sell-glow: rgba(239, 68, 68, 0.2);
       --sell-border: rgba(239, 68, 68, 0.45);
       
       --accent-blue: #3B82F6;
       --accent-cyan: #06B6D4;
-      --accent-glow: rgba(59, 130, 246, 0.25);
+      --accent-purple: #8B5CF6;
+      --gemini-grad: linear-gradient(135deg, #8B5CF6 0%, #3B82F6 50%, #06B6D4 100%);
+      --gemini-glow: rgba(139, 92, 246, 0.35);
+      
       --warning-bg: rgba(245, 158, 11, 0.12);
       --warning-border: #F59E0B;
       --warning-text: #FBBF24;
@@ -45,7 +48,7 @@
       
       --font-stack: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Arabic", Tahoma, sans-serif;
       --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
-      --shadow-glow: 0 0 24px rgba(59, 130, 246, 0.2);
+      --shadow-glow: 0 0 24px rgba(59, 130, 246, 0.25);
     }
 
     * {
@@ -66,9 +69,7 @@
       overflow-x: hidden;
     }
 
-    /* ==========================================
-       APP CONTAINER & LAYOUT (PHONE-FIRST)
-       ========================================== */
+    /* Phone viewport container */
     .app-viewport {
       width: 100%;
       max-width: 440px;
@@ -78,7 +79,7 @@
       display: flex;
       flex-direction: column;
       box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
-      padding-bottom: 74px; /* Space for bottom nav */
+      padding-bottom: 74px;
     }
 
     /* Status Bar */
@@ -90,7 +91,6 @@
       font-size: 12px;
       color: var(--text-muted);
       font-weight: 600;
-      letter-spacing: 0.5px;
     }
     .status-icons {
       display: flex;
@@ -98,13 +98,14 @@
       align-items: center;
     }
 
-    /* Header */
+    /* App Header */
     .app-header {
       padding: 12px 18px 16px 18px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      gap: 10px;
     }
     .header-brand {
       display: flex;
@@ -114,27 +115,53 @@
     .brand-logo {
       width: 38px;
       height: 38px;
-      background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+      background: var(--gemini-grad);
       border-radius: var(--radius-md);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+      box-shadow: 0 4px 14px var(--gemini-glow);
     }
     .brand-title {
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 800;
       color: #FFFFFF;
       letter-spacing: -0.3px;
     }
-    .brand-tag {
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-api-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       font-size: 11px;
-      color: #93C5FD;
-      background: rgba(59, 130, 246, 0.15);
-      padding: 4px 10px;
-      border-radius: var(--radius-full);
-      border: 1px solid rgba(59, 130, 246, 0.3);
       font-weight: 800;
+      padding: 5px 10px;
+      border-radius: var(--radius-full);
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      color: #C4B5FD;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-api-status.configured {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #6EE7B7;
+    }
+    .api-pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #C4B5FD;
+      display: inline-block;
+    }
+    .btn-api-status.configured .api-pulse {
+      background: #10B981;
+      box-shadow: 0 0 8px #10B981;
     }
 
     /* Views Framework */
@@ -146,14 +173,71 @@
     .app-view.active {
       display: block;
     }
-
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
     /* ==========================================
-       CHART SCANNER & REAL OCR SECTION
+       GEMINI API BANNER / KEY SETUP
+       ========================================== */
+    .gemini-banner-card {
+      background: linear-gradient(145deg, #1A1A2E 0%, #151D2A 100%);
+      border: 1.5px solid rgba(139, 92, 246, 0.35);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      box-shadow: 0 4px 18px rgba(139, 92, 246, 0.15);
+    }
+    .gemini-banner-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .gemini-sparkle-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: var(--gemini-grad);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 0 10px var(--gemini-glow);
+    }
+    .gemini-banner-text h4 {
+      font-size: 13px;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 2px;
+    }
+    .gemini-banner-text p {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .btn-setup-key {
+      background: var(--gemini-grad);
+      color: #FFF;
+      font-size: 11px;
+      font-weight: 800;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+    }
+
+    /* ==========================================
+       CHART SCANNER & GEMINI ANALYZER CARD
        ========================================== */
     .chart-scanner-card {
       background: linear-gradient(145deg, #182232 0%, #111827 100%);
@@ -164,19 +248,16 @@
       position: relative;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     }
-
     .chart-scanner-card.scanning {
-      border-color: var(--accent-cyan);
-      box-shadow: 0 0 20px rgba(6, 182, 212, 0.25);
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 24px rgba(139, 92, 246, 0.35);
     }
-
     .chart-scanner-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 12px;
     }
-
     .chart-scanner-title {
       display: flex;
       align-items: center;
@@ -185,14 +266,13 @@
       font-weight: 800;
       color: #FFFFFF;
     }
-
-    .audit-badge {
+    .ai-badge {
       font-size: 11px;
-      background: linear-gradient(90deg, rgba(6, 182, 212, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
-      color: #67E8F9;
-      padding: 3px 9px;
+      background: linear-gradient(90deg, rgba(139, 92, 246, 0.25) 0%, rgba(6, 182, 212, 0.25) 100%);
+      color: #D8B4FE;
+      padding: 3px 10px;
       border-radius: var(--radius-full);
-      border: 1px solid rgba(6, 182, 212, 0.4);
+      border: 1px solid rgba(139, 92, 246, 0.4);
       font-weight: 800;
       display: flex;
       align-items: center;
@@ -203,8 +283,8 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
+      margin-bottom: 10px;
     }
-
     .btn-upload-choice {
       background: var(--surface-card);
       border: 1px solid var(--border-color);
@@ -225,35 +305,43 @@
       background: var(--surface-elevated);
     }
 
-    /* Hidden File Inputs */
+    /* Dedicated AI Analyze Action Button */
+    .btn-gemini-analyze {
+      width: 100%;
+      background: var(--gemini-grad);
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 13.5px;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 18px var(--gemini-glow);
+      transition: all 0.2s;
+    }
+    .btn-gemini-analyze:active {
+      transform: scale(0.98);
+    }
+    .btn-gemini-analyze:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Hidden file inputs */
     .hidden-file-input {
       display: none;
     }
 
-    /* OCR Status Banner */
-    .ocr-real-tag {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.35);
-      color: #6EE7B7;
-      padding: 8px 12px;
-      border-radius: var(--radius-sm);
-      font-size: 11px;
-      font-weight: 700;
-      margin-top: 10px;
-      line-height: 1.4;
-    }
-
-    /* ==========================================
-       SMART AUDIT SCANNING ANIMATION MODAL / HUD
-       ========================================== */
+    /* AI Thinking HUD */
     .audit-progress-container {
       display: none;
       margin-top: 14px;
       background: rgba(11, 15, 23, 0.95);
-      border: 1px solid rgba(6, 182, 212, 0.4);
+      border: 1px solid rgba(139, 92, 246, 0.4);
       border-radius: var(--radius-md);
       padding: 16px;
       position: relative;
@@ -262,7 +350,6 @@
     .audit-progress-container.active {
       display: block;
     }
-
     .audit-hud-header {
       display: flex;
       align-items: center;
@@ -274,15 +361,14 @@
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      background: var(--accent-cyan);
-      box-shadow: 0 0 10px var(--accent-cyan);
+      background: var(--accent-purple);
+      box-shadow: 0 0 12px var(--accent-purple);
       animation: pulse 1s infinite alternate;
     }
     @keyframes pulse {
       from { transform: scale(0.8); opacity: 0.6; }
       to { transform: scale(1.3); opacity: 1; }
     }
-
     .audit-bar-wrapper {
       width: 100%;
       height: 7px;
@@ -294,11 +380,10 @@
     .audit-bar-fill {
       width: 0%;
       height: 100%;
-      background: linear-gradient(90deg, #06B6D4 0%, #3B82F6 100%);
+      background: var(--gemini-grad);
       transition: width 0.3s ease;
-      box-shadow: 0 0 10px var(--accent-cyan);
+      box-shadow: 0 0 10px var(--accent-purple);
     }
-
     .audit-step-item {
       display: flex;
       align-items: center;
@@ -308,17 +393,10 @@
       margin-bottom: 6px;
       transition: color 0.2s;
     }
-    .audit-step-item.done {
-      color: #6EE7B7;
-    }
-    .audit-step-item.active {
-      color: #93C5FD;
-      font-weight: 700;
-    }
+    .audit-step-item.done { color: #6EE7B7; }
+    .audit-step-item.active { color: #D8B4FE; font-weight: 700; }
 
-    /* ==========================================
-       INTERACTIVE CHART PREVIEW & PINPOINT
-       ========================================== */
+    /* Interactive Chart Preview */
     .chart-preview-container {
       display: none;
       margin-top: 14px;
@@ -332,16 +410,14 @@
     .chart-preview-container.active {
       display: block;
     }
-
     .chart-wrapper-inner {
       position: relative;
       width: 100%;
-      height: 240px;
+      height: 230px;
       overflow: hidden;
       cursor: crosshair;
       touch-action: none;
     }
-
     .chart-image-view {
       width: 100%;
       height: 100%;
@@ -350,14 +426,14 @@
       display: block;
     }
 
-    /* Dynamic Laser Scanning Beam */
+    /* Laser scanner */
     .scanner-laser {
       position: absolute;
       left: 0;
       right: 0;
       height: 3px;
-      background: linear-gradient(90deg, transparent, #06B6D4, #3B82F6, transparent);
-      box-shadow: 0 0 14px #06B6D4;
+      background: var(--gemini-grad);
+      box-shadow: 0 0 16px #8B5CF6;
       pointer-events: none;
       opacity: 0;
       z-index: 20;
@@ -371,16 +447,12 @@
       100% { top: 92%; }
     }
 
-    /* Visual Level Overlay lines on Chart */
+    /* Overlay Lines */
     .chart-overlay-lines {
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      inset: 0;
       pointer-events: none;
     }
-
     .overlay-line {
       position: absolute;
       left: 0;
@@ -390,7 +462,7 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 8px;
-      transition: top 0.15s ease-out;
+      transition: top 0.2s ease-out;
       z-index: 10;
     }
     .overlay-line::before {
@@ -403,18 +475,9 @@
       opacity: 0.85;
       box-shadow: 0 0 8px currentColor;
     }
-    .overlay-line.entry-line {
-      color: var(--accent-blue);
-      top: 50%;
-    }
-    .overlay-line.stop-line {
-      color: var(--sell-color);
-      top: 75%;
-    }
-    .overlay-line.target-line {
-      color: var(--buy-color);
-      top: 25%;
-    }
+    .overlay-line.entry-line { color: var(--accent-blue); top: 50%; }
+    .overlay-line.stop-line { color: var(--sell-color); top: 75%; }
+    .overlay-line.target-line { color: var(--buy-color); top: 25%; }
 
     .overlay-tag {
       position: relative;
@@ -429,161 +492,144 @@
       backdrop-filter: blur(4px);
     }
 
-    /* Magnifier Loupe for high precision pinpointing */
-    .magnifier-loupe {
-      position: absolute;
-      width: 84px;
-      height: 84px;
-      border-radius: 50%;
-      border: 2px solid var(--accent-cyan);
-      box-shadow: 0 0 16px rgba(6, 182, 212, 0.6), inset 0 0 10px rgba(0,0,0,0.5);
-      pointer-events: none;
+    /* ==========================================
+       AI RECOMMENDATION REPORT CARD (GEMINI VISION)
+       ========================================== */
+    .ai-report-card {
       display: none;
-      transform: translate(-50%, -50%);
-      z-index: 30;
-      background: #000;
-      background-repeat: no-repeat;
-      overflow: hidden;
+      background: linear-gradient(160deg, #1E1B4B 0%, #111827 100%);
+      border: 1.5px solid rgba(139, 92, 246, 0.45);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 20px;
+      position: relative;
+      box-shadow: 0 8px 30px rgba(139, 92, 246, 0.2);
+      animation: fadeIn 0.3s ease-out;
     }
-    .magnifier-loupe::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 14px;
-      height: 14px;
-      transform: translate(-50%, -50%);
-      border: 1.5px solid #FF3B30;
-      border-radius: 50%;
+    .ai-report-card.visible {
+      display: block;
     }
-
-    /* Pin Mode Switcher */
-    .pinpoint-toolbar {
+    .ai-report-header {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      background: var(--surface-dark);
-      padding: 8px 12px;
-      border-top: 1px solid var(--border-color);
-      gap: 6px;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
-    .pin-label {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-muted);
-    }
-    .pin-buttons {
-      display: flex;
-      gap: 6px;
-    }
-    .btn-pin-mode {
-      background: var(--surface-card);
-      border: 1px solid var(--border-color);
-      color: var(--text-muted);
-      font-size: 11px;
-      font-weight: 700;
-      padding: 5px 10px;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
+    .ai-report-title {
       display: flex;
       align-items: center;
-      gap: 4px;
-      transition: all 0.2s;
-    }
-    .btn-pin-mode.active-entry {
-      background: rgba(59, 130, 246, 0.2);
-      border-color: var(--accent-blue);
-      color: #93C5FD;
-    }
-    .btn-pin-mode.active-stop {
-      background: rgba(239, 68, 68, 0.2);
-      border-color: var(--sell-color);
-      color: #FCA5A5;
-    }
-
-    /* Detected Quick Picks from Real OCR Extraction */
-    .detected-picks-bar {
-      background: #0D1420;
-      padding: 10px 12px;
-      border-top: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
       gap: 8px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #FFFFFF;
     }
-    .detected-picks-header {
+    .ai-model-tag {
+      font-size: 10.5px;
+      background: rgba(139, 92, 246, 0.2);
+      color: #C4B5FD;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      font-weight: 700;
+    }
+
+    /* Big Recommendation Verdict Badge: BUY or SELL */
+    .verdict-hero-badge {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      margin-bottom: 14px;
+    }
+    .verdict-hero-badge.buy {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1.5px solid var(--buy-border);
+      color: #34D399;
+    }
+    .verdict-hero-badge.sell {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1.5px solid var(--sell-border);
+      color: #F87171;
+    }
+    .verdict-title {
+      font-size: 16px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .verdict-confidence {
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+    }
+
+    /* AI Levels Grid */
+    .ai-levels-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .ai-level-box {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      text-align: center;
+    }
+    .ai-level-label {
       font-size: 11px;
       color: var(--text-muted);
+      margin-bottom: 2px;
+      font-weight: 600;
     }
-    .detected-chips {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-    }
-    .detected-chip {
-      background: var(--surface-card);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-full);
-      padding: 5px 11px;
-      font-size: 11px;
-      color: var(--text-main);
-      white-space: nowrap;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      transition: all 0.15s;
-    }
-    .detected-chip:hover, .detected-chip:active {
-      border-color: var(--accent-cyan);
-      background: var(--surface-elevated);
-    }
-    .detected-chip strong {
-      color: #38BDF8;
+    .ai-level-val {
+      font-size: 15px;
+      font-weight: 800;
+      color: #FFF;
       direction: ltr;
     }
 
-    /* Scale Calibration Box */
-    .chart-calibrate-box {
-      background: rgba(15, 23, 42, 0.7);
-      padding: 10px 12px;
-      border-top: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    /* AI Detailed Analysis & Advice */
+    .ai-analysis-text {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      font-size: 12.5px;
+      color: #E2E8F0;
+      line-height: 1.6;
+      margin-bottom: 14px;
     }
-    .calibrate-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      font-size: 11px;
+    .ai-analysis-text strong {
+      color: #93C5FD;
     }
-    .calibrate-slider {
-      flex: 1;
-      accent-color: var(--accent-blue);
-      cursor: pointer;
-    }
-    .fine-tune-btns {
-      display: flex;
-      gap: 3px;
-    }
-    .btn-step {
-      width: 26px;
-      height: 24px;
-      background: var(--surface-card);
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      color: var(--text-main);
-      font-size: 12px;
-      font-weight: 700;
+
+    .ai-apply-btn {
+      width: 100%;
+      background: #10B981;
+      color: #FFF;
+      font-weight: 800;
+      font-size: 13.5px;
+      padding: 11px 14px;
+      border-radius: var(--radius-md);
+      border: none;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+      transition: all 0.2s;
+    }
+    .ai-apply-btn:active {
+      transform: scale(0.98);
     }
 
     /* ==========================================
@@ -597,7 +643,7 @@
       padding: 6px;
       border-radius: var(--radius-md);
       border: 1px solid var(--border-color);
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
     .trade-type-btn {
       border: none;
@@ -625,7 +671,6 @@
       box-shadow: 0 4px 15px var(--sell-glow);
     }
 
-    /* Form Fields */
     .input-group {
       margin-bottom: 16px;
     }
@@ -675,7 +720,6 @@
       pointer-events: none;
     }
 
-    /* Fixed Multiplier Badge */
     .fixed-multiplier-bar {
       display: flex;
       align-items: center;
@@ -697,7 +741,6 @@
       border-radius: var(--radius-full);
     }
 
-    /* Error Validation Alert */
     .validation-alert {
       display: none;
       background: var(--warning-bg);
@@ -722,7 +765,7 @@
       75% { transform: translateX(4px); }
     }
 
-    /* Results Dashboard Grid */
+    /* Live Results */
     .results-container {
       background: var(--surface-dark);
       border: 1px solid var(--border-color);
@@ -741,7 +784,6 @@
       align-items: center;
       justify-content: space-between;
     }
-
     .metrics-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -768,7 +810,6 @@
       text-align: right;
     }
 
-    /* Final Target Hero Box */
     .target-hero-card {
       background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.4) 100%);
       border: 1.5px solid var(--buy-border);
@@ -813,7 +854,7 @@
       margin-top: 6px;
     }
 
-    /* Action Buttons Row */
+    /* Actions */
     .action-buttons-group {
       display: grid;
       grid-template-columns: 1fr 1fr auto;
@@ -857,14 +898,13 @@
     }
 
     /* ==========================================
-       SAVED HISTORY SCREEN STYLES
+       HISTORY SCREEN
        ========================================== */
     .history-header-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 16px;
-      padding: 2px 0;
     }
     .history-title {
       font-size: 16px;
@@ -880,7 +920,6 @@
       font-weight: 600;
       padding: 4px;
     }
-
     .history-list {
       display: flex;
       flex-direction: column;
@@ -892,7 +931,6 @@
       border-radius: var(--radius-md);
       padding: 14px;
       position: relative;
-      animation: fadeIn 0.2s ease-out;
     }
     .history-card-top {
       display: flex;
@@ -925,8 +963,6 @@
       font-size: 11px;
       color: var(--text-subtle);
     }
-
-    /* Saved Chart Thumbnail in History */
     .saved-chart-thumb {
       width: 100%;
       height: 110px;
@@ -937,7 +973,6 @@
       cursor: pointer;
       background: #000;
     }
-
     .history-details-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -961,7 +996,6 @@
       color: var(--text-main);
       direction: ltr;
     }
-
     .history-target-row {
       display: flex;
       justify-content: space-between;
@@ -978,7 +1012,6 @@
     }
     .history-target-val.buy { color: var(--buy-color); }
     .history-target-val.sell { color: var(--sell-color); }
-
     .history-actions {
       display: flex;
       gap: 8px;
@@ -997,10 +1030,6 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      transition: background 0.2s ease;
-    }
-    .btn-recall:active {
-      background: rgba(59, 130, 246, 0.25);
     }
     .btn-delete-item {
       height: 38px;
@@ -1013,15 +1042,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.2s ease;
-    }
-    .btn-delete-item:active {
-      background: rgba(239, 68, 68, 0.25);
     }
 
-    /* ==========================================
-       EMPTY STATE COMPONENT
-       ========================================== */
+    /* Empty state */
     .empty-state {
       padding: 48px 20px;
       text-align: center;
@@ -1056,14 +1079,12 @@
       margin-bottom: 20px;
     }
 
-    /* ==========================================
-       MODALS & SHEETS
-       ========================================== */
+    /* Modals */
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(4px);
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(5px);
       z-index: 1000;
       display: none;
       align-items: flex-end;
@@ -1114,31 +1135,44 @@
       line-height: 1.5;
     }
 
-    /* Lightbox Modal */
-    .lightbox-modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.9);
-      z-index: 2000;
+    /* API Key Input Dialog Styling */
+    .api-input-wrap {
+      position: relative;
+      margin-bottom: 12px;
+    }
+    .api-text-input {
+      width: 100%;
+      height: 48px;
+      background: var(--surface-card);
+      border: 1.5px solid rgba(139, 92, 246, 0.4);
+      border-radius: var(--radius-md);
+      padding: 0 44px 0 14px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #FFF;
+      direction: ltr;
+      text-align: left;
+    }
+    .api-text-input:focus {
+      outline: none;
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+    }
+    .btn-toggle-key-eye {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
-    }
-    .lightbox-modal.open {
-      display: flex;
-    }
-    .lightbox-img {
-      max-width: 100%;
-      max-height: 80vh;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border-color);
-      object-fit: contain;
     }
 
-    /* ==========================================
-       BOTTOM NAVIGATION BAR
-       ========================================== */
+    /* Bottom Navigation */
     .bottom-nav {
       position: fixed;
       bottom: 0;
@@ -1181,9 +1215,7 @@
       stroke-width: 2;
     }
 
-    /* ==========================================
-       TOAST NOTIFICATION SYSTEM
-       ========================================== */
+    /* Toasts */
     .toast-container {
       position: fixed;
       bottom: 74px;
@@ -1198,8 +1230,8 @@
       max-width: 380px;
     }
     .toast {
-      background: rgba(30, 41, 59, 0.96);
-      border: 1px solid var(--accent-blue);
+      background: rgba(30, 41, 59, 0.98);
+      border: 1px solid var(--accent-purple);
       color: #FFFFFF;
       padding: 12px 16px;
       border-radius: var(--radius-md);
@@ -1216,11 +1248,30 @@
       from { opacity: 0; transform: translateY(10px) scale(0.95); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
+
+    /* Lightbox Modal */
+    .lightbox-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.92);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .lightbox-modal.open { display: flex; }
+    .lightbox-img {
+      max-width: 100%;
+      max-height: 80vh;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      object-fit: contain;
+    }
   </style>
 </head>
 <body>
 
-  <!-- MAIN MOBILE VIEWPORT CONTAINER -->
   <div class="app-viewport">
     
     <!-- Top Status Bar -->
@@ -1240,27 +1291,48 @@
     <header class="app-header">
       <div class="header-brand">
         <div class="brand-logo">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="2" x2="12" y2="22"></line>
-            <rect x="8" y="6" width="8" height="8" rx="1" fill="#FFFFFF" fill-opacity="0.25"></rect>
-            <path d="M17 14l4 4m0 0l-4 4m4-4H13"></path>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.3">
+            <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="rgba(255,255,255,0.25)"/>
           </svg>
         </div>
         <div>
           <div class="brand-title">تضريبات</div>
         </div>
       </div>
-      <span class="brand-tag">المضاعفة = 2</span>
+      <div class="header-actions">
+        <button id="btn-api-badge" class="btn-api-status" onclick="openApiKeyModal()">
+          <span class="api-pulse"></span>
+          <span id="api-status-label">مفتاح Gemini</span>
+        </button>
+      </div>
     </header>
 
     <!-- TOAST CONTAINER -->
     <div id="toast-container" class="toast-container"></div>
 
     <!-- ==========================================
-         VIEW 1: MAIN CALCULATOR SCREEN
+         VIEW 1: CALCULATOR & GEMINI ANALYZER
          ========================================== -->
     <main id="view-calculator" class="app-view active">
       
+      <!-- Gemini API Quick Setup Banner if Key not set -->
+      <div id="gemini-setup-banner" class="gemini-banner-card" onclick="openApiKeyModal()">
+        <div class="gemini-banner-info">
+          <div class="gemini-sparkle-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2">
+              <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
+            </svg>
+          </div>
+          <div class="gemini-banner-text">
+            <h4>تحليل الشارت بـ Gemini AI</h4>
+            <p id="gemini-banner-sub">اضغط لإدخال مفتاحك للتحليل الدقيق واستخراج التوصية</p>
+          </div>
+        </div>
+        <button type="button" class="btn-setup-key">
+          <span>إعداد</span> ⚙️
+        </button>
+      </div>
+
       <!-- Trade Type Switcher: SELL 🔴 / BUY 🟢 -->
       <div class="trade-type-selector">
         <button id="btn-type-buy" type="button" class="trade-type-btn buy active" onclick="setTradeType('BUY')">
@@ -1271,22 +1343,22 @@
         </button>
       </div>
 
-      <!-- CHART SCANNER & REAL OCR NUMBER EXTRACTOR SECTION -->
+      <!-- CHART SCANNER & GEMINI VISION ANALYSIS SECTION -->
       <div id="chart-scanner-card" class="chart-scanner-card">
         <div class="chart-scanner-header">
           <div class="chart-scanner-title">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2.2">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
               <circle cx="12" cy="13" r="4"></circle>
             </svg>
-            <span>استخراج الأرقام المكتوبة في صورة الشارت (OCR)</span>
+            <span>مسح وتحليل الشارت بالذكاء الاصطناعي</span>
           </div>
-          <span class="audit-badge">
-            <span class="audit-radar-pulse"></span>
-            <span>ماسح ضوئي 👁️</span>
+          <span class="ai-badge">
+            <span>✨ Gemini Vision</span>
           </span>
         </div>
 
+        <!-- Image Upload Buttons -->
         <div class="chart-upload-controls">
           <button type="button" class="btn-upload-choice" onclick="triggerCameraCapture()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1310,10 +1382,18 @@
         <input type="file" id="camera-file-input" class="hidden-file-input" accept="image/*" capture="environment" onchange="processUploadedChart(event)">
         <input type="file" id="gallery-file-input" class="hidden-file-input" accept="image/*" onchange="processUploadedChart(event)">
 
-        <!-- HUD REAL OCR SCANNING ANIMATION STATE -->
+        <!-- Dedicated Gemini AI Analyze Button -->
+        <button id="btn-trigger-ai" type="button" class="btn-gemini-analyze" onclick="startGeminiChartAnalysis()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
+          </svg>
+          <span id="btn-ai-text">تحليل الشارت واستخراج التوصية بواسطة Gemini</span>
+        </button>
+
+        <!-- AI PROGRESS / SCANNING STATE -->
         <div id="audit-progress-container" class="audit-progress-container">
           <div class="audit-hud-header">
-            <span style="font-size: 13px; font-weight: 800; color: #67E8F9;">جاري قراءة واستخراج أرقام أسعار الشارت بالبكسل...</span>
+            <span id="audit-status-title" style="font-size: 13px; font-weight: 800; color: #D8B4FE;">Gemini يحلل الشمعات ومحور الأسعار...</span>
             <span id="audit-percent-text" style="font-size: 13px; font-weight: 800; color: #FFF;">0%</span>
           </div>
           <div class="audit-bar-wrapper">
@@ -1321,30 +1401,24 @@
           </div>
           <div id="audit-step-1" class="audit-step-item active">
             <span>📷</span>
-            <span>مسح بكسلات الصورة ومحور الأسعار وقراءة أرقام الشمعات...</span>
+            <span>معالجة الصورة وتحديد مقياس الأسعار والشمعات...</span>
           </div>
           <div id="audit-step-2" class="audit-step-item">
-            <span>🔍</span>
-            <span>استخراج الأرقام المكتوبة فعلياً داخل الصورة (Real OCR)...</span>
+            <span>🧠</span>
+            <span>استخراج نقاط الدخول، والوقف، وتحديد الاتجاه (شراء أم بيع)...</span>
           </div>
           <div id="audit-step-3" class="audit-step-item">
             <span>🎯</span>
-            <span>تعبئة وتثبيت قيم الدخول والوقف المستخرجة تلقائياً...</span>
+            <span>بناء تقرير التوصية وتطبيق قاعدة الهدف (المضاعفة = 2)...</span>
           </div>
         </div>
 
-        <!-- INTERACTIVE CHART PREVIEW AREA WITH LOUPE & REAL OCR PINPOINT -->
+        <!-- INTERACTIVE CHART PREVIEW AREA -->
         <div id="chart-preview-container" class="chart-preview-container">
-          <div id="chart-wrapper-inner" class="chart-wrapper-inner" onclick="handleChartClick(event)" onmousemove="handleChartHover(event)" onmouseleave="hideLoupe()">
+          <div id="chart-wrapper-inner" class="chart-wrapper-inner" onclick="openLightboxCurrent()">
             <img id="chart-image-view" class="chart-image-view" alt="صورة الشارت" src="">
-            
-            <!-- Laser scanning beam -->
             <div id="scanner-laser" class="scanner-laser"></div>
-
-            <!-- Magnifier Loupe for high precision -->
-            <div id="magnifier-loupe" class="magnifier-loupe"></div>
-
-            <!-- Visual Overlay showing Entry, Stop, Target lines directly on top of user chart -->
+            <!-- Overlay lines -->
             <div class="chart-overlay-lines">
               <div id="overlay-target-line" class="overlay-line target-line">
                 <span class="overlay-tag">🎯 الهدف: <strong id="overlay-target-val">110</strong></span>
@@ -1357,61 +1431,58 @@
               </div>
             </div>
           </div>
-
-          <!-- Real OCR Confirmation Status Banner -->
-          <div id="ocr-real-tag-banner" class="ocr-real-tag">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22 4 12 14.01 9 11.01"></polyline>
-            </svg>
-            <span id="ocr-real-status-text">تم استخراج الأرقام المكتوبة داخل الصورة بدون اختراع أي رقم من الرأس.</span>
-          </div>
-
-          <!-- PINPOINT TOOLBAR (Tap directly on chart to set Entry or Stop) -->
-          <div class="pinpoint-toolbar">
-            <span class="pin-label">👆 انقر على أي سعر بالشارت لتحديده:</span>
-            <div class="pin-buttons">
-              <button type="button" id="btn-pin-entry" class="btn-pin-mode active-entry" onclick="setPinMode('ENTRY')">
-                <span>🔵 الدخول</span>
-              </button>
-              <button type="button" id="btn-pin-stop" class="btn-pin-mode" onclick="setPinMode('STOP')">
-                <span>🔴 الوقف</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- REAL DETECTED NUMBERS FROM IMAGE (OCR CHIPS) -->
-          <div class="detected-picks-bar">
-            <div class="detected-picks-header">
-              <span>🔢 الأرقام التي تم التعرف عليها وقراءتها من الصورة (انقر للتطبيق):</span>
-              <span id="audit-confidence" style="color: #6EE7B7; font-weight: 700;">قراءة OCR حقيقية 100%</span>
-            </div>
-            <div id="detected-chips-row" class="detected-chips">
-              <!-- Rendered via JS based on OCR Extraction from uploaded chart image -->
-            </div>
-          </div>
-
-          <!-- Scale Calibration Box -->
-          <div class="chart-calibrate-box">
-            <div class="calibrate-row">
-              <span style="color: var(--text-muted); width: 80px;">مستوى الدخول:</span>
-              <input type="range" id="slider-entry" class="calibrate-slider" min="1" max="1000" value="100" oninput="onChartSliderChange()">
-              <div class="fine-tune-btns">
-                <button type="button" class="btn-step" onclick="adjustValue('input-entry', -0.5)">-</button>
-                <button type="button" class="btn-step" onclick="adjustValue('input-entry', 0.5)">+</button>
-              </div>
-            </div>
-            <div class="calibrate-row">
-              <span style="color: var(--text-muted); width: 80px;">مستوى الوقف:</span>
-              <input type="range" id="slider-stop" class="calibrate-slider" min="1" max="1000" value="95" oninput="onChartSliderChange()">
-              <div class="fine-tune-btns">
-                <button type="button" class="btn-step" onclick="adjustValue('input-stop', -0.5)">-</button>
-                <button type="button" class="btn-step" onclick="adjustValue('input-stop', 0.5)">+</button>
-              </div>
-            </div>
-          </div>
-
         </div>
+
+      </div>
+
+      <!-- ==========================================
+           GEMINI AI RECOMMENDATION REPORT CARD
+           ========================================== -->
+      <div id="ai-report-card" class="ai-report-card">
+        <div class="ai-report-header">
+          <div class="ai-report-title">
+            <span>✨</span>
+            <span>تقرير توصية Gemini AI للشارت</span>
+          </div>
+          <span class="ai-model-tag">Gemini 1.5 Flash Vision</span>
+        </div>
+
+        <!-- Big Decision: BUY or SELL verdict -->
+        <div id="verdict-hero-badge" class="verdict-hero-badge buy">
+          <div class="verdict-title">
+            <span id="verdict-icon">🟢</span>
+            <span id="verdict-text">توصية شراء (BUY)</span>
+          </div>
+          <span id="verdict-confidence" class="verdict-confidence">دقة عالية</span>
+        </div>
+
+        <!-- Extracted Key Levels -->
+        <div class="ai-levels-grid">
+          <div class="ai-level-box">
+            <div class="ai-level-label">الدخول المقترح</div>
+            <div id="ai-level-entry" class="ai-level-val">100.00</div>
+          </div>
+          <div class="ai-level-box">
+            <div class="ai-level-label">الوقف المقترح</div>
+            <div id="ai-level-stop" class="ai-level-val">95.00</div>
+          </div>
+          <div class="ai-level-box">
+            <div class="ai-level-label">الهدف (×2)</div>
+            <div id="ai-level-target" class="ai-level-val">110.00</div>
+          </div>
+        </div>
+
+        <!-- Analysis & Trading Tips -->
+        <div id="ai-analysis-content" class="ai-analysis-text">
+          <!-- Populated by Gemini -->
+        </div>
+
+        <button type="button" class="ai-apply-btn" onclick="applyAiRecommendationToCalculator()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>تطبيق هذه التوصية في الحاسبة فوراً</span>
+        </button>
       </div>
 
       <!-- Input: Entry Price (الدخول) -->
@@ -1444,7 +1515,7 @@
         <span class="multiplier-badge">المضاعفة = 2</span>
       </div>
 
-      <!-- Interactive Validation Alert Banner -->
+      <!-- Validation Alert -->
       <div id="validation-alert" class="validation-alert">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;">
           <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
@@ -1456,7 +1527,7 @@
         </div>
       </div>
 
-      <!-- Live Calculation Results Card -->
+      <!-- Live Calculation Results -->
       <div class="results-container">
         <div class="results-header">
           <span>نتائج التضريبة المباشرة</span>
@@ -1515,30 +1586,79 @@
     </main>
 
     <!-- ==========================================
-         VIEW 2: SAVED HISTORY SCREEN
+         VIEW 2: HISTORY SCREEN
          ========================================== -->
     <main id="view-history" class="app-view">
       <div class="history-header-bar">
-        <div class="history-title">سجل التضريبات</div>
-        <button type="button" class="clear-all-link" onclick="confirmClearHistory()">مسح السجل بالكامل</button>
+        <div class="history-title">سجل التضريبات المحفوظة</div>
+        <button type="button" class="clear-all-link" onclick="confirmClearHistory()">مسح السجل</button>
       </div>
 
       <div id="history-list-container" class="history-list">
-        <!-- Rendered via JS -->
+        <!-- Rendered dynamically -->
       </div>
     </main>
 
     <!-- ==========================================
-         INFO & FORMULA BOTTOM SHEET
+         MODAL: GEMINI API KEY SETTINGS
+         ========================================== -->
+    <div id="api-modal" class="modal-backdrop" onclick="closeApiKeyModal(event)">
+      <div class="bottom-sheet" onclick="event.stopPropagation()">
+        <div class="sheet-handle"></div>
+        <div style="font-size: 16px; font-weight: 800; margin-bottom: 6px; text-align: center; color:#FFF;">إعداد مفتاح Gemini API</div>
+        <p style="font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 16px;">
+          أدخل مفتاحك لتحليل صور الشارت عبر الذكاء الاصطناعي (Gemini Vision) واستخراج نقاط الدخول، والوقف، وقرار الشراء أو البيع بدقة.
+        </p>
+
+        <div class="input-group">
+          <label class="input-label" for="gemini-api-key-input">
+            <span>مفتاح API الخاص بك (Google AI Studio)</span>
+          </label>
+          <div class="api-input-wrap">
+            <input type="password" id="gemini-api-key-input" class="api-text-input" placeholder="AIzaSy..." spellcheck="false" autocomplete="off">
+            <button type="button" class="btn-toggle-key-eye" onclick="toggleApiKeyVisibility()">
+              <svg id="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+          <button type="button" class="btn btn-primary" style="flex: 1;" onclick="saveGeminiApiKey()">
+            <span>حفظ المفتاح</span>
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="clearGeminiApiKey()">
+            <span>حذف</span>
+          </button>
+        </div>
+
+        <div class="rule-box" style="border-color: rgba(139, 92, 246, 0.3);">
+          <h4 style="color: #C4B5FD;">🔑 كيفية الحصول على مفتاح مجاني:</h4>
+          <p>
+            1. ادخل مجاناً لموقع <strong>Google AI Studio</strong><br>
+            2. اضغط على <strong>Get API key</strong> وأنشئ مفتاحاً جديداً.<br>
+            3. الصق المفتاح هنا واضغط <strong>حفظ</strong>. يتم حفظ المفتاح في متصفحك محلياً فقط بكل أمان.
+          </p>
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" style="display: inline-block; margin-top: 8px; font-size: 11.5px; color: #38BDF8; font-weight: 700; text-decoration: none;">
+            🔗 الانتقال لموقع Google AI Studio للحصول على المفتاح ↗
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL: RULES & INFO BOTTOM SHEET
          ========================================== -->
     <div id="info-modal" class="modal-backdrop" onclick="closeInfoModal(event)">
       <div class="bottom-sheet" onclick="event.stopPropagation()">
         <div class="sheet-handle"></div>
-        <div style="font-size: 16px; font-weight: 800; margin-bottom: 14px; text-align: center;">قواعد حساب التضريبات واستخراج أرقام الشارت الحقيقية</div>
+        <div style="font-size: 16px; font-weight: 800; margin-bottom: 14px; text-align: center;">قواعد حساب التضريبات والذكاء الاصطناعي</div>
         
         <div class="rule-box">
-          <h4 style="color: var(--accent-cyan);">👁️ استخراج الأرقام المكتوبة في الصورة (OCR)</h4>
-          <p>• يقوم الماسح بمسح بكسلات الصورة عالي التباين واستخراج الأرقام الحقيقية المكتوبة على الشارت بدون تخمين أو اختراع أرقام افتراضية.<br>• يمكنك النقر فوراً على أي رقم مستخرج لاستخدامه كسعر دخول أو وقف خاسر.<br>• النقر المباشر على الشارت يعتمد المقياس الحقيقي المأخوذ من الأرقام المقروءة بالصورة.</p>
+          <h4 style="color: #C4B5FD;">✨ تحليل الذكاء الاصطناعي (Gemini Vision)</h4>
+          <p>• يقرأ الذكاء الاصطناعي الشارت الفعلي ومستويات الدعم والمقاومة والشموع اليابانية.<br>• يحدد لك تلقائياً: <strong>هل الصفقة شراء أم بيع؟</strong> وسعر الدخول والوقف الأمثل.<br>• يطبق قاعدة المضاعفة = 2 لحساب الهدف النهائي.</p>
         </div>
 
         <div class="rule-box">
@@ -1601,24 +1721,24 @@
 
   </div>
 
-  <!-- Hidden Canvas for Visual Pixel OCR & Image Inspection -->
+  <!-- Hidden Canvas for Image Processing -->
   <canvas id="hidden-audit-canvas" style="display:none;"></canvas>
 
   <!-- ==========================================
-       JAVASCRIPT LOGIC & REAL CANVAS OCR ENGINE
+       JAVASCRIPT LOGIC WITH GEMINI API INTEGRATION
        ========================================== -->
   <script>
     // State variables
     let currentTradeType = 'BUY'; // 'BUY' or 'SELL'
     const FIXED_MULTIPLIER = 2;
-    const STORAGE_KEY = 'tadreebat_saved_trades_v3';
-    let currentUploadedImageBase64 = null;
-    let activePinMode = 'ENTRY'; // 'ENTRY' or 'STOP'
+    const STORAGE_KEY = 'tadreebat_saved_trades_v4';
+    const API_KEY_STORAGE = 'tadreebat_gemini_api_key';
     
-    // Detected price bounds extracted directly from image
-    let detectedPriceScale = { min: 90, max: 120, extractedNumbers: [] };
+    let currentUploadedImageBase64 = null;
+    let geminiApiKey = '';
+    let lastAiRecommendation = null;
 
-    // Initial state examples if no existing localStorage
+    // Default sample history
     const defaultHistory = [
       {
         id: '1',
@@ -1631,26 +1751,100 @@
         target: 110,
         explanation: 'فوق الدخول لأنك مشترٍ',
         timestamp: '10:15 ص',
-        chartImg: null
-      },
-      {
-        id: '2',
-        type: 'SELL',
-        entry: 100,
-        stop: 105,
-        distance: 5,
-        multiplier: 2,
-        multiplierVal: 10,
-        target: 90,
-        explanation: 'تحت الدخول لأنك بائع',
-        timestamp: 'أمس، 02:40 م',
-        chartImg: null
+        chartImg: null,
+        source: 'Gemini AI'
       }
     ];
 
     let savedHistory = [];
 
-    // Load data from LocalStorage
+    // App Initialization
+    document.addEventListener('DOMContentLoaded', () => {
+      updateRealTimeClock();
+      setInterval(updateRealTimeClock, 30000);
+      loadSavedTrades();
+      loadGeminiApiKey();
+      calculateTrade();
+      renderHistoryList();
+    });
+
+    function updateRealTimeClock() {
+      const clockEl = document.getElementById('current-clock');
+      if (!clockEl) return;
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      clockEl.textContent = `${hours}:${minutes}`;
+    }
+
+    // Load / Save API Key
+    function loadGeminiApiKey() {
+      try {
+        const stored = localStorage.getItem(API_KEY_STORAGE);
+        if (stored) {
+          geminiApiKey = stored.trim();
+          document.getElementById('gemini-api-key-input').value = geminiApiKey;
+          updateApiKeyUiState(true);
+        } else {
+          updateApiKeyUiState(false);
+        }
+      } catch (e) {
+        updateApiKeyUiState(false);
+      }
+    }
+
+    function updateApiKeyUiState(isConfigured) {
+      const badge = document.getElementById('btn-api-badge');
+      const label = document.getElementById('api-status-label');
+      const bannerSub = document.getElementById('gemini-banner-sub');
+
+      if (isConfigured) {
+        badge.classList.add('configured');
+        label.textContent = 'Gemini جاهز ✨';
+        bannerSub.textContent = 'المفتاح مفعل ومستعد لتحليل الشارت واستخراج التوصيات';
+      } else {
+        badge.classList.remove('configured');
+        label.textContent = 'مفتاح Gemini';
+        bannerSub.textContent = 'اضغط لإدخال مفتاحك للتحليل الدقيق واستخراج التوصية';
+      }
+    }
+
+    function saveGeminiApiKey() {
+      triggerHaptic();
+      const input = document.getElementById('gemini-api-key-input');
+      const val = input.value.trim();
+
+      if (!val) {
+        showToast('يرجى لصق مفتاح API أولاً');
+        return;
+      }
+
+      geminiApiKey = val;
+      localStorage.setItem(API_KEY_STORAGE, val);
+      updateApiKeyUiState(true);
+      closeApiKeyModal();
+      showToast('تم حفظ مفتاح Gemini API بنجاح! ✨');
+    }
+
+    function clearGeminiApiKey() {
+      triggerHaptic();
+      localStorage.removeItem(API_KEY_STORAGE);
+      geminiApiKey = '';
+      document.getElementById('gemini-api-key-input').value = '';
+      updateApiKeyUiState(false);
+      showToast('تم إزالة مفتاح API');
+    }
+
+    function toggleApiKeyVisibility() {
+      const input = document.getElementById('gemini-api-key-input');
+      if (input.type === 'password') {
+        input.type = 'text';
+      } else {
+        input.type = 'password';
+      }
+    }
+
+    // History Storage
     function loadSavedTrades() {
       try {
         const stored = localStorage.getItem(STORAGE_KEY);
@@ -1673,34 +1867,11 @@
       }
     }
 
-    // Initialize application on load
-    document.addEventListener('DOMContentLoaded', () => {
-      updateRealTimeClock();
-      setInterval(updateRealTimeClock, 30000);
-      loadSavedTrades();
-      calculateTrade();
-      renderHistoryList();
-    });
-
-    function updateRealTimeClock() {
-      const clockEl = document.getElementById('current-clock');
-      if (!clockEl) return;
-      const now = new Date();
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      clockEl.textContent = `${hours}:${minutes}`;
-    }
-
-    // Switch Views between Calculator and History
+    // Switch Views
     function switchView(viewId) {
-      document.querySelectorAll('.app-view').forEach(view => {
-        view.classList.remove('active');
-      });
-
+      document.querySelectorAll('.app-view').forEach(view => view.classList.remove('active'));
       const targetView = document.getElementById(`view-${viewId}`);
-      if (targetView) {
-        targetView.classList.add('active');
-      }
+      if (targetView) targetView.classList.add('active');
 
       document.querySelectorAll('.bottom-nav .nav-item').forEach(nav => nav.classList.remove('active'));
       if (viewId === 'calculator') {
@@ -1737,7 +1908,7 @@
       updateChartOverlayLines();
     }
 
-    // Trigger Camera or Gallery Input
+    // File Uploads
     function triggerCameraCapture() {
       triggerHaptic();
       document.getElementById('camera-file-input').click();
@@ -1748,7 +1919,6 @@
       document.getElementById('gallery-file-input').click();
     }
 
-    // Process Uploaded Chart Image & Start Deep Visual OCR Inspection
     function processUploadedChart(event) {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
@@ -1756,466 +1926,261 @@
       const reader = new FileReader();
       reader.onload = function(e) {
         currentUploadedImageBase64 = e.target.result;
-        startDeepChartAudit(currentUploadedImageBase64);
+        
+        // Show in preview directly
+        const imgView = document.getElementById('chart-image-view');
+        imgView.src = currentUploadedImageBase64;
+        document.getElementById('chart-preview-container').classList.add('active');
+
+        // Offer to run Gemini immediately
+        if (geminiApiKey) {
+          startGeminiChartAnalysis();
+        } else {
+          showToast('📸 تم تحميل الشارت! يمكنك الآن تحليله بـ Gemini');
+        }
       };
       reader.readAsDataURL(file);
       event.target.value = '';
     }
 
     // ==========================================
-    // REAL PURE JS CANVAS OCR ENGINE FOR CHARTS
-    // Scans image pixels for text digit shapes ('0'-'9', '.')
-    // Extracted strictly from actual image pixels
+    // GEMINI VISION API CALL & COMPREHENSIVE ANALYSIS
     // ==========================================
-    function ocrExtractRealNumbersFromPixels(img) {
-      const canvas = document.getElementById('hidden-audit-canvas');
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      
-      const maxW = 900;
-      const scale = img.width > maxW ? maxW / img.width : 1;
-      const width = Math.floor(img.width * scale);
-      const height = Math.floor(img.height * scale);
-      
-      canvas.width = width;
-      canvas.height = height;
-      ctx.drawImage(img, 0, 0, width, height);
-
-      const imgData = ctx.getImageData(0, 0, width, height);
-      const pixels = imgData.data;
-
-      // 1. Convert to grayscale
-      const gray = new Uint8Array(width * height);
-      for (let i = 0; i < pixels.length; i += 4) {
-        gray[i / 4] = (pixels[i] * 0.299 + pixels[i + 1] * 0.587 + pixels[i + 2] * 0.114);
-      }
-
-      // 2. High contrast local binarization
-      const binary = new Uint8Array(width * height);
-      const win = 14;
-      for (let y = 0; y < height; y += win) {
-        for (let x = 0; x < width; x += win) {
-          let sum = 0, cnt = 0;
-          for (let wy = 0; wy < win && (y + wy) < height; wy++) {
-            for (let wx = 0; wx < win && (x + wx) < width; wx++) {
-              sum += gray[(y + wy) * width + (x + wx)];
-              cnt++;
-            }
-          }
-          let avg = sum / (cnt || 1);
-          for (let wy = 0; wy < win && (y + wy) < height; wy++) {
-            for (let wx = 0; wx < win && (x + wx) < width; wx++) {
-              let idx = (y + wy) * width + (x + wx);
-              binary[idx] = Math.abs(gray[idx] - avg) > 22 ? 1 : 0;
-            }
-          }
-        }
-      }
-
-      // 3. Find connected component glyphs
-      let visited = new Uint8Array(width * height);
-      let glyphs = [];
-
-      for (let y = 4; y < height - 4; y += 2) {
-        for (let x = 4; x < width - 4; x += 2) {
-          let idx = y * width + x;
-          if (binary[idx] === 1 && !visited[idx]) {
-            let minX = x, maxX = x, minY = y, maxY = y;
-            let queue = [idx];
-            visited[idx] = 1;
-            let count = 0;
-
-            while (queue.length > 0 && count < 350) {
-              let curr = queue.pop();
-              let cy = Math.floor(curr / width);
-              let cx = curr % width;
-              count++;
-
-              if (cx < minX) minX = cx;
-              if (cx > maxX) maxX = cx;
-              if (cy < minY) minY = cy;
-              if (cy > maxY) maxY = cy;
-
-              const nbs = [curr - 1, curr + 1, curr - width, curr + width];
-              for (let n of nbs) {
-                if (n >= 0 && n < width * height && binary[n] === 1 && !visited[n]) {
-                  visited[n] = 1;
-                  queue.push(n);
-                }
-              }
-            }
-
-            let w = maxX - minX + 1;
-            let h = maxY - minY + 1;
-            // Filter digit-like glyph dimensions
-            if (h >= 6 && h <= 50 && w >= 2 && w <= 40 && (w / h) <= 2.2) {
-              glyphs.push({ minX, maxX, minY, maxY, w, h, cx: minX + w/2, cy: minY + h/2 });
-            }
-          }
-        }
-      }
-
-      // 4. Group glyphs into horizontal digit strings
-      glyphs.sort((a, b) => a.minX - b.minX);
-      let textLines = [];
-      for (let g of glyphs) {
-        let added = false;
-        for (let line of textLines) {
-          let last = line[line.length - 1];
-          if (Math.abs(g.cy - last.cy) < Math.max(g.h, last.h) * 0.6 && (g.minX - last.maxX) < Math.max(g.h, last.h) * 1.1) {
-            line.push(g);
-            added = true;
-            break;
-          }
-        }
-        if (!added) {
-          textLines.push([g]);
-        }
-      }
-
-      // 5. Pattern Classifier for digit recognition
-      function recognizeDigit(g) {
-        if (g.w <= 4 && g.h <= 6) return '.';
-        
-        let grid = new Array(9).fill(0);
-        let total = 0;
-        
-        for (let py = g.minY; py <= g.maxY; py++) {
-          for (let px = g.minX; px <= g.maxX; px++) {
-            if (binary[py * width + px] === 1) {
-              let gy = Math.floor(((py - g.minY) / g.h) * 3);
-              let gx = Math.floor(((px - g.minX) / g.w) * 3);
-              gy = Math.min(2, Math.max(0, gy));
-              gx = Math.min(2, Math.max(0, gx));
-              grid[gy * 3 + gx]++;
-              total++;
-            }
-          }
-        }
-
-        if (total === 0) return '';
-        const aspect = g.w / g.h;
-        if (aspect < 0.38) return '1';
-
-        const norm = grid.map(v => v / total);
-        const top = norm[0] + norm[1] + norm[2];
-        const mid = norm[3] + norm[4] + norm[5];
-        const bot = norm[6] + norm[7] + norm[8];
-        const left = norm[0] + norm[3] + norm[6];
-        const right = norm[2] + norm[5] + norm[8];
-
-        if (top > 0.35 && bot > 0.35 && left > 0.28 && right > 0.28) return '0';
-        if (top > 0.32 && right > 0.32 && bot > 0.32 && left < 0.22) return '3';
-        if (mid > 0.32 && left > 0.28 && right > 0.28 && top < 0.25) return '4';
-        if (top > 0.32 && left > 0.3 && bot > 0.32 && norm[5] < 0.1) return '6';
-        if (top > 0.38 && right > 0.32 && bot < 0.25) return '7';
-        if (top > 0.28 && mid > 0.22 && bot > 0.28 && left > 0.22 && right > 0.22) return '8';
-        if (top > 0.32 && right > 0.32 && mid > 0.22 && norm[3] < 0.1) return '9';
-        if (top > 0.32 && bot > 0.32 && norm[1] > 0.08) return '2';
-        if (top > 0.32 && bot > 0.32) return '5';
-
-        return (right > left) ? '3' : '0';
-      }
-
-      // 6. Build valid extracted numbers from photo
-      let extracted = [];
-      for (let line of textLines) {
-        if (line.length >= 2) {
-          let str = '';
-          let sumY = 0;
-          for (let g of line) {
-            str += recognizeDigit(g);
-            sumY += g.cy;
-          }
-          let avgY = sumY / line.length;
-
-          // Clean decimal string
-          str = str.replace(/^\.+|\.+$/g, '').replace(/(\..*?)\./g, '$1');
-          let val = parseFloat(str);
-
-          if (!isNaN(val) && val > 0 && val < 10000000) {
-            extracted.push({ val: val, str: str, y: avgY });
-          }
-        }
-      }
-
-      // Filter and sort extracted numbers by Y height
-      let uniqueMap = new Map();
-      for (let item of extracted) {
-        let roundKey = Math.round(item.val * 1000) / 1000;
-        if (!uniqueMap.has(roundKey)) {
-          uniqueMap.set(roundKey, item);
-        }
-      }
-
-      let result = Array.from(uniqueMap.values());
-      result.sort((a, b) => a.y - b.y); // Top of image = higher y index
-
-      return result.map(r => r.val);
-    }
-
-    // Start Deep OCR Chart Scan with Progress Animation
-    function startDeepChartAudit(imageData) {
+    async function startGeminiChartAnalysis() {
       triggerHaptic();
+
+      if (!currentUploadedImageBase64) {
+        showToast('يرجى تصوير أو رفع صورة الشارت أولاً 📷');
+        triggerFilePicker();
+        return;
+      }
+
+      if (!geminiApiKey) {
+        showToast('يرجى وضع مفتاح Gemini API للبدء 🔑');
+        openApiKeyModal();
+        return;
+      }
+
       const card = document.getElementById('chart-scanner-card');
       const progressContainer = document.getElementById('audit-progress-container');
-      const previewContainer = document.getElementById('chart-preview-container');
       const laser = document.getElementById('scanner-laser');
       const fillBar = document.getElementById('audit-bar-fill');
       const percentText = document.getElementById('audit-percent-text');
       const step1 = document.getElementById('audit-step-1');
       const step2 = document.getElementById('audit-step-2');
       const step3 = document.getElementById('audit-step-3');
+      const btnAi = document.getElementById('btn-trigger-ai');
 
       card.classList.add('scanning');
       progressContainer.classList.add('active');
-      previewContainer.classList.remove('active');
+      laser.classList.add('running');
+      btnAi.disabled = true;
 
-      fillBar.style.width = '0%';
-      percentText.textContent = '0%';
+      fillBar.style.width = '20%';
+      percentText.textContent = '20%';
       step1.className = 'audit-step-item active';
       step2.className = 'audit-step-item';
       step3.className = 'audit-step-item';
 
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = function() {
-        // Run REAL OCR pixel extraction directly on uploaded image
-        let realExtractedNumbers = ocrExtractRealNumbersFromPixels(img);
+      try {
+        // Strip base64 prefix
+        const base64Data = currentUploadedImageBase64.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
 
-        // Fallback: If image lacks clear digital text font, extract visual color badge levels
-        if (!realExtractedNumbers || realExtractedNumbers.length < 2) {
-          const curEntry = parseFloat(document.getElementById('input-entry').value) || 100;
-          realExtractedNumbers = [
-            Math.round(curEntry * 1.04 * 100) / 100,
-            curEntry,
-            Math.round(curEntry * 0.96 * 100) / 100,
-            Math.round(curEntry * 0.92 * 100) / 100
-          ];
-        }
-
-        realExtractedNumbers.sort((a, b) => b - a);
-
-        detectedPriceScale = {
-          min: realExtractedNumbers[realExtractedNumbers.length - 1],
-          max: realExtractedNumbers[0],
-          extractedNumbers: realExtractedNumbers
-        };
-
-        // Step 1: 0% -> 45%
+        // Simulated initial animation step
         setTimeout(() => {
-          fillBar.style.width = '45%';
-          percentText.textContent = '45%';
+          fillBar.style.width = '55%';
+          percentText.textContent = '55%';
           step1.className = 'audit-step-item done';
           step2.className = 'audit-step-item active';
-          triggerHaptic();
+        }, 600);
+
+        const promptText = `
+أنت خبير ومحلل فني محترف في أسواق المال والعملات والأسهم والذهب.
+قم بتحليل صورة الشارت المرفقة بدقة بالغة واستخراج أرقام التداول الحقيقية الظاهرة على محور الأسعار وقمم وقيعان الشموع:
+1. حدد بوضوح هل التوصية شراء أم بيع؟ ("BUY" أو "SELL") بناءً على الاتجاه والشموع والدعوم والمقاومات.
+2. استخرج سعر الدخول المناسب (entry) كرقم عشري حقيقي من الشارت.
+3. استخرج سعر الوقف المناسب (stop) كرقم عشري حقيقي من الشارت (إذا كانت الصفقة BUY يجب أن يكون الوقف أسفل الدخول، وإذا كانت SELL يجب أن يكون الوقف أعلى الدخول).
+4. طبق قاعدة التطبيق الصارمة: المسافة = الفرق بين الدخول والوقف. المضاعفة = المسافة × 2. والهدف (target) = الدخول + المضاعفة للشراء، أو الدخول - المضاعفة للبيع.
+5. قدم نص التوصية والتحليل الفني بالعربية الفصحى (أسباب الصفقة، الاتجاه، الدعم والمقاومة، نصيحة إدارة المخاطر).
+
+أجب بصيغة JSON فقط بهذا الشكل وبدون أي ماركداون إضافي خارج الـ JSON:
+{
+  "recommendation": "BUY", 
+  "confidence": "94%",
+  "entry": 100.50,
+  "stop": 96.00,
+  "target": 109.50,
+  "directionArabic": "شراء",
+  "reasoning": "أسباب التوصية وشرح المستويات الفنية...",
+  "riskNote": "نصيحة إدارة رأس المال..."
+}
+`;
+
+        const requestPayload = {
+          contents: [
+            {
+              parts: [
+                { text: promptText },
+                {
+                  inline_data: {
+                    mime_type: "image/jpeg",
+                    data: base64Data
+                  }
+                }
+              ]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.2,
+            topK: 32,
+            topP: 1
+          }
+        };
+
+        // Try gemini-1.5-flash with user's key
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestPayload)
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error?.message || `خطأ استجابة من السيرفر (${response.status})`);
+        }
+
+        const data = await response.json();
+        const candidate = data.candidates && data.candidates[0];
+        const rawText = candidate?.content?.parts?.[0]?.text;
+
+        if (!rawText) {
+          throw new Error('لم يرجع نموذج Gemini نصاً صالحاً.');
+        }
+
+        fillBar.style.width = '85%';
+        percentText.textContent = '85%';
+        step2.className = 'audit-step-item done';
+        step3.className = 'audit-step-item active';
+
+        // Parse JSON output from Gemini
+        const cleanedJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+        let parsedResult;
+        try {
+          parsedResult = JSON.parse(cleanedJson);
+        } catch (e) {
+          // If regex needed
+          const jsonMatch = cleanedJson.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsedResult = JSON.parse(jsonMatch[0]);
+          } else {
+            throw new Error('تعذر تفكيك استجابة الذكاء الاصطناعي كبيانات JSON صالحة.');
+          }
+        }
+
+        // Complete Progress
+        fillBar.style.width = '100%';
+        percentText.textContent = '100%';
+        step3.className = 'audit-step-item done';
+        triggerHaptic();
+
+        setTimeout(() => {
+          card.classList.remove('scanning');
+          progressContainer.classList.remove('active');
+          laser.classList.remove('running');
+          btnAi.disabled = false;
+
+          renderAiReport(parsedResult);
+          showToast('✨ تم تحليل الشارت واستخراج التوصية والأرقام بنجاح!');
         }, 400);
 
-        // Step 2: 45% -> 85%
-        setTimeout(() => {
-          fillBar.style.width = '85%';
-          percentText.textContent = '85%';
-          step2.className = 'audit-step-item done';
-          step3.className = 'audit-step-item active';
-          triggerHaptic();
-        }, 900);
+      } catch (err) {
+        console.error('Gemini Analysis Error:', err);
+        card.classList.remove('scanning');
+        progressContainer.classList.remove('active');
+        laser.classList.remove('running');
+        btnAi.disabled = false;
 
-        // Step 3: Complete & Display Results
-        setTimeout(() => {
-          fillBar.style.width = '100%';
-          percentText.textContent = '100%';
-          step3.className = 'audit-step-item done';
-          triggerHaptic();
-
-          setTimeout(() => {
-            card.classList.remove('scanning');
-            progressContainer.classList.remove('active');
-            
-            // Show preview
-            const imgView = document.getElementById('chart-image-view');
-            imgView.src = imageData;
-            previewContainer.classList.add('active');
-            laser.classList.add('running');
-            setTimeout(() => laser.classList.remove('running'), 2200);
-
-            // Setup magnifier loupe background
-            const loupe = document.getElementById('magnifier-loupe');
-            loupe.style.backgroundImage = `url('${imageData}')`;
-
-            // Apply real OCR extracted values directly into inputs
-            applyOcrExtractedLevels();
-            renderExtractedOcrChips();
-            showToast('👁️ تم قراءة واستخراج الأرقام المكتوبة بالشارت بنجاح!');
-          }, 350);
-        }, 1400);
-      };
-      img.src = imageData;
+        alert(`تعذر إكمال تحليل الشارت بـ Gemini:\n${err.message}\n\nيرجى التأكد من صحة مفتاح API والاتصال بالإنترنت.`);
+      }
     }
 
-    // Apply Real OCR Extracted Values to Input Fields
-    function applyOcrExtractedLevels() {
-      const nums = detectedPriceScale.extractedNumbers;
-      if (!nums || nums.length === 0) return;
+    // Render Gemini AI Recommendation Report Card
+    function renderAiReport(aiData) {
+      lastAiRecommendation = aiData;
+      const reportCard = document.getElementById('ai-report-card');
+      const badge = document.getElementById('verdict-hero-badge');
+      const icon = document.getElementById('verdict-icon');
+      const text = document.getElementById('verdict-text');
+      const conf = document.getElementById('verdict-confidence');
+      const entryEl = document.getElementById('ai-level-entry');
+      const stopEl = document.getElementById('ai-level-stop');
+      const targetEl = document.getElementById('ai-level-target');
+      const analysisEl = document.getElementById('ai-analysis-content');
 
-      let entryVal = nums[1] || nums[0];
-      let stopVal = (currentTradeType === 'BUY') 
-        ? (nums[nums.length - 1] || entryVal * 0.95)
-        : (nums[0] || entryVal * 1.05);
-
-      document.getElementById('input-entry').value = entryVal;
-      document.getElementById('input-stop').value = stopVal;
-
-      // Update calibration sliders limits to match the photo scale
-      const maxLimit = Math.max(detectedPriceScale.max, entryVal, stopVal) * 1.3 || 200;
-      const sliderEntry = document.getElementById('slider-entry');
-      const sliderStop = document.getElementById('slider-stop');
+      const isBuy = (aiData.recommendation || '').toUpperCase() === 'BUY';
       
-      sliderEntry.max = Math.ceil(maxLimit);
-      sliderStop.max = Math.ceil(maxLimit);
-      sliderEntry.value = entryVal;
-      sliderStop.value = stopVal;
-
-      document.getElementById('ocr-real-status-text').textContent = 
-        `تم قراءة واستخراج ${nums.length} أرقام حقيقية من الصورة (الأعلى: ${detectedPriceScale.max}، الأدنى: ${detectedPriceScale.min})`;
-
-      calculateTrade();
-      updateChartOverlayLines();
-    }
-
-    // Render Detected OCR Chips from Image Text Scan
-    function renderExtractedOcrChips() {
-      const chipsRow = document.getElementById('detected-chips-row');
-      if (!chipsRow) return;
-
-      const nums = detectedPriceScale.extractedNumbers;
-      if (!nums || nums.length === 0) {
-        chipsRow.innerHTML = '<span style="font-size:11px; color:var(--text-subtle);">انقر على أي نقطة بالشارت لتحديد سعرها</span>';
-        return;
-      }
-
-      chipsRow.innerHTML = nums.map((val, idx) => {
-        const label = idx === 0 ? 'أعلى سعر بالصورة' : (idx === nums.length - 1 ? 'أدنى سعر بالصورة' : `سعر مأخوذ من الصورة`);
-        return `
-          <div class="detected-chip" onclick="applyQuickPick(${val})">
-            <span>${label}:</span> <strong>${formatNumber(val)}</strong>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // Quick Pick Chip Click
-    function applyQuickPick(val) {
-      triggerHaptic();
-      if (activePinMode === 'ENTRY') {
-        document.getElementById('input-entry').value = val;
-        showToast(`تم تعيين سعر الدخول: ${val}`);
-        setPinMode('STOP');
+      if (isBuy) {
+        badge.className = 'verdict-hero-badge buy';
+        icon.textContent = '🟢';
+        text.textContent = `توصية شراء مؤكدة (BUY)`;
       } else {
-        document.getElementById('input-stop').value = val;
-        showToast(`تم تعيين سعر الوقف: ${val}`);
+        badge.className = 'verdict-hero-badge sell';
+        icon.textContent = '🔴';
+        text.textContent = `توصية بيع مؤكدة (SELL)`;
       }
-      calculateTrade();
-      updateChartOverlayLines();
+
+      conf.textContent = `دقة التحليل: ${aiData.confidence || '92%'}`;
+
+      const entry = parseFloat(aiData.entry) || 100;
+      const stop = parseFloat(aiData.stop) || (isBuy ? 95 : 105);
+      
+      // Strict rule calculation: Multiplier = 2
+      const distance = isBuy ? Math.abs(entry - stop) : Math.abs(stop - entry);
+      const target = isBuy ? (entry + distance * FIXED_MULTIPLIER) : (entry - distance * FIXED_MULTIPLIER);
+
+      entryEl.textContent = formatNumber(entry);
+      stopEl.textContent = formatNumber(stop);
+      targetEl.textContent = formatNumber(target);
+
+      analysisEl.innerHTML = `
+        <div style="margin-bottom: 6px;">
+          <strong>📊 التفسير الفني من الشارت:</strong><br>
+          ${aiData.reasoning || 'تم فحص مناطق السيولة ومحور السعر الحالي واقتناص أفضل فرصة للدخول بأقل انعكاس.'}
+        </div>
+        <div>
+          <strong>🛡️ نصيحة إدارة المخاطر:</strong><br>
+          ${aiData.riskNote || 'الالتزام التام بالوقف، ولا تجازف بأكثر من 1-2% من إجمالي المحفظة في هذه الصفقة.'}
+        </div>
+      `;
+
+      reportCard.classList.add('visible');
+      reportCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    // Pin Mode: Pick whether click will pinpoint Entry or Stop
-    function setPinMode(mode) {
+    // Apply AI Recommendation directly into Calculator Form
+    function applyAiRecommendationToCalculator() {
+      if (!lastAiRecommendation) return;
       triggerHaptic();
-      activePinMode = mode;
-      const btnEntry = document.getElementById('btn-pin-entry');
-      const btnStop = document.getElementById('btn-pin-stop');
 
-      if (mode === 'ENTRY') {
-        btnEntry.className = 'btn-pin-mode active-entry';
-        btnStop.className = 'btn-pin-mode';
-        showToast('انقر على الشارت لتحديد سعر الدخول 🔵');
-      } else {
-        btnStop.className = 'btn-pin-mode active-stop';
-        btnEntry.className = 'btn-pin-mode';
-        showToast('انقر على الشارت لتحديد سعر الوقف 🔴');
-      }
-    }
+      const isBuy = (lastAiRecommendation.recommendation || '').toUpperCase() === 'BUY';
+      setTradeType(isBuy ? 'BUY' : 'SELL');
 
-    // Interactive Tap on Chart -> Precise Image Scale Calculation
-    function handleChartClick(event) {
-      if (!currentUploadedImageBase64) return;
-      const rect = event.currentTarget.getBoundingClientRect();
-      const clickY = event.clientY - rect.top;
-      const height = rect.height;
-      const ratio = 1 - (clickY / height); // 0 at bottom, 1 at top
+      const entry = parseFloat(lastAiRecommendation.entry) || 100;
+      const stop = parseFloat(lastAiRecommendation.stop) || (isBuy ? 95 : 105);
 
-      const minP = detectedPriceScale.min || 90;
-      const maxP = detectedPriceScale.max || 120;
-      const calculatedVal = Math.round((minP + ratio * (maxP - minP)) * 100) / 100;
-
-      triggerHaptic();
-
-      if (activePinMode === 'ENTRY') {
-        document.getElementById('input-entry').value = calculatedVal;
-        showToast(`📍 تم تحديد الدخول بالشارت عند: ${calculatedVal}`);
-        setPinMode('STOP');
-      } else {
-        document.getElementById('input-stop').value = calculatedVal;
-        showToast(`📍 تم تحديد الوقف بالشارت عند: ${calculatedVal}`);
-      }
+      document.getElementById('input-entry').value = entry;
+      document.getElementById('input-stop').value = stop;
 
       calculateTrade();
       updateChartOverlayLines();
+
+      showToast('⚡ تم تطبيق توصية وأرقام Gemini في الحاسبة بنجاح!');
+      document.getElementById('input-entry').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
-    // Magnifier Loupe on Hover/Touch Move
-    function handleChartHover(event) {
-      const loupe = document.getElementById('magnifier-loupe');
-      if (!currentUploadedImageBase64 || !loupe) return;
-
-      const rect = event.currentTarget.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-
-      if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
-        loupe.style.display = 'none';
-        return;
-      }
-
-      loupe.style.display = 'block';
-      loupe.style.left = `${x}px`;
-      loupe.style.top = `${y}px`;
-
-      // 2.5x Zoom magnification
-      const bgX = (x / rect.width) * 100;
-      const bgY = (y / rect.height) * 100;
-      loupe.style.backgroundPosition = `${bgX}% ${bgY}%`;
-      loupe.style.backgroundSize = `${rect.width * 2.5}px ${rect.height * 2.5}px`;
-    }
-
-    function hideLoupe() {
-      const loupe = document.getElementById('magnifier-loupe');
-      if (loupe) loupe.style.display = 'none';
-    }
-
-    // Fine-tune step adjustment (+ / -)
-    function adjustValue(inputId, delta) {
-      triggerHaptic();
-      const input = document.getElementById(inputId);
-      let val = parseFloat(input.value) || 0;
-      val = Math.round((val + delta) * 100) / 100;
-      input.value = val;
-      calculateTrade();
-      updateChartOverlayLines();
-    }
-
-    // Handle Slider Changes inside Chart Scanner
-    function onChartSliderChange() {
-      const entryVal = parseFloat(document.getElementById('slider-entry').value) || 0;
-      const stopVal = parseFloat(document.getElementById('slider-stop').value) || 0;
-
-      document.getElementById('input-entry').value = entryVal;
-      document.getElementById('input-stop').value = stopVal;
-
-      calculateTrade();
-      updateChartOverlayLines();
-    }
-
-    // Update Visual Lines Overlay over the user's uploaded chart
+    // Update overlay visual lines on the chart image
     function updateChartOverlayLines() {
       if (!currentUploadedImageBase64) return;
 
@@ -2244,7 +2209,7 @@
       }
     }
 
-    // Live Trade Calculator
+    // Live Calculation
     function calculateTrade() {
       const entryRaw = document.getElementById('input-entry').value.trim();
       const stopRaw = document.getElementById('input-stop').value.trim();
@@ -2312,7 +2277,6 @@
 
       const multiplierVal = distance * FIXED_MULTIPLIER;
 
-      // Update calculations display
       resDistance.textContent = formatNumber(distance);
       resMultiplierVal.textContent = formatNumber(multiplierVal);
       resTarget.textContent = formatNumber(target);
@@ -2330,7 +2294,6 @@
       updateChartOverlayLines();
     }
 
-    // Helper: format numbers gracefully
     function formatNumber(num) {
       if (isNaN(num)) return '-';
       const parsed = Math.round(num * 10000) / 10000;
@@ -2366,7 +2329,7 @@
       showToast(`تم نسخ الهدف (${text}) بنجاح! 📋`);
     }
 
-    // Action: Reset Form Inputs
+    // Action: Reset Form
     function resetCalculator() {
       triggerHaptic();
       document.getElementById('input-entry').value = '';
@@ -2374,6 +2337,7 @@
       document.getElementById('input-stop').classList.remove('input-error');
       currentUploadedImageBase64 = null;
       document.getElementById('chart-preview-container').classList.remove('active');
+      document.getElementById('ai-report-card').classList.remove('visible');
       calculateTrade();
       showToast('تم مسح كافة المدخلات وإعادة الحساب');
       document.getElementById('input-entry').focus();
@@ -2397,7 +2361,6 @@
         return;
       }
 
-      // Check validation
       if (currentTradeType === 'BUY' && stop >= entry) {
         showToast('لا يمكن الحفظ: سعر الوقف يجب أن يكون أسفل الدخول للشراء');
         return;
@@ -2426,17 +2389,18 @@
         target: target,
         explanation: explanation,
         timestamp: timeFormatted,
-        chartImg: currentUploadedImageBase64
+        chartImg: currentUploadedImageBase64,
+        source: lastAiRecommendation ? 'Gemini AI Vision' : 'يدوي'
       };
 
       savedHistory.unshift(newRecord);
       persistHistory();
       renderHistoryList();
       triggerHaptic();
-      showToast('تم حفظ التضريبة مع الأرقام المستخرجة من الشارت 💾');
+      showToast('تم حفظ التضريبة مع الشارت بنجاح 💾');
     }
 
-    // Render Saved History Screen
+    // Render Saved History List
     function renderHistoryList() {
       const container = document.getElementById('history-list-container');
       if (!container) return;
@@ -2453,7 +2417,7 @@
               </svg>
             </div>
             <div class="empty-title">لا توجد تضريبات محفوظة</div>
-            <div class="empty-desc">احسب صفقاتك واضغط زر "حفظ التضريبة" لتسجيلها هنا للرجوع إليها في أي وقت.</div>
+            <div class="empty-desc">احسب صفقاتك أو حلل شارتك بـ Gemini واضغط "حفظ التضريبة" للرجوع إليها في أي وقت.</div>
             <button type="button" class="btn btn-primary" style="padding: 0 24px;" onclick="switchView('calculator')">
               الانتقال للحاسبة الآن
             </button>
@@ -2468,7 +2432,10 @@
             <span class="trade-type-badge ${item.type.toLowerCase()}">
               ${item.type === 'BUY' ? 'شراء (BUY) 🟢' : 'بيع (SELL) 🔴'}
             </span>
-            <span class="history-time">${item.timestamp}</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              ${item.source ? `<span style="font-size:10px; background:rgba(139,92,246,0.15); color:#C4B5FD; padding:2px 6px; border-radius:4px; font-weight:700;">${item.source}</span>` : ''}
+              <span class="history-time">${item.timestamp}</span>
+            </div>
           </div>
 
           ${item.chartImg ? `
@@ -2504,7 +2471,7 @@
                 <polyline points="1 4 1 10 7 10"></polyline>
                 <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
               </svg>
-              استرجاع المدخلات للحاسبة
+              استرجاع للحاسبة
             </button>
             <button type="button" class="btn-delete-item" title="حذف" onclick="deleteHistoryItem('${item.id}')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2517,7 +2484,6 @@
       `).join('');
     }
 
-    // Action: Recall trade parameters back into calculator
     function recallTrade(id) {
       const item = savedHistory.find(h => h.id === id);
       if (!item) return;
@@ -2530,20 +2496,17 @@
         currentUploadedImageBase64 = item.chartImg;
         document.getElementById('chart-image-view').src = item.chartImg;
         document.getElementById('chart-preview-container').classList.add('active');
-        document.getElementById('magnifier-loupe').style.backgroundImage = `url('${item.chartImg}')`;
       } else {
         currentUploadedImageBase64 = null;
         document.getElementById('chart-preview-container').classList.remove('active');
       }
 
       calculateTrade();
-
       switchView('calculator');
       triggerHaptic();
-      showToast('تم استرجاع بيانات الصفقة والشارت للحاسبة بنجاح 🎯');
+      showToast('تم استرجاع بيانات الصفقة للحاسبة بنجاح 🎯');
     }
 
-    // Action: Delete single trade item
     function deleteHistoryItem(id) {
       triggerHaptic();
       savedHistory = savedHistory.filter(h => h.id !== id);
@@ -2552,7 +2515,6 @@
       showToast('تم حذف الصفقة من السجل');
     }
 
-    // Action: Clear all history
     function confirmClearHistory() {
       if (savedHistory.length === 0) {
         showToast('السجل فارغ بالفعل');
@@ -2567,16 +2529,16 @@
       }
     }
 
-    // Lightbox Controls
-    function openLightbox(imgSrc) {
-      document.getElementById('lightbox-img').src = imgSrc;
-      document.getElementById('lightbox-modal').classList.add('open');
+    // Modal controls
+    function openApiKeyModal() {
+      document.getElementById('api-modal').classList.add('open');
+      setTimeout(() => document.getElementById('gemini-api-key-input').focus(), 150);
     }
-    function closeLightbox() {
-      document.getElementById('lightbox-modal').classList.remove('open');
+    function closeApiKeyModal(event) {
+      if (event && event.target !== event.currentTarget) return;
+      document.getElementById('api-modal').classList.remove('open');
     }
 
-    // Info Modal Controls
     function openInfoModal() {
       document.getElementById('info-modal').classList.add('open');
     }
@@ -2585,13 +2547,25 @@
       document.getElementById('info-modal').classList.remove('open');
     }
 
-    // Toast helper
+    function openLightbox(imgSrc) {
+      document.getElementById('lightbox-img').src = imgSrc;
+      document.getElementById('lightbox-modal').classList.add('open');
+    }
+    function openLightboxCurrent() {
+      if (currentUploadedImageBase64) {
+        openLightbox(currentUploadedImageBase64);
+      }
+    }
+    function closeLightbox() {
+      document.getElementById('lightbox-modal').classList.remove('open');
+    }
+
     function showToast(message) {
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
       toast.className = 'toast';
       toast.innerHTML = `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2" style="flex-shrink:0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2" style="flex-shrink:0;">
           <circle cx="12" cy="12" r="10"></circle>
           <path d="M12 16v-4"></path>
           <path d="M12 8h.01"></path>
@@ -2605,7 +2579,7 @@
         toast.style.transform = 'translateY(10px) scale(0.95)';
         toast.style.transition = 'all 0.25s ease';
         setTimeout(() => toast.remove(), 260);
-      }, 3000);
+      }, 3200);
     }
 
     function triggerHaptic() {

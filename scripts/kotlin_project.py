@@ -19,8 +19,10 @@ CODE_REL = Path("app/src/main/java/app/main")
 
 
 def package_id(app):
-    # Must match scripts/vault.py and the other native builds.
-    return "com.generated.app_" + app.replace("-", "_")
+    # apps/<app>/package.txt or the default; same as scripts/vault.py and the other builds.
+    sys.path.insert(0, str(HERE))
+    import app_id
+    return app_id.get(app, "kotlin") if re.fullmatch(r"[a-z0-9-]+", app) else app_id.default(app, "kotlin")
 
 
 def prepare(app_dir, proj, app, version=1):

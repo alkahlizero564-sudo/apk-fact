@@ -8,12 +8,12 @@ plugins {
 
 android {
     namespace = "app.main"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "__APP_ID__"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = __VERSION_CODE__
         versionName = "__VERSION_NAME__"
     }

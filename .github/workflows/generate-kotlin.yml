@@ -29,7 +29,7 @@ jobs:
       # Used to compile (and fix) the code before it is saved.
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.10.2"
+          gradle-version: "8.14.3"
       - name: Generate Kotlin app and AI preview
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

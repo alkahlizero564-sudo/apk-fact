@@ -239,8 +239,9 @@ export async function getFailureLog(repoFullName: string, runId: number): Promis
 }
 export async function findAppApkAsset(
   repoFullName: string,
-  app: string
-): Promise<{ id: number; name: string } | null> {
+  app: string,
+  ext: ".apk" | ".aab" = ".apk"
+): Promise<{ id: number; name: string; url: string } | null> {
   const token = await getToken();
   const res = await fetch(
     `${GITHUB_API}/repos/${repoFullName}/releases?per_page=30&t=${Date.now()}`,
@@ -251,8 +252,8 @@ export async function findAppApkAsset(
   const re = new RegExp(`^app-${app}-\\d+$`);
   const rel = releases.find((r: any) => re.test(String(r.tag_name)));
   if (!rel) return null;
-  const asset = (rel.assets || []).find((a: any) => String(a.name).endsWith(".apk"));
-  return asset ? { id: asset.id, name: asset.name } : null;
+  const asset = (rel.assets || []).find((a: any) => String(a.name).endsWith(ext));
+  return asset ? { id: asset.id, name: asset.name, url: asset.browser_download_url } : null;
 }
 
 export async function getAssetDownloadInfo(repoFullName: string, assetId: number) {

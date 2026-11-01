@@ -152,5 +152,12 @@
   "error": "error • The getter 'store_disabled' isn't defined for the type 'Icons'. Try importing the library that defines 'store_disabled', correcting the name to the name of an existing getter, or defining a ge",
   "source": "ai",
   "uses": 0
+ },
+ {
+  "old": "_NewSubscriptionBottomSheetState",
+  "new": "_NewSubscriptionBottomSheet",
+  "error": "error • '_NewSubscriptionBottomSheetState' doesn't conform to the bound 'StatefulWidget' of the type parameter 'T'. Try using a type that is or is a subclass of 'StatefulWidget' • lib/main.dart:2569:9",
+  "source": "ai",
+  "uses": 0
  }
 ]

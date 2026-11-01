@@ -3,700 +3,442 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>محلب الخير - تطبيق الزبون</title>
+  <title>محلب الخير - تطبيق حجز اللبن</title>
   <style>
-    :root {
-      --primary: #0f766e;
-      --primary-dark: #115e59;
-      --accent: #14b8a6;
-      --bg: #f8fafc;
-      --surface: #ffffff;
-      --border: #e2e8f0;
-      --text: #0f172a;
-      --text-muted: #64748b;
-      --green-bg: #ecfdf5;
-      --green-border: #a7f3d0;
-      --green-text: #065f46;
-    }
-
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
     body {
-      background-color: #0f172a;
+      background-color: #0F172A;
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      padding: 16px;
+      padding: 20px;
     }
 
-    /* Mobile Container Frame */
-    .phone-frame {
-      width: 100%;
-      max-width: 412px;
-      height: 840px;
-      background: var(--bg);
-      border-radius: 36px;
+    /* Phone Shell */
+    .phone-container {
+      width: 380px;
+      height: 760px;
+      background: #F8FAFC;
+      border-radius: 40px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      border: 8px solid #1E293B;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
       position: relative;
-      border: 8px solid #334155;
     }
 
-    /* Top Bar Status */
+    /* Top Notch / Status Bar */
     .status-bar {
-      height: 24px;
-      padding: 4px 18px;
+      height: 36px;
+      background: #0F766E;
+      color: white;
       display: flex;
       justify-content: space-between;
-      font-size: 11px;
-      color: #64748b;
-      background: var(--surface);
+      align-items: center;
+      padding: 0 20px;
+      font-size: 12px;
+      font-weight: bold;
     }
 
-    /* Header */
-    .app-bar {
+    .app-header {
+      background: #0F766E;
+      color: white;
       padding: 12px 16px;
-      background: var(--surface);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid var(--border);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
+
     .app-title {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--primary);
+      font-size: 18px;
+      font-weight: bold;
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
-    /* Scrollable Content */
+    /* Content Area */
     .content-area {
       flex: 1;
       overflow-y: auto;
       padding: 16px;
-    }
-
-    /* Bottom Nav Bar */
-    .bottom-nav {
-      height: 64px;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
-      padding-bottom: 4px;
-    }
-    .nav-item {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 11px;
-      font-weight: 500;
-      position: relative;
-      width: 25%;
-      border: none;
-      background: transparent;
-    }
-    .nav-item.active {
-      color: var(--primary);
-      font-weight: 700;
-    }
-    .nav-icon {
-      font-size: 20px;
-    }
-    .badge {
-      position: absolute;
-      top: -2px;
-      right: 28px;
-      background: #ef4444;
-      color: #fff;
-      font-size: 10px;
-      padding: 1px 5px;
-      border-radius: 10px;
-      font-weight: bold;
+      gap: 16px;
     }
 
-    /* Cards */
-    .card {
-      background: var(--surface);
-      border-radius: 16px;
-      padding: 14px;
-      margin-bottom: 12px;
-      border: 1px solid var(--border);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-    }
-
-    /* Store Open Banner */
-    .banner {
-      background: var(--green-bg);
-      border: 1px solid var(--green-border);
+    /* Banners & Cards */
+    .status-banner {
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
       border-radius: 16px;
       padding: 14px;
       display: flex;
       gap: 12px;
       align-items: center;
-      margin-bottom: 16px;
     }
-    .banner-icon {
+
+    .status-badge {
       width: 40px;
       height: 40px;
-      background: #10b981;
+      background: #10B981;
+      color: white;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 20px;
-      color: white;
     }
 
-    /* Product Item */
-    .product-card {
+    .card {
+      background: white;
+      border-radius: 16px;
+      border: 1px solid #E2E8F0;
+      padding: 14px;
       display: flex;
+      gap: 12px;
       align-items: center;
-      gap: 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
-    .product-emoji {
-      width: 60px;
-      height: 60px;
-      background: #f0fdfa;
+
+    .prod-emoji {
+      width: 56px;
+      height: 56px;
+      background: #F0FDFA;
       border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 32px;
+      font-size: 30px;
     }
-    .product-details {
+
+    .prod-info {
       flex: 1;
     }
-    .product-title {
-      font-size: 16px;
-      font-weight: 700;
+
+    .prod-title {
+      font-weight: bold;
+      font-size: 15px;
+      color: #0F172A;
     }
-    .product-price {
-      color: var(--primary);
-      font-weight: 700;
+
+    .prod-sub {
+      font-size: 12px;
+      color: #64748B;
+      margin-top: 2px;
+    }
+
+    .prod-price {
+      color: #0F766E;
+      font-weight: bold;
       font-size: 14px;
       margin-top: 4px;
     }
-    .stock-tag {
-      font-size: 11px;
-      background: #dcfce7;
-      color: #166534;
-      padding: 2px 6px;
-      border-radius: 6px;
-      display: inline-block;
-      margin-right: 6px;
-    }
+
     .btn {
-      background: var(--primary);
+      background: #0F766E;
       color: white;
       border: none;
       padding: 8px 16px;
-      border-radius: 10px;
+      border-radius: 12px;
       font-weight: bold;
       cursor: pointer;
       font-size: 13px;
     }
-    .btn:active {
-      background: var(--primary-dark);
-    }
-    .btn-block {
-      width: 100%;
-      padding: 12px;
-      font-size: 15px;
-      border-radius: 12px;
+
+    .btn-outlined {
+      background: transparent;
+      border: 1px solid #0F766E;
+      color: #0F766E;
     }
 
-    /* Form Fields */
-    .form-group {
-      margin-bottom: 12px;
-      text-align: right;
-    }
-    .form-group label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-bottom: 5px;
-    }
-    .input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      font-size: 14px;
-      background: #fff;
+    /* Bottom Nav Bar */
+    .bottom-nav {
+      height: 64px;
+      background: white;
+      border-top: 1px solid #E2E8F0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
     }
 
-    /* Modal / Bottom Sheet */
-    .modal-backdrop {
-      display: none;
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: #64748B;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .nav-item.active {
+      color: #0F766E;
+      font-weight: bold;
+    }
+
+    .nav-icon {
+      font-size: 20px;
+    }
+
+    /* Modal / Bottom Sheet Preview */
+    .modal-overlay {
       position: absolute;
-      inset: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       background: rgba(0,0,0,0.5);
-      z-index: 100;
+      display: none;
       justify-content: flex-end;
       flex-direction: column;
+      z-index: 100;
     }
-    .modal-backdrop.open {
-      display: flex;
-    }
-    .bottom-sheet {
-      background: var(--surface);
-      border-radius: 24px 24px 0 0;
+
+    .modal-sheet {
+      background: white;
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
       padding: 20px;
-      max-height: 85%;
-      overflow-y: auto;
-      animation: slideUp 0.25s ease-out;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      animation: slideUp 0.3s ease;
     }
+
     @keyframes slideUp {
       from { transform: translateY(100%); }
       to { transform: translateY(0); }
     }
 
-    /* Segment Buttons */
-    .segments {
-      display: flex;
-      border: 1px solid var(--border);
+    .input-field {
+      width: 100%;
+      padding: 10px 14px;
       border-radius: 10px;
-      overflow: hidden;
-      margin-bottom: 12px;
-    }
-    .seg-btn {
-      flex: 1;
-      padding: 8px;
-      text-align: center;
-      background: #f8fafc;
-      border: none;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .seg-btn.active {
-      background: var(--primary);
-      color: white;
-    }
-
-    /* Status Pill */
-    .status-pill {
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 8px;
-      font-weight: bold;
-    }
-    .status-pending { background: #fef3c7; color: #92400e; }
-    .status-accepted { background: #dbeafe; color: #1e40af; }
-    .status-delivering { background: #f3e8ff; color: #6b21a8; }
-    .status-delivered { background: #dcfce7; color: #166534; }
-
-    /* Login Screen */
-    .auth-box {
-      padding: 40px 20px;
-      text-align: center;
+      border: 1px solid #CBD5E1;
+      font-size: 13px;
     }
   </style>
 </head>
 <body>
 
-<div class="phone-frame">
-  <!-- Status bar -->
+<div class="phone-container">
   <div class="status-bar">
     <span>9:41</span>
-    <span>5G 🔋 100%</span>
+    <span>محلب الخير 🥛</span>
   </div>
 
-  <!-- AUTH SCREEN (Shown if loggedOut) -->
-  <div id="authScreen" style="display:none; height:100%; flex-direction:column; justify-content:center;" class="auth-box">
-    <div style="font-size: 56px; margin-bottom: 12px;">🥛</div>
-    <h2 style="color:var(--primary); margin-bottom: 6px;">محلب الخير</h2>
-    <p style="color:var(--text-muted); font-size: 13px; margin-bottom: 24px;">حجز منتجات الألبان الطبيعية الطازجة</p>
-
-    <div id="stepEmail">
-      <div class="form-group">
-        <label>البريد الإلكتروني</label>
-        <input class="input" id="loginEmail" type="email" placeholder="name@example.com" value="customer@dairy.com">
-      </div>
-      <button class="btn btn-block" onclick="sendCode()">إرسال رمز الدخول</button>
-    </div>
-
-    <div id="stepCode" style="display:none;">
-      <div class="form-group">
-        <label>رمز التحقق (6 أرقام)</label>
-        <input class="input" id="loginOtp" type="text" maxlength="6" style="text-align:center; font-size:22px; letter-spacing:6px;" placeholder="123456" value="543210">
-      </div>
-      <button class="btn btn-block" onclick="completeLogin()">تأكيد وتسجيل الدخول</button>
-      <div style="margin-top: 14px; font-size:12px; color:var(--text-muted);">
-        إعادة إرسال بعد (45 ث)
-      </div>
+  <div class="app-header">
+    <div class="app-title" id="headerTitle">
+      <span>🥛</span>
+      <span>محلب الخير - حجز اللبن</span>
     </div>
   </div>
 
-  <!-- MAIN APP CONTAINER -->
-  <div id="mainApp" style="display:flex; flex-direction:column; height:100%;">
-    <!-- App Bar -->
-    <div class="app-bar">
-      <div class="app-title">
-        <span>🥛</span>
-        <span id="screenTitle">محلب الخير - المنتجات</span>
+  <div class="content-area" id="mainContent">
+    <!-- Screen 1: Home -->
+    <div class="status-banner">
+      <div class="status-badge">✓</div>
+      <div>
+        <div style="font-weight: bold; color: #065F46;">باب الحجز مفتوح الآن</div>
+        <div style="font-size: 12px; color: #047857;">احجز نصيبك اليوم من الحليب الطازج والزبادي</div>
       </div>
-      <span style="font-size: 12px; color: var(--primary); font-weight: bold;" id="userWelcome">أهلاً بك</span>
     </div>
 
-    <!-- Screen 1: Products (Home) -->
-    <div id="tabHome" class="content-area">
-      <!-- Store Status -->
-      <div class="banner">
-        <div class="banner-icon">✓</div>
-        <div>
-          <div style="font-weight: bold; color: var(--green-text); font-size: 14px;">باب الحجز مفتوح الآن للطلبات</div>
-          <div style="color: #047857; font-size: 12px;">متاح للتوصيل الصباحي والمسائي أو الاستلام</div>
-        </div>
+    <div style="font-weight: bold; font-size: 15px; margin-top: 4px;">المنتجات المتاحة للحجز اليوم:</div>
+
+    <div class="card">
+      <div class="prod-emoji">🥛</div>
+      <div class="prod-info">
+        <div class="prod-title">حليب بقر طازج</div>
+        <div class="prod-sub">طازج وحليب اليوم الصباحي</div>
+        <div class="prod-price">1200 ج.س / رطل</div>
       </div>
-
-      <div style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">منتجات الألبان اليومية:</div>
-
-      <!-- Product List -->
-      <div id="productsContainer"></div>
+      <button class="btn" onclick="openBooking('حليب بقر طازج', '1200 ج.س')">احجز</button>
     </div>
 
-    <!-- Screen 2: Orders -->
-    <div id="tabOrders" class="content-area" style="display:none;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
-        <span style="font-weight: bold; font-size: 15px;">طلباتي وحجوزاتي</span>
-        <span style="font-size: 12px; color: var(--text-muted);">تحديث تلقائي</span>
+    <div class="card">
+      <div class="prod-emoji">🥣</div>
+      <div class="prod-info">
+        <div class="prod-title">زبادي بلدي طازج</div>
+        <div class="prod-sub">زبادي طبيعي 100%</div>
+        <div class="prod-price">1500 ج.س / كيلو</div>
       </div>
-      <div id="ordersContainer"></div>
+      <button class="btn" onclick="openBooking('زبادي بلدي طازج', '1500 ج.س')">احجز</button>
     </div>
 
-    <!-- Screen 3: Inbox -->
-    <div id="tabInbox" class="content-area" style="display:none;">
-      <div style="font-weight: bold; font-size: 15px; margin-bottom: 12px;">صندوق الإشعارات</div>
-      <div id="inboxContainer"></div>
-    </div>
-
-    <!-- Screen 4: Profile -->
-    <div id="tabProfile" class="content-area" style="display:none;">
-      <div style="text-align: center; margin-bottom: 20px;">
-        <div style="width:70px; height:70px; border-radius:50%; background:#ccfbf1; color:var(--primary); font-size:32px; display:inline-flex; align-items:center; justify-content:center; font-weight:bold;">م</div>
-        <div style="font-weight: bold; margin-top: 8px;" id="profNameDisplay">محمد أحمد</div>
-        <div style="font-size: 12px; color: var(--text-muted);" id="profEmailDisplay">customer@dairy.com</div>
+    <div class="card">
+      <div class="prod-emoji">🍶</div>
+      <div class="prod-info">
+        <div class="prod-title">لبن رايب طازج</div>
+        <div class="prod-sub">منعش ومغذي</div>
+        <div class="prod-price">1100 ج.س / رطل</div>
       </div>
-
-      <div class="card">
-        <div class="form-group">
-          <label>الاسم الكامل</label>
-          <input class="input" id="profNameInput" value="محمد أحمد سليمان">
-        </div>
-        <div class="form-group">
-          <label>رقم الهاتف</label>
-          <input class="input" id="profPhoneInput" value="0912345678">
-        </div>
-        <div class="form-group">
-          <label>العنوان المفصل</label>
-          <input class="input" id="profAddressInput" value="الخرطوم، حي المعمورة - منزل 14">
-        </div>
-        <button class="btn btn-block" onclick="saveProfile()">حفظ البيانات</button>
-      </div>
-
-      <button class="btn btn-block" style="background:#fee2e2; color:#b91c1c; margin-top: 10px;" onclick="logout()">تسجيل الخروج</button>
-    </div>
-
-    <!-- Bottom Nav -->
-    <div class="bottom-nav">
-      <button class="nav-item active" onclick="switchTab('home', this)">
-        <span class="nav-icon">🏪</span>
-        <span>الرئيسية</span>
-      </button>
-      <button class="nav-item" onclick="switchTab('orders', this)">
-        <span class="nav-icon">📋</span>
-        <span>حجوزاتي</span>
-      </button>
-      <button class="nav-item" onclick="switchTab('inbox', this)">
-        <span class="nav-icon">🔔</span>
-        <span class="badge" id="notifBadge">1</span>
-        <span>الإشعارات</span>
-      </button>
-      <button class="nav-item" onclick="switchTab('profile', this)">
-        <span class="nav-icon">👤</span>
-        <span>حسابي</span>
-      </button>
+      <button class="btn" onclick="openBooking('لبن رايب طازج', '1100 ج.س')">احجز</button>
     </div>
   </div>
 
-  <!-- BOOKING BOTTOM SHEET MODAL -->
-  <div class="modal-backdrop" id="bookingModal">
-    <div class="bottom-sheet">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
-        <h3 id="modalProdTitle" style="font-size: 16px;">حجز لبن طازة</h3>
-        <button onclick="closeModal()" style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
+  <!-- Booking Bottom Sheet -->
+  <div class="modal-overlay" id="bookingModal">
+    <div class="modal-sheet">
+      <div style="font-weight: bold; font-size: 17px;" id="modalProdTitle">تأكيد حجز المنتج</div>
+      
+      <div style="font-size: 13px; color: #475569;">اختر اسم المستلم المسبق أو ادخل البيانات:</div>
+      
+      <input type="text" class="input-field" placeholder="الاسم الكامل صاحب الطلب" value="أحمد محمد">
+      <input type="text" class="input-field" placeholder="رقم الهاتف" value="0912345678">
+      <input type="text" class="input-field" placeholder="عنوان التوصيل بالتفصيل" value="الحي الرابع - منزل 12">
+
+      <div style="display: flex; justify-content: space-between; align-items: center; background: #F0FDFA; padding: 10px; border-radius: 10px;">
+        <span style="font-weight: bold; font-size: 14px;">الإجمالي:</span>
+        <span style="font-weight: bold; color: #0F766E; font-size: 16px;" id="modalPrice">2400 ج.س</span>
       </div>
 
-      <div style="display:flex; justify-content:space-between; align-items:center; background:#f1f5f9; padding:8px 12px; border-radius:10px; margin-bottom:12px;">
-        <span style="font-size:13px; font-weight:bold;">الكمية المطلوبة:</span>
-        <div style="display:flex; gap:10px; align-items:center;">
-          <button onclick="adjustQty(-1)" style="width:28px; height:28px; border-radius:6px; border:1px solid #cbd5e1; background:#fff;">-</button>
-          <span id="qtyDisplay" style="font-weight:bold; font-size:15px;">2</span>
-          <button onclick="adjustQty(1)" style="width:28px; height:28px; border-radius:6px; border:1px solid #cbd5e1; background:#fff;">+</button>
-        </div>
-      </div>
+      <button class="btn" onclick="confirmOrder()" style="padding: 12px;">تأكيد وتأمين الحجز</button>
+      <button class="btn btn-outlined" onclick="closeModal()">إلغاء</button>
+    </div>
+  </div>
 
-      <label style="font-size:12px; font-weight:bold; color:var(--text-muted);">طريقة الاستلام:</label>
-      <div class="segments">
-        <button class="seg-btn active" id="segDelivery" onclick="setFulfillment('delivery')">توصيل للعنوان</button>
-        <button class="seg-btn" id="segPickup" onclick="setFulfillment('pickup')">استلام من المحل</button>
-      </div>
-
-      <label style="font-size:12px; font-weight:bold; color:var(--text-muted);">فترة الاستلام:</label>
-      <div class="segments">
-        <button class="seg-btn active" id="slotMorning" onclick="setSlot('morning')">صباحية (6 - 9 ص)</button>
-        <button class="seg-btn" id="slotEvening" onclick="setSlot('evening')">مسائية (5 - 8 م)</button>
-      </div>
-
-      <div class="form-group" id="addressFieldGroup">
-        <label>عنوان التوصيل</label>
-        <input class="input" id="orderAddress" value="الخرطوم، حي المعمورة - منزل 14">
-      </div>
-
-      <div class="form-group">
-        <label>ملاحظة للمحل (اختياري)</label>
-        <input class="input" id="orderNotes" placeholder="مثال: يرجى الاتصال عند الوصول">
-      </div>
-
-      <div style="background:#f0fdfa; padding:12px; border-radius:10px; display:flex; justify-content:space-between; font-weight:bold; margin-bottom:14px;">
-        <span>المبلغ الإجمالي:</span>
-        <span style="color:var(--primary); font-size:16px;" id="orderTotalText">1,000 ج.س</span>
-      </div>
-
-      <button class="btn btn-block" onclick="confirmBooking()">تأكيد الحجز الآن</button>
+  <!-- Navigation Bar -->
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('home', this)">
+      <span class="nav-icon">🏪</span>
+      <span>الرئيسية</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('orders', this)">
+      <span class="nav-icon">📋</span>
+      <span>حجوزاتي</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('names', this)">
+      <span class="nav-icon">📇</span>
+      <span>الأسماء</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('inbox', this)">
+      <span class="nav-icon">🔔</span>
+      <span>الإشعارات</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('profile', this)">
+      <span class="nav-icon">👤</span>
+      <span>حسابي</span>
     </div>
   </div>
 </div>
 
 <script>
-  // State
-  const products = [
-    { id: 1, name: "لبن طازة بقري", price: 500, unit: "رطل", emoji: "🥛", stock: 25, desc: "حليب طازج يومياً من المزرعة" },
-    { id: 2, name: "لبن رايب طبيعي", price: 600, unit: "رطل", emoji: "🍶", stock: 15, desc: "رايب منعش غني ومحضر بعناية" },
-    { id: 3, name: "زبادي بلدي طازج", price: 400, unit: "علبة", emoji: "🥣", stock: 20, desc: "قوام متماسك وطعم لذيذ" },
-    { id: 4, name: "جبنة بيضاء بلدية", price: 2500, unit: "كيلو", emoji: "🧀", stock: 8, desc: "جبنة طبيعية ممتازة قليلة الملح" }
-  ];
+  function switchTab(tab, el) {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
 
-  let orders = [
-    { id: 101, prodName: "لبن طازة بقري", emoji: "🥛", qty: 2, unit: "رطل", total: 1000, status: "accepted", type: "توصيل للعنوان", slot: "صباحاً", date: "اليوم 07:30 ص" },
-    { id: 98, prodName: "جبنة بيضاء بلدية", emoji: "🧀", qty: 1, unit: "كيلو", total: 2500, status: "delivered", type: "استلام من المحل", slot: "مساءً", date: "أمس 06:15 م" }
-  ];
+    const content = document.getElementById('mainContent');
+    const headerTitle = document.getElementById('headerTitle');
 
-  let notifications = [
-    { id: 1, title: "تم قبول طلبك بنجاح", body: "وافق المحل على حجز اللبن رقم #101 وهو قيد التجهيز للتوصيل", date: "منذ 15 دقيقة", unread: true },
-    { id: 2, title: "مرحباً بك في محلب الخير", body: "سعداء بانضمامك إلينا، يمكنك حجز احتياجك اليومي من الألبان الطازجة", date: "أمس", unread: false }
-  ];
-
-  let currentProd = null;
-  let currentQty = 2;
-  let fulfillment = 'delivery';
-  let slot = 'morning';
-
-  function renderProducts() {
-    const container = document.getElementById('productsContainer');
-    container.innerHTML = products.map(p => `
-      <div class="card product-card">
-        <div class="product-emoji">${p.emoji}</div>
-        <div class="product-details">
-          <div class="product-title">${p.name}</div>
-          <div style="font-size:12px; color:var(--text-muted);">${p.desc}</div>
-          <div class="product-price">${p.price} ج.س / ${p.unit}</div>
-          <div style="margin-top:4px;">
-            <span class="stock-tag">متاح: ${p.stock} ${p.unit}</span>
+    if (tab === 'home') {
+      headerTitle.innerHTML = '<span>🥛</span><span>محلب الخير - حجز اللبن</span>';
+      content.innerHTML = `
+        <div class="status-banner">
+          <div class="status-badge">✓</div>
+          <div>
+            <div style="font-weight: bold; color: #065F46;">باب الحجز مفتوح الآن</div>
+            <div style="font-size: 12px; color: #047857;">احجز نصيبك اليوم من الحليب الطازج والزبادي</div>
           </div>
         </div>
-        <button class="btn" onclick="openBooking(${p.id})">احجز</button>
-      </div>
-    `).join('');
-  }
-
-  function renderOrders() {
-    const container = document.getElementById('ordersContainer');
-    if (!orders.length) {
-      container.innerHTML = `<div style="text-align:center; padding:40px; color:#94a3b8;">لا توجد طلبات حتى الآن</div>`;
-      return;
-    }
-    container.innerHTML = orders.map(o => {
-      let stClass = "status-pending";
-      let stText = "قيد الانتظار";
-      if(o.status === "accepted") { stClass = "status-accepted"; stText = "تم القبول"; }
-      if(o.status === "delivered") { stClass = "status-delivered"; stText = "تم التسليم"; }
-
-      return `
+        <div style="font-weight: bold; font-size: 15px; margin-top: 4px;">المنتجات المتاحة للحجز اليوم:</div>
         <div class="card">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <span style="font-weight:bold; font-size:14px;">${o.emoji} طلب #${o.id}</span>
-            <span class="status-pill ${stClass}">${stText}</span>
+          <div class="prod-emoji">🥛</div>
+          <div class="prod-info">
+            <div class="prod-title">حليب بقر طازج</div>
+            <div class="prod-sub">طازج وحليب اليوم الصباحي</div>
+            <div class="prod-price">1200 ج.س / رطل</div>
           </div>
-          <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:600; margin-bottom:6px;">
-            <span>${o.prodName} (${o.qty} ${o.unit})</span>
-            <span style="color:var(--primary); font-weight:bold;">${o.total} ج.س</span>
+          <button class="btn" onclick="openBooking('حليب بقر طازج', '1200 ج.س')">احجز</button>
+        </div>
+        <div class="card">
+          <div class="prod-emoji">🥣</div>
+          <div class="prod-info">
+            <div class="prod-title">زبادي بلدي طازج</div>
+            <div class="prod-sub">زبادي طبيعي 100%</div>
+            <div class="prod-price">1500 ج.س / كيلو</div>
           </div>
-          <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">
-            🛵 ${o.type} • ⏰ ${o.slot}
+          <button class="btn" onclick="openBooking('زبادي بلدي طازج', '1500 ج.س')">احجز</button>
+        </div>`;
+    } else if (tab === 'orders') {
+      headerTitle.innerHTML = '<span>📋</span><span>حجوزاتي وطلباتي</span>';
+      content.innerHTML = `
+        <div class="card" style="flex-direction: column; align-items: flex-start;">
+          <div style="display: flex; justify-content: space-between; width: 100%;">
+            <span style="font-weight: bold;">طلب #00104 - حليب طازج</span>
+            <span style="background: #FEF3C7; color: #92400E; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: bold;">قيد الانتظار</span>
           </div>
-          <div style="font-size:11px; color:#94a3b8; display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-            <span>${o.date}</span>
-            ${o.status === 'pending' ? `<button onclick="cancelOrder(${o.id})" style="color:red; background:none; border:none; cursor:pointer;">إلغاء</button>` : ''}
+          <div style="font-size: 13px; color: #475569; margin-top: 6px;">الكمية: 2 رطل - توصيل صباحي</div>
+          <div style="font-size: 14px; font-weight: bold; color: #0F766E; margin-top: 6px;">المبلغ: 2400 ج.س</div>
+        </div>`;
+    } else if (tab === 'names') {
+      headerTitle.innerHTML = '<span>📇</span><span>شاشة الأسماء والعناوين</span>';
+      content.innerHTML = `
+        <div style="font-size: 13px; color: #64748B;">دليل أسماء المستلمين وعناوين التوصيل السريعة:</div>
+        <div class="card">
+          <div style="font-size: 24px;">🏠</div>
+          <div class="prod-info">
+            <div class="prod-title">البيت (أحمد محمد)</div>
+            <div class="prod-sub">0912345678 - الحي الرابع شارع 10</div>
           </div>
         </div>
-      `;
-    }).join('');
+        <div class="card">
+          <div style="font-size: 24px;">👵</div>
+          <div class="prod-info">
+            <div class="prod-title">الوالدة (عائشة)</div>
+            <div class="prod-sub">0987654321 - الحي الأول شارع 5</div>
+          </div>
+        </div>
+        <button class="btn" style="padding: 12px; margin-top: 10px;">+ إضافة اسم/مستلم جديد</button>`;
+    } else if (tab === 'inbox') {
+      headerTitle.innerHTML = '<span>🔔</span><span>الإشعارات</span>';
+      content.innerHTML = `
+        <div class="card">
+          <div style="font-size: 20px;">🔔</div>
+          <div class="prod-info">
+            <div class="prod-title">تم قبول طلبك بنجاح</div>
+            <div class="prod-sub">طلبك رقم #00104 تم تأكيده وسيصلك في الفترة الصباحية</div>
+          </div>
+        </div>`;
+    } else if (tab === 'profile') {
+      headerTitle.innerHTML = '<span>👤</span><span>حسابي وبياناتي</span>';
+      content.innerHTML = `
+        <div style="text-align: center; margin-bottom: 10px;">
+          <div style="width: 70px; height: 70px; background: #CCFBF1; color: #0F766E; font-size: 28px; font-weight: bold; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;">أ</div>
+          <div style="font-weight: bold;">أحمد محمد</div>
+          <div style="font-size: 12px; color: #64748B;">ahmed@example.com</div>
+        </div>
+        <input type="text" class="input-field" value="أحمد محمد">
+        <input type="text" class="input-field" value="0912345678">
+        <button class="btn" style="padding: 12px;">حفظ البيانات</button>`;
+    }
   }
 
-  function renderInbox() {
-    const container = document.getElementById('inboxContainer');
-    container.innerHTML = notifications.map(n => `
-      <div class="card" style="border-right: 4px solid ${n.unread ? 'var(--primary)' : 'transparent'}; background:${n.unread ? '#f0fdfa' : '#fff'}">
-        <div style="font-weight:bold; font-size:14px; margin-bottom:4px;">${n.title}</div>
-        <div style="font-size:13px; color:var(--text); margin-bottom:6px;">${n.body}</div>
-        <div style="font-size:11px; color:#94a3b8;">${n.date}</div>
-      </div>
-    `).join('');
-  }
-
-  function openBooking(id) {
-    currentProd = products.find(p => p.id === id);
-    currentQty = 1;
-    document.getElementById('modalProdTitle').innerText = `حجز ${currentProd.name}`;
-    updateOrderSummary();
-    document.getElementById('bookingModal').classList.add('open');
+  function openBooking(title, price) {
+    document.getElementById('modalProdTitle').innerText = 'حجز ' + title;
+    document.getElementById('modalPrice').innerText = price;
+    document.getElementById('bookingModal').style.display = 'flex';
   }
 
   function closeModal() {
-    document.getElementById('bookingModal').classList.remove('open');
+    document.getElementById('bookingModal').style.display = 'none';
   }
 
-  function adjustQty(delta) {
-    if (!currentProd) return;
-    const n = currentQty + delta;
-    if (n >= 1 && n <= currentProd.stock) {
-      currentQty = n;
-      updateOrderSummary();
-    }
-  }
-
-  function setFulfillment(type) {
-    fulfillment = type;
-    document.getElementById('segDelivery').classList.toggle('active', type === 'delivery');
-    document.getElementById('segPickup').classList.toggle('active', type === 'pickup');
-    document.getElementById('addressFieldGroup').style.display = (type === 'delivery') ? 'block' : 'none';
-    updateOrderSummary();
-  }
-
-  function setSlot(s) {
-    slot = s;
-    document.getElementById('slotMorning').classList.toggle('active', s === 'morning');
-    document.getElementById('slotEvening').classList.toggle('active', s === 'evening');
-  }
-
-  function updateOrderSummary() {
-    document.getElementById('qtyDisplay').innerText = `${currentQty} ${currentProd ? currentProd.unit : ''}`;
-    const total = currentProd ? (currentProd.price * currentQty) : 0;
-    document.getElementById('orderTotalText').innerText = `${total.toLocaleString()} ج.س`;
-  }
-
-  function confirmBooking() {
-    const newOrder = {
-      id: Math.floor(100 + Math.random() * 900),
-      prodName: currentProd.name,
-      emoji: currentProd.emoji,
-      qty: currentQty,
-      unit: currentProd.unit,
-      total: currentProd.price * currentQty,
-      status: "pending",
-      type: fulfillment === 'delivery' ? 'توصيل للعنوان' : 'استلام من المحل',
-      slot: slot === 'morning' ? 'صباحاً' : 'مساءً',
-      date: "الآن"
-    };
-
-    orders.unshift(newOrder);
-    notifications.unshift({
-      id: Date.now(),
-      title: "تم استلام حجزك الجديد",
-      body: `تم إرسال حجز ${currentProd.name} للإدارة برقم #${newOrder.id}`,
-      date: "الآن",
-      unread: true
-    });
-
+  function confirmOrder() {
+    alert('تم تأكيد حجزك بنجاح! سيتم إشعارات بالنتيجة قريباً.');
     closeModal();
-    alert('تم إرسال حجزك بنجاح للمحل!');
-    renderOrders();
-    renderInbox();
-    switchTab('orders', document.querySelectorAll('.nav-item')[1]);
   }
-
-  function cancelOrder(id) {
-    if (confirm('هل تريد إلغاء هذا الطلب؟')) {
-      orders = orders.filter(o => o.id !== id);
-      renderOrders();
-    }
-  }
-
-  function switchTab(tab, btn) {
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    btn.classList.add('active');
-
-    document.getElementById('tabHome').style.display = (tab === 'home') ? 'block' : 'none';
-    document.getElementById('tabOrders').style.display = (tab === 'orders') ? 'block' : 'none';
-    document.getElementById('tabInbox').style.display = (tab === 'inbox') ? 'block' : 'none';
-    document.getElementById('tabProfile').style.display = (tab === 'profile') ? 'block' : 'none';
-
-    const titles = {
-      home: 'محلب الخير - المنتجات',
-      orders: 'حجوزاتي وطلباتي',
-      inbox: 'الإشعارات الواردة',
-      profile: 'بيانات حسابي'
-    };
-    document.getElementById('screenTitle').innerText = titles[tab] || '';
-  }
-
-  function saveProfile() {
-    const name = document.getElementById('profNameInput').value;
-    document.getElementById('profNameDisplay').innerText = name;
-    document.getElementById('userWelcome').innerText = name.split(' ')[0] || 'أهلاً بك';
-    alert('تم حفظ بيانات الحساب بنجاح');
-  }
-
-  function logout() {
-    document.getElementById('mainApp').style.display = 'none';
-    document.getElementById('authScreen').style.display = 'flex';
-  }
-
-  function sendCode() {
-    document.getElementById('stepEmail').style.display = 'none';
-    document.getElementById('stepCode').style.display = 'block';
-  }
-
-  function completeLogin() {
-    document.getElementById('authScreen').style.display = 'none';
-    document.getElementById('mainApp').style.display = 'flex';
-    document.getElementById('stepEmail').style.display = 'block';
-    document.getElementById('stepCode').style.display = 'none';
-  }
-
-  // Initial load
-  renderProducts();
-  renderOrders();
-  renderInbox();
 </script>
-
 </body>
 </html>

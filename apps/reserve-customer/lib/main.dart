@@ -39,6 +39,13 @@ class DairyCustomerApp extends StatefulWidget {
 class _DairyCustomerAppState extends State<DairyCustomerApp> {
   final GlobalKey<ScaffoldMessengerState> _messengerKey =
       GlobalKey<ScaffoldMessengerState>();
+  ThemeMode _themeMode = ThemeMode.system;
+
+  void _toggleTheme(bool isDark) {
+    setState(() {
+      _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,11 +53,11 @@ class _DairyCustomerAppState extends State<DairyCustomerApp> {
     const accentTeal = Color(0xFF14B8A6);
 
     return MaterialApp(
-      title: 'محلب الخير - حجز اللبن',
+      title: 'محلب الخير - حجز اللبن والطازج',
       scaffoldMessengerKey: _messengerKey,
       debugShowCheckedModeBanner: false,
       locale: const Locale('ar'),
-      themeMode: ThemeMode.system,
+      themeMode: _themeMode,
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: 'Roboto',
@@ -62,13 +69,17 @@ class _DairyCustomerAppState extends State<DairyCustomerApp> {
           brightness: Brightness.light,
         ),
         cardTheme: CardThemeData(
-          elevation: 1,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 0.5,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFFE2E8F0), width: 0.8),
+          ),
           color: Colors.white,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -93,13 +104,17 @@ class _DairyCustomerAppState extends State<DairyCustomerApp> {
           brightness: Brightness.dark,
         ),
         cardTheme: CardThemeData(
-          elevation: 1,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 0.5,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFF334155), width: 0.8),
+          ),
           color: const Color(0xFF1E293B),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: const Color(0xFF1E293B),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: const BorderSide(color: Color(0xFF334155)),
@@ -114,7 +129,7 @@ class _DairyCustomerAppState extends State<DairyCustomerApp> {
           ),
         ),
       ),
-      home: const AuthGate(),
+      home: AuthGate(onThemeToggle: _toggleTheme, isDarkMode: _themeMode == ThemeMode.dark),
     );
   }
 }
@@ -161,6 +176,7 @@ class ProductItem {
   final String unit;
   final double availableQuantity;
   final bool isActive;
+  final String category;
 
   ProductItem({
     required this.id,
@@ -171,6 +187,7 @@ class ProductItem {
     required this.unit,
     required this.availableQuantity,
     required this.isActive,
+    this.category = 'طازج',
   });
 
   factory ProductItem.fromJson(Map<String, dynamic> json) {
@@ -185,6 +202,7 @@ class ProductItem {
           ? (json['available_quantity'] as num).toDouble()
           : 0.0,
       isActive: json['is_active'] ?? true,
+      category: json['category'] ?? (json['name'].toString().contains('زبادي') ? 'زبادي ورايب' : 'حليب طازج'),
     );
   }
 }
@@ -268,12 +286,68 @@ class AppNotificationItem {
   }
 }
 
+class SavedNameEntry {
+  final String id;
+  final String label; // e.g. "المنزل", "الوالدة", "المكتب"
+  final String recipientName;
+  final String phone;
+  final String address;
+
+  SavedNameEntry({
+    required this.id,
+    required this.label,
+    required this.recipientName,
+    required this.phone,
+    required this.address,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'label': label,
+        'recipientName': recipientName,
+        'phone': phone,
+        'address': address,
+      };
+
+  factory SavedNameEntry.fromJson(Map<String, dynamic> json) => SavedNameEntry(
+        id: json['id'] ?? '',
+        label: json['label'] ?? '',
+        recipientName: json['recipientName'] ?? '',
+        phone: json['phone'] ?? '',
+        address: json['address'] ?? '',
+      );
+}
+
+class DailySubscription {
+  final String id;
+  final String productName;
+  final String emoji;
+  final double quantity;
+  final String unit;
+  final String slotLabel;
+  final String daysSchedule;
+  bool isActive;
+
+  DailySubscription({
+    required this.id,
+    required this.productName,
+    required this.emoji,
+    required this.quantity,
+    required this.unit,
+    required this.slotLabel,
+    required this.daysSchedule,
+    this.isActive = true,
+  });
+}
+
 // -------------------------------------------------------------
 // Auth State Gate
 // -------------------------------------------------------------
 
 class AuthGate extends StatefulWidget {
-  const AuthGate({super.key});
+  final Function(bool) onThemeToggle;
+  final bool isDarkMode;
+  const AuthGate({super.key, required this.onThemeToggle, required this.isDarkMode});
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -299,7 +373,6 @@ class _AuthGateState extends State<AuthGate> {
     final email = prefs.getString('user_email');
 
     if (token != null && uid != null) {
-      // Validate or refresh session
       final valid = await _validateOrRefresh(refreshToken);
       if (valid) {
         setState(() {
@@ -381,6 +454,8 @@ class _AuthGateState extends State<AuthGate> {
       userEmail: _userEmail ?? '',
       token: _accessToken!,
       onLogout: _onLoggedOut,
+      onThemeToggle: widget.onThemeToggle,
+      isDarkMode: widget.isDarkMode,
     );
   }
 }
@@ -514,7 +589,6 @@ class _AuthScreenState extends State<AuthScreen> {
         await prefs.setString('user_id', uid);
         await prefs.setString('user_email', email);
 
-        // Ensure customer details entry exists
         await _checkAndCreateCustomerRow(accessToken, uid, email);
 
         widget.onLoginSuccess(accessToken, uid, email);
@@ -535,7 +609,6 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _checkAndCreateCustomerRow(String token, String uid, String email) async {
     try {
-      // 1. Check or insert profile
       final profileRes = await http.get(
         Uri.parse('$supabaseUrl/rest/v1/reserve_profiles?id=eq.$uid'),
         headers: {
@@ -565,7 +638,6 @@ class _AuthScreenState extends State<AuthScreen> {
         }
       }
 
-      // 2. Customer details check
       final detRes = await http.get(
         Uri.parse('$supabaseUrl/rest/v1/reserve_customer_details?customer_id=eq.$uid'),
         headers: {
@@ -610,13 +682,21 @@ class _AuthScreenState extends State<AuthScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Center(
-                      child: Text(
-                        '🥛',
-                        style: TextStyle(fontSize: 72),
+                    Container(
+                      width: 90,
+                      height: 90,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Text(
+                          '🥛',
+                          style: TextStyle(fontSize: 48),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     Text(
                       'محلب الخير',
                       textAlign: TextAlign.center,
@@ -627,7 +707,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'حجز منتجات الألبان الطبيعية بكل سهولة وسرعة',
+                      'حجز اللبن الطازج والمنتجات الطبيعية بكل سهولة وسرعة',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: Colors.grey[600],
@@ -646,7 +726,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.error_outline, color: Colors.red),
+                            const Icon(Icons.error_outline, color: Colors.red, size: 20),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -660,12 +740,12 @@ class _AuthScreenState extends State<AuthScreen> {
 
                     if (!_codeSent) ...[
                       Text(
-                        'الدخول بواسطة البريد الإلكتروني',
+                        'تسجيل الدخول أو حساب جديد',
                         style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Text(
-                        'سنرسل رمز تحقق سري من 6 أرقام إلى بريدك الإلكتروني',
+                        'أدخل بريدك الإلكتروني ليصلك رمز التحقق مباشرة',
                         style: TextStyle(color: Colors.grey[600], fontSize: 13),
                       ),
                       const SizedBox(height: 20),
@@ -674,7 +754,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         keyboardType: TextInputType.emailAddress,
                         decoration: const InputDecoration(
                           labelText: 'البريد الإلكتروني',
-                          hintText: 'example@email.com',
+                          hintText: 'name@example.com',
                           prefixIcon: Icon(Icons.email_outlined),
                         ),
                       ),
@@ -694,16 +774,16 @@ class _AuthScreenState extends State<AuthScreen> {
                                 width: 20,
                                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                               )
-                            : const Text('إرسال رمز الدخول', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            : const Text('إرسال رمز الدخول السري', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
                     ] else ...[
                       Text(
-                        'أدخل رمز التحقق (OTP)',
+                        'رمز التحقق السري (OTP)',
                         style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Text(
-                        'تم إرسال رمز التحقق إلى ${_emailController.text}',
+                        'أدخل الرمز المكون من 6 أرقام المرسل إلى ${_emailController.text}',
                         style: TextStyle(color: Colors.grey[600], fontSize: 13),
                       ),
                       const SizedBox(height: 20),
@@ -712,7 +792,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         keyboardType: TextInputType.number,
                         maxLength: 6,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontSize: 26, letterSpacing: 8, fontWeight: FontWeight.bold),
                         decoration: const InputDecoration(
                           hintText: '------',
                           counterText: '',
@@ -735,7 +815,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 width: 20,
                                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                               )
-                            : const Text('تأكيد وتسجيل الدخول', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            : const Text('تأكيد الدخول', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
                       const SizedBox(height: 16),
                       Row(
@@ -758,7 +838,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 _otpController.clear();
                               });
                             },
-                            child: const Text('تغيير البريد'),
+                            child: const Text('تعديل البريد'),
                           ),
                         ],
                       ),
@@ -775,7 +855,7 @@ class _AuthScreenState extends State<AuthScreen> {
 }
 
 // -------------------------------------------------------------
-// Main Frame: Customer Screen (Home, My Orders, Inbox, Profile)
+// Main Customer Navigation Container
 // -------------------------------------------------------------
 
 class MainCustomerScreen extends StatefulWidget {
@@ -783,6 +863,8 @@ class MainCustomerScreen extends StatefulWidget {
   final String userEmail;
   final String token;
   final VoidCallback onLogout;
+  final Function(bool) onThemeToggle;
+  final bool isDarkMode;
 
   const MainCustomerScreen({
     super.key,
@@ -790,6 +872,8 @@ class MainCustomerScreen extends StatefulWidget {
     required this.userEmail,
     required this.token,
     required this.onLogout,
+    required this.onThemeToggle,
+    required this.isDarkMode,
   });
 
   @override
@@ -908,12 +992,22 @@ class _MainCustomerScreenState extends State<MainCustomerScreen> {
         profile: _profile,
         address: _customerAddress,
         onOrderCreated: () {
-          setState(() => _currentIndex = 1);
+          setState(() => _currentIndex = 1); // Jump to My Orders tab
         },
       ),
       MyOrdersScreen(
         userId: widget.userId,
         token: widget.token,
+      ),
+      SavedNamesScreen(
+        userId: widget.userId,
+        token: widget.token,
+      ),
+      SubscriptionsScreen(
+        userId: widget.userId,
+        token: widget.token,
+        profile: _profile,
+        address: _customerAddress,
       ),
       InboxScreen(
         userId: widget.userId,
@@ -930,6 +1024,8 @@ class _MainCustomerScreenState extends State<MainCustomerScreen> {
           _loadProfileData();
         },
         onLogout: widget.onLogout,
+        onThemeToggle: widget.onThemeToggle,
+        isDarkMode: widget.isDarkMode,
       ),
     ];
 
@@ -944,7 +1040,7 @@ class _MainCustomerScreenState extends State<MainCustomerScreen> {
           selectedIndex: _currentIndex,
           onDestinationSelected: (idx) {
             setState(() => _currentIndex = idx);
-            if (idx == 2) {
+            if (idx == 4) {
               _loadUnreadCount();
             }
           },
@@ -958,6 +1054,16 @@ class _MainCustomerScreenState extends State<MainCustomerScreen> {
               icon: Icon(Icons.receipt_long_outlined),
               selectedIcon: Icon(Icons.receipt_long),
               label: 'حجوزاتي',
+            ),
+            const NavigationDestination(
+              icon: Icon(Icons.badge_outlined),
+              selectedIcon: Icon(Icons.badge),
+              label: 'الأسماء',
+            ),
+            const NavigationDestination(
+              icon: Icon(Icons.repeat_outlined),
+              selectedIcon: Icon(Icons.repeat),
+              label: 'الاشتراكات',
             ),
             NavigationDestination(
               icon: Badge(
@@ -1013,6 +1119,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<ProductItem> _products = [];
   bool _loading = true;
   String? _error;
+  String _searchQuery = '';
+  String _selectedCategory = 'الكل';
 
   @override
   void initState() {
@@ -1027,7 +1135,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      // 1. Store settings
       final sRes = await http.get(
         Uri.parse('$supabaseUrl/rest/v1/reserve_store_settings?select=*&limit=1'),
         headers: {
@@ -1044,7 +1151,6 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
 
-      // 2. Products
       final pRes = await http.get(
         Uri.parse('$supabaseUrl/rest/v1/reserve_products?select=*&is_active=eq.true&order=id.asc'),
         headers: {
@@ -1073,7 +1179,7 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     } catch (e) {
       setState(() {
-        _error = 'تعذر تحميل بيانات المتجر: $e';
+        _error = 'تعذر تحميل بيانات المحلب: $e';
         _loading = false;
       });
     }
@@ -1127,13 +1233,33 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  List<ProductItem> get _filteredProducts {
+    return _products.where((p) {
+      final matchesSearch = p.name.contains(_searchQuery) || (p.description?.contains(_searchQuery) ?? false);
+      final matchesCategory = _selectedCategory == 'الكل' || p.category == _selectedCategory;
+      return matchesSearch && matchesCategory;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('محلب الخير - المنتجات الطازجة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Row(
+          children: [
+            const Text('🥛', style: TextStyle(fontSize: 24)),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('محلب الخير الطازج', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                Text('منتجات ألبان طازجة يومياً', style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+              ],
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -1165,17 +1291,68 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     children: [
-                      // Store banner
                       _buildStoreStatusBanner(theme),
                       const SizedBox(height: 16),
 
-                      Text(
-                        'قائمة الحجز المتاحة اليوم',
-                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      // Search Bar
+                      TextField(
+                        onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                        decoration: InputDecoration(
+                          hintText: 'ابحث عن لبن، زبادي، جبنة...',
+                          prefixIcon: const Icon(Icons.search),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear, size: 18),
+                                  onPressed: () => setState(() => _searchQuery = ''),
+                                )
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Category Filter Chips
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: ['الكل', 'حليب طازج', 'زبادي ورايب', 'أجبان وقشطة'].map((cat) {
+                            final isSelected = _selectedCategory == cat;
+                            return Padding(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              child: ChoiceChip(
+                                label: Text(cat),
+                                selected: isSelected,
+                                onSelected: (sel) {
+                                  if (sel) setState(() => _selectedCategory = cat);
+                                },
+                                selectedColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+                                labelStyle: TextStyle(
+                                  color: isSelected ? theme.colorScheme.primary : Colors.grey[700],
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'قائمة منتجات اليوم المتاحة',
+                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            '${_filteredProducts.length} منتجات',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 12),
 
-                      if (_products.isEmpty)
+                      if (_filteredProducts.isEmpty)
                         Card(
                           elevation: 0,
                           color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
@@ -1185,7 +1362,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               children: [
                                 Text('🥛', style: TextStyle(fontSize: 48)),
                                 SizedBox(height: 8),
-                                Text('لا توجد منتجات معروضة للحجز حالياً', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                Text('لا توجد منتجات مطابقة للبحث', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ),
@@ -1194,10 +1371,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         ListView.separated(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _products.length,
+                          itemCount: _filteredProducts.length,
                           separatorBuilder: (_, _) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
-                            final prod = _products[index];
+                            final prod = _filteredProducts[index];
                             return _buildProductCard(theme, prod);
                           },
                         ),
@@ -1227,7 +1404,7 @@ class _HomeScreenState extends State<HomeScreen> {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              isOpen ? Icons.check_circle : Icons.lock_clock,
+              isOpen ? Icons.check_circle_outline : Icons.lock_clock,
               color: Colors.white,
               size: 24,
             ),
@@ -1238,23 +1415,23 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isOpen ? 'باب الحجز مفتوح الآن للطلبات' : 'الحجز مقفول مؤقتاً',
+                  isOpen ? 'باب الحجز مفتوح الآن للطلبات' : 'الحجز مقفول حالياً',
                   style: TextStyle(
                     color: isOpen ? const Color(0xFF065F46) : const Color(0xFF991B1B),
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 15,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 Text(
                   isOpen
-                      ? 'يمكنك حجز نصيبك من اللبن الطازج ومنتجات الألبان'
+                      ? 'يمكنك الآن اختيار نصيبك من اللبن والمنتجات الطازجة'
                       : (_settings?.closedReason?.isNotEmpty == true
                           ? _settings!.closedReason!
                           : 'نعتذر، اكتملت حجوزات اليوم أو المحل مغلق حالياً'),
                   style: TextStyle(
                     color: isOpen ? const Color(0xFF047857) : const Color(0xFFB91C1C),
-                    fontSize: 13,
+                    fontSize: 12,
                   ),
                 ),
               ],
@@ -1269,7 +1446,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final isAvailable = prod.availableQuantity > 0 && (_settings?.isBookingOpen ?? true);
 
     return Card(
-      elevation: 1,
+      elevation: 0.5,
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Row(
@@ -1296,7 +1473,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Text(
                     prod.name,
-                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   if (prod.description != null && prod.description!.isNotEmpty)
                     Padding(
@@ -1319,7 +1496,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           fontSize: 14,
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
@@ -1350,6 +1527,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                elevation: 0,
               ),
               child: const Text('احجز', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
@@ -1361,7 +1539,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // -------------------------------------------------------------
-// Booking Bottom Sheet
+// Booking Bottom Sheet (With Saved Names Fast Selection)
 // -------------------------------------------------------------
 
 class BookingBottomSheet extends StatefulWidget {
@@ -1393,13 +1571,15 @@ class BookingBottomSheet extends StatefulWidget {
 class _BookingBottomSheetState extends State<BookingBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   double _quantity = 1.0;
-  String _fulfillmentType = 'delivery'; // delivery or pickup
-  String _deliverySlot = 'morning'; // morning or evening
+  String _fulfillmentType = 'delivery';
+  String _deliverySlot = 'morning';
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
   late TextEditingController _addressController;
   late TextEditingController _notesController;
   bool _submitting = false;
+
+  List<SavedNameEntry> _savedNames = [];
 
   @override
   void initState() {
@@ -1408,6 +1588,29 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
     _phoneController = TextEditingController(text: widget.customerPhone);
     _addressController = TextEditingController(text: widget.defaultAddress);
     _notesController = TextEditingController();
+    _loadSavedNames();
+  }
+
+  Future<void> _loadSavedNames() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('saved_names_list_${widget.userId}');
+    if (raw != null) {
+      final List decoded = jsonDecode(raw);
+      setState(() {
+        _savedNames = decoded.map((e) => SavedNameEntry.fromJson(e)).toList();
+      });
+    }
+  }
+
+  void _applySavedName(SavedNameEntry entry) {
+    setState(() {
+      _nameController.text = entry.recipientName;
+      _phoneController.text = entry.phone;
+      _addressController.text = entry.address;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('تم تطبيق بيانات المستلم (${entry.label})'), duration: const Duration(seconds: 1)),
+    );
   }
 
   @override
@@ -1468,7 +1671,6 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
         final inserted = (jsonDecode(res.body) as List).first;
         final orderId = inserted['id'];
 
-        // Send notification to admin
         await http.post(
           Uri.parse('$supabaseUrl/rest/v1/reserve_notifications'),
           headers: {
@@ -1484,9 +1686,7 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
           }),
         );
 
-        // Update profile phone & address if updated
         await _syncProfile();
-
         widget.onSuccess();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1543,7 +1743,7 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(
-        top: 20,
+        top: 16,
         left: 20,
         right: 20,
         bottom: MediaQuery.of(context).viewInsets.bottom + 20,
@@ -1569,7 +1769,7 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
               Row(
                 children: [
                   Text(widget.product.emoji, style: const TextStyle(fontSize: 32)),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1581,7 +1781,7 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
               ),
               const Divider(height: 24),
 
-              // Quantity counter
+              // Quantity Selector
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -1614,7 +1814,34 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
               ),
               const SizedBox(height: 16),
 
-              // Fulfillment Type (Delivery / Pickup)
+              // Quick Saved Names Selector
+              if (_savedNames.isNotEmpty) ...[
+                Row(
+                  children: [
+                    const Icon(Icons.badge_outlined, size: 18),
+                    const SizedBox(width: 6),
+                    const Text('اختيار اسم مستلم مسبق:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _savedNames.map((entry) {
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 8.0),
+                        child: ActionChip(
+                          avatar: const Icon(Icons.person, size: 16),
+                          label: Text('${entry.label}: ${entry.recipientName}'),
+                          onPressed: () => _applySavedName(entry),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 14),
+              ],
+
               const Text('طريقة الاستلام:', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               SegmentedButton<String>(
@@ -1627,8 +1854,7 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
               ),
               const SizedBox(height: 16),
 
-              // Delivery Slot
-              const Text('وقت الاستلام أو التوصيل:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('وقت التسليم والوجبة:', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               SegmentedButton<String>(
                 segments: [
@@ -1640,10 +1866,9 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
               ),
               const SizedBox(height: 16),
 
-              // Inputs
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'الاسم الكامل *', prefixIcon: Icon(Icons.person_outline)),
+                decoration: const InputDecoration(labelText: 'اسم صاحب الطلب أو المستلم *', prefixIcon: Icon(Icons.person_outline)),
                 validator: (v) => (v == null || v.trim().isEmpty) ? 'الاسم مطلوب' : null,
               ),
               const SizedBox(height: 12),
@@ -1651,7 +1876,7 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'رقم الهاتف *', prefixIcon: Icon(Icons.phone_outlined)),
+                decoration: const InputDecoration(labelText: 'رقم الهاتف للتواصل *', prefixIcon: Icon(Icons.phone_outlined)),
                 validator: (v) => (v == null || v.trim().length < 9) ? 'أدخل رقم هاتف صحيح' : null,
               ),
               const SizedBox(height: 12),
@@ -1660,7 +1885,7 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
                 TextFormField(
                   controller: _addressController,
                   decoration: const InputDecoration(
-                    labelText: 'عنوان التوصيل بالتفصيل (الحي / الشارع / المنزل) *',
+                    labelText: 'عنوان التوصيل (الحي / الشارع / المنزل) *',
                     prefixIcon: Icon(Icons.location_on_outlined),
                   ),
                   validator: (v) => (_fulfillmentType == 'delivery' && (v == null || v.trim().isEmpty))
@@ -1676,7 +1901,6 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
               ),
               const SizedBox(height: 20),
 
-              // Price Breakdown
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -1707,6 +1931,7 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
                 ),
                 child: _submitting
                     ? const SizedBox(
@@ -1725,7 +1950,764 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
 }
 
 // -------------------------------------------------------------
-// 2. Orders Screen (Customer's own bookings)
+// 2. Saved Names & Recipient Directory Screen (شاشة إدارة الأسماء والعناوين)
+// -------------------------------------------------------------
+
+class SavedNamesScreen extends StatefulWidget {
+  final String userId;
+  final String token;
+
+  const SavedNamesScreen({super.key, required this.userId, required this.token});
+
+  @override
+  State<SavedNamesScreen> createState() => _SavedNamesScreenState();
+}
+
+class _SavedNamesScreenState extends State<SavedNamesScreen> {
+  List<SavedNameEntry> _savedNames = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedNames();
+  }
+
+  Future<void> _loadSavedNames() async {
+    setState(() => _loading = true);
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('saved_names_list_${widget.userId}');
+
+    if (raw != null) {
+      final List decoded = jsonDecode(raw);
+      setState(() {
+        _savedNames = decoded.map((e) => SavedNameEntry.fromJson(e)).toList();
+        _loading = false;
+      });
+    } else {
+      // Default initial templates if empty
+      setState(() {
+        _savedNames = [
+          SavedNameEntry(
+            id: '1',
+            label: 'منزلي',
+            recipientName: 'الاسم الشخصي',
+            phone: '',
+            address: 'الحي الرابع - شارع 10',
+          ),
+        ];
+        _loading = false;
+      });
+      _persist();
+    }
+  }
+
+  Future<void> _persist() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = jsonEncode(_savedNames.map((e) => e.toJson()).toList());
+    await prefs.setString('saved_names_list_${widget.userId}', raw);
+  }
+
+  void _showAddOrEditDialog([SavedNameEntry? entry]) {
+    final labelCtrl = TextEditingController(text: entry?.label ?? '');
+    final nameCtrl = TextEditingController(text: entry?.recipientName ?? '');
+    final phoneCtrl = TextEditingController(text: entry?.phone ?? '');
+    final addressCtrl = TextEditingController(text: entry?.address ?? '');
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: Text(entry == null ? 'إضافة اسم/مستلم جديد' : 'تعديل اسم المستلم'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: labelCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'المسمى (مثال: البيت، الوالدة، المكتب)',
+                      prefixIcon: Icon(Icons.bookmark_border),
+                    ),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'أدخل مسمى توضيحي' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'اسم المستلم الثلاثي *',
+                      prefixIcon: Icon(Icons.person_outline),
+                    ),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'اسم المستلم مطلوب' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: phoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: 'رقم هاتف التواصل *',
+                      prefixIcon: Icon(Icons.phone_outlined),
+                    ),
+                    validator: (v) => (v == null || v.trim().length < 8) ? 'رقم هاتف صحيح' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: addressCtrl,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                      labelText: 'عنوان التوصيل التفصيلي *',
+                      prefixIcon: Icon(Icons.location_on_outlined),
+                    ),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'العنوان مطلوب' : null,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('إلغاء'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (!formKey.currentState!.validate()) return;
+                setState(() {
+                  if (entry == null) {
+                    _savedNames.add(
+                      SavedNameEntry(
+                        id: DateTime.now().millisecondsSinceEpoch.toString(),
+                        label: labelCtrl.text.trim(),
+                        recipientName: nameCtrl.text.trim(),
+                        phone: phoneCtrl.text.trim(),
+                        address: addressCtrl.text.trim(),
+                      ),
+                    );
+                  } else {
+                    final idx = _savedNames.indexWhere((e) => e.id == entry.id);
+                    if (idx != -1) {
+                      _savedNames[idx] = SavedNameEntry(
+                        id: entry.id,
+                        label: labelCtrl.text.trim(),
+                        recipientName: nameCtrl.text.trim(),
+                        phone: phoneCtrl.text.trim(),
+                        address: addressCtrl.text.trim(),
+                      );
+                    }
+                  }
+                });
+                _persist();
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(entry == null ? 'تمت إضافة الاسم بنجاح' : 'تم تحديث البيانات')),
+                );
+              },
+              child: const Text('حفظ'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _deleteEntry(SavedNameEntry entry) {
+    setState(() {
+      _savedNames.removeWhere((e) => e.id == entry.id);
+    });
+    _persist();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('تم حذف الاسم من القائمة')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('شاشة الأسماء والعناوين المحفوظة', style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            onPressed: () => _showAddOrEditDialog(),
+            tooltip: 'إضافة اسم جديد',
+          ),
+        ],
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // Info Banner
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Text('📇', style: TextStyle(fontSize: 34)),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'دليل أسماء المستلمين للحجز السريع',
+                              style: TextStyle(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'احفظ أسماء وعناوين أهلك وأقاربك أو مواقعك لتسهيل اختيار الاسم مباشرة أثناء حجز اللبن والطازج.',
+                              style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'الأسماء المحفوظة للطلبات',
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () => _showAddOrEditDialog(),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('إضافة اسم'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                if (_savedNames.isEmpty)
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        children: [
+                          const Icon(Icons.badge_outlined, size: 48, color: Colors.grey),
+                          const SizedBox(height: 12),
+                          const Text('لا توجد أسماء مضافة بعد', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          Text('اضغط زر إضافة اسم لحفظ مستلم جديد للحجوزات', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _savedNames.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final item = _savedNames[index];
+                      return Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          item.label,
+                                          style: TextStyle(
+                                            color: theme.colorScheme.primary,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        item.recipientName,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit_outlined, size: 20),
+                                        onPressed: () => _showAddOrEditDialog(item),
+                                        tooltip: 'تعديل',
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                                        onPressed: () => _deleteEntry(item),
+                                        tooltip: 'حذف',
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.phone, size: 16, color: Colors.grey),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    item.phone.isNotEmpty ? item.phone : 'لم يتم إدخال رقم هاتف',
+                                    style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      item.address.isNotEmpty ? item.address : 'لم يحدد عنوان',
+                                      style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+              ],
+            ),
+    );
+  }
+}
+
+// -------------------------------------------------------------
+// 3. Subscriptions Screen (Daily Recurring Reservations)
+// -------------------------------------------------------------
+
+class SubscriptionsScreen extends StatefulWidget {
+  final String userId;
+  final String token;
+  final Map<String, dynamic> profile;
+  final String address;
+
+  const SubscriptionsScreen({
+    super.key,
+    required this.userId,
+    required this.token,
+    required this.profile,
+    required this.address,
+  });
+
+  @override
+  State<SubscriptionsScreen> createState() => _SubscriptionsScreenState();
+}
+
+class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
+  final List<DailySubscription> _subscriptions = [
+    DailySubscription(
+      id: 'sub_1',
+      productName: 'حليب طازج (بقر)',
+      emoji: '🥛',
+      quantity: 2,
+      unit: 'رطل',
+      slotLabel: 'الفترة الصباحية',
+      daysSchedule: 'يومياً (السبت - الجمعة)',
+      isActive: true,
+    ),
+    DailySubscription(
+      id: 'sub_2',
+      productName: 'زبادي طبيعي',
+      emoji: '🥣',
+      quantity: 1,
+      unit: 'كيلو',
+      slotLabel: 'الفترة المسائية',
+      daysSchedule: 'الأحد - الثلاثاء - الخميس',
+      isActive: false,
+    ),
+  ];
+
+  void _toggleSubscription(int index) {
+    setState(() {
+      _subscriptions[index].isActive = !_subscriptions[index].isActive;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          _subscriptions[index].isActive
+              ? 'تم تفعيل الاشتراك الدوري للمنتج'
+              : 'تم إيقاف الاشتراك الدوري مؤقتاً',
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _addNewSubscriptionModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _NewSubscriptionBottomSheet(
+        onAdd: (sub) {
+          setState(() {
+            _subscriptions.add(sub);
+          });
+          Navigator.pop(ctx);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('تم إنشاء الاشتراك الدوري بنجاح! سيتم الحجز آلياً كل يوم'),
+              backgroundColor: Color(0xFF0F766E),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('الاشتراكات اليومية والطلب الدوري', style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            onPressed: _addNewSubscriptionModal,
+            tooltip: 'اشتراك جديد',
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2)),
+            ),
+            child: Row(
+              children: [
+                const Text('📅', style: TextStyle(fontSize: 36)),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'احجز لبنك يومياً آلياً',
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'يمكنك تفعيل الاشتراك الدوري ليصلك اللبن والطازج في الموعد المحدد دون الحاجة للدخول يومياً.',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'جدول الاشتراكات النشطة',
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              ElevatedButton.icon(
+                onPressed: _addNewSubscriptionModal,
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('إضافة اشتراك'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          if (_subscriptions.isEmpty)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  children: [
+                    const Icon(Icons.repeat, size: 48, color: Colors.grey),
+                    const SizedBox(height: 12),
+                    const Text('لا يوجد لديك اشتراكات دائرية بعد', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Text('اضغط زر إضافة اشتراك لطلب اللبن اليومي تلقائياً', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                  ],
+                ),
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _subscriptions.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final sub = _subscriptions[index];
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Text(sub.emoji, style: const TextStyle(fontSize: 28)),
+                                const SizedBox(width: 10),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(sub.productName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                    Text('${sub.quantity.toInt()} ${sub.unit} - ${sub.slotLabel}', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Switch(
+                              value: sub.isActive,
+                              onChanged: (_) => _toggleSubscription(index),
+                              activeThumbColor: theme.colorScheme.primary,
+                            ),
+                          ],
+                        ),
+                        const Divider(height: 20),
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today_outlined, size: 16, color: Colors.grey),
+                            const SizedBox(width: 6),
+                            Text(sub.daysSchedule, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: sub.isActive ? Colors.green.shade50 : Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                sub.isActive ? 'مفعل نشط' : 'متوقف مؤقتاً',
+                                style: TextStyle(
+                                  color: sub.isActive ? Colors.green.shade800 : Colors.grey.shade700,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NewSubscriptionBottomSheet extends StatefulWidget {
+  final Function(DailySubscription) onAdd;
+  const _NewSubscriptionBottomSheet({required this.onAdd});
+
+  @override
+  State<_NewSubscriptionBottomSheet> createState() => _NewSubscriptionBottomSheetState();
+}
+
+class _NewSubscriptionBottomSheetState extends State<_NewSubscriptionBottomSheet> {
+  String _selectedProduct = 'حليب طازج (بقر)';
+  String _emoji = '🥛';
+  double _qty = 2;
+  String _slot = 'الفترة الصباحية (6:00 ص)';
+  String _schedule = 'يومياً (السبت - الجمعة)';
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        top: 16,
+        left: 20,
+        right: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 44,
+                height: 5,
+                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text('إنشاء اشتراك دوري جديد', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+
+            DropdownButtonFormField<String>(
+              initialValue: _selectedProduct,
+              decoration: const InputDecoration(labelText: 'اختر المنتج للدوري', prefixIcon: Icon(Icons.local_drink)),
+              items: const [
+                DropdownMenuItem(value: 'حليب طازج (بقر)', child: Text('🥛 حليب طازج (بقر)')),
+                DropdownMenuItem(value: 'حليب جاموسي', child: Text('🥛 حليب جاموسي')),
+                DropdownMenuItem(value: 'زبادي طبيعي', child: Text('🥣 زبادي طبيعي')),
+                DropdownMenuItem(value: 'لبن رايب', child: Text('🍶 لبن رايب')),
+              ],
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() {
+                    _selectedProduct = val;
+                    if (val.contains('زبادي')) {
+                      _emoji = '🥣';
+                    } else if (val.contains('رايب')) {
+                      _emoji = '🍶';
+                    } else {
+                      _emoji = '🥛';
+                    }
+                  });
+                }
+              },
+            ),
+            const SizedBox(height: 14),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('الكمية اليومية:', style: TextStyle(fontWeight: FontWeight.bold)),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: _qty > 1 ? () => setState(() => _qty--) : null,
+                    ),
+                    Text('${_qty.toInt()} رطل/كيلو', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: () => setState(() => _qty++),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            DropdownButtonFormField<String>(
+              initialValue: _slot,
+              decoration: const InputDecoration(labelText: 'فترة الاستلام اليومي', prefixIcon: Icon(Icons.access_time)),
+              items: const [
+                DropdownMenuItem(value: 'الفترة الصباحية (6:00 ص)', child: Text('الفترة الصباحية (6:00 ص)')),
+                DropdownMenuItem(value: 'الفترة المسائية (5:00 م)', child: Text('الفترة المسائية (5:00 م)')),
+              ],
+              onChanged: (v) => setState(() => _slot = v!),
+            ),
+            const SizedBox(height: 14),
+
+            DropdownButtonFormField<String>(
+              initialValue: _schedule,
+              decoration: const InputDecoration(labelText: 'أيام التكرار', prefixIcon: Icon(Icons.calendar_month)),
+              items: const [
+                DropdownMenuItem(value: 'يومياً (السبت - الجمعة)', child: Text('يومياً (السبت - الجمعة)')),
+                DropdownMenuItem(value: 'الأحد - الثلاثاء - الخميس', child: Text('الأحد - الثلاثاء - الخميس')),
+                DropdownMenuItem(value: 'السبت - الإثنين - الأربعاء', child: Text('السبت - الإثنين - الأربعاء')),
+              ],
+              onChanged: (v) => setState(() => _schedule = v!),
+            ),
+            const SizedBox(height: 20),
+
+            ElevatedButton(
+              onPressed: () {
+                widget.onAdd(
+                  DailySubscription(
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    productName: _selectedProduct,
+                    emoji: _emoji,
+                    quantity: _qty,
+                    unit: _selectedProduct.contains('زبادي') ? 'كيلو' : 'رطل',
+                    slotLabel: _slot,
+                    daysSchedule: _schedule,
+                    isActive: true,
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: const Text('حفظ وتفعيل الاشتراك', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// -------------------------------------------------------------
+// 4. Orders Screen (Customer's own bookings)
 // -------------------------------------------------------------
 
 class MyOrdersScreen extends StatefulWidget {
@@ -1742,6 +2724,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
   List<OrderItem> _orders = [];
   Map<int, ProductItem> _productMap = {};
   bool _loading = true;
+  String _statusFilter = 'الكل';
 
   @override
   void initState() {
@@ -1752,7 +2735,6 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
   Future<void> _fetchOrders() async {
     setState(() => _loading = true);
     try {
-      // Products for names
       final pRes = await http.get(
         Uri.parse('$supabaseUrl/rest/v1/reserve_products?select=*'),
         headers: {
@@ -1765,7 +2747,6 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
         _productMap = {for (var item in pList) item['id']: ProductItem.fromJson(item)};
       }
 
-      // Customer orders
       final res = await http.get(
         Uri.parse('$supabaseUrl/rest/v1/reserve_orders?customer_id=eq.${widget.userId}&order=created_at.desc'),
         headers: {
@@ -1819,7 +2800,6 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
       );
 
       if (res.statusCode == 200 || res.statusCode == 204) {
-        // Notify admin about cancellation
         await http.post(
           Uri.parse('$supabaseUrl/rest/v1/reserve_notifications'),
           headers: {
@@ -1861,7 +2841,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
       case 'accepted':
         bg = Colors.blue.shade100;
         fg = Colors.blue.shade900;
-        label = 'تم القبول';
+        label = 'تم المقابلة والتأكيد';
         break;
       case 'on_the_way':
         bg = Colors.purple.shade100;
@@ -1893,6 +2873,17 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
     );
   }
 
+  List<OrderItem> get _filteredOrders {
+    if (_statusFilter == 'نشط') {
+      return _orders.where((o) => o.status == 'pending' || o.status == 'accepted' || o.status == 'on_the_way' || o.status == 'ready_for_pickup').toList();
+    } else if (_statusFilter == 'مكتمل') {
+      return _orders.where((o) => o.status == 'delivered').toList();
+    } else if (_statusFilter == 'ملغي') {
+      return _orders.where((o) => o.status == 'rejected').toList();
+    }
+    return _orders;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -1908,152 +2899,185 @@ class _MyOrdersScreenState extends State<MyOrdersScreen> {
           ),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _orders.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey),
-                        const SizedBox(height: 16),
-                        const Text('لا توجد لديك حجوزات حتى الآن', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        Text('ابدأ باختيار منتج طازج من شاشة المنتجات واحجزه بكل بساطة',
-                            textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-                      ],
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: ['الكل', 'نشط', 'مكتمل', 'ملغي'].map((st) {
+                  final selected = _statusFilter == st;
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: ChoiceChip(
+                      label: Text(st),
+                      selected: selected,
+                      onSelected: (val) {
+                        if (val) setState(() => _statusFilter = st);
+                      },
+                      selectedColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+                      labelStyle: TextStyle(
+                        color: selected ? theme.colorScheme.primary : Colors.grey[700],
+                        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                      ),
                     ),
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _fetchOrders,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _orders.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final order = _orders[index];
-                      final prod = _productMap[order.productId];
-                      final prodName = prod?.name ?? 'منتج ألبان';
-                      final prodEmoji = prod?.emoji ?? '🥛';
-                      final dateFormatted = order.createdAt.length >= 10 ? order.createdAt.substring(0, 10) : '';
-
-                      return Card(
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredOrders.isEmpty
+                    ? Center(
                         child: Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(32),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(prodEmoji, style: const TextStyle(fontSize: 24)),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'طلب #00${order.id}',
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                      ),
-                                    ],
-                                  ),
-                                  _getStatusBadge(order.status),
-                                ],
-                              ),
-                              const Divider(height: 20),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    '$prodName (${order.quantity.toStringAsFixed(0)} ${prod?.unit ?? "وحدة"})',
-                                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                                  ),
-                                  Text(
-                                    '${order.totalAmount.toStringAsFixed(0)} ج.س',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: theme.colorScheme.primary,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              const Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey),
+                              const SizedBox(height: 16),
+                              const Text('لا توجد حجوزات في هذه القائمة', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Icon(
-                                    order.fulfillmentType == 'delivery' ? Icons.delivery_dining : Icons.store,
-                                    size: 16,
-                                    color: Colors.grey[600],
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    order.fulfillmentType == 'delivery' ? 'توصيل للعنوان' : 'استلام من المحل',
-                                    style: TextStyle(color: Colors.grey[700], fontSize: 13),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Icon(Icons.schedule, size: 16, color: Colors.grey[600]),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    order.deliverySlot == 'morning' ? 'صباحاً' : 'مساءً',
-                                    style: TextStyle(color: Colors.grey[700], fontSize: 13),
-                                  ),
-                                ],
-                              ),
-                              if (order.fulfillmentType == 'delivery' && order.deliveryAddress != null) ...[
-                                const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    Icon(Icons.location_on_outlined, size: 16, color: Colors.grey[600]),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        order.deliveryAddress!,
-                                        style: TextStyle(color: Colors.grey[700], fontSize: 13),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    dateFormatted,
-                                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                                  ),
-                                  if (order.status == 'pending')
-                                    OutlinedButton(
-                                      onPressed: () => _cancelOrder(order),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: Colors.red,
-                                        side: const BorderSide(color: Colors.red),
-                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                                        minimumSize: const Size(60, 32),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                      ),
-                                      child: const Text('إلغاء الحجز', style: TextStyle(fontSize: 12)),
-                                    ),
-                                ],
-                              ),
+                              Text('تصفح شاشة الرئيسية واحجز لبنك في ثوانٍ',
+                                  textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
                             ],
                           ),
                         ),
-                      );
-                    },
-                  ),
-                ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _fetchOrders,
+                        child: ListView.separated(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _filteredOrders.length,
+                          separatorBuilder: (_, _) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final order = _filteredOrders[index];
+                            final prod = _productMap[order.productId];
+                            final prodName = prod?.name ?? 'منتج ألبان';
+                            final prodEmoji = prod?.emoji ?? '🥛';
+                            final dateFormatted = order.createdAt.length >= 10 ? order.createdAt.substring(0, 10) : '';
+
+                            return Card(
+                              elevation: 0.5,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Text(prodEmoji, style: const TextStyle(fontSize: 24)),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              'طلب #00${order.id}',
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                            ),
+                                          ],
+                                        ),
+                                        _getStatusBadge(order.status),
+                                      ],
+                                    ),
+                                    const Divider(height: 20),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          '$prodName (${order.quantity.toStringAsFixed(0)} ${prod?.unit ?? "وحدة"})',
+                                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                                        ),
+                                        Text(
+                                          '${order.totalAmount.toStringAsFixed(0)} ج.س',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          order.fulfillmentType == 'delivery' ? Icons.delivery_dining : Icons.store,
+                                          size: 16,
+                                          color: Colors.grey[600],
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          order.fulfillmentType == 'delivery' ? 'توصيل للعنوان' : 'استلام من المحل',
+                                          style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                                        ),
+                                        const SizedBox(width: 14),
+                                        Icon(Icons.schedule, size: 16, color: Colors.grey[600]),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          order.deliverySlot == 'morning' ? 'صباحاً' : 'مساءً',
+                                          style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                                        ),
+                                      ],
+                                    ),
+                                    if (order.fulfillmentType == 'delivery' && order.deliveryAddress != null) ...[
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.location_on_outlined, size: 16, color: Colors.grey[600]),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Text(
+                                              order.deliveryAddress!,
+                                              style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                    const SizedBox(height: 10),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          dateFormatted,
+                                          style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                                        ),
+                                        if (order.status == 'pending')
+                                          OutlinedButton(
+                                            onPressed: () => _cancelOrder(order),
+                                            style: OutlinedButton.styleFrom(
+                                              foregroundColor: Colors.red,
+                                              side: const BorderSide(color: Colors.red),
+                                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                                              minimumSize: const Size(60, 32),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                            ),
+                                            child: const Text('إلغاء الحجز', style: TextStyle(fontSize: 12)),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 // -------------------------------------------------------------
-// 3. Notifications / Inbox Screen
+// 5. Notifications / Inbox Screen
 // -------------------------------------------------------------
 
 class InboxScreen extends StatefulWidget {
@@ -2130,7 +3154,7 @@ class _InboxScreenState extends State<InboxScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الإشعارات الواردة', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('الإشعارات والتحديثات', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchNotifications),
         ],
@@ -2148,7 +3172,7 @@ class _InboxScreenState extends State<InboxScreen> {
                         const SizedBox(height: 16),
                         const Text('صندوق الإشعارات فارغ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
-                        Text('ستظهر هنا تحديثات طلباتك من المحل', style: TextStyle(color: Colors.grey[600])),
+                        Text('ستظهر هنا تحديثات طلباتك وإشعارات المحلب', style: TextStyle(color: Colors.grey[600])),
                       ],
                     ),
                   ),
@@ -2164,7 +3188,7 @@ class _InboxScreenState extends State<InboxScreen> {
                       final isUnread = item.readAt == null;
 
                       return Card(
-                        elevation: isUnread ? 2 : 0,
+                        elevation: isUnread ? 1 : 0.5,
                         color: isUnread ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.05) : null,
                         child: ListTile(
                           onTap: () => _markAsRead(item),
@@ -2173,7 +3197,7 @@ class _InboxScreenState extends State<InboxScreen> {
                                 ? Theme.of(context).colorScheme.primary
                                 : Colors.grey.shade400,
                             foregroundColor: Colors.white,
-                            child: const Icon(Icons.notifications),
+                            child: const Icon(Icons.notifications, size: 20),
                           ),
                           title: Text(
                             item.title,
@@ -2204,7 +3228,7 @@ class _InboxScreenState extends State<InboxScreen> {
 }
 
 // -------------------------------------------------------------
-// 4. Customer Profile Screen
+// 6. Customer Profile & Settings Screen
 // -------------------------------------------------------------
 
 class ProfileScreen extends StatefulWidget {
@@ -2215,6 +3239,8 @@ class ProfileScreen extends StatefulWidget {
   final String initialAddress;
   final VoidCallback onProfileUpdated;
   final VoidCallback onLogout;
+  final Function(bool) onThemeToggle;
+  final bool isDarkMode;
 
   const ProfileScreen({
     super.key,
@@ -2225,6 +3251,8 @@ class ProfileScreen extends StatefulWidget {
     required this.initialAddress,
     required this.onProfileUpdated,
     required this.onLogout,
+    required this.onThemeToggle,
+    required this.isDarkMode,
   });
 
   @override
@@ -2259,7 +3287,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _saving = true);
 
     try {
-      // 1. Update Profile
       await http.patch(
         Uri.parse('$supabaseUrl/rest/v1/reserve_profiles?id=eq.${widget.userId}'),
         headers: {
@@ -2273,7 +3300,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }),
       );
 
-      // 2. Update or insert details
       await http.patch(
         Uri.parse('$supabaseUrl/rest/v1/reserve_customer_details?customer_id=eq.${widget.userId}'),
         headers: {
@@ -2309,7 +3335,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('تسجيل الخروج'),
-        content: const Text('هل ترغب بتسجيل الخروج من الحساب؟'),
+        content: const Text('هل ترغب بتسجيل الخروج من حسابك؟'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
           ElevatedButton(
@@ -2344,12 +3370,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Stack(
                   children: [
                     CircleAvatar(
-                      radius: 46,
+                      radius: 44,
                       backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.15),
                       child: Text(
                         _nameController.text.isNotEmpty ? _nameController.text.characters.first : '🥛',
                         style: TextStyle(
-                          fontSize: 36,
+                          fontSize: 34,
                           fontWeight: FontWeight.bold,
                           color: theme.colorScheme.primary,
                         ),
@@ -2358,7 +3384,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Text(
                 widget.userEmail,
                 textAlign: TextAlign.center,
@@ -2405,6 +3431,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
                 ),
                 child: _saving
                     ? const SizedBox(
@@ -2414,7 +3441,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       )
                     : const Text('حفظ التعديلات', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
+
+              const Divider(),
+              const SizedBox(height: 12),
+
+              SwitchListTile(
+                title: const Text('المظهر الداكن (Dark Mode)'),
+                subtitle: const Text('تغيير ألوان التطبيق للمظهر المظلم'),
+                secondary: const Icon(Icons.dark_mode_outlined),
+                value: widget.isDarkMode,
+                onChanged: (val) => widget.onThemeToggle(val),
+              ),
+              const SizedBox(height: 20),
 
               OutlinedButton.icon(
                 onPressed: _confirmLogout,

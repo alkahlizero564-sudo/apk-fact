@@ -2,381 +2,667 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>تسبيح - تطبيق الأذكار والمسبحة الإلكترونية</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مسبحتي - المسبحة الإلكترونية والأذكار</title>
   <style>
     :root {
-      --md-sys-color-primary: #006B4D;
-      --md-sys-color-on-primary: #FFFFFF;
-      --md-sys-color-primary-container: #83F8C9;
-      --md-sys-color-on-primary-container: #002115;
-      --md-sys-color-secondary: #4D6356;
-      --md-sys-color-on-secondary: #FFFFFF;
-      --md-sys-color-secondary-container: #CFE9D7;
-      --md-sys-color-on-secondary-container: #092015;
-      --md-sys-color-tertiary: #835400;
-      --md-sys-color-on-tertiary: #FFFFFF;
-      --md-sys-color-tertiary-container: #FFDDAE;
-      --md-sys-color-on-tertiary-container: #2A1700;
-      --md-sys-color-background: #F5FBF6;
-      --md-sys-color-on-background: #171D1A;
-      --md-sys-color-surface: #F5FBF6;
-      --md-sys-color-on-surface: #171D1A;
-      --md-sys-color-surface-variant: #DBE5DD;
-      --md-sys-color-on-surface-variant: #404943;
-      --md-sys-color-outline: #707973;
-      --md-sys-color-outline-variant: #BFC9C1;
-      --md-sys-color-surface-container-lowest: #FFFFFF;
-      --md-sys-color-surface-container-low: #EFF5F0;
-      --md-sys-color-surface-container: #E9EFEA;
-      --md-sys-color-surface-container-high: #E3E9E4;
-      --md-sys-color-surface-container-highest: #DDE4DE;
-      --md-shape-corner-small: 8px;
-      --md-shape-corner-medium: 12px;
-      --md-shape-corner-large: 16px;
-      --md-shape-corner-extra-large: 28px;
-      --md-shape-corner-full: 9999px;
-      --md-elevation-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.08);
-      --font-family-arabic: 'Segoe UI', Tahoma, 'Noto Sans Arabic', sans-serif;
+      --primary: #006B4D;
+      --on-primary: #FFFFFF;
+      --primary-container: #83F8C9;
+      --on-primary-container: #002115;
+      --secondary-container: #CFE9D7;
+      --on-secondary-container: #092015;
+      --tertiary: #835400;
+      --background: #F5FBF6;
+      --surface: #F5FBF6;
+      --surface-container: #EBF3ED;
+      --surface-low: #F0F6F1;
+      --on-surface: #171D1A;
+      --on-surface-variant: #404943;
+      --outline: #707973;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --font-family: system-ui, -apple-system, 'Segoe UI', Tahoma, Arial, sans-serif;
     }
 
-    body.dark-mode {
-      --md-sys-color-primary: #66DBAE;
-      --md-sys-color-on-primary: #003826;
-      --md-sys-color-primary-container: #005239;
-      --md-sys-color-on-primary-container: #83F8C9;
-      --md-sys-color-secondary: #B3CCBC;
-      --md-sys-color-on-secondary: #1F3529;
-      --md-sys-color-secondary-container: #354B3F;
-      --md-sys-color-on-secondary-container: #CFE9D7;
-      --md-sys-color-tertiary: #FFBA66;
-      --md-sys-color-on-tertiary: #462A00;
-      --md-sys-color-tertiary-container: #643E00;
-      --md-sys-color-on-tertiary-container: #FFDDAE;
-      --md-sys-color-background: #0F1512;
-      --md-sys-color-on-background: #E0E4E0;
-      --md-sys-color-surface: #0F1512;
-      --md-sys-color-on-surface: #E0E4E0;
-      --md-sys-color-surface-variant: #404943;
-      --md-sys-color-on-surface-variant: #BFC9C1;
-      --md-sys-color-outline: #89938C;
-      --md-sys-color-outline-variant: #404943;
-      --md-sys-color-surface-container-lowest: #0A0F0D;
-      --md-sys-color-surface-container-low: #171D1A;
-      --md-sys-color-surface-container: #1B211E;
-      --md-sys-color-surface-container-high: #252B28;
-      --md-sys-color-surface-container-highest: #303633;
+    body.dark {
+      --primary: #66DBAE;
+      --on-primary: #003826;
+      --primary-container: #005239;
+      --on-primary-container: #83F8C9;
+      --secondary-container: #354B3F;
+      --on-secondary-container: #CFE9D7;
+      --tertiary: #FFBA66;
+      --background: #0F1512;
+      --surface: #0F1512;
+      --surface-container: #1C231F;
+      --surface-low: #171E1A;
+      --on-surface: #E0E4E0;
+      --on-surface-variant: #BFC9C1;
+      --outline: #89938C;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
     body {
-      font-family: var(--font-family-arabic);
-      background-color: #050807;
-      color: var(--md-sys-color-on-background);
-      display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-      min-height: 100vh; overflow-x: hidden;
+      background-color: #121212;
+      font-family: var(--font-family);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
     }
-
-    #apkfact-screens {
-      position: fixed; top: 0; left: 0; right: 0; height: 48px;
-      background-color: rgba(10, 15, 13, 0.92); backdrop-filter: blur(10px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.12); z-index: 9999;
-      display: flex; align-items: center; padding: 0 12px; gap: 8px; overflow-x: auto;
-    }
-    .screen-pill {
-      background-color: rgba(255, 255, 255, 0.08); color: #DDE4DE;
-      border: 1px solid rgba(255, 255, 255, 0.15); border-radius: var(--md-shape-corner-full);
-      padding: 4px 12px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
-    }
-    .screen-pill.active { background-color: #66DBAE; color: #003826; border-color: #66DBAE; }
 
     .phone-container {
-      margin-top: 56px; margin-bottom: 24px; width: 100%; max-width: 412px; height: 840px;
-      background-color: var(--md-sys-color-background); border-radius: 40px;
-      border: 8px solid #1F2522; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
-      position: relative; display: flex; flex-direction: column; overflow: hidden;
+      width: 390px;
+      height: 800px;
+      background-color: var(--background);
+      color: var(--on-surface);
+      border-radius: 44px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      border: 10px solid #222;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
     }
-    .status-bar {
-      height: 36px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between;
-      font-size: 13px; font-weight: 600; color: var(--md-sys-color-on-surface);
-    }
-    .top-app-bar {
-      height: 56px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between;
-      background-color: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface);
-    }
-    .top-app-bar .title { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-    .icon-btn {
-      width: 40px; height: 40px; border-radius: var(--md-shape-corner-full);
-      display: flex; align-items: center; justify-content: center; background: transparent;
-      border: none; color: var(--md-sys-color-on-surface-variant); cursor: pointer;
-    }
-    .app-content { flex: 1; position: relative; overflow: hidden; }
-    .view-screen {
-      position: absolute; inset: 0; padding: 16px; display: none; flex-direction: column; gap: 16px; overflow-y: auto;
-    }
-    .view-screen.active { display: flex; }
 
-    .navigation-bar {
-      height: 80px; background-color: var(--md-sys-color-surface-container);
-      display: flex; align-items: center; justify-content: space-around; padding: 0 8px 12px 8px;
+    /* Top Status Bar */
+    .status-bar {
+      height: 38px;
+      padding: 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* Header Bar */
+    .app-bar {
+      height: 56px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    .app-title {
+      font-size: 18px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--on-surface);
+    }
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--on-surface-variant);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    /* Content Screens */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: none;
+    }
+    .content.active {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Navigation Bar */
+    .nav-bar {
+      height: 64px;
+      background-color: var(--surface-container);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
     }
     .nav-item {
-      display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; cursor: pointer;
-      color: var(--md-sys-color-on-surface-variant); width: 64px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      color: var(--on-surface-variant);
+      font-size: 11px;
+      cursor: pointer;
+      width: 68px;
+      padding: 4px 0;
+      border-radius: 12px;
     }
-    .nav-icon-wrapper {
-      width: 56px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
+    .nav-item.active {
+      background-color: var(--secondary-container);
+      color: var(--on-secondary-container);
+      font-weight: bold;
     }
-    .nav-item.active .nav-icon-wrapper { background-color: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
-    .nav-item .label { font-size: 12px; font-weight: 600; }
 
-    .m3-card {
-      background-color: var(--md-sys-color-surface-container-low); border-radius: var(--md-shape-corner-extra-large);
-      padding: 16px; border: 1px solid var(--md-sys-color-outline-variant);
+    /* Cards */
+    .card {
+      background-color: var(--surface-container);
+      border-radius: var(--radius-lg);
+      padding: 16px;
     }
-    .m3-card.elevated { background-color: var(--md-sys-color-surface-container-lowest); border: none; box-shadow: var(--md-elevation-1); }
-    .m3-card.primary-tint { background-color: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); border: none; }
 
-    .chip-group { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
-    .m3-chip {
-      height: 36px; border-radius: var(--md-shape-corner-small); padding: 0 16px; display: flex; align-items: center;
-      font-size: 13px; font-weight: 600; border: 1px solid var(--md-sys-color-outline); background: transparent;
-      color: var(--md-sys-color-on-surface-variant); cursor: pointer; white-space: nowrap;
+    /* Counter Canvas Arc Container */
+    .counter-hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
     }
-    .m3-chip.selected { background-color: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); border-color: transparent; }
+    .ring-wrapper {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .ring-svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+    .ring-bg {
+      fill: none;
+      stroke: var(--surface-container);
+      stroke-width: 12;
+    }
+    .ring-progress {
+      fill: none;
+      stroke: var(--primary);
+      stroke-width: 12;
+      stroke-linecap: round;
+      stroke-dasharray: 628;
+      stroke-dashoffset: 400;
+      transition: stroke-dashoffset 0.2s ease-out;
+    }
+    .ring-text {
+      position: absolute;
+      text-align: center;
+    }
+    .count-val {
+      font-size: 52px;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .target-val {
+      font-size: 13px;
+      color: var(--on-surface-variant);
+      margin-top: 4px;
+    }
 
-    .m3-fab {
-      height: 56px; padding: 0 20px; border-radius: var(--md-shape-corner-large); background-color: var(--md-sys-color-primary-container);
-      color: var(--md-sys-color-on-primary-container); display: flex; align-items: center; justify-content: center; gap: 12px;
-      font-size: 15px; font-weight: 700; border: none; cursor: pointer;
+    /* Preset Horizontal Scroll */
+    .chips-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
     }
-    .btn-filled {
-      height: 48px; border-radius: var(--md-shape-corner-full); background-color: var(--md-sys-color-primary);
-      color: var(--md-sys-color-on-primary); border: none; font-size: 15px; font-weight: 700; padding: 0 24px;
-      display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; width: 100%;
+    .chip {
+      background: var(--surface-container);
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      white-space: nowrap;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .chip.selected {
+      background: var(--secondary-container);
+      color: var(--on-secondary-container);
+      font-weight: bold;
+    }
+
+    /* Buttons Row */
+    .btn-row {
+      display: flex;
+      gap: 8px;
     }
     .btn-outlined {
-      height: 42px; border-radius: var(--md-shape-corner-medium); background: transparent; color: var(--md-sys-color-primary);
-      border: 1.5px solid var(--md-sys-color-outline); font-size: 13px; font-weight: 700; padding: 0 12px;
-      display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+      flex: 1;
+      padding: 10px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--outline);
+      background: transparent;
+      color: var(--on-surface);
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      border-radius: 28px;
+      border: none;
+      background: var(--primary);
+      color: var(--on-primary);
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
     }
 
-    .counter-circle-outer {
-      width: 240px; height: 240px; border-radius: 50%; background: var(--md-sys-color-surface-container-low);
-      display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; margin: 12px auto;
+    /* Progress bar */
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--surface-container);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 8px;
     }
-    .counter-ring-svg { position: absolute; inset: 0; transform: rotate(-90deg); }
-    .counter-ring-bg { stroke: var(--md-sys-color-surface-container-highest); stroke-width: 10; fill: none; }
-    .counter-ring-val { stroke: var(--md-sys-color-primary); stroke-width: 10; stroke-linecap: round; fill: none; stroke-dasharray: 691; stroke-dashoffset: 400; }
-    .counter-value { font-size: 54px; font-weight: 800; color: var(--md-sys-color-on-surface); line-height: 1; }
+    .progress-fill {
+      height: 100%;
+      background: var(--primary);
+      width: 65%;
+      border-radius: 4px;
+    }
 
-    .progress-bar-bg { height: 8px; width: 100%; background-color: var(--md-sys-color-surface-container-highest); border-radius: 4px; overflow: hidden; }
-    .progress-bar-fill { height: 100%; background-color: var(--md-sys-color-primary); border-radius: 4px; }
+    /* Chart Simulation */
+    .chart-box {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      height: 110px;
+      padding-top: 10px;
+    }
+    .bar-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .bar {
+      width: 22px;
+      background: var(--primary-container);
+      border-radius: 6px 6px 0 0;
+    }
+    .bar.highlight {
+      background: var(--primary);
+    }
+    .bar-label {
+      font-size: 10px;
+      color: var(--on-surface-variant);
+    }
 
-    .bottom-sheet-overlay {
-      position: absolute; inset: 0; background-color: rgba(0, 0, 0, 0.5); z-index: 200; display: none; align-items: flex-end; justify-content: center;
+    /* Modal Sheet */
+    .modal {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--background);
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      z-index: 99;
     }
-    .bottom-sheet-overlay.active { display: flex; }
-    .bottom-sheet {
-      width: 100%; background-color: var(--md-sys-color-surface-container-low); border-radius: 28px 28px 0 0;
-      padding: 16px 20px 32px 20px; display: flex; flex-direction: column; gap: 16px;
+    .modal.active {
+      display: flex;
     }
-    svg { stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+    .text-input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--outline);
+      background: transparent;
+      color: var(--on-surface);
+      font-family: inherit;
+    }
   </style>
 </head>
 <body>
-
-  <div id="apkfact-screens">
-    <span style="font-size:11px; font-weight:700; color:#FFBA66; background:rgba(255,186,102,0.15); padding:3px 8px; border-radius:4px;">Compose Views</span>
-    <button class="screen-pill active" onclick="switchScreen('screen-counter', this)">1. المسبحة الرئيسية</button>
-    <button class="screen-pill" onclick="switchScreen('screen-adhkar', this)">2. قائمة الأذكار</button>
-    <button class="screen-pill" onclick="switchScreen('screen-reader', this)">3. قارئ الأذكار</button>
-    <button class="screen-pill" onclick="switchScreen('screen-stats', this)">4. الإحصائيات</button>
-    <button class="screen-pill" onclick="switchScreen('screen-settings', this)">5. الإعدادات</button>
-  </div>
-
   <div class="phone-container">
+    <!-- Status Bar -->
     <div class="status-bar">
-      <span>10:45</span>
-      <div>📶 🔋</div>
+      <span>09:41</span>
+      <span>⚡ 98%</span>
     </div>
 
-    <div class="top-app-bar">
-      <div class="title">
-        <svg width="24" height="24" viewBox="0 0 24 24" stroke="var(--md-sys-color-primary)" stroke-width="2.2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
-        <span>تسبيح</span>
+    <!-- Header App Bar -->
+    <div class="app-bar">
+      <div class="app-title">
+        <span>📿</span>
+        <span id="screen-title">مسبحتي - العداد الإلكتروني</span>
       </div>
       <div>
         <button class="icon-btn" onclick="toggleTheme()">🌙</button>
-        <button class="icon-btn" onclick="openTargetSheet()">✏️</button>
+        <button class="icon-btn" onclick="openModal('target-modal')">⚙️</button>
       </div>
     </div>
 
-    <div class="app-content">
-      <!-- SCREEN 1 -->
-      <div class="view-screen active" id="screen-counter">
-        <div class="m3-card primary-tint" style="display:flex; justify-space-between; align-items:center;">
-          <div>
-            <div style="font-weight:700; font-size:14px;">سلسلة التسبيح اليومي 🔥</div>
-            <div style="font-size:12px; opacity:0.9;">7 أيام متتالية من المواظبة</div>
+    <!-- Screen 1: Counter -->
+    <div id="screen-counter" class="content active">
+      <div class="card" style="background: var(--primary-container); color: var(--on-primary-container);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <span style="font-size: 22px;">🔥</span>
+            <div>
+              <div style="font-weight: bold; font-size: 14px;">سلسلة التسبيح اليومي</div>
+              <div style="font-size: 11px; opacity: 0.8;">7 أيام متتالية من المواظبة والأذكار</div>
+            </div>
           </div>
-          <span style="background:var(--md-sys-color-on-primary-container); color:var(--md-sys-color-primary-container); padding:4px 10px; border-radius:12px; font-size:12px; font-weight:800;">ممتاز</span>
+          <span style="background: var(--on-primary-container); color: var(--primary-container); font-size: 11px; font-weight: bold; padding: 4px 8px; border-radius: 8px;">ممتاز</span>
         </div>
+      </div>
 
-        <div class="chip-group">
-          <button class="m3-chip selected" onclick="selectDhikr('سُبْحَانَ اللَّهِ', 33, this)">سُبْحَانَ اللَّهِ (33)</button>
-          <button class="m3-chip" onclick="selectDhikr('الْحَمْدُ لِلَّهِ', 33, this)">الْحَمْدُ لِلَّهِ (33)</button>
-          <button class="m3-chip" onclick="selectDhikr('اللَّهُ أَكْبَرُ', 33, this)">اللَّهُ أَكْبَرُ (33)</button>
-          <button class="m3-chip" onclick="selectDhikr('أَسْتَغْفِرُ اللَّهَ', 100, this)">أَسْتَغْفِرُ اللَّهَ (100)</button>
-        </div>
+      <div class="chips-row">
+        <div class="chip selected" onclick="selectPreset('سُبْحَانَ اللَّهِ', 33, this)">سُبْحَانَ اللَّهِ (33)</div>
+        <div class="chip" onclick="selectPreset('الْحَمْدُ لِلَّهِ', 33, this)">الْحَمْدُ لِلَّهِ (33)</div>
+        <div class="chip" onclick="selectPreset('اللَّهُ أَكْبَرُ', 33, this)">اللَّهُ أَكْبَرُ (33)</div>
+        <div class="chip" onclick="selectPreset('أَسْتَغْفِرُ اللَّهَ', 100, this)">أَسْتَغْفِرُ اللَّهَ (100)</div>
+      </div>
 
-        <div class="m3-card" style="text-align:center;">
-          <h2 id="currentDhikrTitle" style="color:var(--md-sys-color-primary); font-size:22px;">سُبْحَانَ اللَّهِ</h2>
-          <p id="currentDhikrSub" style="font-size:13px; color:var(--md-sys-color-on-surface-variant); margin-top:4px;">فضل الذكر: غراس الجنة وأحب الكلام إلى الله</p>
-        </div>
+      <div class="card" style="text-align: center;">
+        <div id="dhikr-name" style="font-size: 20px; font-weight: bold; color: var(--primary);">سُبْحَانَ اللَّهِ</div>
+        <div style="font-size: 12px; color: var(--on-surface-variant); margin-top: 4px;">فضل الذكر: غراس الجنة وأحب الكلام إلى الله</div>
+      </div>
 
-        <div class="counter-circle-outer" onclick="incrementCounter()">
-          <svg class="counter-ring-svg" viewBox="0 0 240 240">
-            <circle class="counter-ring-bg" cx="120" cy="120" r="110"/>
-            <circle class="counter-ring-val" id="counterProgressRing" cx="120" cy="120" r="110"/>
+      <div class="counter-hero">
+        <div class="ring-wrapper" onclick="increment()">
+          <svg class="ring-svg" viewBox="0 0 220 220">
+            <circle class="ring-bg" cx="110" cy="110" r="95"></circle>
+            <circle id="ring-progress" class="ring-progress" cx="110" cy="110" r="95"></circle>
           </svg>
-          <div style="text-align:center;">
-            <div class="counter-value" id="counterVal">14</div>
-            <div style="font-size:13px; color:var(--md-sys-color-on-surface-variant);">الهدف: <span id="counterTargetVal">33</span></div>
-          </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
-          <button class="btn-outlined" onclick="resetCounter()">إعادة</button>
-          <button class="btn-outlined" onclick="toggleSound()" id="soundToggleBtn">صوت: مفعل</button>
-          <button class="btn-outlined" onclick="openTargetSheet()">تعديل</button>
-        </div>
-
-        <div class="m3-card elevated">
-          <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-weight:700; font-size:14px;">
-            <span>هدف التسبيح اليومي</span>
-            <span style="color:var(--md-sys-color-primary);">65%</span>
-          </div>
-          <div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 65%;"></div></div>
-        </div>
-      </div>
-
-      <!-- SCREEN 2 -->
-      <div class="view-screen" id="screen-adhkar">
-        <input type="text" placeholder="ابحث في أذكار حصن المسلم..." style="width:100%; height:48px; border-radius:24px; border:1px solid var(--md-sys-color-outline); padding:0 16px; background:var(--md-sys-color-surface-container-low); outline:none; font-family:inherit;">
-        
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          <div class="m3-card" onclick="switchScreen('screen-reader', null)" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <div style="font-weight:700; font-size:16px;">☀️ أذكار الصباح</div>
-              <div style="font-size:12px; color:var(--md-sys-color-on-surface-variant);">24 ذكراً • مكتمل 12/24</div>
-            </div>
-            <span>❯</span>
-          </div>
-          <div class="m3-card" onclick="switchScreen('screen-reader', null)" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <div style="font-weight:700; font-size:16px;">🌙 أذكار المساء</div>
-              <div style="font-size:12px; color:var(--md-sys-color-on-surface-variant);">20 ذكراً • غير يبدأ بعد</div>
-            </div>
-            <span>❯</span>
+          <div class="ring-text">
+            <div id="count-num" class="count-val">14</div>
+            <div id="target-num" class="target-val">الهدف: 33</div>
           </div>
         </div>
       </div>
 
-      <!-- SCREEN 3 -->
-      <div class="view-screen" id="screen-reader">
-        <div style="font-size:12px; color:var(--md-sys-color-primary); font-weight:700;">أذكار الصباح (1 من 24)</div>
-        <div class="m3-card" style="flex:1; display:flex; flex-direction:column; justify-content:space-between;">
-          <div style="font-size:22px; line-height:1.8; text-align:center;">اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ...</div>
-          <div style="font-size:13px; color:var(--md-sys-color-on-surface-variant); background:var(--md-sys-color-surface-container); padding:10px; border-radius:8px;">
-            الفضل: من قالها حين يصبح أُجير من الجن حتى يمسي.
-          </div>
-        </div>
-        <button class="btn-filled" onclick="alert('تقبل الله طاعتكم')">تكرار: 1 / 3</button>
+      <div class="btn-row">
+        <button class="btn-outlined" onclick="resetCount()">🔄 إعادة</button>
+        <button class="btn-outlined" id="sound-btn" onclick="toggleSound()">🔊 صوت: مفعل</button>
+        <button class="btn-outlined" onclick="openModal('target-modal')">✏️ تعديل</button>
       </div>
 
-      <!-- SCREEN 4 -->
-      <div class="view-screen" id="screen-stats">
-        <div style="font-size:18px; font-weight:700;">ملخص النشاط والتسبيح</div>
-        <div class="m3-card elevated">
-          <div style="font-size:12px; color:var(--md-sys-color-on-surface-variant);">إجمالي التسبيحات</div>
-          <div style="font-size:28px; font-weight:800; color:var(--md-sys-color-primary);">14,250</div>
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: bold;">
+          <span>هدف التسبيح اليومي العام</span>
+          <span style="color: var(--primary);" id="total-percent">65%</span>
         </div>
-      </div>
-
-      <!-- SCREEN 5 -->
-      <div class="view-screen" id="screen-settings">
-        <div style="font-size:18px; font-weight:700;">إعدادات التطبيق</div>
-        <div class="m3-card">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <div style="font-weight:600;">صوت النقر</div>
-              <div style="font-size:12px; color:var(--md-sys-color-on-surface-variant);">إصدار صوت خفيف</div>
-            </div>
-            <input type="checkbox" checked style="width:24px; height:24px;">
-          </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="total-bar" style="width: 65%;"></div>
         </div>
       </div>
     </div>
 
-    <div class="navigation-bar">
-      <button class="nav-item active" onclick="switchNav('screen-counter', this)"><div class="nav-icon-wrapper">🔄</div><span class="label">المسبحة</span></button>
-      <button class="nav-item" onclick="switchNav('screen-adhkar', this)"><div class="nav-icon-wrapper">📖</div><span class="label">الأذكار</span></button>
-      <button class="nav-item" onclick="switchNav('screen-stats', this)"><div class="nav-icon-wrapper">📊</div><span class="label">الإحصائيات</span></button>
-      <button class="nav-item" onclick="switchNav('screen-settings', this)"><div class="nav-icon-wrapper">⚙️</div><span class="label">الإعدادات</span></button>
-    </div>
-
-    <div class="bottom-sheet-overlay" id="targetBottomSheet" onclick="closeBottomSheet(event, 'targetBottomSheet')">
-      <div class="bottom-sheet">
-        <h3 style="font-size:18px; font-weight:700;">تحديد هدف العداد</h3>
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
-          <button class="btn-outlined" onclick="setTarget(33)">33 مرة</button>
-          <button class="btn-outlined" onclick="setTarget(100)">100 مرة</button>
-          <button class="btn-outlined" onclick="setTarget(1000)">1000 مرة</button>
+    <!-- Screen 2: Adhkar Library -->
+    <div id="screen-library" class="content">
+      <input type="text" class="text-input" placeholder="ابحث في أذكار حصن المسلم..." />
+      
+      <div class="card" onclick="switchTab('reader')" style="cursor: pointer;">
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <div style="font-size: 28px; background: var(--primary-container); padding: 8px; border-radius: 12px;">☀️</div>
+          <div>
+            <div style="font-weight: bold; font-size: 15px;">أذكار الصباح</div>
+            <div style="font-size: 12px; color: var(--on-surface-variant);">24 ذكراً • مكتمل 12/24</div>
+          </div>
         </div>
       </div>
+
+      <div class="card">
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <div style="font-size: 28px; background: var(--secondary-container); padding: 8px; border-radius: 12px;">🌙</div>
+          <div>
+            <div style="font-weight: bold; font-size: 15px;">أذكار المساء</div>
+            <div style="font-size: 12px; color: var(--on-surface-variant);">20 ذكراً • يبدأ بعد قليل</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <div style="font-size: 28px; background: var(--primary-container); padding: 8px; border-radius: 12px;">🕌</div>
+          <div>
+            <div style="font-weight: bold; font-size: 15px;">أذكار بعد الصلاة</div>
+            <div style="font-size: 12px; color: var(--on-surface-variant);">10 أذكار • مكتمل 100%</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="openModal('custom-modal')" style="margin-top: auto;">+ إضافة ذكر مخصص</button>
+    </div>
+
+    <!-- Screen 3: Reader -->
+    <div id="screen-reader" class="content">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-size: 12px; color: var(--primary); font-weight: bold;">أذكار الصباح (1 من 2)</div>
+          <div style="font-weight: bold; font-size: 16px;">آية الكرسي</div>
+        </div>
+        <button class="icon-btn" onclick="switchTab('library')">➡️</button>
+      </div>
+
+      <div class="card" style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; text-align: center;">
+        <div style="font-size: 18px; line-height: 1.8; font-weight: 500; padding: 20px 0;">
+          اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ...
+        </div>
+        <div style="background: var(--surface-low); padding: 10px; border-radius: 10px; font-size: 12px; color: var(--on-surface-variant);">
+          الفضل: من قالها حين يصبح أُجير من الجن حتى يمسي.
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="alert('تم التسبيح للذكر الحالي!')">تكرار: 1 / 3</button>
+    </div>
+
+    <!-- Screen 4: Stats -->
+    <div id="screen-stats" class="content">
+      <div style="font-weight: bold; font-size: 16px;">ملخص النشاط والتسبيح</div>
+
+      <div style="display: flex; gap: 10px;">
+        <div class="card" style="flex: 1;">
+          <div style="font-size: 11px; color: var(--on-surface-variant);">إجمالي التسبيحات</div>
+          <div style="font-size: 22px; font-weight: 800; color: var(--primary); margin: 4px 0;">14,250</div>
+          <div style="font-size: 10px; color: #4CAF50; font-weight: bold;">▲ 12% هذا الأسبوع</div>
+        </div>
+        <div class="card" style="flex: 1;">
+          <div style="font-size: 11px; color: var(--on-surface-variant);">الأيام المتتالية</div>
+          <div style="font-size: 22px; font-weight: 800; color: var(--tertiary); margin: 4px 0;">7 أيام</div>
+          <div style="font-size: 10px; color: var(--on-surface-variant);">أفضل سلسلة: 14</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight: bold; font-size: 14px;">النشاط الأسبوعي</div>
+        <div class="chart-box">
+          <div class="bar-col"><div class="bar" style="height: 45%;"></div><span class="bar-label">الأحد</span></div>
+          <div class="bar-col"><div class="bar" style="height: 70%;"></div><span class="bar-label">الإثنين</span></div>
+          <div class="bar-col"><div class="bar" style="height: 90%;"></div><span class="bar-label">الثلاثاء</span></div>
+          <div class="bar-col"><div class="bar" style="height: 35%;"></div><span class="bar-label">الأربعاء</span></div>
+          <div class="bar-col"><div class="bar" style="height: 60%;"></div><span class="bar-label">الخميس</span></div>
+          <div class="bar-col"><div class="bar highlight" style="height: 100%;"></div><span class="bar-label">الجمعة</span></div>
+          <div class="bar-col"><div class="bar" style="height: 50%;"></div><span class="bar-label">السبت</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 5: Settings -->
+    <div id="screen-settings" class="content">
+      <div style="font-weight: bold; font-size: 16px;">إعدادات التطبيق</div>
+
+      <div class="card" style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-weight: bold; font-size: 14px;">صوت النقر</div>
+            <div style="font-size: 11px; color: var(--on-surface-variant);">صوت خفيف عند كل تسبيحة</div>
+          </div>
+          <input type="checkbox" checked />
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-weight: bold; font-size: 14px;">الاهتزاز (Haptics)</div>
+            <div style="font-size: 11px; color: var(--on-surface-variant);">اهتزاز عند اكتمال الهدف</div>
+          </div>
+          <input type="checkbox" checked />
+        </div>
+      </div>
+
+      <div class="card" style="text-align: center; margin-top: auto;">
+        <div style="font-weight: bold; font-size: 13px;">تطبيق مسبحتي والأذكار • v1.0.0</div>
+        <div style="font-size: 11px; color: var(--on-surface-variant); margin-top: 2px;">Kotlin & Jetpack Compose Native</div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="nav-bar">
+      <button class="nav-item active" onclick="switchTab('counter')">
+        <span style="font-size: 18px;">📿</span>
+        <span>المسبحة</span>
+      </button>
+      <button class="nav-item" onclick="switchTab('library')">
+        <span style="font-size: 18px;">📖</span>
+        <span>الأذكار</span>
+      </button>
+      <button class="nav-item" onclick="switchTab('stats')">
+        <span style="font-size: 18px;">📊</span>
+        <span>الإحصائيات</span>
+      </button>
+      <button class="nav-item" onclick="switchTab('settings')">
+        <span style="font-size: 18px;">⚙️</span>
+        <span>الإعدادات</span>
+      </button>
+    </div>
+
+    <!-- Modals -->
+    <div id="target-modal" class="modal">
+      <div style="font-weight: bold; font-size: 16px;">تحديد هدف العداد</div>
+      <div class="btn-row">
+        <button class="btn-outlined" onclick="setTarget(33)">33 مرة</button>
+        <button class="btn-outlined" onclick="setTarget(100)">100 مرة</button>
+        <button class="btn-outlined" onclick="setTarget(1000)">1000 مرة</button>
+      </div>
+      <button class="btn-primary" onclick="closeModal('target-modal')">إغلاق</button>
+    </div>
+
+    <div id="custom-modal" class="modal">
+      <div style="font-weight: bold; font-size: 16px;">إضافة ذكر مخصص</div>
+      <input type="text" class="text-input" placeholder="نص الذكر..." />
+      <input type="number" class="text-input" placeholder="الهدف (مثال: 100)" />
+      <button class="btn-primary" onclick="closeModal('custom-modal')">حفظ الذكر</button>
     </div>
   </div>
 
   <script>
-    let currentCount = 14;
-    let targetCount = 33;
-    let isSoundOn = true;
+    let count = 14;
+    let target = 33;
+    let soundEnabled = true;
 
-    function updateCounterDisplay() {
-      document.getElementById('counterVal').innerText = currentCount;
-      document.getElementById('counterTargetVal').innerText = targetCount;
-      const ring = document.getElementById('counterProgressRing');
-      const maxOffset = 691;
-      const progress = Math.min(currentCount / targetCount, 1);
-      ring.style.strokeDashoffset = maxOffset - (progress * maxOffset);
+    function updateRing() {
+      document.getElementById('count-num').innerText = count;
+      document.getElementById('target-num').innerText = 'الهدف: ' + target;
+      const ring = document.getElementById('ring-progress');
+      const maxOffset = 628;
+      const progress = Math.min(count / target, 1);
+      ring.style.strokeDashoffset = maxOffset - (maxOffset * progress);
     }
-    function incrementCounter() {
-      if (currentCount < targetCount) currentCount++;
-      updateCounterDisplay();
+
+    function increment() {
+      if (count < target) {
+        count++;
+        updateRing();
+      }
     }
-    function resetCounter() { currentCount = 0; updateCounterDisplay(); }
-    function selectDhikr(title, target, chip) {
-      document.querySelectorAll('.chip-group .m3-chip').forEach(c => c.classList.remove('selected'));
-      chip.classList.add('selected');
-      document.getElementById('currentDhikrTitle').innerText = title;
-      targetCount = target; currentCount = 0; updateCounterDisplay();
+
+    function resetCount() {
+      count = 0;
+      updateRing();
     }
-    function toggleSound() { isSoundOn = !isSoundOn; document.getElementById('soundToggleBtn').innerText = isSoundOn ? 'صوت: مفعل' : 'صوت: صامت'; }
-    function toggleTheme() { document.body.classList.toggle('dark-mode'); }
-    function switchScreen(id, pill) {
-      if (pill) { document.querySelectorAll('.screen-pill').forEach(p => p.classList.remove('active')); pill.classList.add('active'); }
-      document.querySelectorAll('.view-screen').forEach(s => s.classList.remove('active'));
+
+    function setTarget(val) {
+      target = val;
+      count = 0;
+      updateRing();
+      closeModal('target-modal');
+    }
+
+    function selectPreset(name, tVal, el) {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('dhikr-name').innerText = name;
+      setTarget(tVal);
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('sound-btn').innerText = soundEnabled ? '🔊 صوت: مفعل' : '🔇 صوت: صامت';
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+      const targetScreen = document.getElementById('screen-' + tabId);
+      if (targetScreen) targetScreen.classList.add('active');
+
+      const titles = {
+        counter: 'مسبحتي - العداد الإلكتروني',
+        library: 'حصن المسلم والأذكار',
+        reader: 'قراءة الأذكار',
+        stats: 'إحصائيات التسبيح',
+        settings: 'إعدادات التطبيق'
+      };
+      document.getElementById('screen-title').innerText = titles[tabId] || 'مسبحتي';
+
+      const navButtons = document.querySelectorAll('.nav-item');
+      if (tabId === 'counter') navButtons[0].classList.add('active');
+      if (tabId === 'library') navButtons[1].classList.add('active');
+      if (tabId === 'stats') navButtons[2].classList.add('active');
+      if (tabId === 'settings') navButtons[3].classList.add('active');
+    }
+
+    function openModal(id) {
       document.getElementById(id).classList.add('active');
     }
-    function switchNav(id, el) {
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      el.classList.add('active'); switchScreen(id, null);
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
     }
-    function openTargetSheet() { document.getElementById('targetBottomSheet').classList.add('active'); }
-    function closeBottomSheet(e, id) { if (!e || e.target.classList.contains('bottom-sheet-overlay')) document.getElementById(id).classList.remove('active'); }
-    function setTarget(val) { targetCount = val; updateCounterDisplay(); closeBottomSheet(null, 'targetBottomSheet'); }
-    updateCounterDisplay();
+
+    // Init Ring
+    updateRing();
   </script>
 </body>
 </html>

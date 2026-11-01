@@ -11,13 +11,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -318,15 +316,15 @@ fun App(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = when (currentRoute) {
-                                "counter" -> "المسبحة الإلكترونية"
+                                "counter" -> "مسبحتي - العداد الإلكتروني"
                                 "library" -> "حصن المسلم والأذكار"
                                 "reader" -> "قراءة الذكر"
                                 "stats" -> "إحصائيات التسبيح"
                                 "settings" -> "إعدادات التطبيق"
-                                else -> "تسبيح"
+                                else -> "مسبحتي والأذكار"
                             },
                             fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
+                            fontSize = 19.sp
                         )
                     }
                 },
@@ -505,7 +503,6 @@ fun App(
                     onAdd = { newItem ->
                         customDhikrs.add(newItem)
                         showAddCustomSheet = false
-                        // Save JSON array to prefs
                         val jsonArr = JSONArray()
                         customDhikrs.forEach { d ->
                             val obj = JSONObject()

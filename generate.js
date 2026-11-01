@@ -38,7 +38,8 @@ const relatedBlock = relatedCode
   ? `\n\nThis app belongs to the SAME project as another app that is already built (the "${related}" app). ` +
     `Read its code carefully first:\n\`\`\`html\n${relatedCode}\n\`\`\`\n` +
     `Keep the new app consistent with it (same visual style, colors, language, and data/field names) ` +
-    `and make the two apps work together as parts of one program.\n`
+    `and make the two apps work together as parts of one program. The new app's purpose, screens and features ` +
+    `come ONLY from its own request below; do not copy the other app's features.\n`
   : "";
 
 // One design bar for every language, shared with the app and scripts/native_langs.py.
@@ -212,7 +213,7 @@ function classifyGemini(e) {
   return "retry"; // 503, timeout, unknown model, bad output: move to the next model now
 }
 
-async function tryGeminiKeys(keys, models, rounds, userPrompt) {
+async function tryGeminiKeys(keys, models, rounds, userPrompt, raw = false) {
   const deadKeys = new Set();
   const deadPairs = new Set();
   const deadModels = new Set();
@@ -226,7 +227,8 @@ async function tryGeminiKeys(keys, models, rounds, userPrompt) {
         const pair = `${n}|${model}`;
         if (deadKeys.has(key) || deadPairs.has(pair) || (cooldown.get(pair) || 0) > Date.now()) continue;
         try {
-          return { code: extract(await callGemini(key, model, userPrompt)), model };
+          const text = await callGemini(key, model, userPrompt);
+          return { code: raw ? text : extract(text), model };
         } catch (e) {
           lastErr = String((e && e.message) || e).replace(/\s+/g, " ").slice(0, 200);
           const kind = classifyGemini(e);
@@ -286,6 +288,47 @@ async function repair(code, problems, order) {
   return code;
 }
 
+// Checks that the app does everything the owner asked; when something is missing, one more round adds it.
+async function completeRequirements(code, order) {
+  if (geminiKeys.length === 0) return code;
+  const what = existing ? "the CHANGE the owner asked for" : "the owner's request";
+  const check = await tryGeminiKeys(
+    geminiKeys,
+    geminiModels,
+    2,
+    `You review an app against ${what}. List every concrete requirement in it (features, screens, fields, ` +
+      `buttons, texts, names, numbers, rules) that the code does NOT implement, or implements differently ` +
+      `from what was asked. Ignore style details the owner did not mention. Reply with JSON only: ` +
+      `{"missing": ["..."]} (an empty list when everything is done).\n\nOWNER'S REQUEST:\n${request}\n\nCODE:\n` +
+      "```html\n" + code + "\n```",
+    true
+  );
+  let missing = [];
+  try {
+    missing = JSON.parse((check.code || "").replace(/^[^{]*/, "").replace(/[^}]*$/, "")).missing || [];
+  } catch {
+    return code;
+  }
+  missing = missing.filter((m) => typeof m === "string" && m.trim()).slice(0, 15);
+  if (!missing.length) {
+    console.log("مراجعة الطلب: كل المطلوب منفّذ");
+    return code;
+  }
+  console.log("مراجعة الطلب: ناقص\n- " + missing.join("\n- "));
+  const fixPrompt =
+    `${prompt}\n\nYour previous version is below, but it does not do all of what the owner asked. Missing or ` +
+    `different:\n- ${missing.join("\n- ")}\n\nReturn the FULL file again with ALL of these implemented exactly ` +
+    `as asked, keeping everything else.\n\nPREVIOUS VERSION:\n` + "```html\n" + code + "\n```";
+  for (const label of order) {
+    const res = await runProvider(label, fixPrompt);
+    if (res.code) {
+      console.log("اتضاف الناقص");
+      return res.code;
+    }
+  }
+  return code;
+}
+
 (async () => {
   const order = process.env.AI_PROVIDER === "gemini" ? ["Gemini", "Claude"] : ["Claude", "Gemini"];
 
@@ -293,6 +336,7 @@ async function repair(code, problems, order) {
   for (const label of order) {
     const res = await runProvider(label);
     if (res.code) {
+      res.code = await completeRequirements(res.code, order);
       const problems = checkHtml(res.code);
       if (problems.length) res.code = await repair(res.code, problems, order);
       fs.mkdirSync(dir, { recursive: true });

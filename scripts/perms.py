@@ -55,7 +55,12 @@ def from_code(app):
 
 
 def from_request(text):
-    return [k for k, rx in REQUEST_WORDS.items() if re.search(rx, text or "", re.I)]
+    text = text or ""
+    # The requirements the owner approved in APK Fact end with "ANDROID_PERMISSIONS: CAMERA, LOCATION".
+    m = re.search(r"^ANDROID_PERMISSIONS:(.*)$", text, re.M)
+    if m:
+        return [k for k in re.findall(r"[A-Z_]+", m.group(1)) if k in ANDROID]
+    return [k for k, rx in REQUEST_WORDS.items() if re.search(rx, text, re.I)]
 
 
 def needs(app):

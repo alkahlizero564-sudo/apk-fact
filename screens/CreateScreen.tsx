@@ -1,5 +1,5 @@
 // New app wizard: start -> language -> details -> review, then a live progress timeline.
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,6 +20,8 @@ import { AppAvatar, LANG_ICONS, LangBadge } from "../components/appVisuals";
 import { TEMPLATES, Template } from "../services/templates";
 import { LANGS, LANG_ORDER, Lang } from "../services/langs";
 import DesignStudio from "../components/DesignStudio";
+import UnderstandStudio, { UnderstandHandle } from "../components/UnderstandStudio";
+import { Spec, specText } from "../services/understand";
 import { saveApprovedDesign, clearDraft, DesignTarget } from "../services/design";
 import { appExists, cleanName, cleanLabel, generateApp, listApps, setDisplayName, uploadCode, AppInfo } from "../services/appActions";
 import { colors, langColors, space, radius, type } from "../theme";
@@ -27,7 +29,7 @@ import type { RootScreenProps } from "../navigation";
 
 type Start = "blank" | "template" | "paste" | "pair";
 
-const STEPS = ["البداية", "اللغة", "التفاصيل", "التصميم", "المراجعة"];
+const STEPS = ["البداية", "اللغة", "التفاصيل", "الفهم", "التصميم", "المراجعة"];
 
 const LANG_PITCH: Record<Lang, string> = {
   html: "الأسرع في البناء. ممتاز للمتاجر والمنيو والصفحات التعريفية.",
@@ -64,6 +66,9 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
   const [label, setLabel] = useState(preset?.title ?? "");
   const [design, setDesign] = useState<string | null>(null);
   const [designBusy, setDesignBusy] = useState(false);
+  const [spec, setSpec] = useState<Spec | null>(null); // the requirements the owner approved
+  const [understandBusy, setUnderstandBusy] = useState(false);
+  const understandRef = useRef<UnderstandHandle>(null);
   const [text, setText] = useState(preset?.description ?? "");
   const [code, setCode] = useState("");
   const [related, setRelated] = useState("");
@@ -116,20 +121,34 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
       : step === 2
       ? !!clean && !nameTaken && (start === "paste" ? code.trim().length > 20 : text.trim().length > 10)
       : step === 3
+      ? !understandBusy
+      : step === 4
       ? !!design && !designBusy
       : true;
 
-  // Pasted code already has its look, so it skips the design step.
-  const nextStep = () => {
-    if (step === 2 && start !== "paste") setDesign(null); // the studio reports the design for the current details
-    setStep(step === 2 && start === "paste" ? 4 : step + 1);
+  // Pasted code already has its look and features, so it skips the understanding and design steps.
+  const nextStep = async () => {
+    if (step === 2 && start === "paste") return setStep(5);
+    if (step === 2) {
+      setSpec(null); // the understanding is for the current details
+      setDesign(null); // the studio reports the design for the current details
+    }
+    if (step === 3) {
+      const approved = await understandRef.current?.approve();
+      if (!approved) return;
+      setSpec(approved);
+      setDesign(null);
+    }
+    setStep(step + 1);
   };
-  const prevStep = () => setStep(step === 4 && start === "paste" ? 2 : step - 1);
+  const prevStep = () => setStep(step === 5 && start === "paste" ? 2 : step - 1);
+  // The owner's words plus the requirements they approved: the design, the code and the request check follow it.
+  const fullText = spec ? `${text.trim()}\n${specText(spec)}` : text.trim();
   const designTarget: DesignTarget = {
     key: clean,
     label: cleanLabel(label) || clean,
     title: cleanLabel(label) || clean,
-    description: text.trim(),
+    description: fullText,
     lang,
   };
 
@@ -147,7 +166,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
       } else {
         genReset();
         if (design) await saveApprovedDesign(clean, design);
-        await generateApp({ name: clean, lang, text: text.trim(), kind: "create", related: related || undefined }, genReport);
+        await generateApp({ name: clean, lang, text: fullText, kind: "create", related: related || undefined }, genReport);
       }
       if (cleanLabel(label)) await setDisplayName(clean, label);
       if (design) clearDraft(designTarget);
@@ -163,11 +182,29 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
   if (phase === "form") {
     footer = (
       <View style={[styles.footer, footerPad]}>
-        {step > 0 ? <Button title="رجوع" variant="secondary" onPress={prevStep} disabled={designBusy} style={{ flex: 1 }} /> : null}
-        {step < 4 ? (
+        {step > 0 ? (
+          <Button title="رجوع" variant="secondary" onPress={prevStep} disabled={designBusy || understandBusy} style={{ flex: 1 }} />
+        ) : null}
+        {step < 5 ? (
           <Button
-            title={step === 2 && start !== "paste" ? "صمّم الواجهات" : step === 3 ? "اعتمد التصميم" : "التالي"}
-            icon={step === 3 ? "checkmark-done" : step === 2 && start !== "paste" ? "color-palette-outline" : "arrow-back"}
+            title={
+              step === 2 && start !== "paste"
+                ? "افهم فكرتي"
+                : step === 3
+                ? "تمام، ده اللي أبغاه"
+                : step === 4
+                ? "اعتمد التصميم"
+                : "التالي"
+            }
+            icon={
+              step === 2 && start !== "paste"
+                ? "bulb-outline"
+                : step === 3
+                ? "checkmark"
+                : step === 4
+                ? "checkmark-done"
+                : "arrow-back"
+            }
             onPress={nextStep}
             disabled={!canNext}
             style={{ flex: 2 }}
@@ -423,6 +460,19 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
           </>
         ) : step === 3 ? (
           <>
+            <Text style={styles.q}>فهمتك صح؟</Text>
+            <Text style={styles.subhint}>
+              ده اللي فهمته من فكرتك. احذف أي حاجة غلط بـ ✕، جاوب الأسئلة، واكتب أي إضافة أو تصحيح. لما تكون القائمة هي
+              بالضبط اللي في راسك اضغط «تمام، ده اللي أبغاه»، والتصميم والكود بيتبنوا عليها بند بند.
+            </Text>
+            <UnderstandStudio
+              ref={understandRef}
+              target={{ title: cleanLabel(label) || clean, description: text.trim(), lang }}
+              onBusy={setUnderstandBusy}
+            />
+          </>
+        ) : step === 4 ? (
+          <>
             <Text style={styles.q}>التصميم أولاً</Text>
             <Text style={styles.subhint}>
               ده شكل كل شاشات التطبيق قبل أي برمجة. اضغط على الأزرار جوّه التصميم، ولو في حاجة ما عجبتك اكتبها تحت والذكاء
@@ -448,7 +498,16 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
               {cleanLabel(label) ? <ListRow icon="text-outline" title="الاسم على الجهاز" value={cleanLabel(label)} /> : null}
               <ListRow icon={LANG_ICONS[lang]} tint={langColors[lang]} title="اللغة" value={LANGS[lang].label} />
               {design && start !== "paste" ? (
-                <ListRow icon="color-palette-outline" tint={colors.okText} title="التصميم" value="معتمد" onPress={() => setStep(3)} />
+                <ListRow icon="color-palette-outline" tint={colors.okText} title="التصميم" value="معتمد" onPress={() => setStep(4)} />
+              ) : null}
+              {spec && start !== "paste" ? (
+                <ListRow
+                  icon="bulb-outline"
+                  tint={colors.okText}
+                  title="المتطلبات"
+                  value={`${spec.screens.length + spec.features.length} بند · معتمدة`}
+                  onPress={() => setStep(3)}
+                />
               ) : null}
               {related ? <ListRow icon="link-outline" title="مرتبط بـ" value={related} /> : null}
               <ListRow

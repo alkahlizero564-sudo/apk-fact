@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>محلل الشموع بالصورة</title>
+<style>
+:root{--bg:#0e131c;--card:#171e2b;--line:#263044;--tx:#e8edf5;--mu:#8b97ad;--up:#22c08a;--dn:#ef5b5b;--pr:#3b82f6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,sans-serif;padding:14px 14px 40px}
+h1{font-size:20px;margin:4px 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+summary{font-weight:700;cursor:pointer}
+.row{display:flex;gap:8px;margin-bottom:8px}
+.row>*{flex:1;min-width:0}
+label{display:block;font-size:12px;color:var(--mu);margin:8px 0 4px}
+input{width:100%;padding:11px;border-radius:10px;border:1px solid var(--line);background:#0e131c;color:var(--tx);font-size:15px}
+button{width:100%;padding:13px;border:0;border-radius:12px;background:var(--pr);color:#fff;font-size:16px;font-weight:700;margin-top:8px}
+button.sec{background:#222b3d;border:1px dashed #3a4661}
+button:disabled{opacity:.5}
+img#prev{width:100%;max-height:260px;object-fit:contain;border-radius:10px;margin-top:10px;display:none;background:#000}
+.sig{font-size:30px;font-weight:800;text-align:center;padding:10px;border-radius:12px}
+.buy{background:#10372d;color:var(--up)}.sell{background:#3c1b1f;color:var(--dn)}.wait{background:#2a3142;color:var(--mu)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.cell{background:#0e131c;border:1px solid var(--line);border-radius:10px;padding:10px}
+.cell small{display:block;color:var(--mu);font-size:12px}
+.cell b{direction:ltr;display:block;text-align:right;font-size:16px;margin-top:2px}
+canvas#cv{width:100%;height:auto;border-radius:10px;display:block}
+h3{font-size:14px;margin:14px 0 4px}
+ul{margin:6px 0 0;padding-inline-start:18px;color:var(--mu);font-size:13px;line-height:1.8}
+.tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;margin-inline-start:6px}
+.bullish{background:#10372d;color:var(--up)}.bearish{background:#3c1b1f;color:var(--dn)}.neutral{background:#2a3142;color:var(--mu)}
+.warn{color:#f5b942}
+.note{font-size:12px;color:var(--mu);line-height:1.7}
+</style>
+</head>
+<body>
+<h1>📷 محلل الشموع بالصورة</h1>
+
+<details class="card" id="settings">
+  <summary>⚙️ الإعدادات (مفاتيح Gemini)</summary>
+  <label>المفتاح 1</label><input id="k1" type="password" dir="ltr" placeholder="AIza...">
+  <label>المفتاح 2 (احتياطي)</label><input id="k2" type="password" dir="ltr" placeholder="AIza...">
+  <label>المفتاح 3 (احتياطي)</label><input id="k3" type="password" dir="ltr" placeholder="AIza...">
+  <label>النموذج الأساسي</label><input id="mdl" dir="ltr" value="gemini-2.5-flash">
+  <button id="saveKeys">حفظ الإعدادات</button>
+  <p class="note">المفاتيح تُحفظ على جهازك فقط، وتُرسل لـ Google مع الصورة عند التحليل. لو المفتاح خلص ينتقل تلقائياً للتالي.</p>
+</details>
+
+<div class="card">
+  <input id="file" type="file" accept="image/*" hidden>
+  <button id="pick" class="sec">🖼️ اختيار صورة الشارت من المعرض</button>
+  <img id="prev" alt="">
+  <div class="row">
+    <div><label>رصيد الحساب (اختياري)</label><input id="bal" type="number" inputmode="decimal" placeholder="1000"></div>
+    <div><label>المخاطرة % للصفقة</label><input id="risk" type="number" inputmode="decimal" value="1"></div>
+  </div>
+  <label>ملاحظات (اختياري): الزوج، الفريم، رأيك في الاتجاه الأكبر</label>
+  <input id="note" placeholder="مثال: ذهب، فريم 15 دقيقة">
+  <button id="go" disabled>تحليل الصورة</button>
+  <p id="status" class="note"></p>
+</div>
+
+<div id="out"></div>
+<p class="note">تحليل آلي لأغراض تعليمية، وليس نصيحة مالية. قراءة الأرقام من الصور قد تكون غير دقيقة. تأكد من الخطوط على الشارت، والتداول فيه مخاطرة خسارة رأس المال.</p>
+
+<script>
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ls={
+  get:k=>{try{return localStorage.getItem(k)||""}catch(e){return ""}},
+  set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}
+};
+const num=v=>{v=typeof v==="string"?parseFloat(v):v;return Number.isFinite(v)?v:null};
+const fmt=v=>v==null?"—":(Math.abs(v)>=100?v.toFixed(2):Math.abs(v)>=1?v.toFixed(4):v.toFixed(6));
+
+/* ---------- settings ---------- */
+["k1","k2","k3"].forEach(k=>$(k).value=ls.get(k));
+if(ls.get("mdl"))$("mdl").value=ls.get("mdl");
+if(!ls.get("k1")&&!ls.get("k2")&&!ls.get("k3"))$("settings").open=true;
+$("saveKeys").onclick=()=>{
+  ["k1","k2","k3"].forEach(k=>ls.set(k,$(k).value.trim()));
+  ls.set("mdl",$("mdl").value.trim()||"gemini-2.5-flash");
+  $("saveKeys").textContent="✓ تم الحفظ";
+  setTimeout(()=>$("saveKeys").textContent="حفظ الإعدادات",1500);
+};
+
+/* ---------- image ---------- */
+let imgData=null;
+$("pick").onclick=()=>$("file").click();
+$("file").onchange=e=>{
+  const f=e.target.files[0];
+  if(!f)return;
+  const url=URL.createObjectURL(f);
+  const im=new Image();
+  im.onload=()=>{
+    const s=Math.min(1,1600/Math.max(im.width,im.height));
+    const cv=document.createElement("canvas");
+    cv.width=Math.round(im.width*s);cv.height=Math.round(im.height*s);
+    cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);
+    imgData={cv,b64:cv.toDataURL("image/jpeg",0.88).split(",")[1]};
+    $("prev").src=url;$("prev").style.display="block";
+    $("go").disabled=false;$("out").innerHTML="";$("status").textContent="";
+  };
+  im.onerror=()=>{$("status").textContent="❌ تعذر قراءة الصورة، جرّب صورة تانية."};
+  im.src=url;
+};
+
+/* ---------- AI prompt ---------- */
+const SYSTEM=`You are an expert technical analyst of candlestick charts. The user sends a screenshot of a price chart (any market: crypto, forex, gold, stocks, indices). Analyze ONLY what is visible. Reply with JSON only, matching the schema below. Write every human-readable text field in Arabic.
+
+HOW TO READ THE IMAGE
+1. Find the price axis (usually on the right) and the time axis. Read the price labels exactly. Note the symbol, timeframe, visible indicators, and anything the user already drew (trendlines, boxes, long/short position tools with entry, stop and target).
+2. If the chart already shows a trade plan (a position tool or labeled entry/stop/target lines), extract those exact prices and set plan_found to true. Otherwise build your own plan.
+3. Never invent prices. If the price axis is not readable enough, set price fields to null, say so in warnings, and describe levels relatively in the reasoning.
+4. Candle colors: green/white = bullish, red/black = bearish, unless the chart shows otherwise.
+
+CANDLESTICK KNOWLEDGE (identify every pattern that appears, mainly on the latest candles and at key levels; give its position, e.g. "الشمعة الأخيرة" or "الثانية قبل الأخيرة")
+One candle: Doji (standard, long-legged, dragonfly, gravestone), Hammer, Inverted Hammer, Hanging Man, Shooting Star, Marubozu (bullish/bearish), Spinning Top, Belt Hold.
+Two candles: Bullish/Bearish Engulfing, Piercing Line, Dark Cloud Cover, Bullish/Bearish Harami and Harami Cross, Tweezer Top/Bottom, Bullish/Bearish Kicker, On-Neck and In-Neck.
+Three candles: Morning Star, Evening Star, Morning/Evening Doji Star, Three White Soldiers, Three Black Crows, Three Inside Up/Down, Three Outside Up/Down, Abandoned Baby, Tri-Star, Rising/Falling Three Methods, Three Line Strike.
+Context rules: a reversal pattern matters only after a clear trend and near support/resistance; continuation patterns need an existing trend. Weigh each pattern by context, candle size relative to recent candles, and volume.
+
+CHART PATTERNS AND STRUCTURE
+Trend and market structure (HH/HL/LH/LL), break of structure and change of character, support/resistance and role reversal, trendlines and channels, double/triple top and bottom, head and shoulders (and inverse), triangles (ascending, descending, symmetrical), wedges (rising/falling), flags and pennants, rectangles and ranges, cup and handle, breakouts, false breakouts and liquidity sweeps, order blocks, fair value gaps, Fibonacci retracement/extension zones, price gaps.
+INDICATORS when visible: moving averages (cross, slope, price relation), RSI/Stochastic (overbought/oversold, divergence), MACD (cross, histogram, divergence), Bollinger Bands (squeeze, band walk), VWAP, Ichimoku, volume (confirmation or divergence), ATR.
+
+DECISION RULES
+- signal is "buy", "sell" or "wait". Choose "wait" when evidence is mixed, price is in the middle of a range, or reward-to-risk is poor. Never force a trade.
+- For buy/sell give entry (a realistic price near the current price, or a clear pullback/breakout level), stop_loss beyond the invalidating structure (below the swing low for buys, above the swing high for sells) with a small buffer, take_profit_1 and take_profit_2 at the next real levels (support/resistance, Fibonacci, previous swing). take_profit_1 needs at least 1.5 reward-to-risk, otherwise prefer "wait".
+- Stop loss must be on the losing side of entry and targets on the winning side.
+- confidence is 0-100 and reflects how many independent factors agree. Be conservative.
+- Add warnings for anything uncertain (blurry image, missing axis, counter-trend trade, noisy low timeframe, news risk).
+- If the image is not a price chart, set is_chart to false and explain in warnings.
+
+JSON SCHEMA (all keys required, use null when unknown)
+{
+ "is_chart": true,
+ "plan_found": false,
+ "symbol": "string or null",
+ "timeframe": "string or null",
+ "trend": {"direction": "up|down|sideways", "strength": "weak|medium|strong", "structure": "short Arabic description"},
+ "signal": "buy|sell|wait",
+ "confidence": 0,
+ "entry": null,
+ "entry_note": "Arabic: when/how to enter (market, pullback, breakout)",
+ "stop_loss": null,
+ "take_profit_1": null,
+ "take_profit_2": null,
+ "candle_patterns": [{"name_ar": "", "name_en": "", "bias": "bullish|bearish|neutral", "position": "", "reliability": "low|medium|high"}],
+ "chart_patterns": [{"name_ar": "", "name_en": "", "bias": "bullish|bearish|neutral", "position": "", "reliability": "low|medium|high"}],
+ "levels": {"support": [], "resistance": []},
+ "indicators": ["Arabic notes about each visible indicator"],
+ "reasoning": ["Arabic bullet points explaining the decision"],
+ "warnings": ["Arabic warnings"],
+ "axis_calibration": {"points": [{"y": 0.0, "price": 0.0}, {"y": 0.0, "price": 0.0}]}
+}
+axis_calibration: two clearly readable price labels on the axis, y is the vertical position of the label as a fraction of the image height measured from the top (0 = top edge, 1 = bottom edge), at least 20% of the height apart. Use null if the axis is not readable.`;
+
+/* ---------- Gemini call with key/model rotation ---------- */
+const FALLBACK_MODELS=["gemini-2.5-flash-lite","gemini-2.5-pro"];
+
+async function callOnce(c,b64,note){
+  const ctrl=new AbortController();
+  const t=setTimeout(()=>ctrl.abort(),90000);
+  try{
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${c.m}:generateContent`,{
+      method:"POST",
+      headers:{"content-type":"application/json","x-goog-api-key":c.k},
+      signal:ctrl.signal,
+      body:JSON.stringify({
+        systemInstruction:{parts:[{text:SYSTEM}]},
+        contents:[{role:"user",parts:[
+          {inline_data:{mime_type:"image/jpeg",data:b64}},
+          {text:"Analyze this chart image."+(note?" User notes: "+note:"")}
+        ]}],
+        generationConfig:{responseMimeType:"application/json",temperature:0.2}
+      })
+    });
+    const txt=await r.text();
+    if(!r.ok){const e=new Error(txt.slice(0,400));e.status=r.status;throw e}
+    const d=JSON.parse(txt);
+    const parts=(d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[];
+    const out=parts.map(p=>p.text||"").join("").trim().replace(/^```(?:json)?\s*|\s*```$/g,"");
+    return JSON.parse(out);
+  }catch(e){
+    if(e.name==="AbortError"){const x=new Error("انتهت المهلة");x.status=0;throw x}
+    throw e;
+  }finally{clearTimeout(t)}
+}
+
+function classify(e){
+  const m=String(e.message||"").toLowerCase(),s=e.status;
+  if(s===401||s===403||(s===400&&m.includes("api key")))return "bad_key";
+  if(s===404)return "bad_model";
+  if(s===429||m.includes("resource_exhausted")||m.includes("quota")){
+    return (m.includes("perday")||m.includes("per day")||m.includes("daily"))?"dead":"cooldown";
+  }
+  if(s===400)return "dead";
+  return "transient";
+}
+
+async function askGemini(b64,note,onStatus){
+  const keys=["k1","k2","k3"].map(ls.get).filter(Boolean);
+  if(!keys.length)throw new Error("أضف مفتاح Gemini واحد على الأقل من الإعدادات.");
+  const primary=ls.get("mdl")||"gemini-2.5-flash";
+  const models=[primary,...FALLBACK_MODELS.filter(m=>m!==primary)];
+  const cands=[];
+  models.forEach(m=>keys.forEach((k,i)=>cands.push({m,k,i})));
+  const dead=cands.map(()=>false),until=cands.map(()=>0);
+  const deadline=Date.now()+240000;
+  let last="";
+  while(Date.now()<deadline){
+    for(let j=0;j<cands.length;j++){
+      if(dead[j]||until[j]>Date.now())continue;
+      if(Date.now()>=deadline)break;
+      const c=cands[j];
+      onStatus(`جاري التحليل (المفتاح ${c.i+1}، ${c.m})...`);
+      try{
+        return await callOnce(c,b64,note);
+      }catch(e){
+        last=String(e.message||e).replace(/\s+/g," ").slice(0,160);
+        const kind=classify(e);
+        if(kind==="bad_key")cands.forEach((x,q)=>{if(x.i===c.i)dead[q]=true});
+        else if(kind==="bad_model")cands.forEach((x,q)=>{if(x.m===c.m)dead[q]=true});
+        else if(kind==="dead")dead[j]=true;
+        else if(kind==="cooldown")until[j]=Date.now()+60000;
+        else until[j]=Date.now()+20000;
+      }
+    }
+    if(dead.every(Boolean))throw new Error("كل المفاتيح أو النماذج غير صالحة أو انتهت حصتها. آخر خطأ: "+last);
+    const pend=until.filter((u,j)=>!dead[j]);
+    const wait=Math.max(3000,Math.min(Math.min(...pend)-Date.now(),30000));
+    onStatus(`الخدمة مشغولة، إعادة المحاولة بعد ${Math.round(wait/1000)} ثانية...`);
+    await sleep(wait);
+  }
+  throw new Error("انتهت مهلة المحاولات. آخر خطأ: "+last);
+}
+
+/* ---------- render ---------- */
+const BIAS={bullish:"صاعد",bearish:"هابط",neutral:"محايد"};
+function plist(arr){
+  if(!Array.isArray(arr)||!arr.length)return "<li>لا يوجد</li>";
+  return arr.map(p=>`<li><b>${esc(p.name_ar||p.name_en)}</b>${p.name_en&&p.name_ar?" ("+esc(p.name_en)+")":""}
+    <span class="tag ${esc(p.bias)}">${BIAS[p.bias]||esc(p.bias)}</span>
+    ${p.position?"— "+esc(p.position):""}${p.reliability?" — الموثوقية: "+esc(p.reliability):""}</li>`).join("");
+}
+function ul(arr){
+  return Array.isArray(arr)&&arr.length?`<ul>${arr.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:"<ul><li>لا يوجد</li></ul>";
+}
+
+function render(R){
+  if(!R||R.is_chart===false){
+    $("out").innerHTML=`<div class="card note">الصورة ما تبدو شارت أسعار. ${esc((R&&R.warnings&&R.warnings.join(" "))||"")}</div>`;
+    return;
+  }
+  const sig=R.signal==="buy"?"buy":R.signal==="sell"?"sell":"wait";
+  const lab=sig==="buy"?"شراء 🟢":sig==="sell"?"بيع 🔴":"انتظار ⚪";
+  const entry=num(R.entry),stop=num(R.stop_loss),t1=num(R.take_profit_1),t2=num(R.take_profit_2);
+  const warns=[...(Array.isArray(R.warnings)?R.warnings:[])];
+  let ok=false;
+  if(sig!=="wait"&&entry!=null&&stop!=null&&t1!=null){
+    ok=sig==="buy"?(stop<entry&&entry<t1):(stop>entry&&entry>t1);
+    if(!ok)warns.push("المستويات غير متسقة (اتجاه الوقف أو الهدف خطأ). لا تعتمد عليها وراجع الشارت يدوياً.");
+  }
+  let h=`<div class="card"><div class="sig ${sig}">${lab}</div>
+    <p class="note" style="text-align:center">${esc(R.symbol||"")} ${esc(R.timeframe||"")} — الثقة: ${esc(num(R.confidence)==null?"—":Math.round(num(R.confidence))+"%")}${R.plan_found?" — الأرقام مأخوذة من خطة مرسومة في الصورة":""}</p>`;
+  if(sig!=="wait"){
+    h+=`<div class="grid">
+      <div class="cell"><small>الدخول</small><b>${fmt(entry)}</b></div>
+      <div class="cell"><small>وقف الخسارة</small><b style="color:var(--dn)">${fmt(stop)}</b></div>
+      <div class="cell"><small>الهدف 1</small><b style="color:var(--up)">${fmt(t1)}</b></div>
+      <div class="cell"><small>الهدف 2</small><b style="color:var(--up)">${fmt(t2)}</b></div></div>`;
+    if(R.entry_note)h+=`<p class="note">${esc(R.entry_note)}</p>`;
+    if(ok){
+      const risk=Math.abs(entry-stop);
+      h+=`<p class="note">نسبة العائد للمخاطرة: الهدف 1 = ${(Math.abs(t1-entry)/risk).toFixed(2)}R`+(t2!=null?`، الهدف 2 = ${(Math.abs(t2-entry)/risk).toFixed(2)}R`:"")+`</p>`;
+      const bal=+$("bal").value,rk=+$("risk").value||1;
+      if(bal>0){
+        const amt=bal*rk/100,q=amt/risk;
+        h+=`<p class="note">لمخاطرة ${rk}% من الرصيد (${amt.toFixed(2)}): حجم الصفقة ≈ ${q.toPrecision(4)} وحدة</p>`;
+      }
+    }
+  }else{
+    h+=`<p class="note">لا توجد صفقة واضحة الآن. الأفضل الانتظار لإشارة أقوى.${R.entry_note?" "+esc(R.entry_note):""}</p>`;
+  }
+  h+=`</div><div class="card"><canvas id="cv"></canvas><p id="ovnote" class="note"></p></div>`;
+  const tr=R.trend||{};
+  const lv=R.levels||{};
+  h+=`<div class="card">
+    <h3>الاتجاه</h3><p class="note">${esc(tr.direction||"")} — ${esc(tr.strength||"")} — ${esc(tr.structure||"")}</p>
+    <h3>أنماط الشموع</h3><ul>${plist(R.candle_patterns)}</ul>
+    <h3>أنماط الشارت</h3><ul>${plist(R.chart_patterns)}</ul>
+    <h3>الدعم</h3><p class="note" dir="ltr">${esc((lv.support||[]).join(" ,  ")||"—")}</p>
+    <h3>المقاومة</h3><p class="note" dir="ltr">${esc((lv.resistance||[]).join(" ,  ")||"—")}</p>
+    <h3>المؤشرات</h3>${ul(R.indicators)}
+    <h3>سبب القرار</h3>${ul(R.reasoning)}
+    ${warns.length?`<h3 class="warn">تنبيهات</h3><ul class="warn">${warns.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
+  </div>`;
+  $("out").innerHTML=h;
+  const drawn=drawOverlay(R,sig==="wait"?[]:[["دخول",entry,"#e8edf5"],["وقف",stop,"#ef5b5b"],["هدف 1",t1,"#22c08a"],["هدف 2",t2,"#22c08a"]]);
+  $("ovnote").textContent=sig==="wait"?"":(drawn?"الخطوط مرسومة تقريبياً حسب قراءة محور السعر. تأكد من مطابقتها للأرقام.":"تعذّر رسم المستويات على الصورة (محور السعر غير واضح). اعتمد على الأرقام بعد مراجعتها.");
+}
+
+function drawOverlay(R,levels){
+  const cv=$("cv"),src=imgData.cv;
+  cv.width=src.width;cv.height=src.height;
+  const g=cv.getContext("2d");
+  g.drawImage(src,0,0);
+  const pts=R.axis_calibration&&R.axis_calibration.points;
+  if(!levels.length||!pts||pts.length<2)return false;
+  const y1=num(pts[0].y),p1=num(pts[0].price),y2=num(pts[1].y),p2=num(pts[1].price);
+  if([y1,p1,y2,p2].some(v=>v==null)||Math.abs(y2-y1)<0.05||p1===p2)return false;
+  const yOf=p=>(y1+(p-p1)*(y2-y1)/(p2-p1))*cv.height;
+  const lw=Math.max(2,cv.width/400),fs=Math.max(14,Math.round(cv.width/45));
+  g.font=`bold ${fs}px sans-serif`;
+  let any=false;
+  levels.forEach(([name,price,col])=>{
+    if(price==null)return;
+    const y=yOf(price);
+    if(y<0||y>cv.height)return;
+    any=true;
+    g.strokeStyle=col;g.fillStyle=col;g.lineWidth=lw;
+    g.setLineDash([lw*4,lw*3]);
+    g.beginPath();g.moveTo(0,y);g.lineTo(cv.width,y);g.stroke();
+    g.setLineDash([]);
+    const label=name+" "+fmt(price);
+    const w=g.measureText(label).width+10;
+    g.fillStyle="rgba(0,0,0,.7)";
+    g.fillRect(4,y-fs-4,w,fs+6);
+    g.fillStyle=col;
+    g.fillText(label,9,y-6);
+  });
+  return any;
+}
+
+/* ---------- run ---------- */
+$("go").onclick=async()=>{
+  if(!imgData)return;
+  const b=$("go");
+  b.disabled=true;b.textContent="جاري التحليل...";$("out").innerHTML="";
+  try{
+    const R=await askGemini(imgData.b64,$("note").value.trim(),s=>{$("status").textContent="⏳ "+s});
+    $("status").textContent="";
+    render(R);
+  }catch(e){
+    $("status").textContent="";
+    $("out").innerHTML=`<div class="card note">❌ ${esc(e.message)}</div>`;
+  }
+  b.disabled=false;b.textContent="تحليل الصورة";
+};
+</script>
+</body>
+</html>

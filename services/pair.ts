@@ -4,6 +4,7 @@ import * as SecureStore from "expo-secure-store";
 import { githubApi, latestRunId, listWorkflowRuns, getFailureLog, triggerWorkflow, getFileText } from "./github";
 import { REPO } from "./config";
 import { runSql } from "./supabase";
+import { listProjects, secretName, tokenFor } from "./projects";
 import { setRepoSecret, setRepoVariable } from "./repoSecrets";
 import type { Lang } from "./langs";
 import type { Report } from "./appActions";
@@ -18,6 +19,8 @@ export type PairOptions = {
   description: string;
   customerName?: string;
   adminName?: string;
+  /** A client's / created project (services/projects.ts); empty = the default project from Settings. */
+  supabaseRef?: string;
 };
 
 export function pairApps(base: string) {
@@ -28,7 +31,8 @@ export type PairReadiness = { supabase: boolean; firebase: boolean; firebaseProj
 
 export async function pairReadiness(): Promise<PairReadiness> {
   const get = (k: string) => SecureStore.getItemAsync(k);
-  const supabase = !!(await get("SUPABASE_ACCESS_TOKEN")) && !!(await get("SUPABASE_PROJECT_REF"));
+  const supabase =
+    (!!(await get("SUPABASE_ACCESS_TOKEN")) && !!(await get("SUPABASE_PROJECT_REF"))) || (await listProjects()).length > 0;
   let firebaseProject: string | undefined;
   try {
     firebaseProject = JSON.parse((await get("FIREBASE_SERVICE_ACCOUNT")) ?? "").project_id;
@@ -50,14 +54,19 @@ export function parseServiceAccount(raw: string): string {
   return sa.project_id;
 }
 
-async function syncSecrets(push: boolean) {
+async function syncSecrets(push: boolean, supabaseRef?: string) {
   const get = async (k: string) => ((await SecureStore.getItemAsync(k)) ?? "").trim();
-  const token = await get("SUPABASE_ACCESS_TOKEN");
-  const ref = await get("SUPABASE_PROJECT_REF");
-  if (!token || !ref) throw new Error("أكمل إعداد Supabase من الإعدادات (المفتاح و Project Ref).");
-  await setRepoSecret("SUPABASE_ACCESS_TOKEN", token);
-  await setRepoVariable("SUPABASE_PROJECT_REF", ref);
-  const publishable = await get("SUPABASE_PUBLISHABLE_KEY");
+  if (supabaseRef) {
+    // A client's / created project: its own token, as the secret generate-pair.yml reads for this ref.
+    await setRepoSecret(secretName(supabaseRef), await tokenFor(supabaseRef));
+  } else {
+    const token = await get("SUPABASE_ACCESS_TOKEN");
+    const ref = await get("SUPABASE_PROJECT_REF");
+    if (!token || !ref) throw new Error("أكمل إعداد Supabase من الإعدادات (المفتاح و Project Ref)، أو اختار مشروع زبون.");
+    await setRepoSecret("SUPABASE_ACCESS_TOKEN", token);
+    await setRepoVariable("SUPABASE_PROJECT_REF", ref);
+  }
+  const publishable = supabaseRef ? "" : await get("SUPABASE_PUBLISHABLE_KEY");
   if (publishable) {
     if (/^sb_secret_/.test(publishable) || /service_role/.test(publishable)) {
       throw new Error("المفتاح ده سرّي (secret). حط المفتاح العام publishable أو anon، مش السري.");
@@ -99,7 +108,7 @@ const STEP_KEYS: Record<string, string> = {
 // Steps: sync -> backend -> auth -> firebase -> customer -> admin -> save
 export async function createPair(o: PairOptions, report: Report) {
   report("sync", "active");
-  await syncSecrets(o.push);
+  await syncSecrets(o.push, o.supabaseRef);
   const prevId = await latestRunId(REPO, "generate-pair.yml");
   await triggerWorkflow(REPO, "generate-pair.yml", {
     base: o.base,
@@ -108,6 +117,7 @@ export async function createPair(o: PairOptions, report: Report) {
     push: o.push ? "true" : "false",
     description: o.description,
     names: [o.customerName, o.adminName].map((n) => (n ?? "").replace(/[|]/g, "").trim()).join("|"),
+    ...(o.supabaseRef ? { supabase_ref: o.supabaseRef } : {}),
   });
   report("sync", "done");
 

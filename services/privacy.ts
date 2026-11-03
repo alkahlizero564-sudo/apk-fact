@@ -92,3 +92,30 @@ export async function makeRepoPrivate() {
   }
   await check(res, "تحويل المستودع لخاص");
 }
+
+/** GitHub's free build minutes per month for a private repo on a free personal account. */
+export const FREE_MINUTES = 2000;
+/** GitHub billing: payment method and the Actions budget (spending limit) that allows minutes beyond the free ones. */
+export const BILLING_URL = "https://github.com/settings/billing";
+
+/**
+ * Build minutes this month (approximate: run start to finish; GitHub rounds each job up to a whole minute).
+ * Only counts while apk-fact is private; public repos build for free.
+ */
+export async function monthMinutes(): Promise<number> {
+  const now = new Date();
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0, 10);
+  let total = 0;
+  for (let page = 1; page <= 10; page++) {
+    const res = await githubApi(`/repos/${REPO}/actions/runs?per_page=100&page=${page}&created=%3E%3D${start}`);
+    if (!res.ok) break;
+    const runs = ((await res.json()).workflow_runs ?? []) as any[];
+    for (const r of runs) {
+      if (r.status !== "completed" || !r.run_started_at) continue;
+      const ms = new Date(r.updated_at).getTime() - new Date(r.run_started_at).getTime();
+      total += Math.max(1, Math.ceil(ms / 60000));
+    }
+    if (runs.length < 100) break;
+  }
+  return total;
+}

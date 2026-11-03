@@ -24,6 +24,10 @@ on:
         description: "Names under the icons: customer name|admin name (can be Arabic)"
         required: false
         default: ""
+      supabase_ref:
+        description: "A client's Supabase project (its token is the secret SUPABASE_TOKEN_<REF>); empty = the default project"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -35,9 +39,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
-      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      # The project picked for this pair in APK Fact (a client's own, or one APK Fact created), else the default.
+      SUPABASE_ACCESS_TOKEN: ${{ inputs.supabase_ref != '' && secrets[format('SUPABASE_TOKEN_{0}', inputs.supabase_ref)] || secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ inputs.supabase_ref != '' && inputs.supabase_ref || vars.SUPABASE_PROJECT_REF }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ inputs.supabase_ref == '' && secrets.SUPABASE_PUBLISHABLE_KEY || '' }}
       SUPABASE_SMTP: ${{ secrets.SUPABASE_SMTP }}
       FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

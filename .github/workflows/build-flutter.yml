@@ -77,6 +77,8 @@ jobs:
           # Android permissions (INTERNET too: release builds don't have it by default).
           python scripts/perms.py manifest "$APP" "$PROJ/android/app/src/main/AndroidManifest.xml"
 
+          # Apps of a connected pair: every piece of the connection in the code before building (scripts/pair_wiring.py).
+          if [ -f "$SRC/pair.json" ]; then python "$GITHUB_WORKSPACE/scripts/pair_wiring.py" fix "$APP" || true; fi
           OK=0
           for i in $(seq 1 "$MAX_ATTEMPTS"); do
             echo "=== Build attempt $i of $MAX_ATTEMPTS ==="

@@ -153,7 +153,7 @@ export function forApp(text: string, role?: "customer" | "admin") {
   return String(text)
     .split("\n")
     .filter((line) => !/^\s*(ANDROID_PERMISSIONS|LOGIN):/.test(line) && !/^\s*الصلاحيات:/.test(line))
-    .filter((line) => !other || !new RegExp(`^\\s*-\\s*«?${other}»?\\s*:`).test(line))
+    .filter((line) => !other || !new RegExp(`^\\s*-\\s*«?\\s*${other}\\s*(:\\s*»|»\\s*:|:)`).test(line))
     .join("\n")
     .trim();
 }

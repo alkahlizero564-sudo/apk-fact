@@ -508,7 +508,13 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
             ltr
             autoCapitalize="none"
             keyboardType="email-address"
-            error={admins && !emailsValid ? "اكتب بريد صحيح (أو أكتر، مفصولين بفاصلة)" : null}
+            error={
+              admins && !emailsValid
+                ? "اكتب بريد صحيح (أو أكتر، مفصولين بفاصلة)"
+                : emails.find((e) => /\.(con|cmo|comm|cpm|vom)$|@(gmial|gamil|gmai|gmal|hotmial|yaho)\./i.test(e))
+                ? `اتأكد من البريد: ${emails.find((e) => /\.(con|cmo|comm|cpm|vom)$|@(gmial|gamil|gmai|gmal|hotmial|yaho)\./i.test(e))} (غالباً قصدك .com)`
+                : null
+            }
             helper="اللي يسجّل دخول بالبريد ده في تطبيق الإدارة يصير مدير."
           />
         ) : mode === "none" || loginApps ? (

@@ -7,6 +7,7 @@ import { DESIGN_BRIEF } from "./designBrief";
 import { pushFile } from "./github";
 import { REPO } from "./config";
 import { Lang } from "./langs";
+import { forApp } from "./understand";
 
 export type DesignTarget = {
   key: string; // app folder name
@@ -87,7 +88,11 @@ export async function clearDraft(t: DesignTarget) {
 /** First design of an app. `brandFrom` is another approved design to share colors, fonts and style with. */
 export async function designApp(t: DesignTarget, onStatus: (s: string) => void, brandFrom?: string) {
   let prompt =
-    `App name: ${t.title}\n${platformLine(t)}\n${roleLine(t)}\n\nWhat the app is and does:\n${t.description}\n`;
+    `App name: ${t.title}\n${platformLine(t)}\n${roleLine(t)}\n\nWhat the app is and does:\n${forApp(t.description, t.role)}\n` +
+    (t.role
+      ? `\nDesign ONLY the ${t.role === "admin" ? "ADMIN" : "CUSTOMER"} app: its own items and the shared ones («الاثنين»). ` +
+        `The other app of the pair is designed separately; do not put its screens here.\n`
+      : "");
   if (brandFrom) {
     prompt +=
       "\nThis app belongs to the same business as the design below. Use the SAME brand: palette, fonts, " +

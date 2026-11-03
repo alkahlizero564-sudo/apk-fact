@@ -152,6 +152,10 @@ def main():
         Path(os.environ.get("REQUEST_FILE") or cfg["request_file"]).read_text(encoding="utf-8"))
     if not name or not (task or preview_only):
         raise SystemExit("Bad request file")
+    # The lines meant only for the build (permissions, sign-in mode) stay out of what the AI reads, so they never
+    # end up on a screen; the raw task is kept for the history and the permissions (scripts/perms.py).
+    raw_task = task
+    task = re.sub(r"(?m)^\s*(ANDROID_PERMISSIONS|LOGIN):.*$", "", task).strip()
 
     keys = gemini_keys(os.environ)
     if not keys:
@@ -233,13 +237,13 @@ App name: {name}
 
     code_path.parent.mkdir(parents=True, exist_ok=True)
     code_path.write_text(code + "\n", encoding="utf-8")
-    record_history(base, name, lang, "edit" if existing else "create", task)
+    record_history(base, name, lang, "edit" if existing else "create", raw_task)
     (base / "preview.html").write_text(preview + "\n", encoding="utf-8")
     deps = clean_deps(lang, deps) or (read_deps(lang, base) if existing else [])
     write_deps(lang, base, deps)
     try:  # Android permissions the description asks for (apps/<name>/perms.txt)
         import perms
-        perms.save(name, task)
+        perms.save(name, raw_task)
     except Exception as e:
         print(f"Warning: permissions not saved ({e})")
 

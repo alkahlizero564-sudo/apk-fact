@@ -215,6 +215,11 @@ def _request(method, path, token, body=None):
         raise RuntimeError(f"Supabase {method} {path} -> {e.code}: {e.read().decode()[:600]}")
 
 
+def set_function_secrets(ref, token, values):
+    """Edge Function secrets through the Management API (the CLI now asks for a confirmation it cannot get in CI)."""
+    return _request("POST", f"/projects/{ref}/secrets", token, [{"name": k, "value": v} for k, v in values.items()])
+
+
 def run_sql(ref, token, sql):
     return _request("POST", f"/projects/{ref}/database/query", token, {"query": sql})
 

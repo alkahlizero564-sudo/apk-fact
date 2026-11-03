@@ -312,6 +312,19 @@ def flutter_options(google_services, package):
     )
 
 
+def supabase_cli(args, cwd):
+    """Runs the Supabase CLI without questions. Newer versions ask for a confirmation that CI cannot give
+    ("Re-run with --yes"); older ones do not know --yes. Try with it, and without it if it is unknown."""
+    r = subprocess.run(["supabase", *args, "--yes"], cwd=cwd, capture_output=True, text=True)
+    out = (r.stdout or "") + (r.stderr or "")
+    if r.returncode != 0 and re.search(r"unknown (flag|shorthand flag).*yes", out):
+        r = subprocess.run(["supabase", *args], cwd=cwd, capture_output=True, text=True)
+        out = (r.stdout or "") + (r.stderr or "")
+    print(out.strip(), flush=True)
+    if r.returncode != 0:
+        raise SystemExit(f"supabase {' '.join(args[:2])} failed (exit {r.returncode})")
+
+
 def cmd_firebase(a):
     st = load_state(a.base)
     if not st["push"]:
@@ -341,12 +354,10 @@ def cmd_firebase(a):
         fdir.mkdir(parents=True)
         src = (ROOT / "scripts" / "templates" / "push_function.ts").read_text(encoding="utf-8")
         (fdir / "index.ts").write_text(src.replace("__PREFIX__", p), encoding="utf-8")
-        env_file = Path(tmp) / "secrets.env"
-        env_file.write_text(f"FIREBASE_SERVICE_ACCOUNT={json.dumps(sa)}\nPUSH_SECRET_{p.upper()}={secret}\n", encoding="utf-8")
+        print("Saving the notification secrets in Supabase…", flush=True)
+        sb.set_function_secrets(ref, token, {"FIREBASE_SERVICE_ACCOUNT": json.dumps(sa), f"PUSH_SECRET_{p.upper()}": secret})
         print(f"Deploying the {fn} Edge Function…", flush=True)
-        subprocess.run(["supabase", "secrets", "set", "--project-ref", ref, "--env-file", str(env_file)], cwd=tmp, check=True)
-        subprocess.run(["supabase", "functions", "deploy", fn, "--project-ref", ref, "--no-verify-jwt", "--use-api"],
-                       cwd=tmp, check=True)
+        supabase_cli(["functions", "deploy", fn, "--project-ref", ref, "--no-verify-jwt", "--use-api"], cwd=tmp)
     run_sql("create extension if not exists pg_net;\n" +
             sb.push_sql(p, f"{st['supabase']['url']}/functions/v1/{fn}", secret))
     st["pushFunction"] = fn

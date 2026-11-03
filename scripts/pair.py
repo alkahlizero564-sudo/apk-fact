@@ -145,8 +145,8 @@ def designs_note(base):
 MODES = ("none", "code", "password", "password_code")
 LOGIN_NO = re.compile(r"(بدون|بلا|من غير|ما في|مافي|ما يحتاج|لا يحتاج|مش محتاج|ما فيه|without|no)\s+(أي\s+|اي\s+)?(تسجيل|login|log in|sign)", re.I)
 LOGIN_YES = re.compile(r"تسجيل\s*(ال)?دخول|دخول\s*(بال)?(بريد|ايميل|إيميل)|login|log ?in|sign ?in|sign ?up|إنشاء حساب|انشاء حساب|"
-                       r"حساب جديد|كلمة\s*(ال)?(مرور|سر)|password|رمز\s*(ال)?تحقق|\botp\b", re.I)
-LOGIN_PASSWORD = re.compile(r"كلمة\s*(ال)?(مرور|سر)|باسورد|password", re.I)
+                       r"حساب جديد|كلم[ةه]\s*(ال)?(مرور|سر)|password|رمز\s*(ال)?تحقق|\botp\b", re.I)
+LOGIN_PASSWORD = re.compile(r"كلم[ةه]\s*(ال)?(مرور|سر)|باسورد|password", re.I)
 LOGIN_CODE = re.compile(r"(رمز|كود)\s*(ال)?(تحقق|تأكيد|دخول)|(رمز|كود)\s*من\s*(6|٦|ستة|سته)|(رمز|كود)\s*(يوصل|يجي|بالبريد|على البريد)|"
                         r"\botp\b|verification code|one.time code", re.I)
 
@@ -491,7 +491,7 @@ def for_app(text, role):
     without LOGIN (the contract has the sign-in rules). Same rules as forApp() in services/understand.ts."""
     other = "الإدارة" if role == "customer" else "الزبون"
     keep = [l for l in (text or "").split("\n")
-            if not re.match(r"^\s*LOGIN:", l) and not re.match(rf"^\s*-\s*«?{other}»?\s*:", l)]
+            if not re.match(r"^\s*LOGIN:", l) and not re.match(rf"^\s*-\s*«?\s*{other}\s*(:\s*»|»\s*:|:)", l)]
     return "\n".join(keep).strip()
 
 
@@ -516,6 +516,9 @@ def cmd_generate(a):
     else:
         subprocess.run([sys.executable, str(ROOT / "scripts" / "generate_native.py"), lang], cwd=ROOT, env=env, check=True)
     print(f"Generated {name}", flush=True)
+    # The two apps must really be connected: every piece of the contract in the code (scripts/pair_wiring.py).
+    import pair_wiring
+    pair_wiring.fix(name)
 
 
 def edit_rules(app):

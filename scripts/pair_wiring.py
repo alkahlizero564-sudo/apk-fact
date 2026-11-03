@@ -1,0 +1,190 @@
+"""Makes sure both apps of a connected pair are really connected: the pieces the contract asks for are in the code.
+
+The AI sometimes writes only half of the connection (found in the almadrar pair: both apps sent notifications but
+neither had an inbox that reads them, and neither asked Android 13+ for the notification permission, so the
+phone blocked every push silently). This runs after a pair app is generated and before every build of one:
+  1. sure fixes without AI (Flutter: ask for the notification permission before reading the push token);
+  2. a check for every piece; what is missing is added by the AI following the pair contract;
+  3. the result must still compile/check (Flutter analyze, Python check, HTML check), else it is not kept.
+
+    python scripts/pair_wiring.py check APP   -> lists what is missing (exit 1 when something is)
+    python scripts/pair_wiring.py fix APP     -> sure fixes, then AI for the rest (needs GEMINI_API_KEY)
+"""
+import json
+import os
+import re
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent
+sys.path.insert(0, str(HERE))
+
+CODE_FILE = {"flutter": "lib/main.dart", "python": "main.py", "html": "index.html"}
+FENCE = {"flutter": "dart", "python": "python", "html": "html"}
+
+
+def state(app):
+    p = ROOT / "apps" / app / "pair.json"
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+
+
+def code_path(app, st):
+    return ROOT / "apps" / app / CODE_FILE[st["lang"]]
+
+
+def required(st):
+    """(description for the AI, regex that must match the code)."""
+    p, lang, role = st["prefix"], st["lang"], st["role"]
+    req = [
+        (f"an in-app notifications inbox screen (with an unread badge) that READS {p}_notifications "
+         f"(GET {p}_notifications?or=(to_user.eq.<uid>,to_role.eq.{role})&order=created_at.desc) and marks them read",
+         rf"{p}_notifications\?"),
+        (f"sending a notification (POST {p}_notifications with to_role / to_user) whenever an event of the contract "
+         f"happens in this app",
+         r"to_(role|user)"),
+    ]
+    if role == "admin":
+        req.append((f"after sign-in / session start, calling rpc {p}_claim_admin (and the admin PIN screen when it "
+                    f"returns false)", rf"{p}_claim_admin"))
+    if st.get("push") and lang != "python":
+        req.append((f"registering this device for push after sign-in: rpc {p}_register_device", rf"{p}_register_device"))
+        if lang == "flutter":
+            req.append(("asking for the notification permission (Android 13+) before reading the token: "
+                        "await FirebaseMessaging.instance.requestPermission()", r"requestPermission\("))
+            req.append(("showing a push that arrives while the app is open: FirebaseMessaging.onMessage.listen(...) "
+                        "shows a SnackBar/banner and refreshes the inbox", r"onMessage\b"))
+        if lang == "html":
+            req.append(("asking for the notification permission: PushNotifications.requestPermissions() before "
+                        "PushNotifications.register()", r"requestPermissions\("))
+    return req
+
+
+def missing(app):
+    st = state(app)
+    if not st:
+        return []
+    code = code_path(app, st).read_text(encoding="utf-8", errors="ignore")
+    return [d for d, rx in required(st) if not re.search(rx, code)]
+
+
+def sure_fixes(app):
+    """Fixes that need no AI. Returns True when the code changed."""
+    st = state(app)
+    if not st or st["lang"] != "flutter":
+        return False
+    f = code_path(app, st)
+    code = f.read_text(encoding="utf-8")
+    if "requestPermission(" in code or "FirebaseMessaging.instance.getToken()" not in code:
+        return False
+    # The token line is inside an async function (it is awaited), so an await before it is valid.
+    new, n = re.subn(
+        r"\n([ \t]*)((?:final|var|String\??)\s+\w+\s*=\s*)?await\s+FirebaseMessaging\.instance\.getToken\(\)",
+        lambda m: f"\n{m.group(1)}await FirebaseMessaging.instance.requestPermission(); // Android 13+ shows pushes only "
+                  f"after this\n{m.group(1)}{m.group(2) or ''}await FirebaseMessaging.instance.getToken()",
+        code, count=1)
+    if n:
+        f.write_text(new, encoding="utf-8")
+        print(f"{app}: added the notification permission request (Android 13+)", flush=True)
+    return bool(n)
+
+
+def problems(app, st):
+    """Compile/check errors of the code (empty when clean or when no checker is available here)."""
+    f = code_path(app, st)
+    if st["lang"] == "python":
+        r = subprocess.run([sys.executable, str(HERE / "check_python.py"), str(f)], capture_output=True, text=True)
+        return "" if r.returncode == 0 else (r.stdout + r.stderr)[-3000:]
+    if st["lang"] == "html":
+        r = subprocess.run(["node", str(HERE / "check_html.js"), str(f)], capture_output=True, text=True)
+        return "" if r.returncode == 0 else (r.stdout + r.stderr)[-3000:]
+    import shutil
+    if not shutil.which("flutter"):
+        return ""
+    with tempfile.TemporaryDirectory() as tmp:
+        r = subprocess.run([sys.executable, str(HERE / "check_flutter.py"), str(f.parent.parent), str(Path(tmp) / "p"),
+                            "--rounds", "1"], capture_output=True, text=True)
+        return "" if r.returncode == 0 else (r.stdout + r.stderr)[-3000:]
+
+
+def ai_complete(app, gaps):
+    import pair
+    from gemini_client import call_gemini
+    from native_langs import gemini_keys, parse_reply, LANGS, rules_for
+
+    st = state(app)
+    f = code_path(app, st)
+    keys = gemini_keys(os.environ)
+    if not keys:
+        print("No Gemini key: cannot add the missing pieces", flush=True)
+        return False
+    model = os.environ.get("GEMINI_MODEL") or "gemini-3.8-flash"
+    fence = FENCE[st["lang"]]
+    rules = rules_for(st["lang"]) if st["lang"] in LANGS else ""
+    prompt = (
+        f"This is the {st['role'].upper()} app of a connected pair (customer + admin on one Supabase backend). It "
+        f"does not do everything the pair contract asks, so the two apps are not really connected. ADD these "
+        f"missing pieces exactly as the contract below says, wired into the existing screens and navigation, and "
+        f"keep everything else (screens, design, texts, data) as it is:\n- " + "\n- ".join(gaps) +
+        f"\n\n{rules}\n\n{pair.contract_text(st, st['role'])}\n\n"
+        f"Reply with exactly one ```{fence} code block with the complete updated file"
+        + (" and a last line `DEPS: ` with the packages used, comma separated" if st["lang"] != "html" else "") +
+        f".\n\nCURRENT FILE:\n```{fence}\n{f.read_text(encoding='utf-8')}\n```\n"
+    )
+    blocks, _ = parse_reply(call_gemini(model, prompt, keys, temperature=0.2, json_mode=False))
+    new = blocks.get(fence, "")
+    if len(new) < len(f.read_text(encoding="utf-8")) * 0.6:
+        print("The AI reply was empty or much shorter than the app: not used", flush=True)
+        return False
+    before = f.read_text(encoding="utf-8")
+    f.write_text(new.rstrip() + "\n", encoding="utf-8")
+    sure_fixes(app)
+    errs = problems(app, st)
+    if errs:
+        print(f"The completed code does not check clean, keeping the previous version:\n{errs[-1500:]}", flush=True)
+        f.write_text(before, encoding="utf-8")
+        return False
+    return True
+
+
+def fix(app):
+    st = state(app)
+    if not st:
+        print(f"{app} is not part of a connected pair")
+        return 0
+    sure_fixes(app)
+    gaps = missing(app)
+    if not gaps:
+        print(f"{app}: connected — every piece of the pair contract is in the code", flush=True)
+        return 0
+    print(f"{app}: missing pieces of the connection:\n- " + "\n- ".join(gaps), flush=True)
+    for attempt in range(2):
+        try:
+            ai_complete(app, gaps)
+        except (Exception, SystemExit) as e:
+            print(f"Could not add them ({e})", flush=True)
+        gaps = missing(app)
+        if not gaps:
+            print(f"{app}: connected now", flush=True)
+            return 0
+    print(f"::warning::{app} still misses: " + "; ".join(gaps), flush=True)
+    return 0  # never fails a build or a generation
+
+
+def main():
+    cmd, *a = sys.argv[1:] or ["help"]
+    if not a or not re.fullmatch(r"[a-z0-9-]+", a[0]):
+        raise SystemExit(__doc__)
+    if cmd == "check":
+        gaps = missing(a[0])
+        print("\n".join(gaps) or "connected")
+        raise SystemExit(1 if gaps else 0)
+    if cmd == "fix":
+        raise SystemExit(fix(a[0]))
+    raise SystemExit(__doc__)
+
+
+if __name__ == "__main__":
+    main()

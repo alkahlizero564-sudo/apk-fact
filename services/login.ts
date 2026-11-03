@@ -10,8 +10,8 @@ export type PairLogin = { customer: LoginMode; admin: LoginMode };
 
 const NO = /(بدون|بلا|من غير|ما في|مافي|ما يحتاج|لا يحتاج|مش محتاج|ما فيه|without|no)\s+(أي\s+|اي\s+)?(تسجيل|login|log in|sign)/i;
 const YES =
-  /تسجيل\s*(ال)?دخول|دخول\s*(بال)?(بريد|ايميل|إيميل)|login|log ?in|sign ?in|sign ?up|إنشاء حساب|انشاء حساب|حساب جديد|كلمة\s*(ال)?(مرور|سر)|password|رمز\s*(ال)?تحقق|\botp\b/i;
-const PASSWORD = /كلمة\s*(ال)?(مرور|سر)|باسورد|password/i;
+  /تسجيل\s*(ال)?دخول|دخول\s*(بال)?(بريد|ايميل|إيميل)|login|log ?in|sign ?in|sign ?up|إنشاء حساب|انشاء حساب|حساب جديد|كلم[ةه]\s*(ال)?(مرور|سر)|password|رمز\s*(ال)?تحقق|\botp\b/i;
+const PASSWORD = /كلم[ةه]\s*(ال)?(مرور|سر)|باسورد|password/i;
 const CODE = /(رمز|كود)\s*(ال)?(تحقق|تأكيد|دخول)|(رمز|كود)\s*من\s*(6|٦|ستة|سته)|(رمز|كود)\s*(يوصل|يجي|بالبريد|على البريد)|\botp\b|verification code|one.time code/i;
 
 export const LOGIN_LABELS: Record<LoginMode, string> = {

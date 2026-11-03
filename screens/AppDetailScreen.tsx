@@ -26,6 +26,7 @@ import {
   buildAndInstall,
   buildForStore,
   getPackageId,
+  getClient,
   setPackageId,
   validPackageId,
   deleteApp,
@@ -69,6 +70,7 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
   const [labelDraft, setLabelDraft] = useState("");
   const [labelBusy, setLabelBusy] = useState(false);
   const [pkg, setPkg] = useState<{ id: string; custom: boolean } | null>(null);
+  const [client, setClientName] = useState("");
   const [pkgDraft, setPkgDraft] = useState("");
   const [pkgBusy, setPkgBusy] = useState(false);
   const [aabUrl, setAabUrl] = useState("");
@@ -130,6 +132,7 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
     loadVault();
     getDisplayName(name).then(setLabel);
     getPackageId(name, lang).then(setPkg);
+    getClient(name).then(setClientName);
     pairInfo(name).then(setPair);
   }, [name]);
 
@@ -401,6 +404,7 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
         <View style={{ flex: 1, gap: 6 }}>
           <Text style={styles.name}>{label || name}</Text>
           <LangBadge lang={lang} />
+          {client ? <Text style={styles.client}>للزبون: {client}</Text> : null}
           <Text style={styles.path}>{label ? `${name} · ` : ""}apps/{name}</Text>
         </View>
       </Card>
@@ -816,6 +820,7 @@ const styles = StyleSheet.create({
   hero: { flexDirection: "row-reverse", alignItems: "center", gap: space.lg, marginBottom: space.md },
   icon: { width: 76, height: 76, borderRadius: 22 },
   name: { fontSize: 24, fontWeight: "900", color: colors.text, textAlign: "right" },
+  client: { fontSize: 13, color: colors.accent, textAlign: "right", fontWeight: "600" },
   path: { fontSize: 12, color: colors.textMuted, textAlign: "right", fontFamily: "monospace" },
   actions: { flexDirection: "row-reverse", gap: space.md, marginBottom: space.xl },
   list: { padding: 0, overflow: "hidden" },

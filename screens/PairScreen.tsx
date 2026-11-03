@@ -11,6 +11,8 @@ import { appExists } from "../services/appActions";
 import { createPair, pairApps, pairReadiness, PairReadiness, setAdminPin } from "../services/pair";
 import DesignStudio from "../components/DesignStudio";
 import DbProjectsPanel from "../components/DbProjectsPanel";
+import OwnerSheet, { Owner } from "../components/OwnerSheet";
+import { setClient } from "../services/appActions";
 import { listProjects, DbProject } from "../services/projects";
 import UnderstandStudio, { UnderstandHandle } from "../components/UnderstandStudio";
 import { Spec, specText } from "../services/understand";
@@ -26,7 +28,7 @@ const EXAMPLES = [
   { label: "عيادة ومواعيد", text: "عيادة: المريض يحجز موعد مع الطبيب ويشوف مواعيده ونتائج الزيارات، والإدارة تدير الأطباء والمواعيد وتسجل ملاحظات الزيارة." },
 ];
 
-export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
+export default function PairScreen({ navigation, route }: RootScreenProps<"Pair">) {
   const insets = useSafeAreaInsets();
   const [base, setBase] = useState("");
   const [lang, setLang] = useState<Lang>("flutter");
@@ -39,7 +41,14 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
   const [adminName, setAdminName] = useState("");
   const [push, setPush] = useState(true);
   // Where the pair's database lives: "" = the default project (Settings > Supabase), else a client's project.
-  const [dbRef, setDbRef] = useState("");
+  // A client picked on the create screen without a database project is asked again here (a pair needs one).
+  const given = route.params?.owner;
+  const [owner, setOwnerState] = useState<Owner | null>(given && !(given.kind === "client" && !given.ref) ? given : null);
+  const [dbRef, setDbRef] = useState(route.params?.owner?.kind === "client" ? route.params.owner.ref ?? "" : "");
+  function setOwner(o: Owner) {
+    setOwnerState(o);
+    setDbRef(o.kind === "client" ? o.ref ?? "" : "");
+  }
   const [dbProjects, setDbProjects] = useState<DbProject[]>([]);
   const [dbSheet, setDbSheet] = useState(false);
   const [ready, setReady] = useState<PairReadiness | null>(null);
@@ -118,6 +127,10 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
         },
         report
       );
+      if (owner?.kind === "client") {
+        await setClient(apps.customer, owner.name);
+        await setClient(apps.admin, owner.name);
+      }
       // Admin app without sign-in: it opens with the admin PIN (anyone could install it).
       if (pairLogin.admin === "none") await setAdminPin(clean.replace(/[^a-z0-9_]/g, "_"), dbRef, pin.trim());
       designTargets.forEach((t) => clearDraft(t));
@@ -395,6 +408,13 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
           <Button title="اعتمد التصميم وأنشئ التطبيقين" icon="checkmark-done" onPress={submit} disabled={!designsReady} style={{ flex: 2 }} />
         </View>
       ) : null}
+      <OwnerSheet
+        visible={phase === "form" && !owner}
+        pair
+        onPick={setOwner}
+        onClose={() => (owner ? null : navigation.goBack())}
+      />
+
       <Sheet visible={dbSheet} title="قاعدة بيانات للزبون" onClose={() => setDbSheet(false)}>
         <DbProjectsPanel
           showList={false}

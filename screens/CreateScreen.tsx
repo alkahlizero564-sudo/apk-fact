@@ -21,9 +21,10 @@ import { TEMPLATES, Template } from "../services/templates";
 import { LANGS, LANG_ORDER, Lang } from "../services/langs";
 import DesignStudio from "../components/DesignStudio";
 import UnderstandStudio, { UnderstandHandle } from "../components/UnderstandStudio";
+import OwnerSheet, { Owner } from "../components/OwnerSheet";
 import { Spec, specText } from "../services/understand";
 import { saveApprovedDesign, clearDraft, DesignTarget } from "../services/design";
-import { appExists, cleanName, cleanLabel, generateApp, listApps, setDisplayName, uploadCode, AppInfo } from "../services/appActions";
+import { appExists, cleanName, cleanLabel, generateApp, listApps, setDisplayName, setClient, uploadCode, AppInfo } from "../services/appActions";
 import { colors, langColors, space, radius, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
 
@@ -66,6 +67,8 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
   const [label, setLabel] = useState(preset?.title ?? "");
   const [design, setDesign] = useState<string | null>(null);
   const [designBusy, setDesignBusy] = useState(false);
+  const [owner, setOwner] = useState<Owner | null>(null); // the first question: the owner's own app, or a client's
+  const [askOwner, setAskOwner] = useState(true);
   const [spec, setSpec] = useState<Spec | null>(null); // the requirements the owner approved
   const [understandBusy, setUnderstandBusy] = useState(false);
   const understandRef = useRef<UnderstandHandle>(null);
@@ -169,6 +172,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
         await generateApp({ name: clean, lang, text: fullText, kind: "create", related: related || undefined }, genReport);
       }
       if (cleanLabel(label)) await setDisplayName(clean, label);
+      if (owner?.kind === "client") await setClient(clean, owner.name);
       if (design) clearDraft(designTarget);
       setPhase("done");
     } catch (e: any) {
@@ -285,7 +289,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
                       color={start === key ? colors.primary : colors.textMuted}
                     />
                   }
-                  onPress={() => (key === "pair" ? navigation.replace("Pair") : setStart(key))}
+                  onPress={() => (key === "pair" ? navigation.replace("Pair", { owner: owner ?? undefined }) : setStart(key))}
                 />
               ))}
             </Card>
@@ -495,6 +499,12 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
                 title="البداية"
                 value={start === "paste" ? "كود جاهز" : start === "template" ? template?.title ?? "قالب" : "من الصفر"}
               />
+              <ListRow
+                icon={owner?.kind === "client" ? "person-outline" : "home-outline"}
+                title="لمين"
+                value={owner?.kind === "client" ? `الزبون: ${owner.name}` : "لي (الأساسي)"}
+                onPress={() => setAskOwner(true)}
+              />
               {cleanLabel(label) ? <ListRow icon="text-outline" title="الاسم على الجهاز" value={cleanLabel(label)} /> : null}
               <ListRow icon={LANG_ICONS[lang]} tint={langColors[lang]} title="اللغة" value={LANGS[lang].label} />
               {design && start !== "paste" ? (
@@ -523,6 +533,14 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
         )}
       </ScrollView>
       {footer}
+      <OwnerSheet
+        visible={phase === "form" && askOwner}
+        onPick={(o) => {
+          setOwner(o);
+          setAskOwner(false);
+        }}
+        onClose={() => (owner ? setAskOwner(false) : navigation.goBack())}
+      />
     </KeyboardAvoidingView>
   );
 }

@@ -189,6 +189,19 @@ export async function approvePermissions(name: string, add: string[]) {
   await pushFile(REPO, `apps/${name}/perms.txt`, keys.map((k) => k + "\n").join("") || "\n", `Permissions: ${name}`);
 }
 
+/** Who the app is for (a client's name), apps/<name>/client.txt; empty = the owner's own app. */
+export async function getClient(name: string): Promise<string> {
+  try {
+    return cleanLabel((await getFileText(REPO, `apps/${name}/client.txt`)) ?? "");
+  } catch {
+    return "";
+  }
+}
+
+export async function setClient(name: string, client: string) {
+  await pushFile(REPO, `apps/${name}/client.txt`, cleanLabel(client) + "\n", `Client: ${name}`);
+}
+
 export async function uploadIcon(name: string, base64: string) {
   await pushBase64File(REPO, `apps/${name}/icon.png`, base64, `Set icon: ${name}`);
 }

@@ -41,6 +41,21 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Version number of this build
+        # Each build gets its own version (build 82 -> versionCode 82, "1.0.82") so Android sees a real update.
+        run: |
+          node -e '
+            const fs = require("fs");
+            const a = JSON.parse(fs.readFileSync("app.json", "utf8"));
+            const n = Number(process.env.RUN);
+            a.expo.version = "1.0." + n;
+            a.expo.android = { ...a.expo.android, versionCode: n };
+            fs.writeFileSync("app.json", JSON.stringify(a, null, 2) + "\n");
+            console.log("version", a.expo.version, "versionCode", n);
+          '
+        env:
+          RUN: ${{ github.run_number }}
+
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:

@@ -26,7 +26,7 @@ import { testGeminiConnection, testClaudeConnection, listGeminiModels, GeminiMod
 import { buildTool, listToolBuilds, ToolRun } from "../services/appActions";
 import { REPO } from "../services/config";
 import DbProjectsPanel from "../components/DbProjectsPanel";
-import { privacyStatus, setupUpdatesRepo, makeRepoPrivate, appsWithInstalls, PrivacyStatus } from "../services/privacy";
+import { privacyStatus, setupUpdatesRepo, makeRepoPrivate, appsWithInstalls, PrivacyStatus, monthMinutes, FREE_MINUTES, BILLING_URL } from "../services/privacy";
 import { parseServiceAccount } from "../services/pair";
 import { colors, space, radius, type } from "../theme";
 
@@ -450,6 +450,43 @@ ${(a.sha256 ?? "").slice(0, 23)}…`}
   );
 }
 
+function MinutesPanel({ repoPrivate }: { repoPrivate: boolean }) {
+  const [used, setUsed] = useState<number | null>(null);
+  useEffect(() => {
+    monthMinutes().then(setUsed).catch(() => setUsed(null));
+  }, []);
+  const pct = used === null ? 0 : Math.min(100, Math.round((used / FREE_MINUTES) * 100));
+  return (
+    <View>
+      <Text style={styles.sheetText}>
+        {repoPrivate
+          ? `المستودع خاص، فـ GitHub بيدي ${FREE_MINUTES} دقيقة بناء مجانية كل شهر. لما تخلص، البناء بيقيف لحد أول الشهر، إلا لو فعّلت الدفع.`
+          : "المستودع لسه عام، فالبناء مجاني بلا حد. الحد ده بيبدأ لما تخلّيه خاص من «الخصوصية»."}
+      </Text>
+      <Card style={{ marginBottom: space.md }}>
+        <Text style={styles.minutesBig}>{used === null ? "…" : `${used} دقيقة`}</Text>
+        <Text style={styles.sheetSmall}>
+          استهلاك الشهر ده (تقريبي){repoPrivate ? ` من ${FREE_MINUTES} مجانية` : ""}
+        </Text>
+        {repoPrivate ? (
+          <View style={styles.bar}>
+            <View style={[styles.barFill, { width: `${pct}%`, backgroundColor: pct >= 80 ? colors.warnText : colors.okText }]} />
+          </View>
+        ) : null}
+      </Card>
+      {repoPrivate && pct >= 80 ? <Banner kind="error" text="قرّبت تخلّص الدقايق المجانية. زوّدها عشان البناء ما يوقف." /> : null}
+      <Banner
+        kind="info"
+        text={
+          "في صفحة الفواتير اللي بتفتح: 1) أضف طريقة دفع (Payment information). 2) في Budgets and alerts عدّل حد صرف Actions " +
+          "لمبلغ يناسبك (مثلاً 5 أو 10 دولار). البناء بعد الدقايق المجانية بيتحسب من المبلغ ده بس، وما بيعدّيه أبداً."
+        }
+      />
+      <Button title="زيادة الدقايق (صفحة الدفع)" icon="card-outline" onPress={() => Linking.openURL(BILLING_URL)} style={{ marginTop: space.md }} />
+    </View>
+  );
+}
+
 function PrivacyPanel({ status, onChange }: { status: PrivacyStatus | null; onChange: () => void }) {
   const [steps, report, reset] = useSteps([
     ["repo", "إنشاء مستودع عام للتحديثات apk-fact-updates (بدون كود)"],
@@ -630,6 +667,13 @@ export default function SettingsScreen() {
             }
             right={<View style={[styles.dot, { backgroundColor: privacy?.repoPrivate ? colors.okText : colors.border }]} />}
             onPress={() => setOpen("privacy")}
+          />
+          <ListRow
+            icon="timer-outline"
+            tint={colors.accent}
+            title="دقايق البناء"
+            subtitle={privacy?.repoPrivate ? `${FREE_MINUTES} دقيقة مجانية في الشهر · زوّدها بالدفع` : "مجانية بلا حد طالما المستودع عام"}
+            onPress={() => setOpen("minutes")}
             last
           />
         </Card>
@@ -659,6 +703,9 @@ export default function SettingsScreen() {
       <Sheet visible={open === "projects"} title="قواعد بيانات الزباين" onClose={() => setOpen(null)}>
         <DbProjectsPanel />
       </Sheet>
+      <Sheet visible={open === "minutes"} title="دقايق البناء" onClose={() => setOpen(null)}>
+        <MinutesPanel repoPrivate={!!privacy?.repoPrivate} />
+      </Sheet>
       <Sheet visible={open === "privacy"} title="الخصوصية" onClose={() => setOpen(null)}>
         <PrivacyPanel status={privacy} onChange={loadStatus} />
       </Sheet>
@@ -673,6 +720,9 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  minutesBig: { fontSize: 28, fontWeight: "800", color: colors.text, textAlign: "right" },
+  bar: { height: 8, borderRadius: 4, backgroundColor: colors.border, marginTop: space.sm, overflow: "hidden" },
+  barFill: { height: 8, borderRadius: 4 },
   list: { padding: 0, overflow: "hidden" },
   dot: { width: 8, height: 8, borderRadius: 4 },
   sheetText: { ...type.body, color: colors.textMuted, textAlign: "right", marginBottom: space.lg },

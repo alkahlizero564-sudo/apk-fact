@@ -10,6 +10,8 @@ import { LANGS, PAIR_LANGS, Lang } from "../services/langs";
 import { appExists } from "../services/appActions";
 import { createPair, pairApps, pairReadiness, PairReadiness, setAdminPin } from "../services/pair";
 import DesignStudio from "../components/DesignStudio";
+import DbProjectsPanel from "../components/DbProjectsPanel";
+import { listProjects, DbProject } from "../services/projects";
 import UnderstandStudio, { UnderstandHandle } from "../components/UnderstandStudio";
 import { Spec, specText } from "../services/understand";
 import { loginFromText, loginLine, LOGIN_LABELS, PairLogin } from "../services/login";
@@ -36,6 +38,10 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
   const [customerName, setCustomerName] = useState("");
   const [adminName, setAdminName] = useState("");
   const [push, setPush] = useState(true);
+  // Where the pair's database lives: "" = the default project (Settings > Supabase), else a client's project.
+  const [dbRef, setDbRef] = useState("");
+  const [dbProjects, setDbProjects] = useState<DbProject[]>([]);
+  const [dbSheet, setDbSheet] = useState(false);
   const [ready, setReady] = useState<PairReadiness | null>(null);
   const [taken, setTaken] = useState(false);
   const [phase, setPhase] = useState<"form" | "understand" | "design" | "running" | "done" | "failed">("form");
@@ -59,6 +65,7 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
   useFocusEffect(
     useCallback(() => {
       pairReadiness().then(setReady).catch(() => {});
+      listProjects().then(setDbProjects);
     }, [])
   );
 
@@ -107,11 +114,12 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
           description: fullDescription,
           customerName,
           adminName,
+          supabaseRef: dbRef || undefined,
         },
         report
       );
       // Admin app without sign-in: it opens with the admin PIN (anyone could install it).
-      if (pairLogin.admin === "none") await setAdminPin(clean.replace(/[^a-z0-9_]/g, "_"), "", pin.trim());
+      if (pairLogin.admin === "none") await setAdminPin(clean.replace(/[^a-z0-9_]/g, "_"), dbRef, pin.trim());
       designTargets.forEach((t) => clearDraft(t));
       setPhase("done");
     } catch (e: any) {
@@ -324,6 +332,20 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
                 : `تسجيل الدخول من وصفك: ${LOGIN_LABELS[mode]}. بعد «افهم فكرتي» بتختار لأي تطبيق.`}
             </Text>
 
+            <Text style={styles.label}>قاعدة البيانات</Text>
+            <View style={styles.chips}>
+              <Chip label="مشروعي الأساسي" icon="home-outline" selected={!dbRef} onPress={() => setDbRef("")} />
+              {dbProjects.map((p) => (
+                <Chip key={p.ref} label={p.label} icon="server-outline" selected={dbRef === p.ref} onPress={() => setDbRef(p.ref)} />
+              ))}
+              <Chip label="مشروع زبون / جديد" icon="add" onPress={() => setDbSheet(true)} />
+            </View>
+            <Text style={styles.namesHint}>
+              {dbRef
+                ? "بيانات النظام ده بتتحفظ في مشروع الزبون لوحده، منفصلة عن باقي زباينك."
+                : "النظام ده بيتعمل في مشروع Supabase الأساسي بتاعك (مع أي أنظمة تانية فيه). لكل زبون مشروع خاص، اختار أو أضف مشروع."}
+            </Text>
+
             <Pressable
               onPress={() => lang !== "python" && setPush((p) => !p)}
               style={[styles.toggle, lang === "python" && { opacity: 0.5 }]}
@@ -373,6 +395,17 @@ export default function PairScreen({ navigation }: RootScreenProps<"Pair">) {
           <Button title="اعتمد التصميم وأنشئ التطبيقين" icon="checkmark-done" onPress={submit} disabled={!designsReady} style={{ flex: 2 }} />
         </View>
       ) : null}
+      <Sheet visible={dbSheet} title="قاعدة بيانات للزبون" onClose={() => setDbSheet(false)}>
+        <DbProjectsPanel
+          showList={false}
+          onAdded={(p) => {
+            listProjects().then(setDbProjects);
+            setDbRef(p.ref);
+            setDbSheet(false);
+          }}
+        />
+      </Sheet>
+
       <Sheet visible={loginSheet} title="تسجيل الدخول" onClose={() => setLoginSheet(false)}>
         {mode !== "none" ? (
           <>

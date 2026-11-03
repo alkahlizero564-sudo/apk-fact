@@ -1,15 +1,11 @@
 import * as SecureStore from "expo-secure-store";
+import { tokenFor } from "./projects";
 
 const MGMT_API = "https://api.supabase.com/v1";
 
-async function getManagementToken(): Promise<string> {
-  const token = await SecureStore.getItemAsync("SUPABASE_ACCESS_TOKEN");
-  if (!token) {
-    throw new Error(
-      "SUPABASE_ACCESS_TOKEN missing. This is a Personal Access Token from supabase.com → Account → Access Tokens (different from the project's anon key)."
-    );
-  }
-  return token;
+// The default account's token, or the token of the client project the call is for (services/projects.ts).
+async function getManagementToken(ref?: string): Promise<string> {
+  return tokenFor(ref);
 }
 
 async function getProjectRef(): Promise<string> {
@@ -36,7 +32,7 @@ export async function testSupabaseConnection(): Promise<{ name: string; status: 
 }
 
 export async function runSql(query: string, projectRef?: string): Promise<any> {
-  const token = await getManagementToken();
+  const token = await getManagementToken(projectRef);
   const ref = projectRef || (await getProjectRef());
 
   const res = await fetch(`${MGMT_API}/projects/${ref}/database/query`, {

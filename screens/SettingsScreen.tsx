@@ -25,6 +25,7 @@ import { testSupabaseConnection, testEmailCode, EmailCodeTest, applySmtpSettings
 import { testGeminiConnection, testClaudeConnection, listGeminiModels, GeminiModel } from "../services/ai";
 import { buildTool, listToolBuilds, ToolRun } from "../services/appActions";
 import { REPO } from "../services/config";
+import DbProjectsPanel from "../components/DbProjectsPanel";
 import { privacyStatus, setupUpdatesRepo, makeRepoPrivate, appsWithInstalls, PrivacyStatus } from "../services/privacy";
 import { parseServiceAccount } from "../services/pair";
 import { colors, space, radius, type } from "../theme";
@@ -603,6 +604,19 @@ export default function SettingsScreen() {
         </Card>
       </Section>
 
+      <Section title="قواعد بيانات الزباين">
+        <Card style={styles.list}>
+          <ListRow
+            icon="server-outline"
+            tint={colors.accent}
+            title="مشاريع Supabase للزباين"
+            subtitle="مشروع منفصل لكل زبون: من حسابه، أو جديد في حسابك"
+            onPress={() => setOpen("projects")}
+            last
+          />
+        </Card>
+      </Section>
+
       <Section title="الخصوصية">
         <Card style={styles.list}>
           <ListRow
@@ -641,6 +655,9 @@ export default function SettingsScreen() {
       </Sheet>
       <Sheet visible={open === "vault"} title="الخزنة الخاصة" onClose={() => setOpen(null)}>
         <VaultPanel status={vault} onReady={loadStatus} />
+      </Sheet>
+      <Sheet visible={open === "projects"} title="قواعد بيانات الزباين" onClose={() => setOpen(null)}>
+        <DbProjectsPanel />
       </Sheet>
       <Sheet visible={open === "privacy"} title="الخصوصية" onClose={() => setOpen(null)}>
         <PrivacyPanel status={privacy} onChange={loadStatus} />

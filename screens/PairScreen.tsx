@@ -11,7 +11,7 @@ import { appExists } from "../services/appActions";
 import { createPair, pairApps, pairReadiness, PairReadiness, setAdminPin } from "../services/pair";
 import DesignStudio from "../components/DesignStudio";
 import DbProjectsPanel from "../components/DbProjectsPanel";
-import OwnerSheet, { Owner } from "../components/OwnerSheet";
+import { OwnerPicker, Owner } from "../components/OwnerSheet";
 import { setClient } from "../services/appActions";
 import { listProjects, DbProject } from "../services/projects";
 import UnderstandStudio, { UnderstandHandle } from "../components/UnderstandStudio";
@@ -227,7 +227,12 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
       </View>
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        {phase === "understand" ? (
+        {phase === "form" && !owner ? (
+          <>
+            <Text style={styles.label}>التطبيقين دول لمين؟</Text>
+            <OwnerPicker pair onPick={setOwner} />
+          </>
+        ) : phase === "understand" ? (
           <>
             <Text style={styles.label}>فهمتك صح؟</Text>
             <Text style={styles.subtitle}>
@@ -390,6 +395,11 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
                 : `تسجيل الدخول من وصفك: ${LOGIN_LABELS[mode]}. بعد «افهم فكرتي» بتختار لأي تطبيق.`}
             </Text>
 
+            <Pressable onPress={() => setOwnerState(null)} accessibilityRole="button">
+              <Text style={styles.namesHint}>
+                {owner?.kind === "client" ? `للزبون: ${owner.name}` : "لي (الأساسي)"} · <Text style={{ color: colors.primary }}>تغيير</Text>
+              </Text>
+            </Pressable>
             <Text style={styles.label}>قاعدة البيانات</Text>
             <View style={styles.chips}>
               <Chip label="مشروعي الأساسي" icon="home-outline" selected={!dbRef} onPress={() => setDbRef("")} />
@@ -420,7 +430,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
         )}
       </ScrollView>
 
-      {phase === "form" ? (
+      {phase === "form" && owner ? (
         <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
           <Button
             title="افهم فكرتي"
@@ -453,12 +463,6 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
           <Button title="اعتمد التصميم وأنشئ التطبيقين" icon="checkmark-done" onPress={submit} disabled={!designsReady} style={{ flex: 2 }} />
         </View>
       ) : null}
-      <OwnerSheet
-        visible={phase === "form" && !owner}
-        pair
-        onPick={setOwner}
-        onClose={() => (owner ? null : navigation.goBack())}
-      />
 
       <Sheet visible={dbSheet} title="قاعدة بيانات للزبون" onClose={() => setDbSheet(false)}>
         <DbProjectsPanel

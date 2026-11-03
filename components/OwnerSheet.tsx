@@ -14,7 +14,20 @@ export type Owner = { kind: "mine" } | { kind: "client"; name: string; ref?: str
 
 type Props = { visible: boolean; pair?: boolean; onPick: (o: Owner) => void; onClose: () => void };
 
+/** As a window (to change the answer later from the review step). */
 export default function OwnerSheet({ visible, pair, onPick, onClose }: Props) {
+  return (
+    <Sheet visible={visible} title={pair ? "التطبيقين دول لمين؟" : "التطبيق ده لمين؟"} onClose={onClose}>
+      <OwnerPicker pair={pair} onPick={onPick} visible={visible} />
+    </Sheet>
+  );
+}
+
+/**
+ * The question itself, shown right in the screen when it opens: a window (Modal) opened while a new screen
+ * slides in may not appear on some Android phones.
+ */
+export function OwnerPicker({ pair, onPick, visible = true }: { pair?: boolean; onPick: (o: Owner) => void; visible?: boolean }) {
   const [forClient, setForClient] = useState(false);
   const [projects, setProjects] = useState<DbProject[]>([]);
   const [name, setName] = useState("");
@@ -36,7 +49,7 @@ export default function OwnerSheet({ visible, pair, onPick, onClose }: Props) {
   );
 
   return (
-    <Sheet visible={visible} title={pair ? "التطبيقين دول لمين؟" : "التطبيق ده لمين؟"} onClose={onClose}>
+    <View>
       {!forClient ? (
         <View style={{ gap: space.md }}>
           <Big
@@ -93,7 +106,7 @@ export default function OwnerSheet({ visible, pair, onPick, onClose }: Props) {
           <Button title="رجوع" variant="secondary" onPress={() => setForClient(false)} style={{ marginTop: space.md }} />
         </View>
       )}
-    </Sheet>
+    </View>
   );
 }
 

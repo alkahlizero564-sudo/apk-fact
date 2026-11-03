@@ -21,7 +21,7 @@ import { TEMPLATES, Template } from "../services/templates";
 import { LANGS, LANG_ORDER, Lang } from "../services/langs";
 import DesignStudio from "../components/DesignStudio";
 import UnderstandStudio, { UnderstandHandle } from "../components/UnderstandStudio";
-import OwnerSheet, { Owner } from "../components/OwnerSheet";
+import OwnerSheet, { OwnerPicker, Owner } from "../components/OwnerSheet";
 import { Spec, specText } from "../services/understand";
 import { saveApprovedDesign, clearDraft, DesignTarget } from "../services/design";
 import { loadDraft as loadWork, clearDraft as clearWork, useAutoSave } from "../services/drafts";
@@ -225,7 +225,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
 
   const footerPad = { paddingBottom: insets.bottom + space.md };
   let footer: React.ReactNode = null;
-  if (phase === "form") {
+  if (phase === "form" && owner) {
     footer = (
       <View style={[styles.footer, footerPad]}>
         {step > 0 ? (
@@ -287,7 +287,17 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
       </View>
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        {phase !== "form" ? (
+        {phase === "form" && !owner ? (
+          <>
+            <Text style={styles.q}>التطبيق ده لمين؟</Text>
+            <OwnerPicker
+              onPick={(o) => {
+                setOwner(o);
+                setAskOwner(false);
+              }}
+            />
+          </>
+        ) : phase !== "form" ? (
           <>
             <Card style={styles.summary}>
               <AppAvatar name={clean} lang={lang} size={56} />
@@ -576,12 +586,12 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
       </ScrollView>
       {footer}
       <OwnerSheet
-        visible={phase === "form" && askOwner}
+        visible={phase === "form" && !!owner && askOwner}
         onPick={(o) => {
           setOwner(o);
           setAskOwner(false);
         }}
-        onClose={() => (owner ? setAskOwner(false) : navigation.goBack())}
+        onClose={() => setAskOwner(false)}
       />
     </KeyboardAvoidingView>
   );

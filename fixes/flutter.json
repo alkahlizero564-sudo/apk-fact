@@ -144,7 +144,7 @@
   "new": "FontWeight.w800",
   "error": "error • Invalid constant value • lib/main.dart:515:33 • invalid_constant",
   "source": "ai",
-  "uses": 0
+  "uses": 2
  },
  {
   "old": "Icons.store_disabled",

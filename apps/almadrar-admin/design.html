@@ -1,1767 +1,1346 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>إدارة المدرار - almadrar</title>
-  <style>
-    :root {
-      /* Material 3 Color Tokens - Construction Terracotta & Warm Ochre Theme */
-      --md-sys-color-primary: #9C4300;
-      --md-sys-color-on-primary: #FFFFFF;
-      --md-sys-color-primary-container: #FFDCCB;
-      --md-sys-color-on-primary-container: #351500;
-      
-      --md-sys-color-secondary: #765849;
-      --md-sys-color-on-secondary: #FFFFFF;
-      --md-sys-color-secondary-container: #FFDBCF;
-      --md-sys-color-on-secondary-container: #2C160B;
-
-      --md-sys-color-tertiary: #656031;
-      --md-sys-color-tertiary-container: #ECE4AA;
-      --md-sys-color-on-tertiary-container: #1F1C00;
-
-      --md-sys-color-surface: #FFF8F6;
-      --md-sys-color-on-surface: #211A16;
-      --md-sys-color-surface-variant: #F5DED4;
-      --md-sys-color-on-surface-variant: #53443C;
-      --md-sys-color-outline: #85736B;
-      --md-sys-color-outline-variant: #D8C2B8;
-
-      --md-sys-color-surface-container-lowest: #FFFFFF;
-      --md-sys-color-surface-container-low: #FDF2EC;
-      --md-sys-color-surface-container: #F7ECE6;
-      --md-sys-color-surface-container-high: #F1E6E0;
-      --md-sys-color-surface-container-highest: #EBE0DA;
-
-      --md-sys-color-error: #BA1A1A;
-      --md-sys-color-error-container: #FFDAD6;
-      --md-sys-color-on-error: #FFFFFF;
-
-      --md-sys-color-success: #1E6F39;
-      --md-sys-color-success-container: #D1E8D5;
-      
-      /* Material 3 Shape Tokens */
-      --md-shape-corner-extra-small: 4px;
-      --md-shape-corner-small: 8px;
-      --md-shape-corner-medium: 12px;
-      --md-shape-corner-large: 16px;
-      --md-shape-corner-extra-large: 28px;
-      --md-shape-corner-full: 9999px;
-
-      /* Elevation Shadows */
-      --md-elevation-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.30);
-      --md-elevation-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.30);
-      --md-elevation-3: 0px 4px 8px 3px rgba(0, 0, 0, 0.15), 0px 1px 3px 0px rgba(0, 0, 0, 0.30);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Cairo', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      background-color: #121212;
-      color: var(--md-sys-color-on-surface);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    /* Top Tester Screen Switcher Bar */
-    #apkfact-screens {
-      position: sticky;
-      top: 0;
-      left: 0;
-      right: 0;
-      width: 100%;
-      max-width: 440px;
-      z-index: 10000;
-      background: rgba(20, 20, 20, 0.95);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 8px 10px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    }
-
-    .apkfact-title {
-      font-size: 11px;
-      font-weight: 700;
-      color: #D8C2B8;
-      margin-bottom: 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 4px;
-    }
-
-    .apkfact-pills {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      white-space: nowrap;
-      padding-bottom: 4px;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-    }
-
-    .apkfact-pills::-webkit-scrollbar {
-      height: 3px;
-    }
-
-    .apkfact-pills::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 4px;
-    }
-
-    .apkfact-pill {
-      background: rgba(255, 255, 255, 0.1);
-      color: #E2E2E2;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: var(--md-shape-corner-full);
-      padding: 4px 12px;
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .apkfact-pill.active {
-      background: var(--md-sys-color-primary);
-      color: var(--md-sys-color-on-primary);
-      border-color: var(--md-sys-color-primary);
-      box-shadow: 0 2px 8px rgba(156, 67, 0, 0.4);
-    }
-
-    /* Phone Shell Container */
-    .app-viewport {
-      width: 100%;
-      max-width: 430px;
-      height: calc(100vh - 54px);
-      max-height: 900px;
-      background-color: var(--md-sys-color-surface);
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-      border-radius: 0;
-    }
-
-    @media (min-width: 440px) {
-      .app-viewport {
-        border-radius: 28px;
-        margin-top: 10px;
-        margin-bottom: 10px;
-        height: 860px;
-        border: 4px solid #2B2623;
-      }
-    }
-
-    /* M3 Top Bar */
-    .m3-top-bar {
-      height: 64px;
-      background: var(--md-sys-color-surface-container-low);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 16px;
-      border-bottom: 1px solid var(--md-sys-color-outline-variant);
-      flex-shrink: 0;
-      z-index: 200;
-    }
-
-    .m3-app-brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .m3-logo-badge {
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, var(--md-sys-color-primary), #7A3300);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: 900;
-      font-size: 20px;
-      box-shadow: 0 2px 6px rgba(156, 67, 0, 0.3);
-    }
-
-    .m3-brand-titles {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .m3-brand-title {
-      font-size: 17px;
-      font-weight: 800;
-      color: var(--md-sys-color-on-surface);
-      line-height: 1.2;
-    }
-
-    .m3-brand-sub {
-      font-size: 11px;
-      color: var(--md-sys-color-outline);
-      font-weight: 600;
-      letter-spacing: 0.5px;
-    }
-
-    .m3-icon-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      border: none;
-      background: transparent;
-      color: var(--md-sys-color-on-surface-variant);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      position: relative;
-      transition: background 0.2s;
-    }
-
-    .m3-icon-btn:active {
-      background: rgba(0, 0, 0, 0.08);
-    }
-
-    .m3-icon-btn .badge-dot {
-      position: absolute;
-      top: 8px;
-      left: 8px;
-      width: 8px;
-      height: 8px;
-      background: var(--md-sys-color-error);
-      border-radius: 50%;
-      border: 2px solid var(--md-sys-color-surface-container-low);
-    }
-
-    /* Content Screen Area */
-    .screen-content {
-      flex: 1;
-      overflow-y: auto;
-      overflow-x: hidden;
-      display: none;
-      padding: 16px;
-      padding-bottom: 90px;
-    }
-
-    .screen-content.active {
-      display: block;
-      animation: fadeIn 0.25s cubic-bezier(0.05, 0.7, 0.1, 1);
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* M3 Bottom Navigation Bar */
-    .m3-navigation-bar {
-      height: 72px;
-      background: var(--md-sys-color-surface-container-high);
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      border-top: 1px solid var(--md-sys-color-outline-variant);
-      z-index: 300;
-      padding: 0 4px;
-    }
-
-    .m3-nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      cursor: pointer;
-      background: none;
-      border: none;
-      flex: 1;
-      color: var(--md-sys-color-on-surface-variant);
-      text-decoration: none;
-    }
-
-    .m3-nav-pill {
-      width: 52px;
-      height: 30px;
-      border-radius: var(--md-shape-corner-full);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-    }
-
-    .m3-nav-item.active .m3-nav-pill {
-      background: var(--md-sys-color-secondary-container);
-      color: var(--md-sys-color-on-secondary-container);
-    }
-
-    .m3-nav-label {
-      font-size: 11px;
-      font-weight: 700;
-      transition: color 0.2s;
-    }
-
-    .m3-nav-item.active .m3-nav-label {
-      color: var(--md-sys-color-primary);
-    }
-
-    /* M3 Card Components */
-    .m3-card {
-      background: var(--md-sys-color-surface-container-lowest);
-      border-radius: var(--md-shape-corner-large);
-      padding: 16px;
-      margin-bottom: 14px;
-      box-shadow: var(--md-elevation-1);
-      border: 1px solid var(--md-sys-color-surface-variant);
-      transition: transform 0.15s, box-shadow 0.15s;
-    }
-
-    .m3-card.clickable:active {
-      transform: scale(0.985);
-    }
-
-    .m3-card-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--md-sys-color-on-surface);
-      margin-bottom: 4px;
-    }
-
-    .m3-card-sub {
-      font-size: 12px;
-      color: var(--md-sys-color-on-surface-variant);
-      margin-bottom: 10px;
-    }
-
-    /* M3 Chips */
-    .m3-chip-row {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 6px;
-      margin-bottom: 12px;
-    }
-
-    .m3-chip {
-      padding: 6px 14px;
-      border-radius: var(--md-shape-corner-small);
-      border: 1px solid var(--md-sys-color-outline);
-      background: transparent;
-      color: var(--md-sys-color-on-surface-variant);
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .m3-chip.selected {
-      background: var(--md-sys-color-primary-container);
-      color: var(--md-sys-color-on-primary-container);
-      border-color: var(--md-sys-color-primary);
-    }
-
-    /* Form Components */
-    .m3-textfield {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-bottom: 14px;
-    }
-
-    .m3-label {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--md-sys-color-on-surface);
-    }
-
-    .m3-input, .m3-select, .m3-textarea {
-      width: 100%;
-      padding: 12px 14px;
-      border-radius: var(--md-shape-corner-small);
-      border: 1px solid var(--md-sys-color-outline);
-      background: var(--md-sys-color-surface-container-lowest);
-      color: var(--md-sys-color-on-surface);
-      font-size: 13px;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    .m3-input:focus, .m3-select:focus, .m3-textarea:focus {
-      border-color: var(--md-sys-color-primary);
-      box-shadow: 0 0 0 3px rgba(156, 67, 0, 0.15);
-    }
-
-    /* M3 Buttons */
-    .m3-btn {
-      min-height: 48px;
-      padding: 0 20px;
-      border-radius: var(--md-shape-corner-full);
-      border: none;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-      width: 100%;
-      text-decoration: none;
-    }
-
-    .m3-btn-primary {
-      background: var(--md-sys-color-primary);
-      color: var(--md-sys-color-on-primary);
-      box-shadow: var(--md-elevation-1);
-    }
-
-    .m3-btn-primary:active {
-      background: #7E3600;
-      box-shadow: none;
-    }
-
-    .m3-btn-tonal {
-      background: var(--md-sys-color-secondary-container);
-      color: var(--md-sys-color-on-secondary-container);
-    }
-
-    .m3-btn-outlined {
-      background: transparent;
-      border: 1px solid var(--md-sys-color-outline);
-      color: var(--md-sys-color-primary);
-    }
-
-    /* Image Gallery Grid */
-    .work-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .work-grid-item {
-      aspect-ratio: 4/3;
-      border-radius: var(--md-shape-corner-medium);
-      overflow: hidden;
-      position: relative;
-      background: #EBE0DA;
-      display: flex;
-      align-items: flex-end;
-      padding: 8px;
-      box-shadow: var(--md-elevation-1);
-    }
-
-    .work-grid-bg {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .work-grid-overlay {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.7), transparent 60%);
-    }
-
-    .work-grid-title {
-      position: relative;
-      z-index: 2;
-      color: white;
-      font-size: 11px;
-      font-weight: 700;
-    }
-
-    /* Progress bar */
-    .m3-progress-track {
-      height: 10px;
-      background: var(--md-sys-color-surface-variant);
-      border-radius: var(--md-shape-corner-full);
-      overflow: hidden;
-      margin: 8px 0;
-    }
-
-    .m3-progress-fill {
-      height: 100%;
-      background: var(--md-sys-color-primary);
-      border-radius: var(--md-shape-corner-full);
-      transition: width 0.4s ease;
-    }
-
-    /* Status Badges */
-    .m3-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 8px;
-      border-radius: var(--md-shape-corner-small);
-      font-size: 11px;
-      font-weight: 700;
-    }
-
-    .m3-badge-success {
-      background: var(--md-sys-color-success-container);
-      color: var(--md-sys-color-success);
-    }
-
-    .m3-badge-warning {
-      background: #FFF3CD;
-      color: #856404;
-    }
-
-    .m3-badge-info {
-      background: #CCE5FF;
-      color: #004085;
-    }
-
-    /* Permissions Pill Banner */
-    .permissions-banner {
-      background: var(--md-sys-color-surface-container-high);
-      border-radius: var(--md-shape-corner-medium);
-      padding: 8px 12px;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border: 1px dashed var(--md-sys-color-outline-variant);
-    }
-
-    .permission-tags {
-      display: flex;
-      gap: 4px;
-      flex-wrap: wrap;
-    }
-
-    .perm-tag {
-      font-size: 10px;
-      background: var(--md-sys-color-surface-container-lowest);
-      padding: 2px 6px;
-      border-radius: 4px;
-      color: var(--md-sys-color-outline);
-      font-weight: 600;
-    }
-
-    /* Section Header */
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 14px 0 10px 0;
-    }
-
-    .section-title {
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--md-sys-color-on-surface);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    /* Modal Sheet */
-    .m3-dialog-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.6);
-      z-index: 1000;
-      display: none;
-      align-items: flex-end;
-      justify-content: center;
-      backdrop-filter: blur(4px);
-    }
-
-    .m3-dialog-overlay.active {
-      display: flex;
-      animation: slideUp 0.25s cubic-bezier(0, 0, 0.2, 1);
-    }
-
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
-    }
-
-    .m3-sheet {
-      background: var(--md-sys-color-surface-container-lowest);
-      width: 100%;
-      border-top-left-radius: 28px;
-      border-top-right-radius: 28px;
-      padding: 20px 18px 28px 18px;
-      max-height: 85%;
-      overflow-y: auto;
-      box-shadow: var(--md-elevation-3);
-    }
-
-    .sheet-handle {
-      width: 36px;
-      height: 4px;
-      background: var(--md-sys-color-outline-variant);
-      border-radius: 2px;
-      margin: 0 auto 16px auto;
-    }
-
-    /* Toast Notification Snackbar */
-    .m3-snackbar {
-      position: absolute;
-      bottom: 80px;
-      left: 16px;
-      right: 16px;
-      background: #313033;
-      color: #F4EFF4;
-      padding: 12px 16px;
-      border-radius: var(--md-shape-corner-small);
-      font-size: 12px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      z-index: 2000;
-      transform: translateY(180%);
-      transition: transform 0.3s cubic-bezier(0, 0, 0.2, 1);
-      box-shadow: var(--md-elevation-2);
-    }
-
-    .m3-snackbar.active {
-      transform: translateY(0);
-    }
-
-    /* Skeleton Loading Animation */
-    .skeleton-box {
-      background: linear-gradient(90deg, #EBE0DA 25%, #F7ECE6 50%, #EBE0DA 75%);
-      background-size: 200% 100%;
-      animation: loading 1.5s infinite;
-      border-radius: var(--md-shape-corner-medium);
-    }
-
-    @keyframes loading {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-
-    /* PDF Print Mockup Dialog */
-    .pdf-preview {
-      background: white;
-      color: #111;
-      padding: 16px;
-      border-radius: 8px;
-      font-family: 'Cairo', sans-serif;
-      border: 1px dashed #999;
-      margin-top: 10px;
-      font-size: 12px;
-    }
-
-    /* KPI Card Dashboard grid */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-
-    .kpi-card {
-      background: var(--md-sys-color-surface-container-low);
-      padding: 12px;
-      border-radius: var(--md-shape-corner-large);
-      border: 1px solid var(--md-sys-color-surface-variant);
-    }
-
-    .kpi-val {
-      font-size: 20px;
-      font-weight: 900;
-      color: var(--md-sys-color-primary);
-      margin-top: 4px;
-    }
-
-    .kpi-title {
-      font-size: 11px;
-      color: var(--md-sys-color-outline);
-      font-weight: 700;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>إدارة المدرار - لوحة تحكم المقاولات الهندسية</title>
+    <style>
+        /* ==========================================
+           1. MATERIAL 3 DESIGN TOKENS & SYSTEM
+           ========================================== */
+        :root {
+            /* M3 Core Palette - Engineering & Construction Admin Theme */
+            --md-sys-color-primary: #0F4C81;
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-primary-container: #D6E3FF;
+            --md-sys-color-on-primary-container: #001B3E;
+            
+            --md-sys-color-secondary: #E38B29; /* Engineering Warm Amber Gold */
+            --md-sys-color-on-secondary: #FFFFFF;
+            --md-sys-color-secondary-container: #FFDCC2;
+            --md-sys-color-on-secondary-container: #2E1500;
+
+            --md-sys-color-tertiary: #2D6A4F; /* Construction Field Green */
+            --md-sys-color-on-tertiary: #FFFFFF;
+            --md-sys-color-tertiary-container: #B7F0CE;
+            --md-sys-color-on-tertiary-container: #002111;
+
+            --md-sys-color-surface: #F8F9FE;
+            --md-sys-color-on-surface: #191C1E;
+            --md-sys-color-surface-variant: #E0E2EC;
+            --md-sys-color-on-surface-variant: #43474E;
+            --md-sys-color-surface-container-lowest: #FFFFFF;
+            --md-sys-color-surface-container-low: #F3F3F8;
+            --md-sys-color-surface-container: #EDEEF4;
+            --md-sys-color-surface-container-high: #E7E8EE;
+            --md-sys-color-surface-container-highest: #E1E2E8;
+
+            --md-sys-color-outline: #74777F;
+            --md-sys-color-outline-variant: #C4C6CF;
+            
+            --md-sys-color-error: #BA1A1A;
+            --md-sys-color-on-error: #FFFFFF;
+            --md-sys-color-error-container: #FFDAD6;
+            --md-sys-color-on-error-container: #410002;
+
+            --md-sys-color-success: #2E7D32;
+            --md-sys-color-success-container: #E8F5E9;
+            --md-sys-color-info: #0288D1;
+            --md-sys-color-info-container: #E0F7FA;
+
+            /* M3 Corner Radius Scale */
+            --md-shape-corner-none: 0px;
+            --md-shape-corner-extra-small: 4px;
+            --md-shape-corner-small: 8px;
+            --md-shape-corner-medium: 12px;
+            --md-shape-corner-large: 16px;
+            --md-shape-corner-extra-large: 28px;
+            --md-shape-corner-full: 9999px;
+
+            /* M3 Elevation Shadows */
+            --md-elevation-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.04);
+            --md-elevation-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.04);
+            --md-elevation-3: 0px 4px 8px 3px rgba(0, 0, 0, 0.1), 0px 1px 3px 0px rgba(0, 0, 0, 0.06);
+
+            --font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans Arabic", Tahoma, sans-serif;
+        }
+
+        /* Dark Theme Support Tokens */
+        body.dark-mode {
+            --md-sys-color-primary: #A2C8FF;
+            --md-sys-color-on-primary: #003062;
+            --md-sys-color-primary-container: #004689;
+            --md-sys-color-on-primary-container: #D6E3FF;
+
+            --md-sys-color-secondary: #FFB77C;
+            --md-sys-color-on-secondary: #4A2800;
+            --md-sys-color-secondary-container: #693C00;
+            --md-sys-color-on-secondary-container: #FFDCC2;
+
+            --md-sys-color-surface: #111318;
+            --md-sys-color-on-surface: #E1E2E8;
+            --md-sys-color-surface-variant: #43474E;
+            --md-sys-color-on-surface-variant: #C4C6CF;
+            --md-sys-color-surface-container-lowest: #0C0E13;
+            --md-sys-color-surface-container-low: #191C20;
+            --md-sys-color-surface-container: #1D2024;
+            --md-sys-color-surface-container-high: #282A2F;
+            --md-sys-color-surface-container-highest: #33353A;
+
+            --md-sys-color-outline: #8E9099;
+            --md-sys-color-outline-variant: #43474E;
+        }
+
+        /* Base Reset */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            background-color: #070a12;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--md-sys-color-on-surface);
+            direction: rtl;
+        }
+
+        /* Top Auditor Screen Switcher Bar */
+        #apkfact-screens {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 48px;
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(12px);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            gap: 8px;
+            overflow-x: auto;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            scrollbar-width: none;
+        }
+        #apkfact-screens::-webkit-scrollbar { display: none; }
+        .screen-pill {
+            background: rgba(255, 255, 255, 0.08);
+            color: #94A3B8;
+            padding: 6px 14px;
+            border-radius: var(--md-shape-corner-full);
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        .screen-pill.active {
+            background: var(--md-sys-color-secondary);
+            color: #000;
+            font-weight: 800;
+            border-color: #FFF;
+        }
+
+        /* Flutter Phone Container */
+        .phone-frame {
+            width: 100%;
+            max-width: 412px;
+            height: 870px;
+            max-height: 94vh;
+            background-color: var(--md-sys-color-surface);
+            border-radius: 36px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            margin-top: 40px;
+            border: 8px solid #1E293B;
+        }
+
+        /* Header App Bar */
+        .app-bar {
+            height: 64px;
+            background: var(--md-sys-color-surface);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 1px solid var(--md-sys-color-surface-container-high);
+        }
+        .app-bar .brand-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .app-bar .admin-tag {
+            background: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: var(--md-shape-corner-full);
+        }
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--md-shape-corner-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--md-sys-color-on-surface-variant);
+            position: relative;
+            transition: background 0.2s;
+        }
+        .icon-btn:active {
+            background: var(--md-sys-color-surface-container-high);
+        }
+
+        /* View Main Scroll Container */
+        .view-content {
+            flex: 1;
+            overflow-y: auto;
+            display: none;
+            padding: 16px;
+            padding-bottom: 90px;
+            position: relative;
+        }
+        .view-content.active {
+            display: block;
+        }
+
+        /* M3 Navigation Bar */
+        .navigation-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 76px;
+            background: var(--md-sys-color-surface-container-lowest);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+            border-top: 1px solid var(--md-sys-color-surface-container);
+            z-index: 20;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            cursor: pointer;
+            color: var(--md-sys-color-on-surface-variant);
+            font-size: 11px;
+            font-weight: 600;
+            width: 60px;
+        }
+        .nav-icon-wrapper {
+            width: 52px;
+            height: 30px;
+            border-radius: var(--md-shape-corner-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .nav-item.active .nav-icon-wrapper {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+        }
+        .nav-item.active {
+            color: var(--md-sys-color-primary);
+            font-weight: 800;
+        }
+
+        /* M3 Cards & Cards Grid */
+        .m3-card {
+            background: var(--md-sys-color-surface-container-lowest);
+            border-radius: var(--md-shape-corner-large);
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid var(--md-sys-color-surface-container-high);
+            box-shadow: var(--md-elevation-1);
+        }
+        .m3-card.clickable:active {
+            transform: scale(0.98);
+        }
+
+        /* KPI Dashboard Stats Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .kpi-card {
+            background: var(--md-sys-color-surface-container-lowest);
+            border-radius: var(--md-shape-corner-medium);
+            padding: 14px;
+            border: 1px solid var(--md-sys-color-surface-container);
+            box-shadow: var(--md-elevation-1);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+            overflow: hidden;
+        }
+        .kpi-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 4px;
+            height: 100%;
+        }
+        .kpi-primary::after { background: var(--md-sys-color-primary); }
+        .kpi-amber::after { background: var(--md-sys-color-secondary); }
+        .kpi-green::after { background: var(--md-sys-color-tertiary); }
+        .kpi-info::after { background: var(--md-sys-color-info); }
+
+        .kpi-card .val {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--md-sys-color-on-surface);
+            letter-spacing: -0.5px;
+        }
+        .kpi-card .lbl {
+            font-size: 11px;
+            color: var(--md-sys-color-outline);
+            font-weight: 600;
+        }
+        .kpi-card .trend {
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        /* Status Badges */
+        .badge-status {
+            padding: 4px 10px;
+            border-radius: var(--md-shape-corner-full);
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .badge-new { background: var(--md-sys-color-info-container); color: var(--md-sys-color-info); }
+        .badge-inspect { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
+        .badge-working { background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); }
+        .badge-complete { background: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-tertiary-container); }
+
+        /* M3 Input Elements */
+        .m3-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 14px;
+            text-align: right;
+        }
+        .m3-input-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+        .m3-input {
+            width: 100%;
+            height: 48px;
+            border-radius: var(--md-shape-corner-small);
+            border: 1px solid var(--md-sys-color-outline);
+            background: var(--md-sys-color-surface-container-lowest);
+            padding: 0 14px;
+            font-size: 14px;
+            color: var(--md-sys-color-on-surface);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .m3-input:focus {
+            border-color: var(--md-sys-color-primary);
+            border-width: 2px;
+        }
+
+        /* OTP Digit Boxes */
+        .otp-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin: 16px 0;
+            direction: ltr;
+        }
+        .otp-box {
+            width: 44px;
+            height: 52px;
+            border-radius: var(--md-shape-corner-medium);
+            border: 2px solid var(--md-sys-color-outline-variant);
+            background: var(--md-sys-color-surface-container-lowest);
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--md-sys-color-primary);
+        }
+        .otp-box:focus {
+            border-color: var(--md-sys-color-primary);
+            outline: none;
+            background: var(--md-sys-color-primary-container);
+        }
+
+        /* M3 Buttons */
+        .m3-btn {
+            height: 48px;
+            border-radius: var(--md-shape-corner-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            padding: 0 20px;
+            width: 100%;
+            transition: opacity 0.15s;
+        }
+        .m3-btn-primary {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            box-shadow: var(--md-elevation-1);
+        }
+        .m3-btn-secondary {
+            background: var(--md-sys-color-secondary);
+            color: var(--md-sys-color-on-secondary);
+        }
+        .m3-btn-tertiary {
+            background: var(--md-sys-color-tertiary);
+            color: var(--md-sys-color-on-tertiary);
+        }
+        .m3-btn-tonal {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+        }
+        .m3-btn-outlined {
+            background: transparent;
+            border: 1px solid var(--md-sys-color-outline);
+            color: var(--md-sys-color-primary);
+        }
+        .m3-btn:active { opacity: 0.85; }
+
+        /* Chips & Segmented Controls */
+        .chip-group {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            scrollbar-width: none;
+        }
+        .chip-group::-webkit-scrollbar { display: none; }
+        .chip {
+            padding: 6px 14px;
+            border-radius: var(--md-shape-corner-small);
+            border: 1px solid var(--md-sys-color-outline-variant);
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            background: var(--md-sys-color-surface-container-lowest);
+            color: var(--md-sys-color-on-surface-variant);
+            cursor: pointer;
+        }
+        .chip.active {
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            border-color: var(--md-sys-color-primary);
+            font-weight: 700;
+        }
+
+        /* Bottom Sheet Modal */
+        .bottom-sheet {
+            position: absolute;
+            bottom: -100%;
+            left: 0;
+            right: 0;
+            background: var(--md-sys-color-surface-container-lowest);
+            border-radius: 28px 28px 0 0;
+            padding: 20px 18px 30px 18px;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.35);
+            z-index: 100;
+            transition: bottom 0.3s cubic-bezier(0, 0, 0.2, 1);
+            max-height: 85%;
+            overflow-y: auto;
+        }
+        .bottom-sheet.open { bottom: 0; }
+        .sheet-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 90;
+            display: none;
+        }
+        .sheet-backdrop.open { display: block; }
+        .sheet-handle {
+            width: 36px;
+            height: 4px;
+            background: var(--md-sys-color-outline-variant);
+            border-radius: 2px;
+            margin: 0 auto 16px auto;
+        }
+
+        /* Skeleton Loading Effect */
+        .skeleton {
+            background: linear-gradient(90deg, var(--md-sys-color-surface-container) 25%, var(--md-sys-color-surface-container-high) 50%, var(--md-sys-color-surface-container) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.4s infinite;
+            border-radius: 6px;
+        }
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Visual Media Placeholder Cards */
+        .media-placeholder {
+            width: 100%;
+            height: 120px;
+            border-radius: var(--md-shape-corner-medium);
+            background: linear-gradient(135deg, var(--md-sys-color-primary), #1B2A47);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFF;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Chart SVG Graphic Container */
+        .chart-box {
+            width: 100%;
+            height: 120px;
+            margin-top: 8px;
+        }
+    </style>
 </head>
 <body>
 
-  <!-- Top Tester Screen Switcher Bar (req: id="apkfact-screens") -->
-  <div id="apkfact-screens">
-    <div class="apkfact-title">
-      <span>تطبيق المقاولات: المدرار (almadrar)</span>
-      <span style="background: var(--md-sys-color-primary); color: white; padding: 1px 6px; border-radius: 4px; font-size: 10px;">Flutter M3 System</span>
-    </div>
-    <div class="apkfact-pills">
-      <button class="apkfact-pill active" onclick="switchScreen('screen-customer-home', this)">🏠 الخدمات والأعمال</button>
-      <button class="apkfact-pill" onclick="switchScreen('screen-quote-request', this)">📝 طلب عرض سعر</button>
-      <button class="apkfact-pill" onclick="switchScreen('screen-customer-track', this)">🔍 متابعة المشروع</button>
-      <button class="apkfact-pill" onclick="switchScreen('screen-customer-contact', this)">📞 التواصل المباشر</button>
-      <button class="apkfact-pill" onclick="switchScreen('screen-admin-login', this)">🔐 دخول الإدارة</button>
-      <button class="apkfact-pill" onclick="switchScreen('screen-admin-projects', this)">🏗️ المشاريع والمواقع</button>
-      <button class="apkfact-pill" onclick="switchScreen('screen-daily-report', this)">📋 التقرير اليومي</button>
-      <button class="apkfact-pill" onclick="switchScreen('screen-admin-expenses', this)">💰 المصروفات والعمال</button>
-      <button class="apkfact-pill" onclick="switchScreen('screen-admin-invoices', this)">📄 الفواتير و PDF</button>
-      <button class="apkfact-pill" onclick="switchScreen('screen-notifications', this)">🔔 الإشعارات</button>
-      <button class="apkfact-pill" onclick="switchScreen('screen-loading-skeleton', this)">⏳ جاري التحميل</button>
-      <button class="apkfact-pill" onclick="switchScreen('screen-empty-state', this)">📭 حالة فارغة</button>
-    </div>
-  </div>
-
-  <!-- Main Mobile App Viewport -->
-  <div class="app-viewport">
-    
-    <!-- Top App Bar -->
-    <header class="m3-top-bar">
-      <div class="m3-app-brand">
-        <div class="m3-logo-badge">م</div>
-        <div class="m3-brand-titles">
-          <span class="m3-brand-title">إدارة المدرار</span>
-          <span class="m3-brand-sub">almadrar contracting</span>
-        </div>
-      </div>
-      <div style="display: flex; gap: 4px;">
-        <button class="m3-icon-btn" title="الإشعارات" onclick="switchScreen('screen-notifications')">
-          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          <span class="badge-dot"></span>
-        </button>
-        <button class="m3-icon-btn" title="الدخول للإدارة" onclick="switchScreen('screen-admin-login')">
-          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
-        </button>
-      </div>
-    </header>
-
-    <!-- Permissions Banner Bar Context -->
-    <div style="padding: 10px 16px 0 16px;">
-      <div class="permissions-banner">
-        <span style="font-size: 11px; font-weight: 700; color: var(--md-sys-color-outline);">صلاحيات النظام النشطة:</span>
-        <div class="permission-tags">
-          <span class="perm-tag">📸 CAMERA</span>
-          <span class="perm-tag">📁 STORAGE</span>
-          <span class="perm-tag">🔔 NOTIF</span>
-          <span class="perm-tag">📞 CALL</span>
-        </div>
-      </div>
+    <!-- AUDITOR SCREEN SWITCHER (TOP BAR) -->
+    <div id="apkfact-screens">
+        <div class="screen-pill active" onclick="switchView('v-dashboard', this)">1. لوحة التحكم (Dashboard)</div>
+        <div class="screen-pill" onclick="switchView('v-requests', this)">2. إدارة الطلبات والمشاريع</div>
+        <div class="screen-pill" onclick="switchView('v-cost-inspection', this)">3. المعاينة وتحديد التكلفة</div>
+        <div class="screen-pill" onclick="switchView('v-update-progress', this)">4. تحديث نسبة الإنجاز والرفع</div>
+        <div class="screen-pill" onclick="switchView('v-services-admin', this)">5. إدارة الخدمات (12 خدمة)</div>
+        <div class="screen-pill" onclick="switchView('v-portfolio-admin', this)">6. إدارة معرض الأعمال</div>
+        <div class="screen-pill" onclick="switchView('v-customers', this)">7. قائمة العملاء (الحسابات)</div>
+        <div class="screen-pill" onclick="switchView('v-notifications-admin', this)">8. الإشعارات والتنبيهات</div>
+        <div class="screen-pill" onclick="switchView('v-login-admin', this)">9. تسجيل دخول إدارة (OTP)</div>
+        <div class="screen-pill" onclick="switchView('v-signup-admin', this)">10. حساب جديد (إدارة)</div>
+        <div class="screen-pill" onclick="switchView('v-settings', this)">11. الإعدادات والملف</div>
+        <div class="screen-pill" onclick="switchView('v-skeleton', this)">12. حالة التحميل (Skeleton)</div>
+        <div class="screen-pill" onclick="switchView('v-empty', this)">13. حالة فارغة (Empty)</div>
     </div>
 
-    <!-- ==================== SCREEN 1: CUSTOMER HOME & SERVICES ==================== -->
-    <main id="screen-customer-home" class="screen-content active">
-      <div class="m3-card" style="background: linear-gradient(135deg, #9C4300, #5C2700); color: white;">
-        <span class="m3-badge" style="background: rgba(255,255,255,0.2); color: white; margin-bottom: 8px;">مؤسسة المدرار للمقاولات العامة</span>
-        <h2 style="font-size: 19px; font-weight: 900; margin-bottom: 6px;">نبني رؤيتكم بأعلى معايير الجودة</h2>
-        <p style="font-size: 12px; opacity: 0.9; margin-bottom: 16px;">متخصصون في الأعمال الخرسانية، التشطيبات اللوكس، وتسليم الشقق على المفتاح.</p>
-        <div style="display: flex; gap: 8px;">
-          <button class="m3-btn m3-btn-primary" style="background: white; color: #9C4300; flex: 1; font-size: 13px;" onclick="switchScreen('screen-quote-request')">طلب عرض سعر</button>
-          <button class="m3-btn m3-btn-outlined" style="border-color: rgba(255,255,255,0.6); color: white; flex: 1; font-size: 13px;" onclick="switchScreen('screen-customer-track')">متابعة مشروعك</button>
-        </div>
-      </div>
+    <!-- MAIN FLUTTER PHONE FRAME CONTAINER -->
+    <div class="phone-frame">
 
-      <div class="section-header">
-        <span class="section-title">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-          خدمات الشركة الأساسية
-        </span>
-      </div>
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
-        <div class="m3-card clickable" onclick="switchScreen('screen-quote-request')">
-          <div style="width: 36px; height: 36px; border-radius: 10px; background: var(--md-sys-color-primary-container); color: var(--md-sys-color-primary); display: flex; align-items: center; justify-content: center; margin-bottom: 8px; font-size: 18px;">🎨</div>
-          <div class="m3-card-title" style="font-size: 14px;">تشطيب</div>
-          <div class="m3-card-sub" style="font-size: 11px; margin-bottom: 0;">تشطيب داخلي وخارجي سوبر لوكس</div>
-        </div>
-        <div class="m3-card clickable" onclick="switchScreen('screen-quote-request')">
-          <div style="width: 36px; height: 36px; border-radius: 10px; background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-secondary); display: flex; align-items: center; justify-content: center; margin-bottom: 8px; font-size: 18px;">🏗️</div>
-          <div class="m3-card-title" style="font-size: 14px;">صب أساسات وطوابق</div>
-          <div class="m3-card-sub" style="font-size: 11px; margin-bottom: 0;">قواعد، لبشة، وأسقف مسلحة</div>
-        </div>
-        <div class="m3-card clickable" onclick="switchScreen('screen-quote-request')">
-          <div style="width: 36px; height: 36px; border-radius: 10px; background: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-tertiary-container); display: flex; align-items: center; justify-content: center; margin-bottom: 8px; font-size: 18px;">🏛️</div>
-          <div class="m3-card-title" style="font-size: 14px;">أعمدة</div>
-          <div class="m3-card-sub" style="font-size: 11px; margin-bottom: 0;">هياكل خرسانية خرسانات مسلحة</div>
-        </div>
-        <div class="m3-card clickable" onclick="switchScreen('screen-quote-request')">
-          <div style="width: 36px; height: 36px; border-radius: 10px; background: var(--md-sys-color-success-container); color: var(--md-sys-color-success); display: flex; align-items: center; justify-content: center; margin-bottom: 8px; font-size: 18px;">🔑</div>
-          <div class="m3-card-title" style="font-size: 14px;">شقق جاهزة</div>
-          <div class="m3-card-sub" style="font-size: 11px; margin-bottom: 0;">تسليم كامل مفتاح متكامل</div>
-        </div>
-      </div>
-
-      <div class="section-header">
-        <span class="section-title">🖼️ معرض صور الأعمال السابقة</span>
-        <span style="font-size: 12px; color: var(--md-sys-color-primary); font-weight: 700; cursor: pointer;">عرض الكل</span>
-      </div>
-
-      <div class="work-grid">
-        <div class="work-grid-item">
-          <svg class="work-grid-bg" viewBox="0 0 200 150" preserveAspectRatio="none">
-            <rect width="200" height="150" fill="#2C3E50"/>
-            <path d="M20 130 L100 40 L180 130 Z" fill="#E74C3C"/>
-            <rect x="75" y="80" width="50" height="50" fill="#ECF0F1"/>
-            <rect x="90" y="95" width="20" height="35" fill="#34495E"/>
-          </svg>
-          <div class="work-grid-overlay"></div>
-          <span class="work-grid-title">فيلا النرجس - تشطيب كامل</span>
-        </div>
-        <div class="work-grid-item">
-          <svg class="work-grid-bg" viewBox="0 0 200 150" preserveAspectRatio="none">
-            <rect width="200" height="150" fill="#34495E"/>
-            <rect x="30" y="30" width="140" height="110" fill="#95A5A6"/>
-            <line x1="30" y1="60" x2="170" y2="60" stroke="#7F8C8D" stroke-width="4"/>
-            <line x1="30" y1="90" x2="170" y2="90" stroke="#7F8C8D" stroke-width="4"/>
-            <rect x="50" y="40" width="25" height="15" fill="#F39C12"/>
-            <rect x="90" y="40" width="25" height="15" fill="#F39C12"/>
-          </svg>
-          <div class="work-grid-overlay"></div>
-          <span class="work-grid-title">صب أسقف برج الياسمين</span>
-        </div>
-        <div class="work-grid-item">
-          <svg class="work-grid-bg" viewBox="0 0 200 150" preserveAspectRatio="none">
-            <rect width="200" height="150" fill="#16A085"/>
-            <rect x="40" y="40" width="20" height="100" fill="#BDC3C7"/>
-            <rect x="90" y="40" width="20" height="100" fill="#BDC3C7"/>
-            <rect x="140" y="40" width="20" height="100" fill="#BDC3C7"/>
-          </svg>
-          <div class="work-grid-overlay"></div>
-          <span class="work-grid-title">تركيب أعمدة خرسانية</span>
-        </div>
-        <div class="work-grid-item">
-          <svg class="work-grid-bg" viewBox="0 0 200 150" preserveAspectRatio="none">
-            <rect width="200" height="150" fill="#D35400"/>
-            <rect x="20" y="20" width="160" height="120" fill="#F1C40F"/>
-            <circle cx="100" cy="70" r="30" fill="#E67E22"/>
-          </svg>
-          <div class="work-grid-overlay"></div>
-          <span class="work-grid-title">شقق مجهزة بالكامل</span>
-        </div>
-      </div>
-    </main>
-
-    <!-- ==================== SCREEN 2: REQUEST QUOTE ==================== -->
-    <main id="screen-quote-request" class="screen-content">
-      <div class="m3-card">
-        <h2 class="m3-card-title">طلب عرض سعر جديد</h2>
-        <p class="m3-card-sub">أدخل تفاصيل مشروعك وسيقوم مهندسونا بحساب التكلفة التقديرية والتواصل معك مباشرة.</p>
-        
-        <form onsubmit="handleQuoteSubmit(event)">
-          <div class="m3-textfield">
-            <label class="m3-label">نوع الشغل المطلوب</label>
-            <select id="quote-work-type" class="m3-select" required>
-              <option value="تشطيب">تشطيب كامل</option>
-              <option value="صب أساسات وطوابق">صب أساسات وطوابق</option>
-              <option value="أعمدة">أعمدة وخرسانة مسلحة</option>
-              <option value="شقق جاهزة">شقق جاهزة (تسليم مفتاح)</option>
-            </select>
-          </div>
-
-          <div class="m3-textfield">
-            <label class="m3-label">المساحة الإجمالية (متر مربع)</label>
-            <input type="number" id="quote-area" class="m3-input" placeholder="مثال: 350" required min="10">
-          </div>
-
-          <div class="m3-textfield">
-            <label class="m3-label">الموقع / المدينة / الحي</label>
-            <input type="text" id="quote-location" class="m3-input" placeholder="مثال: الرياض - حي الملقا" required>
-          </div>
-
-          <div class="m3-textfield">
-            <label class="m3-label">اسمك الكريم</label>
-            <input type="text" id="quote-name" class="m3-input" placeholder="أدخل اسمك" required>
-          </div>
-
-          <div class="m3-textfield">
-            <label class="m3-label">رقم الهاتف للتواصل</label>
-            <input type="tel" id="quote-phone" class="m3-input" placeholder="05xxxxxxxx" required>
-          </div>
-
-          <div class="m3-textfield">
-            <label class="m3-label">تفاصيل وملاحظات إضافية</label>
-            <textarea id="quote-notes" class="m3-textarea" rows="3" placeholder="اكتب أي مواصفات خاصة ترغب بها..."></textarea>
-          </div>
-
-          <button type="submit" class="m3-btn m3-btn-primary" style="margin-top: 10px;">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            إرسال طلب عرض السعر
-          </button>
-        </form>
-      </div>
-
-      <div class="m3-card" style="background: var(--md-sys-color-surface-container-low);">
-        <div style="display: flex; gap: 12px; align-items: center;">
-          <div style="font-size: 28px;">⏱️</div>
-          <div>
-            <div style="font-weight: 700; font-size: 13px;">سرعة الاستجابة</div>
-            <div style="font-size: 11px; color: var(--md-sys-color-outline);">تم إرسال أكثر من 450 عرض سعر خلال هذا الشهر بمعدل رد أقل من 3 ساعات.</div>
-          </div>
-        </div>
-      </div>
-    </main>
-
-    <!-- ==================== SCREEN 3: TRACK PROJECT (CUSTOMER) ==================== -->
-    <main id="screen-customer-track" class="screen-content">
-      <div class="m3-card">
-        <h2 class="m3-card-title">متابعة مشروعك</h2>
-        <p class="m3-card-sub">أدخل كود المشروع الخاص بك لمتابعة نسبة التقدم ومراحل التنفيذ والصور اليومية.</p>
-
-        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-          <input type="text" id="project-code-input" class="m3-input" style="font-weight: 700; letter-spacing: 1px;" placeholder="كود المشروع (مثال: MAD-2025-01)" value="MAD-2025-01">
-          <button class="m3-btn m3-btn-primary" style="width: auto; padding: 0 16px;" onclick="searchProjectCode()">بحث</button>
-        </div>
-
-        <div style="font-size: 11px; color: var(--md-sys-color-outline);">
-          💡 أكواد تجريبية جاهزة للمعاينة: 
-          <span style="color: var(--md-sys-color-primary); font-weight: 700; cursor: pointer;" onclick="document.getElementById('project-code-input').value='MAD-2025-01'; searchProjectCode();">MAD-2025-01</span> أو 
-          <span style="color: var(--md-sys-color-primary); font-weight: 700; cursor: pointer;" onclick="document.getElementById('project-code-input').value='MAD-2025-02'; searchProjectCode();">MAD-2025-02</span>
-        </div>
-      </div>
-
-      <!-- Project Results View Container -->
-      <div id="project-results-container">
-        <div class="m3-card">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-            <div>
-              <span class="m3-badge m3-badge-success">قيد التنفيذ النشط</span>
-              <h3 id="track-proj-title" style="font-size: 16px; font-weight: 800; margin-top: 6px;">فيلا الأمل - حي النرجس</h3>
-              <div style="font-size: 12px; color: var(--md-sys-color-outline);">كود المشروع: <strong id="track-proj-code" style="color: var(--md-sys-color-primary);">MAD-2025-01</strong></div>
+        <!-- COMMON TOP APP BAR -->
+        <header class="app-bar" id="main-app-bar">
+            <div class="brand-badge">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--md-sys-color-primary)" stroke-width="2.2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                <div>
+                    <h1 style="font-size: 15px; font-weight: 800; color: var(--md-sys-color-on-surface); line-height: 1.1;">إدارة المدرار</h1>
+                    <span style="font-size: 10px; color: var(--md-sys-color-outline);">المدرار للمقاولات الهندسية</span>
+                </div>
             </div>
-            <div style="text-align: left;">
-              <div style="font-size: 22px; font-weight: 900; color: var(--md-sys-color-primary);" id="track-proj-percent">68%</div>
-              <div style="font-size: 11px; color: var(--md-sys-color-outline);">إنجاز كلي</div>
+            <div style="display: flex; gap: 4px; align-items: center;">
+                <span class="admin-tag">لوحة الإدارة</span>
+                <button class="icon-btn" onclick="switchView('v-notifications-admin')" title="التنبيهات">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                </button>
             </div>
-          </div>
+        </header>
 
-          <div class="m3-progress-track">
-            <div id="track-proj-bar" class="m3-progress-fill" style="width: 68%;"></div>
-          </div>
-
-          <div style="margin: 14px 0; background: var(--md-sys-color-surface-container-high); padding: 12px; border-radius: 12px;">
-            <div style="font-size: 11px; font-weight: 700; color: var(--md-sys-color-outline); margin-bottom: 4px;">مرحلة التنفيذ الحالية:</div>
-            <div id="track-proj-phase" style="font-size: 14px; font-weight: 800; color: var(--md-sys-color-on-surface);">صب سقف الطابق الثاني والبدء بالمباني</div>
-            <div style="font-size: 11px; color: var(--md-sys-color-outline); margin-top: 4px;">المشرف على الموقع: <strong id="track-proj-engineer">م. أحمد العمراني</strong></div>
-          </div>
-
-          <div class="section-header">
-            <span class="section-title">📷 أحدث صور الموقع المرفوعة من المهندس</span>
-          </div>
-
-          <div class="work-grid">
-            <div class="work-grid-item">
-              <svg class="work-grid-bg" viewBox="0 0 200 150"><rect width="200" height="150" fill="#7F8C8D"/><circle cx="100" cy="75" r="40" fill="#BDC3C7"/></svg>
-              <div class="work-grid-overlay"></div>
-              <span class="work-grid-title">صب الخرسانة اليوم</span>
+        <!-- ==========================================
+             1. DASHBOARD VIEW (لوحة التحكم الرئيسية)
+             ========================================== -->
+        <div id="v-dashboard" class="view-content active">
+            <!-- Hero Welcome Card -->
+            <div class="m3-card" style="background: linear-gradient(135deg, #0F4C81, #1B3B6F); color: #FFF; padding: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="font-size: 11px; opacity: 0.85;">مرحباً بك، المهندس المدير</span>
+                        <h2 style="font-size: 18px; font-weight: 800; margin-top: 2px;">ملخص العمليات والمشاريع</h2>
+                    </div>
+                    <button class="m3-btn m3-btn-secondary" style="height: 36px; font-size: 11px; width: auto; padding: 0 12px;" onclick="switchView('v-requests')">
+                        + طلب جديد
+                    </button>
+                </div>
             </div>
-            <div class="work-grid-item">
-              <svg class="work-grid-bg" viewBox="0 0 200 150"><rect width="200" height="150" fill="#95A5A6"/><rect x="40" y="30" width="120" height="90" fill="#D35400"/></svg>
-              <div class="work-grid-overlay"></div>
-              <span class="work-grid-title">فحص حديد التسليح</span>
+
+            <!-- KPI Cards Grid -->
+            <div class="kpi-grid">
+                <div class="kpi-card kpi-amber" onclick="switchView('v-requests')">
+                    <span class="lbl">طلبات جديدة</span>
+                    <span class="val">8 طلبات</span>
+                    <span class="trend" style="color: #D97706;">▲ بانتظار المعاينة</span>
+                </div>
+                <div class="kpi-card kpi-primary" onclick="switchView('v-requests')">
+                    <span class="lbl">مشاريع قيد التنفيذ</span>
+                    <span class="val">14 مشروعاً</span>
+                    <span class="trend" style="color: var(--md-sys-color-primary);">● خرسانة وتطببيق</span>
+                </div>
+                <div class="kpi-card kpi-green" onclick="switchView('v-requests')">
+                    <span class="lbl">إجمالي الإيرادات</span>
+                    <span class="val">345,000</span>
+                    <span class="trend" style="color: var(--md-sys-color-tertiary);">دينار ليبي</span>
+                </div>
+                <div class="kpi-card kpi-info" onclick="switchView('v-customers')">
+                    <span class="lbl">إجمالي العملاء</span>
+                    <span class="val">128 عميل</span>
+                    <span class="trend" style="color: var(--md-sys-color-info);">+12 هذا الشهر</span>
+                </div>
             </div>
-          </div>
 
-          <button class="m3-btn m3-btn-tonal" style="margin-top: 16px;" onclick="switchScreen('screen-notifications')">
-            🔔 مشاهدة التنبيهات الخاصة بهذا المشروع
-          </button>
-        </div>
-      </div>
-    </main>
-
-    <!-- ==================== SCREEN 4: DIRECT CONTACT ==================== -->
-    <main id="screen-customer-contact" class="screen-content">
-      <div class="m3-card" style="text-align: center; padding: 24px 16px;">
-        <div style="width: 64px; height: 64px; background: var(--md-sys-color-primary-container); color: var(--md-sys-color-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 30px;">
-          📞
-        </div>
-        <h2 style="font-size: 19px; font-weight: 800; margin-bottom: 8px;">التواصل المباشر مع الشركة</h2>
-        <p style="font-size: 12px; color: var(--md-sys-color-outline); margin-bottom: 24px;">فريق شركة المدرار جاهز للرد على جميع استفساراتك وتزويدك بالاستشارات الهندسية.</p>
-
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <!-- WhatsApp Launcher Button -->
-          <a href="https://wa.me/966500000000?text=مرحباً%20شركة%20المدرار%20للمقاولات،%20أود%20الاستفسار%20عن%20خدماتكم" target="_blank" class="m3-btn" style="background: #25D366; color: white; border-radius: var(--md-shape-corner-medium);">
-            <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984 0 1.763.459 3.483 1.332 5.001l-1.415 5.166 5.289-1.386c1.464.799 3.116 1.22 4.78 1.221h.004c5.505 0 9.988-4.478 9.989-9.985 0-2.668-1.038-5.176-2.924-7.062-1.886-1.886-4.395-2.924-7.065-2.925zm0 1.664c4.587 0 8.324 3.738 8.325 8.324 0 2.224-.866 4.314-2.441 5.888-1.574 1.575-3.664 2.442-5.888 2.442h-.003c-1.45 0-2.871-.374-4.127-1.082l-.296-.168-3.076.806.821-3.001-.184-.293c-.779-1.242-1.191-2.68-1.191-4.148.001-4.586 3.739-8.324 8.326-8.324zm-3.606 4.41c-.201 0-.525.075-.8.375s-1.05 1.026-1.05 2.502 1.076 2.902 1.226 3.102c.15.2 2.072 3.237 5.127 4.436.726.285 1.293.456 1.736.597.729.232 1.393.199 1.918.12.585-.088 1.8-.735 2.05-1.447.25-.712.25-1.323.175-1.447-.075-.125-.275-.2-.575-.35s-1.8-.888-2.075-1.013-.475-.188-.675.112-.775.975-.95 1.175-.35.225-.65.075c-.3-.15-1.265-.466-2.41-1.487-.892-.795-1.493-1.776-1.668-2.076s-.019-.462.131-.612c.135-.135.3-.35.45-.525.15-.175.2-.3.3-.5.1-.2.05-.375-.025-.525s-.675-1.625-.925-2.225c-.244-.583-.493-.504-.675-.513z"/></svg>
-            التواصل عبر الواتساب المباشر
-          </a>
-
-          <!-- Direct Call Button -->
-          <a href="tel:920000000" class="m3-btn m3-btn-primary" style="border-radius: var(--md-shape-corner-medium);">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            الاتصال الهاتفي المباشر (920000000)
-          </a>
-        </div>
-      </div>
-
-      <div class="m3-card">
-        <h3 class="m3-card-title" style="font-size: 14px;">📍 مقر الإدارة والمبيعات</h3>
-        <p class="m3-card-sub">الرياض - طريق الملك فهد - برج المدرار لتقنيات البناء - الدور 12</p>
-        <div style="font-size: 11px; color: var(--md-sys-color-outline);">أوقات العمل: الأحد - الخميس (8:00 صباحاً - 5:00 مساءً)</div>
-      </div>
-    </main>
-
-    <!-- ==================== SCREEN 5: ADMIN LOGIN / REGISTER ==================== -->
-    <main id="screen-admin-login" class="screen-content">
-      <div class="m3-card">
-        <div style="text-align: center; margin-bottom: 16px;">
-          <span class="m3-badge m3-badge-warning" style="margin-bottom: 8px;">بوابة طاقم الإدارة والمهندسين</span>
-          <h2 style="font-size: 19px; font-weight: 800;">تسجيل دخول الإدارة</h2>
-        </div>
-
-        <div class="m3-chip-row" style="justify-content: center;">
-          <button class="m3-chip selected" id="tab-login-code" onclick="toggleAuthTab('code')">رمز الإدارة السريع</button>
-          <button class="m3-chip" id="tab-login-email" onclick="toggleAuthTab('email')">الاسم والبريد الإلكتروني</button>
-        </div>
-
-        <form id="auth-form" onsubmit="handleAdminAuth(event)">
-          <!-- Admin Code Field -->
-          <div id="field-admin-code" class="m3-textfield">
-            <label class="m3-label">رمز الإدارة الخاص (Admin PIN)</label>
-            <input type="password" id="admin-pin-input" class="m3-input" placeholder="أدخل الرمز السرّي (مثال: 8888)" value="8888">
-          </div>
-
-          <!-- Email / Register Fields (hidden by default) -->
-          <div id="fields-register" style="display: none;">
-            <div class="m3-textfield">
-              <label class="m3-label">اسم المشرف / المهندس</label>
-              <input type="text" class="m3-input" placeholder="م. أحمد العمراني">
+            <!-- Statistics Visual SVG Chart -->
+            <div class="m3-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <h3 style="font-size: 14px; font-weight: 700;">إحصائيات الطلبات التنفيذية (أسبوعي)</h3>
+                    <span style="font-size: 11px; color: var(--md-sys-color-outline);">هذا الشهر</span>
+                </div>
+                <div class="chart-box">
+                    <svg width="100%" height="100%" viewBox="0 0 320 100" preserveAspectRatio="none">
+                        <!-- Grid Lines -->
+                        <line x1="0" y1="20" x2="320" y2="20" stroke="var(--md-sys-color-surface-container-high)" stroke-dasharray="4"/>
+                        <line x1="0" y1="60" x2="320" y2="60" stroke="var(--md-sys-color-surface-container-high)" stroke-dasharray="4"/>
+                        
+                        <!-- Bar Charts -->
+                        <!-- Sun -->
+                        <rect x="20" y="40" width="22" height="50" rx="4" fill="var(--md-sys-color-primary)"/>
+                        <!-- Mon -->
+                        <rect x="65" y="25" width="22" height="65" rx="4" fill="var(--md-sys-color-primary)"/>
+                        <!-- Tue -->
+                        <rect x="110" y="55" width="22" height="35" rx="4" fill="var(--md-sys-color-secondary)"/>
+                        <!-- Wed -->
+                        <rect x="155" y="15" width="22" height="75" rx="4" fill="var(--md-sys-color-primary)"/>
+                        <!-- Thu -->
+                        <rect x="200" y="30" width="22" height="60" rx="4" fill="var(--md-sys-color-tertiary)"/>
+                        <!-- Fri -->
+                        <rect x="245" y="70" width="22" height="20" rx="4" fill="var(--md-sys-color-outline-variant)"/>
+                        <!-- Sat -->
+                        <rect x="290" y="45" width="22" height="45" rx="4" fill="var(--md-sys-color-primary)"/>
+                    </svg>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--md-sys-color-outline); padding: 0 6px;">
+                    <span>أحد</span><span>إثنين</span><span>ثلاثاء</span><span>أربعاء</span><span>خميس</span><span>جمعة</span><span>سبت</span>
+                </div>
             </div>
-            <div class="m3-textfield">
-              <label class="m3-label">البريد الإلكتروني</label>
-              <input type="email" class="m3-input" placeholder="eng.ahmed@almadrar.com">
+
+            <!-- Quick Action Buttons Row -->
+            <div style="margin: 14px 0 10px 0; font-size: 14px; font-weight: 700;">إجراءات سريعة للإدارة:</div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                <button class="m3-btn m3-btn-tonal" style="height: 42px; font-size: 12px;" onclick="switchView('v-cost-inspection')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    تحديد تكلفة موقع
+                </button>
+                <button class="m3-btn m3-btn-tonal" style="height: 42px; font-size: 12px;" onclick="switchView('v-update-progress')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    تحديث تقدم ميداني
+                </button>
             </div>
-            <div class="m3-textfield">
-              <label class="m3-label">كلمة المرور</label>
-              <input type="password" class="m3-input" placeholder="••••••••">
+
+            <!-- Recent Received Requests -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 18px 0 10px 0;">
+                <h3 style="font-size: 15px; font-weight: 700;">أحدث الطلبات الواردة</h3>
+                <span style="font-size: 12px; color: var(--md-sys-color-primary); font-weight: 700; cursor: pointer;" onclick="switchView('v-requests')">عرض الكل</span>
             </div>
-          </div>
 
-          <button type="submit" class="m3-btn m3-btn-primary" style="margin-top: 10px;">
-            دخول لوحة تحكم الإدارة 🔐
-          </button>
-        </form>
-      </div>
-
-      <div class="m3-card" style="background: var(--md-sys-color-surface-container-low); text-align: center;">
-        <span style="font-size: 11px; color: var(--md-sys-color-outline);">
-          رمز الدخول الافتراضي للتجربة: <strong style="color: var(--md-sys-color-primary);">8888</strong>
-        </span>
-      </div>
-    </main>
-
-    <!-- ==================== SCREEN 6: ADMIN PROJECTS MANAGEMENT ==================== -->
-    <main id="screen-admin-projects" class="screen-content">
-      <div class="section-header">
-        <span class="section-title">🏗️ المشاريع والمواقع (الإدارة)</span>
-        <button class="m3-btn m3-btn-primary" style="width: auto; min-height: 36px; padding: 0 12px; font-size: 12px;" onclick="openNewProjectModal()">
-          + إضافة موقع جديد
-        </button>
-      </div>
-
-      <!-- Admin Dashboard KPI Cards -->
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-title">المشاريع النشطة</div>
-          <div class="kpi-val" id="kpi-active-count">6 مواقع</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-title">إجمالي الفواتير المسددة</div>
-          <div class="kpi-val" style="color: var(--md-sys-color-success);">420,000 ر.س</div>
-        </div>
-      </div>
-
-      <div class="m3-chip-row">
-        <button class="m3-chip selected">جميع المشاريع</button>
-        <button class="m3-chip">قيد التنفيذ (4)</button>
-        <button class="m3-chip">مكتملة (2)</button>
-      </div>
-
-      <!-- Dynamic Projects List -->
-      <div id="admin-projects-list">
-        <!-- Project Item 1 -->
-        <div class="m3-card">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-              <span class="m3-badge m3-badge-success">قيد التنفيذ</span>
-              <h3 style="font-size: 15px; font-weight: 800; margin-top: 4px;">فيلا الأمل - حي النرجس</h3>
-              <p style="font-size: 12px; color: var(--md-sys-color-outline); margin-bottom: 6px;">العميل: د. خالد السليمان</p>
+            <div class="m3-card clickable" onclick="switchView('v-cost-inspection')">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <span class="badge-status badge-new">طلب معاينة جديد</span>
+                        <h4 style="font-size: 14px; font-weight: 700; margin-top: 4px;">صب خرسانات وصب عمدان</h4>
+                        <p style="font-size: 12px; color: var(--md-sys-color-outline);">العميل: طارق بن علي • عين زارة</p>
+                    </div>
+                    <span style="font-size: 11px; color: var(--md-sys-color-outline);">اليوم 10:30 ص</span>
+                </div>
             </div>
-            <div style="text-align: left;">
-              <span class="m3-badge m3-badge-info" style="font-size: 10px;">كود الزبون</span>
-              <div style="font-size: 12px; font-weight: 800; color: var(--md-sys-color-primary); font-family: monospace;">MAD-2025-01</div>
+
+            <div class="m3-card clickable" onclick="switchView('v-update-progress')">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <span class="badge-status badge-working">قيد التنفيذ (45%)</span>
+                        <h4 style="font-size: 14px; font-weight: 700; margin-top: 4px;">شغل شقة كاملة جاهزة بالتشطيب</h4>
+                        <p style="font-size: 12px; color: var(--md-sys-color-outline);">العميل: سالم الفيتوري • حي النخيل</p>
+                    </div>
+                    <span style="font-size: 11px; color: var(--md-sys-color-outline);">أمس</span>
+                </div>
             </div>
-          </div>
-
-          <div style="font-size: 12px; color: var(--md-sys-color-on-surface-variant); margin: 6px 0;">
-            المرحلة: <strong>صب سقف الطابق الثاني</strong> (68%)
-          </div>
-
-          <div class="m3-progress-track">
-            <div class="m3-progress-fill" style="width: 68%;"></div>
-          </div>
-
-          <div style="display: flex; gap: 6px; margin-top: 12px;">
-            <button class="m3-btn m3-btn-tonal" style="min-height: 36px; font-size: 11px; flex: 1;" onclick="switchScreen('screen-daily-report')">📋 كتابة تقرير</button>
-            <button class="m3-btn m3-btn-tonal" style="min-height: 36px; font-size: 11px; flex: 1;" onclick="switchScreen('screen-admin-expenses')">💰 المصروفات</button>
-            <button class="m3-btn m3-btn-outlined" style="min-height: 36px; font-size: 11px; flex: 1;" onclick="showCodeModal('MAD-2025-01', 'فيلا الأمل')">🔑 الكود</button>
-          </div>
         </div>
 
-        <!-- Project Item 2 -->
-        <div class="m3-card">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-              <span class="m3-badge m3-badge-warning">مرحلة الأعمدة</span>
-              <h3 style="font-size: 15px; font-weight: 800; margin-top: 4px;">عمارة الياسمين التجاري</h3>
-              <p style="font-size: 12px; color: var(--md-sys-color-outline); margin-bottom: 6px;">العميل: شركة الأفق العقارية</p>
+        <!-- ==========================================
+             2. MANAGE REQUESTS & PROJECTS (إدارة الطلبات والمشاريع)
+             ========================================== -->
+        <div id="v-requests" class="view-content">
+            <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 4px;">إدارة الطلبات والمشاريع</h2>
+            <p style="font-size: 12px; color: var(--md-sys-color-outline); margin-bottom: 12px;">متابعة طلبات الخرسانات والتصاميم والتشطيبات</p>
+
+            <!-- Filter Chips -->
+            <div class="chip-group">
+                <div class="chip active">الكل (18)</div>
+                <div class="chip">طلبات المعاينة</div>
+                <div class="chip">بانتظار موافقة التكلفة</div>
+                <div class="chip">جاري التنفيذ</div>
+                <div class="chip">مكتملة</div>
             </div>
-            <div style="text-align: left;">
-              <span class="m3-badge m3-badge-info" style="font-size: 10px;">كود الزبون</span>
-              <div style="font-size: 12px; font-weight: 800; color: var(--md-sys-color-primary); font-family: monospace;">MAD-2025-02</div>
+
+            <!-- Request Item 1 (Needs Inspection & Cost Set) -->
+            <div class="m3-card" style="border-right: 4px solid var(--md-sys-color-secondary);">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <span class="badge-status badge-inspect">بانتظار المعاينة والتكلفة</span>
+                        <h3 style="font-size: 14px; font-weight: 800; margin-top: 6px;">صب من الأول وصب طوابق</h3>
+                        <p style="font-size: 12px; color: var(--md-sys-color-outline);">الزبون: مهند الشريفي • طرابلس - طريق المطبات</p>
+                    </div>
+                    <span style="font-size: 11px; background: #FFF3C4; color: #856404; padding: 2px 6px; border-radius: 4px;">#1092</span>
+                </div>
+
+                <div style="margin: 10px 0; background: var(--md-sys-color-surface-container-low); padding: 8px 10px; border-radius: 8px; font-size: 12px; color: var(--md-sys-color-on-surface-variant);">
+                    <span>المساحة: 220 م² • مرفق خرائط معمارية والهيكل.</span>
+                </div>
+
+                <div style="display: flex; gap: 8px;">
+                    <button class="m3-btn m3-btn-secondary" style="height: 38px; font-size: 12px; flex: 2;" onclick="switchView('v-cost-inspection')">
+                        تحديد التكلفة وإرسالها
+                    </button>
+                    <button class="m3-btn m3-btn-outlined" style="height: 38px; font-size: 12px; flex: 1;" onclick="openModalSheet('تفاصيل طلب #1092', 'الخدمة المطلوبة: صب من الأول وصب طوابق.<br>الزبون: مهند الشريفي (0912345678).<br>الموقع: طرابلس.<br>الملاحظات: يرغب في صب السقف الأول والقواعد المسلحة خلال الأسبوع القادم.')">
+                        الخرائط
+                    </button>
+                </div>
             </div>
-          </div>
 
-          <div style="font-size: 12px; color: var(--md-sys-color-on-surface-variant); margin: 6px 0;">
-            المرحلة: <strong>صب أعمدة الدور الأرضي</strong> (42%)
-          </div>
+            <!-- Request Item 2 (Active Construction Progress) -->
+            <div class="m3-card" style="border-right: 4px solid var(--md-sys-color-primary);">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <span class="badge-status badge-working">جاري التنفيذ الميداني</span>
+                        <h3 style="font-size: 14px; font-weight: 800; margin-top: 6px;">شغل شقة كاملة جاهزة بالتشطيب</h3>
+                        <p style="font-size: 12px; color: var(--md-sys-color-outline);">الزبون: خالد بن مسعود • بنغازي</p>
+                    </div>
+                    <span style="font-size: 11px; background: var(--md-sys-color-primary-container); color: var(--md-sys-color-primary); padding: 2px 6px; border-radius: 4px;">#1084</span>
+                </div>
 
-          <div class="m3-progress-track">
-            <div class="m3-progress-fill" style="width: 42%;"></div>
-          </div>
+                <div style="margin: 10px 0;">
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+                        <span>التكلفة المقرة: <strong>42,500 د.ل</strong></span>
+                        <span style="color: var(--md-sys-color-tertiary); font-weight: 800;">نسبة الإنجاز: 65%</span>
+                    </div>
+                </div>
 
-          <div style="display: flex; gap: 6px; margin-top: 12px;">
-            <button class="m3-btn m3-btn-tonal" style="min-height: 36px; font-size: 11px; flex: 1;" onclick="switchScreen('screen-daily-report')">📋 كتابة تقرير</button>
-            <button class="m3-btn m3-btn-tonal" style="min-height: 36px; font-size: 11px; flex: 1;" onclick="switchScreen('screen-admin-expenses')">💰 المصروفات</button>
-            <button class="m3-btn m3-btn-outlined" style="min-height: 36px; font-size: 11px; flex: 1;" onclick="showCodeModal('MAD-2025-02', 'عمارة الياسمين')">🔑 الكود</button>
-          </div>
-        </div>
-      </div>
-    </main>
-
-    <!-- ==================== SCREEN 7: DAILY REPORT (ADMIN/ENGINEER) ==================== -->
-    <main id="screen-daily-report" class="screen-content">
-      <div class="m3-card">
-        <span class="m3-badge m3-badge-warning" style="margin-bottom: 6px;">صلاحية المشرف والمهندس</span>
-        <h2 class="m3-card-title">كتابة ورفع التقرير اليومي</h2>
-        <p class="m3-card-sub">تحديث سير العمل بالموقع وإرفاق صور الإنجاز اليومية ليراها الزبون والإدارة.</p>
-
-        <form onsubmit="handleDailyReportSubmit(event)">
-          <div class="m3-textfield">
-            <label class="m3-label">اختر المشروع / الموقع</label>
-            <select class="m3-select" required>
-              <option value="1">MAD-2025-01 - فيلا الأمل (حي النرجس)</option>
-              <option value="2">MAD-2025-02 - عمارة الياسمين التجاري</option>
-              <option value="3">MAD-2025-03 - مشروع تشطيب الشاطئ</option>
-            </select>
-          </div>
-
-          <div class="m3-textfield">
-            <label class="m3-label">اسم المهندس / المشرف</label>
-            <input type="text" class="m3-input" value="م. أحمد العمراني" required>
-          </div>
-
-          <div class="m3-textfield">
-            <label class="m3-label">تاريخ التقرير اليومي</label>
-            <input type="date" class="m3-input" value="2025-05-24" required>
-          </div>
-
-          <div class="m3-textfield">
-            <label class="m3-label">تفاصيل وتطورات العمل اليوم</label>
-            <textarea class="m3-textarea" rows="4" placeholder="تم الانتهاء من نجارة وشد حديد أسقف الطابق الثاني، وتم توريد 40 م3 خرسانة جاهزة..." required></textarea>
-          </div>
-
-          <div class="m3-textfield">
-            <label class="m3-label">إرفاق صور التقدم بالموقع 📸 (تستخدم الكاميرا/الصور)</label>
-            <div style="border: 2px dashed var(--md-sys-color-outline-variant); padding: 16px; border-radius: 12px; text-align: center; background: var(--md-sys-color-surface-container-low); cursor: pointer;" onclick="simulatedImageUpload()">
-              <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin: 0 auto; color: var(--md-sys-color-primary);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              <div style="font-size: 12px; font-weight: 700; margin-top: 6px; color: var(--md-sys-color-primary);" id="report-img-label">اضغط لالتقاط أو اختيار صور الموقع</div>
-              <div style="font-size: 10px; color: var(--md-sys-color-outline);">CAMERA & STORAGE Permissions Active</div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="m3-btn m3-btn-tertiary" style="height: 38px; font-size: 12px; width: 100%;" onclick="switchView('v-update-progress')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                        رفع تحديث وصور ميدانية
+                    </button>
+                </div>
             </div>
-          </div>
 
-          <button type="submit" class="m3-btn m3-btn-primary" style="margin-top: 10px;">
-            رفع التقرير وإشعار الزبون 🚀
-          </button>
-        </form>
-      </div>
-    </main>
-
-    <!-- ==================== SCREEN 8: EXPENSES, MATERIALS & WORKERS ==================== -->
-    <main id="screen-admin-expenses" class="screen-content">
-      <div class="section-header">
-        <span class="section-title">💰 المصروفات والمواد والعمال</span>
-        <button class="m3-btn m3-btn-primary" style="width: auto; min-height: 36px; padding: 0 12px; font-size: 12px;" onclick="openAddExpenseSheet()">
-          + تسجيل بنود
-        </button>
-      </div>
-
-      <div class="m3-textfield" style="margin-bottom: 12px;">
-        <label class="m3-label">المشروع المحدد:</label>
-        <select class="m3-select" style="font-weight: 700;">
-          <option>فيلا الأمل (MAD-2025-01)</option>
-          <option>عمارة الياسمين (MAD-2025-02)</option>
-        </select>
-      </div>
-
-      <!-- Category Filter Tabs -->
-      <div class="m3-chip-row">
-        <button class="m3-chip selected">الكل (18,400 ر.س)</button>
-        <button class="m3-chip">📦 مواد بناء</button>
-        <button class="m3-chip">👷 أجور عمال</button>
-        <button class="m3-chip">🚜 معدات ونقل</button>
-      </div>
-
-      <!-- Expenses List -->
-      <div class="m3-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--md-sys-color-outline-variant); padding-bottom: 10px; margin-bottom: 10px;">
-          <div>
-            <span class="m3-badge m3-badge-info">مواد بناء</span>
-            <div style="font-size: 14px; font-weight: 800; margin-top: 4px;">توريد خرسانة جاهزة (جهد 350)</div>
-            <div style="font-size: 11px; color: var(--md-sys-color-outline);">الكمية: 45 م3 | المورد: خرسانة الشرق</div>
-          </div>
-          <div style="text-align: left;">
-            <div style="font-size: 15px; font-weight: 900; color: var(--md-sys-color-primary);">11,250 ر.س</div>
-            <div style="font-size: 10px; color: var(--md-sys-color-outline);">اليوم 10:30 ص</div>
-          </div>
+            <!-- Request Item 3 (Other service types) -->
+            <div class="m3-card">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <span class="badge-status badge-complete">مكتمل ومسلم</span>
+                        <h3 style="font-size: 14px; font-weight: 800; margin-top: 6px;">الجمولونات والصيوانات</h3>
+                        <p style="font-size: 12px; color: var(--md-sys-color-outline);">المصنع الوطني • مصراتة</p>
+                    </div>
+                    <span style="font-size: 11px; opacity: 0.7;">#1010</span>
+                </div>
+            </div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--md-sys-color-outline-variant); padding-bottom: 10px; margin-bottom: 10px;">
-          <div>
-            <span class="m3-badge m3-badge-warning">أجور عمال</span>
-            <div style="font-size: 14px; font-weight: 800; margin-top: 4px;">يوميات عمال النجارة والحدادة</div>
-            <div style="font-size: 11px; color: var(--md-sys-color-outline);">عدد العمال: 8 عمال | المشرف: معلم أبو فهد</div>
-          </div>
-          <div style="text-align: left;">
-            <div style="font-size: 15px; font-weight: 900; color: var(--md-sys-color-primary);">2,400 ر.س</div>
-            <div style="font-size: 10px; color: var(--md-sys-color-outline);">أمس</div>
-          </div>
+        <!-- ==========================================
+             3. INSPECTION & COST FORM (المعاينة وتحديد التكلفة)
+             ========================================== -->
+        <div id="v-cost-inspection" class="view-content">
+            <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 4px;">معاينة الموقع وتحديد التكلفة</h2>
+            <p style="font-size: 12px; color: var(--md-sys-color-outline); margin-bottom: 16px;">إدخال نتائج المعاينة الميدانية وإرسال التكلفة المالية للزبون</p>
+
+            <form onsubmit="handleCostSubmit(event)">
+                <div class="m3-card m3-card-tonal" style="margin-bottom: 16px;">
+                    <div style="font-size: 12px; font-weight: 700;">طلب رقم: #1092</div>
+                    <div style="font-size: 14px; font-weight: 800; margin-top: 2px;">الخدمة: صب من الأول وصب طوابق</div>
+                    <div style="font-size: 12px; opacity: 0.9;">العميل: مهند الشريفي (0912345678)</div>
+                </div>
+
+                <div class="m3-input-group">
+                    <label class="m3-input-label">التكلفة المادية الإجمالية المحسوبة (بالدينار الليبي)</label>
+                    <input type="number" class="m3-input" placeholder="أدخل المبلغ بالإرقام..." value="38500" required>
+                </div>
+
+                <div class="m3-input-group">
+                    <label class="m3-input-label">تفاصيل التكلفة ومواصفات الخرسانة والمواد</label>
+                    <textarea class="m3-input" style="height: 90px; padding-top: 10px;" required>تشمل التكلفة: توريد خرسانة جاهزة عيار 350، حديد تسليح ليبيا 14 مم، أجور العمالة، والإشراف الهندسي المباشر حتى جفاف القواعد.</textarea>
+                </div>
+
+                <div class="m3-input-group">
+                    <label class="m3-input-label">المدة الزمنية التقديرية للتنفيذ</label>
+                    <input type="text" class="m3-input" value="21 يوماً عمل" required>
+                </div>
+
+                <div class="m3-input-group">
+                    <label class="m3-input-label">تاريخ بدء العمل المتوقع</label>
+                    <input type="date" class="m3-input" value="2025-03-01">
+                </div>
+
+                <button type="submit" class="m3-btn m3-btn-primary" style="margin-top: 10px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    إرسال التكلفة للزبون عبر التطبيق
+                </button>
+            </form>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <span class="m3-badge m3-badge-success">حديد تسليح</span>
-            <div style="font-size: 14px; font-weight: 800; margin-top: 4px;">طن حديد 14 ملم سابك</div>
-            <div style="font-size: 11px; color: var(--md-sys-color-outline);">الكمية: 2 طن</div>
-          </div>
-          <div style="text-align: left;">
-            <div style="font-size: 15px; font-weight: 900; color: var(--md-sys-color-primary);">4,750 ر.س</div>
-            <div style="font-size: 10px; color: var(--md-sys-color-outline);">22 مايو</div>
-          </div>
-        </div>
-      </div>
-    </main>
+        <!-- ==========================================
+             4. UPDATE PROGRESS & FIELD PHOTOS (تحديث نسب الإنجاز)
+             ========================================== -->
+        <div id="v-update-progress" class="view-content">
+            <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 4px;">تحديث مرحلة التنفيذ وصور الميدان</h2>
+            <p style="font-size: 12px; color: var(--md-sys-color-outline); margin-bottom: 16px;">رفع التقارير المصورة للزبون بعد كل مرحلة صب أو تشطيب</p>
 
-    <!-- ==================== SCREEN 9: INVOICES, QUOTES & PDF EXPORT ==================== -->
-    <main id="screen-admin-invoices" class="screen-content">
-      <div class="section-header">
-        <span class="section-title">📄 عروض الأسعار والفواتير</span>
-        <button class="m3-btn m3-btn-primary" style="width: auto; min-height: 36px; padding: 0 12px; font-size: 12px;" onclick="openAddInvoiceModal()">
-          + إنشاء فاتورة
-        </button>
-      </div>
+            <form onsubmit="handleProgressSubmit(event)">
+                <div class="m3-card">
+                    <h3 style="font-size: 14px; font-weight: 700;">مشروع: شغل شقة كاملة جاهزة بالتشطيب</h3>
+                    <p style="font-size: 12px; color: var(--md-sys-color-outline);">العميل: خالد بن مسعود (#1084)</p>
+                </div>
 
-      <!-- Invoices Summary -->
-      <div class="m3-card" style="background: var(--md-sys-color-surface-container-low);">
-        <div style="display: flex; justify-content: space-between; text-align: center;">
-          <div>
-            <div style="font-size: 11px; color: var(--md-sys-color-outline);">المبلغ المتفق عليه</div>
-            <div style="font-size: 16px; font-weight: 900; color: var(--md-sys-color-on-surface);">350,000 ر.س</div>
-          </div>
-          <div style="border-right: 1px solid var(--md-sys-color-outline-variant); border-left: 1px solid var(--md-sys-color-outline-variant); padding: 0 12px;">
-            <div style="font-size: 11px; color: var(--md-sys-color-outline);">المسدد</div>
-            <div style="font-size: 16px; font-weight: 900; color: var(--md-sys-color-success);">220,000 ر.س</div>
-          </div>
-          <div>
-            <div style="font-size: 11px; color: var(--md-sys-color-outline);">المتبقي</div>
-            <div style="font-size: 16px; font-weight: 900; color: var(--md-sys-color-error);">130,000 ر.س</div>
-          </div>
-        </div>
-      </div>
+                <div class="m3-input-group">
+                    <label class="m3-input-label">نسبة الإنجاز الحالية: <strong id="progress-val-lbl" style="color: var(--md-sys-color-primary);">75%</strong></label>
+                    <input type="range" min="0" max="100" value="75" style="width: 100%; height: 8px; margin: 10px 0;" oninput="document.getElementById('progress-val-lbl').innerText = this.value + '%'">
+                </div>
 
-      <!-- Invoices Cards List -->
-      <div class="m3-card">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-          <div>
-            <span class="m3-badge m3-badge-success">دفعة مسددة</span>
-            <div style="font-size: 14px; font-weight: 800; margin-top: 4px;">فاتورة الدفعة الثانية - صب القواعد</div>
-            <div style="font-size: 11px; color: var(--md-sys-color-outline);">مشروع: فيلا الأمل | فاتورة #: INV-9041</div>
-          </div>
-          <div style="text-align: left;">
-            <div style="font-size: 16px; font-weight: 900; color: var(--md-sys-color-primary);">70,000 ر.س</div>
-            <div style="font-size: 10px; color: var(--md-sys-color-outline);">15 مايو 2025</div>
-          </div>
+                <div class="m3-input-group">
+                    <label class="m3-input-label">المرحلة الحالية المكتملة</label>
+                    <select class="m3-input">
+                        <option>مرحلة صب الخرسانة المسلحة والأعمدة</option>
+                        <option selected>مرحلة التمديدات الكهربائية والسباكة</option>
+                        <option>مرحلة المحارة والطلاء الداخلي والخارجي</option>
+                        <option>مرحلة تركيب السيراميك والتشطيب النهائي</option>
+                    </select>
+                </div>
+
+                <div class="m3-input-group">
+                    <label class="m3-input-label">إضافة صور التحديث الميداني</label>
+                    <div style="border: 2px dashed var(--md-sys-color-primary); border-radius: var(--md-shape-corner-medium); padding: 18px; text-align: center; background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); cursor: pointer;" onclick="alert('تم اختيار 3 صور ميدانية من موقع العمل')">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        <p style="font-size: 13px; font-weight: 700; margin-top: 4px;">اضغط لالتقاط أو اختيار صور الميدان</p>
+                        <span style="font-size: 10px; opacity: 0.8;">سيتم إشعار الزبون فور رفع الصور</span>
+                    </div>
+                </div>
+
+                <div class="m3-input-group">
+                    <label class="m3-input-label">ملاحظات المهندس المشرف للزبون</label>
+                    <textarea class="m3-input" style="height: 70px; padding-top: 8px;" required>تم الانتهاء بحمد الله من صب وتجهيز كافة التمديدات، وسنبدأ مرحلة تركيب الأرضيات مطلع الأسبوع المقبل.</textarea>
+                </div>
+
+                <button type="submit" class="m3-btn m3-btn-tertiary">
+                    إرسال التحديث والإشعار للزبون
+                </button>
+            </form>
         </div>
 
-        <div style="display: flex; gap: 8px; margin-top: 12px;">
-          <button class="m3-btn m3-btn-tonal" style="min-height: 38px; font-size: 12px; flex: 1;" onclick="openPdfPreviewModal('INV-9041', '70,000', 'دفعة صب القواعد والأساسات')">
-            📲 تصدير PDF
-          </button>
-          <button class="m3-btn m3-btn-outlined" style="min-height: 38px; font-size: 12px; flex: 1;" onclick="triggerPrintMock('INV-9041')">
-            🖨️ طباعة الفاتورة
-          </button>
-        </div>
-      </div>
+        <!-- ==========================================
+             5. MANAGE SERVICES (إدارة قائمة الخدمات 12)
+             ========================================== -->
+        <div id="v-services-admin" class="view-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div>
+                    <h2 style="font-size: 18px; font-weight: 800;">إدارة الخدمات الهندسية</h2>
+                    <p style="font-size: 11px; color: var(--md-sys-color-outline);">12 خدمة متاحة للزبائن</p>
+                </div>
+                <button class="m3-btn m3-btn-primary" style="height: 36px; font-size: 11px; width: auto; padding: 0 12px;" onclick="openModalSheet('إضافة خدمة جديدة', 'نموذج إضافة خدمة جديدة للشركة مع رفع الصور والوصف.')">
+                    + إضافة خدمة
+                </button>
+            </div>
 
-      <!-- Invoice Item 2 -->
-      <div class="m3-card">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-          <div>
-            <span class="m3-badge m3-badge-warning">مستحقة قريباً</span>
-            <div style="font-size: 14px; font-weight: 800; margin-top: 4px;">فاتورة الدفعة الثالثة - صب السقف الثاني</div>
-            <div style="font-size: 11px; color: var(--md-sys-color-outline);">مشروع: فيلا الأمل | فاتورة #: INV-9042</div>
-          </div>
-          <div style="text-align: left;">
-            <div style="font-size: 16px; font-weight: 900; color: var(--md-sys-color-primary);">60,000 ر.س</div>
-            <div style="font-size: 10px; color: var(--md-sys-color-outline);">استحقاق: 1 يونيو</div>
-          </div>
+            <!-- List of exact 12 required services -->
+            <div id="admin-services-list">
+                <!-- Populated dynamically by JS for full fidelity -->
+            </div>
         </div>
 
-        <div style="display: flex; gap: 8px; margin-top: 12px;">
-          <button class="m3-btn m3-btn-tonal" style="min-height: 38px; font-size: 12px; flex: 1;" onclick="openPdfPreviewModal('INV-9042', '60,000', 'دفعة صب السقف والطابق الثاني')">
-            📲 تصدير PDF
-          </button>
-          <button class="m3-btn m3-btn-outlined" style="min-height: 38px; font-size: 12px; flex: 1;" onclick="triggerPrintMock('INV-9042')">
-            🖨️ طباعة الفاتورة
-          </button>
+        <!-- ==========================================
+             6. MANAGE PORTFOLIO (إدارة معرض الأعمال السابقة)
+             ========================================== -->
+        <div id="v-portfolio-admin" class="view-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div>
+                    <h2 style="font-size: 18px; font-weight: 800;">إدارة معرض الأعمال</h2>
+                    <p style="font-size: 11px; color: var(--md-sys-color-outline);">رفع وتعديل صور وفيديوهات المشاريع المنفذة</p>
+                </div>
+                <button class="m3-btn m3-btn-secondary" style="height: 36px; font-size: 11px; width: auto; padding: 0 12px;" onclick="openModalSheet('رفع مشروع جديد للمعرض', 'أدخل عنوان المشروع، وصف التنفيذ، وارفق صور عالية الجودة وفيديوهات المعاينة.')">
+                    + مشروع جديد
+                </button>
+            </div>
+
+            <div class="m3-card" style="padding: 12px; margin-bottom: 12px;">
+                <div style="display: flex; gap: 12px;">
+                    <div style="width: 80px; height: 65px; border-radius: 8px; background: #0F4C81; display: flex; align-items: center; justify-content: center; color: white;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                    </div>
+                    <div style="flex: 1;">
+                        <h4 style="font-size: 13px; font-weight: 800;">مشروع صب خرسانات وجمولونات لمجمع تجاري</h4>
+                        <span style="font-size: 11px; color: var(--md-sys-color-outline);">3 صور • 1 فيديو • زليتن</span>
+                        <div style="display: flex; gap: 10px; margin-top: 6px; font-size: 11px; font-weight: 700; color: var(--md-sys-color-primary);">
+                            <span style="cursor: pointer;" onclick="alert('تعديل الوسائط')">تعديل</span>
+                            <span style="cursor: pointer; color: var(--md-sys-color-error);" onclick="alert('تم حزف العنصر من المعرض')">حذف</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="m3-card" style="padding: 12px; margin-bottom: 12px;">
+                <div style="display: flex; gap: 12px;">
+                    <div style="width: 80px; height: 65px; border-radius: 8px; background: #2D6A4F; display: flex; align-items: center; justify-content: center; color: white;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                    </div>
+                    <div style="flex: 1;">
+                        <h4 style="font-size: 13px; font-weight: 800;">تشطيب فاخر شقة كاملة من الأول للآخر</h4>
+                        <span style="font-size: 11px; color: var(--md-sys-color-outline);">8 صور • طرابلس</span>
+                        <div style="display: flex; gap: 10px; margin-top: 6px; font-size: 11px; font-weight: 700; color: var(--md-sys-color-primary);">
+                            <span style="cursor: pointer;" onclick="alert('تعديل الوسائط')">تعديل</span>
+                            <span style="cursor: pointer; color: var(--md-sys-color-error);" onclick="alert('تم حذف العنصر من المعرض')">حذف</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </main>
 
-    <!-- ==================== SCREEN 10: NOTIFICATIONS INBOX & PUSH ==================== -->
-    <main id="screen-notifications" class="screen-content">
-      <div class="section-header">
-        <span class="section-title">🔔 مركز الإشعارات والتنبيهات</span>
-        <button class="m3-btn m3-btn-primary" style="width: auto; min-height: 34px; padding: 0 10px; font-size: 11px;" onclick="openSendNotificationModal()">
-          + إرسال إشعار للزبون
-        </button>
-      </div>
+        <!-- ==========================================
+             7. CUSTOMERS LIST (قائمة العملاء والحسابات)
+             ========================================== -->
+        <div id="v-customers" class="view-content">
+            <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 4px;">سجل العملاء والحسابات</h2>
+            <p style="font-size: 12px; color: var(--md-sys-color-outline); margin-bottom: 12px;">إدارة حسابات المستخدمين المسجلة والتأكيدات</p>
 
-      <div class="m3-card" style="border-right: 4px solid var(--md-sys-color-primary);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <h4 style="font-size: 14px; font-weight: 800;">تحديث جديد على مشروعك (MAD-2025-01)</h4>
-          <span style="font-size: 10px; color: var(--md-sys-color-outline);">منذ 10 دقائق</span>
+            <div class="m3-input-group">
+                <input type="text" class="m3-input" placeholder="بحث باسم العميل أو البريد..." style="height: 42px;">
+            </div>
+
+            <div class="m3-card">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--md-sys-color-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                        م ش
+                    </div>
+                    <div style="flex: 1;">
+                        <h4 style="font-size: 14px; font-weight: 700;">مهند الشريفي</h4>
+                        <p style="font-size: 11px; color: var(--md-sys-color-outline);">mohanad@example.com • زبون</p>
+                    </div>
+                    <span style="font-size: 10px; background: #D1E7DD; color: #0F5132; padding: 2px 6px; border-radius: 10px;">مؤكد (OTP)</span>
+                </div>
+            </div>
+
+            <div class="m3-card">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--md-sys-color-secondary); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                        خ م
+                    </div>
+                    <div style="flex: 1;">
+                        <h4 style="font-size: 14px; font-weight: 700;">خالد بن مسعود</h4>
+                        <p style="font-size: 11px; color: var(--md-sys-color-outline);">khalid@example.com • زبون</p>
+                    </div>
+                    <span style="font-size: 10px; background: #D1E7DD; color: #0F5132; padding: 2px 6px; border-radius: 10px;">مؤكد (OTP)</span>
+                </div>
+            </div>
         </div>
-        <p style="font-size: 12px; color: var(--md-sys-color-on-surface-variant); margin-top: 4px;">قام المهندس أحمد العمراني برفع تقرير يومي جديد وإضافة 4 صور لموقع فيلا الأمل.</p>
-      </div>
 
-      <div class="m3-card" style="border-right: 4px solid var(--md-sys-color-success);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <h4 style="font-size: 14px; font-weight: 800;">تأكيد استلام دفعة مالية 💳</h4>
-          <span style="font-size: 10px; color: var(--md-sys-color-outline);">أمس</span>
+        <!-- ==========================================
+             8. NOTIFICATIONS & ALERTS DISPATCH (الإشعارات)
+             ========================================== -->
+        <div id="v-notifications-admin" class="view-content">
+            <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 4px;">مرسل الإشعارات والتنبيهات</h2>
+            <p style="font-size: 12px; color: var(--md-sys-color-outline); margin-bottom: 14px;">إرسال إشعارات فورية للزبائن بحالة الطلبات والخرسانات</p>
+
+            <form onsubmit="handleSendPush(event)">
+                <div class="m3-input-group">
+                    <label class="m3-input-label">مستلم الإشعار</label>
+                    <select class="m3-input">
+                        <option>جميع العملاء (إشعار عام)</option>
+                        <option selected>مهند الشريفي (طلب #1092)</option>
+                        <option>خالد بن مسعود (طلب #1084)</option>
+                    </select>
+                </div>
+
+                <div class="m3-input-group">
+                    <label class="m3-input-label">عنوان التنبيه</label>
+                    <input type="text" class="m3-input" value="تحديث التكلفة الميدانية للمشروع" required>
+                </div>
+
+                <div class="m3-input-group">
+                    <label class="m3-input-label">نص الإشعار الفوري</label>
+                    <textarea class="m3-input" style="height: 70px; padding-top: 8px;" required>تم إتمام تحديد تكلفة المعاينة الخاصة بمشروعكم. يرجى الدخول للتطبيق للاطلاع والموافقة.</textarea>
+                </div>
+
+                <button type="submit" class="m3-btn m3-btn-primary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path></svg>
+                    بث الإشعار الفوري الآن
+                </button>
+            </form>
         </div>
-        <p style="font-size: 12px; color: var(--md-sys-color-on-surface-variant); margin-top: 4px;">تم تسجيل دفعة بقيمة 70,000 ر.س بنجاح وتحديث كشف حساب الفاتورة.</p>
-      </div>
 
-      <div class="m3-card" style="border-right: 4px solid var(--md-sys-color-outline);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <h4 style="font-size: 14px; font-weight: 800;">تم اعتماد طلب عرض السعر رقم #309</h4>
-          <span style="font-size: 10px; color: var(--md-sys-color-outline);">21 مايو</span>
+        <!-- ==========================================
+             9. ADMIN LOGIN SCREEN (تسجيل دخول إدارة مع OTP)
+             ========================================== -->
+        <div id="v-login-admin" class="view-content">
+            <div style="text-align: center; margin: 20px 0;">
+                <div style="width: 60px; height: 60px; border-radius: 16px; background: var(--md-sys-color-primary-container); color: var(--md-sys-color-primary); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+                <h2 style="font-size: 20px; font-weight: 800;">تسجيل دخول الإدارة</h2>
+                <p style="font-size: 12px; color: var(--md-sys-color-outline); margin-top: 4px;">المدرار للمقاولات الهندسية</p>
+            </div>
+
+            <form onsubmit="handleLoginOtpStep(event)">
+                <div class="m3-input-group">
+                    <label class="m3-input-label">البريد الإلكتروني للإدارة</label>
+                    <input type="email" class="m3-input" placeholder="admin@almedrar.ly" value="admin@almedrar.ly" required>
+                </div>
+
+                <div class="m3-input-group">
+                    <label class="m3-input-label">كلمة المرور</label>
+                    <input type="password" class="m3-input" value="••••••••" required>
+                </div>
+
+                <button type="submit" class="m3-btn m3-btn-primary" style="margin-top: 10px;">
+                    استلام رمز التأكيد (6 أرقام)
+                </button>
+            </form>
+
+            <div style="text-align: center; margin-top: 16px; font-size: 12px;">
+                ليس لديك حساب إدارة؟ <span style="color: var(--md-sys-color-primary); font-weight: 700; cursor: pointer;" onclick="switchView('v-signup-admin')">إنشاء حساب جديد</span>
+            </div>
         </div>
-        <p style="font-size: 12px; color: var(--md-sys-color-on-surface-variant); margin-top: 4px;">تم إرسال المقايسة التقديرية لطلب تشطيب Villa 350m2 عبر الهاتف.</p>
-      </div>
-    </main>
 
-    <!-- ==================== SCREEN 11: LOADING SKELETON STATE ==================== -->
-    <main id="screen-loading-skeleton" class="screen-content">
-      <div style="font-size: 13px; font-weight: 700; color: var(--md-sys-color-outline); margin-bottom: 12px;">جاري تحميل بيانات المشاريع والتقارير...</div>
+        <!-- ==========================================
+             10. ADMIN SIGNUP SCREEN (حساب إدارة جديد)
+             ========================================== -->
+        <div id="v-signup-admin" class="view-content">
+            <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 4px;">إنشاء حساب جديد (إدارة)</h2>
+            <p style="font-size: 12px; color: var(--md-sys-color-outline); margin-bottom: 16px;">أدخل بياناتك للانضمام لفريق إدارة المدرار للمقاولات</p>
 
-      <div class="m3-card">
-        <div class="skeleton-box" style="height: 20px; width: 40%; margin-bottom: 10px;"></div>
-        <div class="skeleton-box" style="height: 14px; width: 70%; margin-bottom: 16px;"></div>
-        <div class="skeleton-box" style="height: 12px; width: 100%; margin-bottom: 8px;"></div>
-        <div class="skeleton-box" style="height: 12px; width: 85%; margin-bottom: 16px;"></div>
-        <div style="display: flex; gap: 8px;">
-          <div class="skeleton-box" style="height: 36px; flex: 1;"></div>
-          <div class="skeleton-box" style="height: 36px; flex: 1;"></div>
+            <form onsubmit="handleSignupOtpStep(event)">
+                <div class="m3-input-group">
+                    <label class="m3-input-label">الاسم الكامل</label>
+                    <input type="text" class="m3-input" placeholder="أدخل اسمك الثلاثي" value="م. عبد السلام الفيتوري" required>
+                </div>
+
+                <div class="m3-input-group">
+                    <label class="m3-input-label">البريد الإلكتروني</label>
+                    <input type="email" class="m3-input" placeholder="name@almedrar.ly" value="eng.abdosalam@almedrar.ly" required>
+                </div>
+
+                <div class="m3-input-group">
+                    <label class="m3-input-label">كلمة المرور</label>
+                    <input type="password" class="m3-input" placeholder="••••••••" value="Password123" required>
+                </div>
+
+                <div class="m3-input-group">
+                    <label class="m3-input-label">نوع الحساب</label>
+                    <input type="text" class="m3-input" value="حساب إدارة ومتابعة ميدانية" readonly style="background: var(--md-sys-color-surface-container);">
+                </div>
+
+                <button type="submit" class="m3-btn m3-btn-secondary" style="margin-top: 10px;">
+                    إنشاء الحساب واستلام رمز التأكيد
+                </button>
+            </form>
         </div>
-      </div>
 
-      <div class="m3-card">
-        <div class="skeleton-box" style="height: 20px; width: 50%; margin-bottom: 10px;"></div>
-        <div class="skeleton-box" style="height: 80px; width: 100%;"></div>
-      </div>
-    </main>
+        <!-- ==========================================
+             11. SETTINGS & PROFILE (الإعدادات والملف)
+             ========================================== -->
+        <div id="v-settings" class="view-content">
+            <div class="m3-card" style="text-align: center; padding: 20px 16px;">
+                <div style="width: 64px; height: 64px; border-radius: 50%; background: var(--md-sys-color-primary); color: white; font-size: 24px; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px;">
+                    م
+                </div>
+                <h3 style="font-size: 16px; font-weight: 800;">المهندس المدير</h3>
+                <span style="font-size: 11px; color: var(--md-sys-color-outline);">admin@almedrar.ly • صلاحية كاملة</span>
+            </div>
 
-    <!-- ==================== SCREEN 12: EMPTY STATE ==================== -->
-    <main id="screen-empty-state" class="screen-content">
-      <div style="text-align: center; padding: 40px 16px;">
-        <div style="width: 80px; height: 80px; background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-outline); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 36px;">
-          📭
+            <div style="font-size: 13px; font-weight: 700; margin: 16px 0 8px 0;">تفضيلات النظام والتطبيق:</div>
+
+            <div class="m3-card" style="padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;" onclick="toggleDarkMode()">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                    <span style="font-size: 13px; font-weight: 600;">الوضع الداكن (Dark Mode)</span>
+                </div>
+                <input type="checkbox" id="dark-toggle" style="width: 18px; height: 18px; cursor: pointer;">
+            </div>
+
+            <div class="m3-card" style="padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;" onclick="alert('تطبيق الإدارة إصدار 2.4.0 متصل بالخادم')">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    <span style="font-size: 13px; font-weight: 600;">عن الشركة والنظام</span>
+                </div>
+                <span style="font-size: 11px; color: var(--md-sys-color-outline);">v2.4.0</span>
+            </div>
+
+            <button class="m3-btn m3-btn-outlined" style="margin-top: 20px; color: var(--md-sys-color-error); border-color: var(--md-sys-color-error);" onclick="switchView('v-login-admin')">
+                تسجيل الخروج من الإدارة
+            </button>
         </div>
-        <h3 style="font-size: 17px; font-weight: 800; color: var(--md-sys-color-on-surface); margin-bottom: 6px;">لا توجد سجلات حالية</h3>
-        <p style="font-size: 13px; color: var(--md-sys-color-outline); max-width: 280px; margin: 0 auto 20px auto;">لم يتم العثور على أي مصروفات أو تقارير لهذا الموقع في الوقت الحالي.</p>
-        
-        <button class="m3-btn m3-btn-primary" style="width: auto; padding: 0 24px;" onclick="switchScreen('screen-admin-projects')">
-          العودة لقائمة المشاريع
-        </button>
-      </div>
-    </main>
 
-    <!-- M3 Bottom Navigation Bar -->
-    <nav class="m3-navigation-bar">
-      <button class="m3-nav-item active" id="nav-btn-home" onclick="switchScreen('screen-customer-home')">
-        <div class="m3-nav-pill">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <!-- ==========================================
+             12. SKELETON LOADING STATE
+             ========================================== -->
+        <div id="v-skeleton" class="view-content">
+            <div style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--md-sys-color-outline);">جاري تحميل بيانات لوحة التحكم...</div>
+            
+            <div class="skeleton" style="height: 100px; margin-bottom: 14px;"></div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                <div class="skeleton" style="height: 70px;"></div>
+                <div class="skeleton" style="height: 70px;"></div>
+            </div>
+
+            <div class="skeleton" style="height: 140px; margin-bottom: 14px;"></div>
+            <div class="skeleton" style="height: 80px; margin-bottom: 10px;"></div>
+            <div class="skeleton" style="height: 80px;"></div>
         </div>
-        <span class="m3-nav-label">الخدمات</span>
-      </button>
 
-      <button class="m3-nav-item" id="nav-btn-track" onclick="switchScreen('screen-customer-track')">
-        <div class="m3-nav-pill">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <!-- ==========================================
+             13. EMPTY STATE
+             ========================================== -->
+        <div id="v-empty" class="view-content">
+            <div style="text-align: center; padding: 60px 20px;">
+                <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-outline); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="9" y1="14" x2="15" y2="14"/></svg>
+                </div>
+                <h3 style="font-size: 16px; font-weight: 800;">لا توجد طلبات في القائمة</h3>
+                <p style="font-size: 12px; color: var(--md-sys-color-outline); margin-top: 6px; line-height: 1.5;">لم يتم العثور على أية طلبات أو مشاريع تطابق خيارات التصفية الحالية.</p>
+                <button class="m3-btn m3-btn-tonal" style="margin-top: 20px; width: auto; display: inline-flex; padding: 0 24px;" onclick="switchView('v-dashboard')">
+                    العودة للرئيسية
+                </button>
+            </div>
         </div>
-        <span class="m3-nav-label">متابعة</span>
-      </button>
 
-      <button class="m3-nav-item" id="nav-btn-projects" onclick="switchScreen('screen-admin-projects')">
-        <div class="m3-nav-pill">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <!-- COMMON BOTTOM NAVIGATION BAR -->
+        <nav class="navigation-bar" id="main-nav-bar">
+            <div class="nav-item active" onclick="switchView('v-dashboard', this)">
+                <div class="nav-icon-wrapper">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                </div>
+                <span>الرئيسية</span>
+            </div>
+
+            <div class="nav-item" onclick="switchView('v-requests', this)">
+                <div class="nav-icon-wrapper">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                </div>
+                <span>الطلبات</span>
+            </div>
+
+            <div class="nav-item" onclick="switchView('v-services-admin', this)">
+                <div class="nav-icon-wrapper">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                </div>
+                <span>الخدمات</span>
+            </div>
+
+            <div class="nav-item" onclick="switchView('v-portfolio-admin', this)">
+                <div class="nav-icon-wrapper">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                </div>
+                <span>المعرض</span>
+            </div>
+
+            <div class="nav-item" onclick="switchView('v-settings', this)">
+                <div class="nav-icon-wrapper">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </div>
+                <span>الإعدادات</span>
+            </div>
+        </nav>
+
+        <!-- BACKDROP & BOTTOM SHEET MODAL -->
+        <div class="sheet-backdrop" id="sheet-backdrop" onclick="closeBottomSheet()"></div>
+        <div class="bottom-sheet" id="bottom-sheet">
+            <div class="sheet-handle"></div>
+            <h3 id="sheet-title" style="font-size: 16px; font-weight: 800; margin-bottom: 8px;"></h3>
+            <div id="sheet-content" style="font-size: 13px; color: var(--md-sys-color-on-surface-variant); line-height: 1.6; margin-bottom: 20px;"></div>
+            <button class="m3-btn m3-btn-primary" onclick="closeBottomSheet()">إغلاق النافذة</button>
         </div>
-        <span class="m3-nav-label">المشاريع</span>
-      </button>
 
-      <button class="m3-nav-item" id="nav-btn-expenses" onclick="switchScreen('screen-admin-expenses')">
-        <div class="m3-nav-pill">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        </div>
-        <span class="m3-nav-label">المصروفات</span>
-      </button>
-
-      <button class="m3-nav-item" id="nav-btn-invoices" onclick="switchScreen('screen-admin-invoices')">
-        <div class="m3-nav-pill">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        </div>
-        <span class="m3-nav-label">الفواتير</span>
-      </button>
-    </nav>
-
-    <!-- Global Toast Snackbar -->
-    <div id="m3-toast" class="m3-snackbar">
-      <span id="toast-text">تمت العملية بنجاح</span>
-      <span style="color: var(--md-sys-color-primary-container); cursor: pointer;" onclick="hideToast()">تم</span>
     </div>
 
-  </div> <!-- End App Viewport -->
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // 12 Exact Required Services Data Array
+        const requiredServices = [
+            "تشطيب داخلي وخارجي",
+            "صب من الأول",
+            "صب طوابق",
+            "شغل شقة كاملة جاهزة بالتشطيب",
+            "صب عمدان",
+            "صب خرسانات",
+            "تصميم داخلي وخارجي",
+            "تشطيب من الأول إلى الآخر",
+            "تشطيب نصفي",
+            "رسم خرائط بالشقة",
+            "الجمولونات",
+            "الصيوانات"
+        ];
 
-  <!-- Modal Bottom Sheet Container -->
-  <div id="m3-dialog-sheet" class="m3-dialog-overlay" onclick="closeSheetOnOverlay(event)">
-    <div class="m3-sheet" id="sheet-content">
-      <div class="sheet-handle"></div>
-      <div id="sheet-inner-body"></div>
-    </div>
-  </div>
+        // Populate Services List in Admin View
+        function renderAdminServices() {
+            const container = document.getElementById('admin-services-list');
+            if (!container) return;
+            container.innerHTML = '';
 
-  <!-- JavaScript Application Logic -->
-  <script>
-    // Screen Navigation Engine
-    function switchScreen(screenId, pillElement) {
-      // Hide all screen views
-      const screens = document.querySelectorAll('.screen-content');
-      screens.forEach(s => s.classList.remove('active'));
+            requiredServices.forEach((service, index) => {
+                const card = document.createElement('div');
+                card.className = 'm3-card';
+                card.style.padding = '12px 14px';
+                card.style.marginBottom = '10px';
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 36px; height: 36px; border-radius: 8px; background: var(--md-sys-color-primary-container); color: var(--md-sys-color-primary); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px;">
+                                ${index + 1}
+                            </div>
+                            <div>
+                                <h4 style="font-size: 13.5px; font-weight: 700;">${service}</h4>
+                                <span style="font-size: 11px; color: var(--md-sys-color-outline);">متاح للطلب المباشر والمعاينة</span>
+                            </div>
+                        </div>
+                        <button class="m3-btn m3-btn-tonal" style="height: 32px; font-size: 11px; width: auto; padding: 0 10px;" onclick="openModalSheet('تعديل خدمة ${service}', 'أدخل التعديلات والوصف التفصيلي لهذه الخدمة الهندسية.')">
+                            تعديل
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
 
-      // Show selected screen
-      const target = document.getElementById(screenId);
-      if (target) {
-        target.classList.add('active');
-        target.scrollTop = 0;
-      }
+        // View Navigation Switcher
+        function switchView(viewId, pillElement = null) {
+            // Hide all views
+            document.querySelectorAll('.view-content').forEach(view => {
+                view.classList.remove('active');
+            });
 
-      // Update tester pill states if clicked from bar
-      if (pillElement) {
-        document.querySelectorAll('.apkfact-pill').forEach(p => p.classList.remove('active'));
-        pillElement.classList.add('active');
-      }
+            // Show selected view
+            const targetView = document.getElementById(viewId);
+            if (targetView) {
+                targetView.classList.add('active');
+                targetView.scrollTop = 0;
+            }
 
-      // Sync Bottom Navigation icons state
-      document.querySelectorAll('.m3-nav-item').forEach(n => n.classList.remove('active'));
-      if (screenId === 'screen-customer-home' || screenId === 'screen-quote-request') {
-        document.getElementById('nav-btn-home')?.classList.add('active');
-      } else if (screenId === 'screen-customer-track') {
-        document.getElementById('nav-btn-track')?.classList.add('active');
-      } else if (screenId === 'screen-admin-projects' || screenId === 'screen-admin-login' || screenId === 'screen-daily-report') {
-        document.getElementById('nav-btn-projects')?.classList.add('active');
-      } else if (screenId === 'screen-admin-expenses') {
-        document.getElementById('nav-btn-expenses')?.classList.add('active');
-      } else if (screenId === 'screen-admin-invoices') {
-        document.getElementById('nav-btn-invoices')?.classList.add('active');
-      }
-    }
+            // Update Screen Switcher Pills
+            if (pillElement) {
+                document.querySelectorAll('#apkfact-screens .screen-pill').forEach(pill => {
+                    pill.classList.remove('active');
+                });
+                pillElement.classList.add('active');
+            }
 
-    // Auth tab switcher
-    function toggleAuthTab(type) {
-      const codeTab = document.getElementById('tab-login-code');
-      const emailTab = document.getElementById('tab-login-email');
-      const fieldCode = document.getElementById('field-admin-code');
-      const fieldsReg = document.getElementById('fields-register');
+            // Sync Bottom Nav Active Highlight
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => item.classList.remove('active'));
 
-      if (type === 'code') {
-        codeTab.classList.add('selected');
-        emailTab.classList.remove('selected');
-        fieldCode.style.display = 'flex';
-        fieldsReg.style.display = 'none';
-      } else {
-        emailTab.classList.add('selected');
-        codeTab.classList.remove('selected');
-        fieldCode.style.display = 'none';
-        fieldsReg.style.display = 'block';
-      }
-    }
+            if (viewId === 'v-dashboard') navItems[0]?.classList.add('active');
+            else if (viewId === 'v-requests' || viewId === 'v-cost-inspection' || viewId === 'v-update-progress') navItems[1]?.classList.add('active');
+            else if (viewId === 'v-services-admin') navItems[2]?.classList.add('active');
+            else if (viewId === 'v-portfolio-admin') navItems[3]?.classList.add('active');
+            else if (viewId === 'v-settings') navItems[4]?.classList.add('active');
+        }
 
-    // Form handlers & Toasts
-    function showToast(message) {
-      const toast = document.getElementById('m3-toast');
-      const text = document.getElementById('toast-text');
-      text.innerText = message;
-      toast.classList.add('active');
-      setTimeout(() => {
-        toast.classList.remove('active');
-      }, 3200);
-    }
+        // Bottom Sheet Controls
+        function openModalSheet(title, contentHtml) {
+            document.getElementById('sheet-title').innerText = title;
+            document.getElementById('sheet-content').innerHTML = contentHtml;
+            document.getElementById('bottom-sheet').classList.add('open');
+            document.getElementById('sheet-backdrop').classList.add('open');
+        }
 
-    function hideToast() {
-      document.getElementById('m3-toast').classList.remove('active');
-    }
+        function closeBottomSheet() {
+            document.getElementById('bottom-sheet').classList.remove('open');
+            document.getElementById('sheet-backdrop').classList.remove('open');
+        }
 
-    function handleQuoteSubmit(e) {
-      e.preventDefault();
-      showToast('✅ تم إرسال طلب عرض السعر بنجاح! سيتم التواصل معك قريباً.');
-      switchScreen('screen-customer-home');
-    }
+        // Action Handlers
+        function handleCostSubmit(e) {
+            e.preventDefault();
+            alert('تم اعتماد وتحديد تكلفة المشروع بنجاح، وإرسال إشعار فوري للزبون عبر التطبيق!');
+            switchView('v-requests');
+        }
 
-    function handleAdminAuth(e) {
-      e.preventDefault();
-      showToast('🔐 تم تسجيل دخول الإدارة بنجاح');
-      switchScreen('screen-admin-projects');
-    }
+        function handleProgressSubmit(e) {
+            e.preventDefault();
+            alert('تم رفع التحديث الميداني والصور وإشعار الزبون بنسبة الإنجاز الجديد!');
+            switchView('v-requests');
+        }
 
-    function handleDailyReportSubmit(e) {
-      e.preventDefault();
-      showToast('📋 تم نشر التقرير اليومي وتنبيه صاحب المشروع');
-      switchScreen('screen-admin-projects');
-    }
+        function handleSendPush(e) {
+            e.preventDefault();
+            alert('تم إرسال الإشعار الفوري بنجاح!');
+            switchView('v-dashboard');
+        }
 
-    // Dynamic Search Project Code
-    function searchProjectCode() {
-      const code = document.getElementById('project-code-input').value.trim();
-      if (code === 'MAD-2025-02') {
-        document.getElementById('track-proj-title').innerText = 'عمارة الياسمين التجاري';
-        document.getElementById('track-proj-code').innerText = 'MAD-2025-02';
-        document.getElementById('track-proj-percent').innerText = '42%';
-        document.getElementById('track-proj-bar').style.width = '42%';
-        document.getElementById('track-proj-phase').innerText = 'صب أعمدة الدور الأرضي وتجهيز السقف';
-        document.getElementById('track-proj-engineer').innerText = 'م. خالد المنصور';
-        showToast('تم العثور على بيانات مشروع عمارة الياسمين');
-      } else {
-        document.getElementById('track-proj-title').innerText = 'فيلا الأمل - حي النرجس';
-        document.getElementById('track-proj-code').innerText = 'MAD-2025-01';
-        document.getElementById('track-proj-percent').innerText = '68%';
-        document.getElementById('track-proj-bar').style.width = '68%';
-        document.getElementById('track-proj-phase').innerText = 'صب سقف الطابق الثاني والبدء بالمباني';
-        document.getElementById('track-proj-engineer').innerText = 'م. أحمد العمراني';
-        showToast('تم العثور على بيانات مشروع فيلا الأمل');
-      }
-    }
+        function handleLoginOtpStep(e) {
+            e.preventDefault();
+            openModalSheet('رمز تأكيد الدخول (OTP)', `
+                <p>تم إرسال رمز تأكيد مكون من 6 أرقام إلى بريدك الإلكتروني.</p>
+                <div class="otp-container">
+                    <input type="text" class="otp-box" maxlength="1" value="4">
+                    <input type="text" class="otp-box" maxlength="1" value="8">
+                    <input type="text" class="otp-box" maxlength="1" value="1">
+                    <input type="text" class="otp-box" maxlength="1" value="9">
+                    <input type="text" class="otp-box" maxlength="1" value="2">
+                    <input type="text" class="otp-box" maxlength="1" value="5">
+                </div>
+                <button class="m3-btn m3-btn-primary" onclick="closeBottomSheet(); switchView('v-dashboard');">تأكيد الرمز وتأكيد الدخول</button>
+            `);
+        }
 
-    // Image Upload Mockup
-    function simulatedImageUpload() {
-      const label = document.getElementById('report-img-label');
-      label.innerText = '📷 تم اختيار 3 صور من المعرض بنجاح!';
-      label.style.color = 'var(--md-sys-color-success)';
-      showToast('تمت إضافة 3 صور للتقرير اليومي');
-    }
+        function handleSignupOtpStep(e) {
+            e.preventDefault();
+            openModalSheet('تأكيد إنشاء حساب إدارة جديد', `
+                <p>تم إرسال رمز التأكيد المكون من 6 أرقام للبريد الإلكتروني المدخل.</p>
+                <div class="otp-container">
+                    <input type="text" class="otp-box" maxlength="1" value="7">
+                    <input type="text" class="otp-box" maxlength="1" value="3">
+                    <input type="text" class="otp-box" maxlength="1" value="0">
+                    <input type="text" class="otp-box" maxlength="1" value="4">
+                    <input type="text" class="otp-box" maxlength="1" value="9">
+                    <input type="text" class="otp-box" maxlength="1" value="1">
+                </div>
+                <button class="m3-btn m3-btn-secondary" onclick="closeBottomSheet(); switchView('v-dashboard');">تفعيل الحساب وتأكيده</button>
+            `);
+        }
 
-    // Modal Sheet Handlers
-    function openModalSheet(htmlContent) {
-      const overlay = document.getElementById('m3-dialog-sheet');
-      const body = document.getElementById('sheet-inner-body');
-      body.innerHTML = htmlContent;
-      overlay.classList.add('active');
-    }
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            document.getElementById('dark-toggle').checked = isDark;
+        }
 
-    function closeModalSheet() {
-      document.getElementById('m3-dialog-sheet').classList.remove('active');
-    }
-
-    function closeSheetOnOverlay(e) {
-      if (e.target.id === 'm3-dialog-sheet') {
-        closeModalSheet();
-      }
-    }
-
-    // PDF Preview and Print Dialog
-    function openPdfPreviewModal(invNum, amount, details) {
-      const html = `
-        <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 6px;">📲 معاينة ملف الفاتورة PDF</h3>
-        <p style="font-size: 12px; color: var(--md-sys-color-outline);">توليد وحفظ الفاتورة بصيغة PDF قابلة للمشاركة والطباعة.</p>
-        
-        <div class="pdf-preview">
-          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #ccc; padding-bottom: 8px; margin-bottom: 8px;">
-            <strong>شركة المدرار للمقاولات العامة</strong>
-            <span>رقم الفاتورة: ${invNum}</span>
-          </div>
-          <div>العميل: د. خالد السليمان (مشروع فيلا الأمل)</div>
-          <div>البيان: ${details}</div>
-          <div style="margin-top: 10px; text-align: left; font-size: 14px; font-weight: 900; color: #9C4300;">المبلغ: ${amount} ر.س</div>
-          <div style="font-size: 10px; color: #666; margin-top: 10px; text-align: center;">الرقم الضريبي: 300492810400003 - مختومة إلكترونياً</div>
-        </div>
-
-        <div style="display: flex; gap: 8px; margin-top: 16px;">
-          <button class="m3-btn m3-btn-primary" style="flex: 1;" onclick="showToast('📥 تم تحميل ملف الفاتورة PDF على جهازك'); closeModalSheet();">تنزيل ملف PDF</button>
-          <button class="m3-btn m3-btn-outlined" style="flex: 1;" onclick="closeModalSheet()">إغلاق</button>
-        </div>
-      `;
-      openModalSheet(html);
-    }
-
-    function triggerPrintMock(invNum) {
-      showToast('🖨️ جاري الاتصال بالطابعة وإرسال الفاتورة ' + invNum);
-    }
-
-    // Modal Generators
-    function openNewProjectModal() {
-      const html = `
-        <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 12px;">إضافة موقع مشروع جديد</h3>
-        <div class="m3-textfield">
-          <label class="m3-label">اسم المشروع</label>
-          <input type="text" id="new-p-name" class="m3-input" placeholder="مثال: فيلا حي الياسمين">
-        </div>
-        <div class="m3-textfield">
-          <label class="m3-label">اسم الزبون / العميل</label>
-          <input type="text" id="new-p-client" class="m3-input" placeholder="أدخل اسم الزبون">
-        </div>
-        <div class="m3-textfield">
-          <label class="m3-label">توليد كود المتابعة للزبون</label>
-          <input type="text" class="m3-input" value="MAD-2025-03" readonly style="background: #eee; font-weight: 800;">
-        </div>
-        <button class="m3-btn m3-btn-primary" onclick="addNewProjectAction()">حفظ وإنشاء كود المتابعة 🔑</button>
-      `;
-      openModalSheet(html);
-    }
-
-    function addNewProjectAction() {
-      const name = document.getElementById('new-p-name')?.value || 'مشروع جديد';
-      const container = document.getElementById('admin-projects-list');
-      const cardHtml = `
-        <div class="m3-card">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-              <span class="m3-badge m3-badge-info">جديد</span>
-              <h3 style="font-size: 15px; font-weight: 800; margin-top: 4px;">${name}</h3>
-              <p style="font-size: 12px; color: var(--md-sys-color-outline); margin-bottom: 6px;">العميل: عميل جديد</p>
-            </div>
-            <div style="text-align: left;">
-              <span class="m3-badge m3-badge-info" style="font-size: 10px;">كود الزبون</span>
-              <div style="font-size: 12px; font-weight: 800; color: var(--md-sys-color-primary); font-family: monospace;">MAD-2025-03</div>
-            </div>
-          </div>
-          <div class="m3-progress-track"><div class="m3-progress-fill" style="width: 5%;"></div></div>
-          <div style="display: flex; gap: 6px; margin-top: 12px;">
-            <button class="m3-btn m3-btn-tonal" style="min-height: 36px; font-size: 11px; flex: 1;" onclick="switchScreen('screen-daily-report')">📋 تقرير</button>
-            <button class="m3-btn m3-btn-tonal" style="min-height: 36px; font-size: 11px; flex: 1;" onclick="switchScreen('screen-admin-expenses')">💰 مصروفات</button>
-          </div>
-        </div>
-      `;
-      container.insertAdjacentHTML('afterbegin', cardHtml);
-      closeModalSheet();
-      showToast('🏗️ تم إضافة المشروع وتوليد كود الزبون MAD-2025-03');
-    }
-
-    function showCodeModal(code, title) {
-      const html = `
-        <div style="text-align: center; padding: 10px 0;">
-          <div style="font-size: 32px;">🔑</div>
-          <h3 style="font-size: 16px; font-weight: 800; margin: 8px 0;">كود متابعة الزبون الخاصة بـ ${title}</h3>
-          <div style="background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); padding: 12px; border-radius: 12px; font-size: 20px; font-weight: 900; font-family: monospace; letter-spacing: 2px; margin: 12px 0;">
-            ${code}
-          </div>
-          <p style="font-size: 12px; color: var(--md-sys-color-outline); margin-bottom: 16px;">قم بإعطاء هذا الكود للزبون ليدخله في شاشة متابعة المشروع بالتطبيق.</p>
-          <button class="m3-btn m3-btn-primary" onclick="navigator.clipboard?.writeText('${code}'); showToast('📋 تم نسخ الكود بالحافظة'); closeModalSheet();">نسخ الكود إلكترونياً</button>
-        </div>
-      `;
-      openModalSheet(html);
-    }
-
-    function openAddExpenseSheet() {
-      const html = `
-        <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 12px;">تسجيل مصروف أو مواد أو أجور</h3>
-        <div class="m3-textfield">
-          <label class="m3-label">نوع المصروف</label>
-          <select class="m3-select">
-            <option>📦 مواد بناء (حديد، خرسانة، أسمنت)</option>
-            <option>👷 أجور عمال ومقاولين</option>
-            <option>🚜 معدات وحفريات ونقل</option>
-          </select>
-        </div>
-        <div class="m3-textfield">
-          <label class="m3-label">الوصف التفصيلي</label>
-          <input type="text" class="m3-input" placeholder="مثال: توريد طابوق مفرغ">
-        </div>
-        <div class="m3-textfield">
-          <label class="m3-label">المبلغ الإجمالي (ر.س)</label>
-          <input type="number" class="m3-input" placeholder="مثال: 3500">
-        </div>
-        <button class="m3-btn m3-btn-primary" onclick="showToast('💰 تم تسجيل المصروف بنجاح'); closeModalSheet();">حفظ البند</button>
-      `;
-      openModalSheet(html);
-    }
-
-    function openAddInvoiceModal() {
-      const html = `
-        <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 12px;">إنشاء فاتورة دفعة جديدة</h3>
-        <div class="m3-textfield">
-          <label class="m3-label">المشروع والزبون</label>
-          <select class="m3-select">
-            <option>فيلا الأمل (د. خالد السليمان)</option>
-            <option>عمارة الياسمين (شركة الأفق)</option>
-          </select>
-        </div>
-        <div class="m3-textfield">
-          <label class="m3-label">عنوان الفاتورة / المرحلة</label>
-          <input type="text" class="m3-input" placeholder="مثال: دفعة التشطيبات الأولية">
-        </div>
-        <div class="m3-textfield">
-          <label class="m3-label">قيمة الفاتورة (ر.س)</label>
-          <input type="number" class="m3-input" placeholder="مثال: 45000">
-        </div>
-        <button class="m3-btn m3-btn-primary" onclick="showToast('📄 تم إنشاء الفاتورة وإدراجها بالنظام'); closeModalSheet();">حفظ وتوليد PDF</button>
-      `;
-      openModalSheet(html);
-    }
-
-    function openSendNotificationModal() {
-      const html = `
-        <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 12px;">إرسال إشعار مباشر لزبون</h3>
-        <div class="m3-textfield">
-          <label class="m3-label">مستلم الإشعار</label>
-          <select class="m3-select">
-            <option>جميع زبائن المشاريع النشطة</option>
-            <option>زبون مشروع MAD-2025-01 (فيلا الأمل)</option>
-          </select>
-        </div>
-        <div class="m3-textfield">
-          <label class="m3-label">عنوان الإشعار</label>
-          <input type="text" class="m3-input" placeholder="تحديث جديد بالموقع">
-        </div>
-        <div class="m3-textfield">
-          <label class="m3-label">نص الرسالة</label>
-          <textarea class="m3-textarea" rows="3" placeholder="اكتب التنبيه المطلوب..."></textarea>
-        </div>
-        <button class="m3-btn m3-btn-primary" onclick="showToast('🔔 تم إرسال الإشعار بنجاح للتطبيقيين'); closeModalSheet();">إرسال الآن 🚀</button>
-      `;
-      openModalSheet(html);
-    }
-  </script>
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            renderAdminServices();
+        });
+    </script>
 </body>
 </html>

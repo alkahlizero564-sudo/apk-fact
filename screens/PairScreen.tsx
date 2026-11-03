@@ -1,6 +1,6 @@
 // Two connected apps (customer + admin) on Supabase, with the sign-in the owner wrote in the description, and push notifications.
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { Alert, View, Text, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,6 +18,7 @@ import UnderstandStudio, { UnderstandHandle } from "../components/UnderstandStud
 import { Spec, specText } from "../services/understand";
 import { loginFromText, loginLine, LOGIN_LABELS, PairLogin } from "../services/login";
 import { saveApprovedDesign, clearDraft, DesignTarget } from "../services/design";
+import { loadDraft as loadWork, clearDraft as clearWork, useAutoSave } from "../services/drafts";
 import { colors, langColors, space, radius, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
 
@@ -60,6 +61,40 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
   const [designs, setDesigns] = useState<Record<string, string>>({});
   const [designBusy, setDesignBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Unfinished work: offer to continue it after an error or after closing APK Fact (the admin PIN is not kept).
+  type Work = {
+    base: string; lang: Lang; description: string; admins: string; loginApps: "" | "customer" | "admin" | "both";
+    customerName: string; adminName: string; push: boolean; owner: Owner | null; dbRef: string; spec: Spec | null;
+    stage: "form" | "understand" | "design";
+  };
+  useEffect(() => {
+    loadWork<Work>("pair").then((w) => {
+      if (!w || !(w.base || w.description)) return;
+      Alert.alert("تكمّل اللي كنت شغال فيه؟", `عندك نظام ما كمّلته${w.base ? `: «${w.base}»` : ""}. تكمّل من مكانك؟`, [
+        { text: "ابدأ من جديد", style: "destructive", onPress: () => clearWork("pair") },
+        {
+          text: "كمّل",
+          onPress: () => {
+            setBase(w.base);
+            setLang(w.lang);
+            setDescription(w.description);
+            setAdmins(w.admins);
+            setLoginApps(w.loginApps);
+            setCustomerName(w.customerName);
+            setAdminName(w.adminName);
+            setPush(w.push);
+            if (w.owner) setOwnerState(w.owner);
+            setDbRef(w.dbRef);
+            setSpec(w.spec);
+            // The admin PIN is never saved: when the admin app has no sign-in (it needs the PIN) start from the form.
+            const adminSignIn = loginFromText(w.description) !== "none" && (w.loginApps === "admin" || w.loginApps === "both");
+            setPhase(!adminSignIn ? "form" : w.stage === "design" && w.spec ? "design" : w.stage === "understand" ? "understand" : "form");
+          },
+        },
+      ]);
+    });
+  }, []);
   const [steps, report, reset] = useSteps([
     ["design", "حفظ التصميم المعتمد للتطبيقين"],
     ["sync", "ربط المفاتيح بعمليات البناء (مشفّرة)"],
@@ -105,6 +140,15 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
   const canSubmit =
     !!ready?.supabase && (!usePush || ready.firebase) && baseValid && !taken && description.trim().length > 20;
 
+  useAutoSave(
+    "pair",
+    {
+      base, lang, description, admins, loginApps, customerName, adminName, push, owner, dbRef, spec,
+      stage: phase === "understand" || phase === "design" ? phase : "form",
+    },
+    (phase === "form" || phase === "understand" || phase === "design") && !!(base || description)
+  );
+
   async function submit() {
     setPhase("running");
     setError(null);
@@ -135,6 +179,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
       if (pairLogin.admin === "none") await setAdminPin(clean.replace(/[^a-z0-9_]/g, "_"), dbRef, pin.trim());
       designTargets.forEach((t) => clearDraft(t));
       setPhase("done");
+      clearWork("pair");
     } catch (e: any) {
       setError(e.message);
       setPhase("failed");

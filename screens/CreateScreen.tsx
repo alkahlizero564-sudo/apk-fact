@@ -1,6 +1,6 @@
 // New app wizard: start -> language -> details -> review, then a live progress timeline.
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { Alert, View, Text, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -24,6 +24,7 @@ import UnderstandStudio, { UnderstandHandle } from "../components/UnderstandStud
 import OwnerSheet, { Owner } from "../components/OwnerSheet";
 import { Spec, specText } from "../services/understand";
 import { saveApprovedDesign, clearDraft, DesignTarget } from "../services/design";
+import { loadDraft as loadWork, clearDraft as clearWork, useAutoSave } from "../services/drafts";
 import { appExists, cleanName, cleanLabel, generateApp, listApps, setDisplayName, setClient, uploadCode, AppInfo } from "../services/appActions";
 import { colors, langColors, space, radius, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
@@ -94,6 +95,40 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
     listApps().then(setApps).catch(() => setApps([]));
   }, []);
 
+  // Unfinished work: offer to continue it after an error or after closing APK Fact (services/drafts.ts).
+  type Work = {
+    step: number; start: Start; templateId?: string; lang: Lang; name: string; label: string; text: string;
+    code: string; related: string; owner: Owner | null; spec: Spec | null;
+  };
+  useEffect(() => {
+    if (preset) return;
+    loadWork<Work>("create").then((w) => {
+      if (!w || !(w.name || w.text || w.code)) return;
+      Alert.alert("تكمّل اللي كنت شغال فيه؟", `عندك تطبيق ما كمّلته${w.name ? `: «${w.name}»` : ""}. تكمّل من مكانك؟`, [
+        { text: "ابدأ من جديد", style: "destructive", onPress: () => clearWork("create") },
+        {
+          text: "كمّل",
+          onPress: () => {
+            setStart(w.start);
+            setTemplate(TEMPLATES.find((t) => t.id === w.templateId));
+            setLang(w.lang);
+            setName(w.name);
+            setLabel(w.label);
+            setText(w.text);
+            setCode(w.code);
+            setRelated(w.related);
+            setSpec(w.spec);
+            if (w.owner) {
+              setOwner(w.owner);
+              setAskOwner(false);
+            }
+            setStep(Math.min(w.step, 4));
+          },
+        },
+      ]);
+    });
+  }, []);
+
   const clean = cleanName(name);
   useEffect(() => {
     setNameTaken(null);
@@ -155,6 +190,12 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
     lang,
   };
 
+  useAutoSave(
+    "create",
+    { step, start, templateId: template?.id, lang, name, label, text, code, related, owner, spec },
+    phase === "form" && !!(name || text || code)
+  );
+
   async function submit() {
     setPhase("running");
     setError(null);
@@ -174,6 +215,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
       if (cleanLabel(label)) await setDisplayName(clean, label);
       if (owner?.kind === "client") await setClient(clean, owner.name);
       if (design) clearDraft(designTarget);
+      clearWork("create");
       setPhase("done");
     } catch (e: any) {
       setError(e.message);

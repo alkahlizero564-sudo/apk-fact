@@ -486,6 +486,15 @@ Build the complete {role} experience for this business with real screens backed 
 """
 
 
+def for_app(text, role):
+    """The description for one app of the pair: without the other app's items («الزبون:» / «الإدارة:»), and
+    without LOGIN (the contract has the sign-in rules). Same rules as forApp() in services/understand.ts."""
+    other = "الإدارة" if role == "customer" else "الزبون"
+    keep = [l for l in (text or "").split("\n")
+            if not re.match(r"^\s*LOGIN:", l) and not re.match(rf"^\s*-\s*«?{other}»?\s*:", l)]
+    return "\n".join(keep).strip()
+
+
 def cmd_generate(a):
     st = load_state(a.base)
     role, lang = a.role, st["lang"]
@@ -496,7 +505,7 @@ def cmd_generate(a):
     scope = (f"\n(This is the {mine} app only: build every requirement marked «{mine}:» or «الاثنين:». "
              f"Items marked «{other}:» belong to the other app and are only context; do not build them here.)\n"
              if "=== المواصفات" in st["description"] else "")
-    request = f"{title} لهذا المشروع:\n{st['description']}\n{scope}{contract_text(st, role)}"
+    request = f"{title} لهذا المشروع:\n{for_app(st['description'], role)}\n{scope}{contract_text(st, role)}"
     with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8") as f:
         related = f"@related: {st['apps']['customer']['name']}\n" if role == "admin" else ""
         f.write(f"{name}\n{related}{request}\n\n(request id: {int(time.time())})\n")

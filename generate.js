@@ -14,6 +14,9 @@ if (lines.length && /^@related:/i.test(lines[0].trim())) {
 }
 
 const request = lines.join("\n").trim();
+// What the AI reads: without the lines meant only for the build (permissions, sign-in mode), so they never end up
+// on a screen. The raw request is still saved and used for the permissions (scripts/perms.py).
+const aiRequest = request.replace(/^\s*(ANDROID_PERMISSIONS|LOGIN):.*$/gm, "").trim();
 if (!name || !request) {
   console.error("السطر الأول اسم التطبيق (إنجليزي) والباقي الوصف");
   process.exit(1);
@@ -86,8 +89,8 @@ function pairRules() {
 }
 
 const prompt = existing
-  ? `Here is the current app:\n\`\`\`html\n${existing}\n\`\`\`${relatedBlock}\n\nApply this change and return the FULL updated file:\n${request}${pairRules()}`
-  : `Create this app:\n${request}${relatedBlock}${designBlock()}`;
+  ? `Here is the current app:\n\`\`\`html\n${existing}\n\`\`\`${relatedBlock}\n\nApply this change and return the FULL updated file:\n${aiRequest}${pairRules()}`
+  : `Create this app:\n${aiRequest}${relatedBlock}${designBlock()}`;
 
 // apps/<name>/meta.json keeps the app's description and every requested change (copied to the vault).
 function recordHistory(kind) {
@@ -334,7 +337,7 @@ async function completeRequirements(code, order) {
     `You review an app against ${what}. List every concrete requirement in it (features, screens, fields, ` +
       `buttons, texts, names, numbers, rules) that the code does NOT implement, or implements differently ` +
       `from what was asked. Ignore style details the owner did not mention. Reply with JSON only: ` +
-      `{"missing": ["..."]} (an empty list when everything is done).\n\nOWNER'S REQUEST:\n${request}\n\nCODE:\n` +
+      `{"missing": ["..."]} (an empty list when everything is done).\n\nOWNER'S REQUEST:\n${aiRequest}\n\nCODE:\n` +
       "```html\n" + code + "\n```",
     true
   );

@@ -143,4 +143,19 @@ export function specText(spec: Spec) {
   return out.join("\n");
 }
 
+/**
+ * What one app's designer should read: the description and approved list without the lines meant for the builds
+ * (ANDROID_PERMISSIONS, LOGIN, the permissions summary), and for an app of a pair only its own items
+ * («الزبون:» / «الإدارة:») plus the shared ones («الاثنين:»). Same rules as forApp() in scripts/pair.py.
+ */
+export function forApp(text: string, role?: "customer" | "admin") {
+  const other = role === "customer" ? "الإدارة" : role === "admin" ? "الزبون" : "";
+  return String(text)
+    .split("\n")
+    .filter((line) => !/^\s*(ANDROID_PERMISSIONS|LOGIN):/.test(line) && !/^\s*الصلاحيات:/.test(line))
+    .filter((line) => !other || !new RegExp(`^\\s*-\\s*«?${other}»?\\s*:`).test(line))
+    .join("\n")
+    .trim();
+}
+
 export { permLabel, PERM_KEYS };

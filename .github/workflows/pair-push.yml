@@ -1,0 +1,38 @@
+name: pair-push
+run-name: Push notifications of ${{ inputs.base }}
+
+# Redeploys the push notification function of an existing connected pair (no app is regenerated):
+# after a fix to scripts/templates/push_function.ts, or when push notifications of a pair need repairing.
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: "Project name of the pair (the apps are <base>-customer and <base>-admin)"
+        required: true
+      supabase_ref:
+        description: "The pair's client Supabase project (its token is the secret SUPABASE_TOKEN_<REF>); empty = the default project"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ inputs.supabase_ref != '' && secrets[format('SUPABASE_TOKEN_{0}', inputs.supabase_ref)] || secrets.SUPABASE_ACCESS_TOKEN }}
+      FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      BASE: ${{ inputs.base }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Redeploy the push function
+        run: |
+          if ! [[ "$BASE" =~ ^[a-z0-9-]+$ ]]; then echo "bad project name"; exit 1; fi
+          python scripts/pair.py push --base "$BASE"

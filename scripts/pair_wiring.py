@@ -103,9 +103,16 @@ def problems(app, st):
     import shutil
     if not shutil.which("flutter"):
         return ""
+    # check_flutter.py needs a project made by `flutter create` (like generate_native.check_flutter_app); it also
+    # gets two AI rounds to fix compile errors in the added code instead of throwing the addition away.
     with tempfile.TemporaryDirectory() as tmp:
-        r = subprocess.run([sys.executable, str(HERE / "check_flutter.py"), str(f.parent.parent), str(Path(tmp) / "p"),
-                            "--rounds", "1"], capture_output=True, text=True)
+        proj = Path(tmp) / "app"
+        r = subprocess.run(["flutter", "create", "--platforms=android", "--project-name", "app_check", str(proj)],
+                           capture_output=True, text=True)
+        if r.returncode != 0:
+            return ""  # cannot check here; the build analyzes the code anyway
+        r = subprocess.run([sys.executable, str(HERE / "check_flutter.py"), str(f.parent.parent), str(proj),
+                            "--rounds", "2"], capture_output=True, text=True, cwd=str(HERE))
         return "" if r.returncode == 0 else (r.stdout + r.stderr)[-3000:]
 
 

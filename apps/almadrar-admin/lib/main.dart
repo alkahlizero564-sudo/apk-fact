@@ -604,6 +604,7 @@ class AdminStateProvider extends ChangeNotifier {
 
   void _registerDeviceToken() async {
     try {
+      await FirebaseMessaging.instance.requestPermission(); // Android 13+ shows pushes only after this
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null) {
         await http.post(

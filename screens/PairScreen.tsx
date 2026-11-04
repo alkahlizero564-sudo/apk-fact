@@ -86,8 +86,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
             setCustomerName(w.customerName);
             setAdminName(w.adminName);
             setPush(w.push);
-            if (w.owner) setOwnerState(w.owner);
-            setDbRef(w.dbRef);
+            // «لمين؟» is asked again (one tap; it also picks the database), never taken silently from a draft.
             setSpec(w.spec);
             // The admin PIN is never saved: when the admin app has no sign-in (it needs the PIN) start from the form.
             const adminEmail = !!w.method && usesEmail(w.method) && (w.loginApps === "admin" || w.loginApps === "both");
@@ -226,14 +225,14 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
         <View style={styles.topRow}>
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>تطبيقين متصلين</Text>
-            <Text style={styles.subtitle}>زبون + إدارة · Supabase · دخول برمز البريد · إشعارات</Text>
+            <Text style={styles.subtitle}>زبون + إدارة · Supabase · تسجيل دخول تختاره · إشعارات</Text>
           </View>
           <IconButton icon="close" label="إغلاق" onPress={() => navigation.goBack()} />
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        {phase === "form" && !owner ? (
+        {!owner && (phase === "form" || phase === "understand" || phase === "design") ? (
           <>
             <Text style={styles.label}>التطبيقين دول لمين؟</Text>
             <OwnerPicker pair onPick={setOwner} />
@@ -447,7 +446,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
             style={{ flex: 1 }}
           />
         </View>
-      ) : phase === "understand" ? (
+      ) : !owner ? null : phase === "understand" ? (
         <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
           <Button title="رجوع" variant="secondary" onPress={() => setPhase("form")} disabled={understandBusy} style={{ flex: 1 }} />
           <Button

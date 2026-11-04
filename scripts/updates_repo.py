@@ -36,10 +36,21 @@ def base(tag):
 
 
 def release(tag, title, notes, files):
+    """Creates the release with its files. GitHub sometimes answers 502/500 (build 83 of APK Fact was lost to
+    one), so it tries 5 times; when the release was made but a file did not upload, the file is uploaded again."""
+    import time
     repo, token = target()
-    subprocess.run(["gh", "release", "create", tag, *files, "--repo", repo, "--title", title, "--notes", notes],
-                   check=True, env={**os.environ, "GH_TOKEN": token})
-    print(base(tag))
+    env = {**os.environ, "GH_TOKEN": token}
+    for attempt in range(5):
+        exists = subprocess.run(["gh", "release", "view", tag, "--repo", repo], env=env, capture_output=True).returncode == 0
+        cmd = (["gh", "release", "upload", tag, *files, "--repo", repo, "--clobber"] if exists else
+               ["gh", "release", "create", tag, *files, "--repo", repo, "--title", title, "--notes", notes])
+        if subprocess.run(cmd, env=env).returncode == 0:
+            print(base(tag))
+            return
+        print(f"GitHub did not take the release (try {attempt + 1} of 5), trying again…", flush=True)
+        time.sleep(10 * (attempt + 1))
+    raise SystemExit(f"Could not publish release {tag} to {repo} after 5 tries")
 
 
 def mirror(app):

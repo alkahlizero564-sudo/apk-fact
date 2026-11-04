@@ -118,10 +118,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
             setCode(w.code);
             setRelated(w.related);
             setSpec(w.spec);
-            if (w.owner) {
-              setOwner(w.owner);
-              setAskOwner(false);
-            }
+            // «لمين؟» is asked again (one tap): it decides whose app it is, so it is never taken silently from a draft.
             setStep(Math.min(w.step, 4));
           },
         },
@@ -324,7 +321,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
                   ["blank", "من الصفر", "صف فكرتك بكلماتك", "sparkles-outline"],
                   ["template", "من قالب", `${TEMPLATES.length} فكرة جاهزة تقدر تعدّلها`, "grid-outline"],
                   ["paste", "عندي كود جاهز", "الصق الكود ونجهّز له معاينة", "code-slash-outline"],
-                  ["pair", "تطبيقين متصلين", "زبون + إدارة على Supabase، دخول برمز البريد وإشعارات", "git-merge-outline"],
+                  ["pair", "تطبيقين متصلين", "زبون + إدارة على Supabase، تسجيل دخول تختاره وإشعارات", "git-merge-outline"],
                 ] as [Start, string, string, IconName][]
               ).map(([key, title, sub, icon], i) => (
                 <ListRow

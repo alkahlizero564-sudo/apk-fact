@@ -68,7 +68,13 @@ $$;
 create or replace function public.{p}_handle_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  insert into public.{p}_profiles (id, email, role) values (new.id, new.email, public.{p}_role_for(new.email))
+  -- Name and phone come from the sign-up (user metadata); phone accounts have a hidden email (…@phone.<p>.app).
+  insert into public.{p}_profiles (id, email, full_name, phone, role)
+  values (new.id,
+          case when new.email like '%@phone.%.app' then null else new.email end,
+          nullif(new.raw_user_meta_data->>'full_name', ''),
+          nullif(new.raw_user_meta_data->>'phone', ''),
+          public.{p}_role_for(new.email))
   on conflict (id) do nothing;
   return new;
 end $$;

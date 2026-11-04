@@ -16,7 +16,7 @@ import { setClient } from "../services/appActions";
 import { listProjects, DbProject } from "../services/projects";
 import UnderstandStudio, { UnderstandHandle } from "../components/UnderstandStudio";
 import { Spec, specText } from "../services/understand";
-import { loginFromText, loginLine, LOGIN_LABELS, PairLogin } from "../services/login";
+import { loginLine, LOGIN_LABELS, LOGIN_CHOICES, LoginMode, PairLogin, suggestedChoice, usesEmail } from "../services/login";
 import { saveApprovedDesign, clearDraft, DesignTarget } from "../services/design";
 import { loadDraft as loadWork, clearDraft as clearWork, useAutoSave } from "../services/drafts";
 import { colors, langColors, space, radius, type } from "../theme";
@@ -38,6 +38,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
   const [pin, setPin] = useState("");
   const [loginSheet, setLoginSheet] = useState(false);
   const [loginApps, setLoginApps] = useState<"" | "customer" | "admin" | "both">("");
+  const [method, setMethod] = useState<LoginMode | "">(""); // how users sign in (the owner picks it in the sheet)
   const [customerName, setCustomerName] = useState("");
   const [adminName, setAdminName] = useState("");
   const [push, setPush] = useState(true);
@@ -64,7 +65,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
 
   // Unfinished work: offer to continue it after an error or after closing APK Fact (the admin PIN is not kept).
   type Work = {
-    base: string; lang: Lang; description: string; admins: string; loginApps: "" | "customer" | "admin" | "both";
+    base: string; lang: Lang; description: string; admins: string; loginApps: "" | "customer" | "admin" | "both"; method?: LoginMode | "";
     customerName: string; adminName: string; push: boolean; owner: Owner | null; dbRef: string; spec: Spec | null;
     stage: "form" | "understand" | "design";
   };
@@ -81,6 +82,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
             setDescription(w.description);
             setAdmins(w.admins);
             setLoginApps(w.loginApps);
+            setMethod(w.method ?? "");
             setCustomerName(w.customerName);
             setAdminName(w.adminName);
             setPush(w.push);
@@ -88,8 +90,8 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
             setDbRef(w.dbRef);
             setSpec(w.spec);
             // The admin PIN is never saved: when the admin app has no sign-in (it needs the PIN) start from the form.
-            const adminSignIn = loginFromText(w.description) !== "none" && (w.loginApps === "admin" || w.loginApps === "both");
-            setPhase(!adminSignIn ? "form" : w.stage === "design" && w.spec ? "design" : w.stage === "understand" ? "understand" : "form");
+            const adminEmail = !!w.method && usesEmail(w.method) && (w.loginApps === "admin" || w.loginApps === "both");
+            setPhase(!adminEmail ? "form" : w.stage === "design" && w.spec ? "design" : w.stage === "understand" ? "understand" : "form");
           },
         },
       ]);
@@ -126,9 +128,9 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
   }, [clean, baseValid]);
 
   const usePush = push && lang !== "python";
-  // The owner decides sign-in in the description (services/login.ts, same rules in scripts/pair.py): whether
-  // there is one and how (code / password). When there is, the sign-in sheet asks which app gets it.
-  const mode = loginFromText(description);
+  // The owner picks the sign-in in the sheet (services/login.ts, same modes in scripts/pair.py): how users sign
+  // in, and which app gets it. The description only suggests the first choice.
+  const mode: LoginMode = method || "none";
   const pairLogin: PairLogin = {
     customer: mode !== "none" && (loginApps === "customer" || loginApps === "both") ? mode : "none",
     admin: mode !== "none" && (loginApps === "admin" || loginApps === "both") ? mode : "none",
@@ -136,14 +138,16 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
   const emails = admins.split(/[,\s]+/).filter(Boolean);
   const emailsValid = emails.length > 0 && emails.every((e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
   const pinValid = /^[A-Za-z0-9]{4,12}$/.test(pin.trim());
-  const loginReady = (mode === "none" || !!loginApps) && (pairLogin.admin !== "none" ? emailsValid : pinValid);
+  // The admin app needs admin emails when its sign-in uses an email, else the admin PIN (anyone could install it).
+  const adminByEmail = usesEmail(pairLogin.admin);
+  const loginReady = !!method && (mode === "none" || !!loginApps) && (adminByEmail ? emailsValid : pinValid);
   const canSubmit =
     !!ready?.supabase && (!usePush || ready.firebase) && baseValid && !taken && description.trim().length > 20;
 
   useAutoSave(
     "pair",
     {
-      base, lang, description, admins, loginApps, customerName, adminName, push, owner, dbRef, spec,
+      base, lang, description, admins, loginApps, method, customerName, adminName, push, owner, dbRef, spec,
       stage: phase === "understand" || phase === "design" ? phase : "form",
     },
     (phase === "form" || phase === "understand" || phase === "design") && !!(base || description)
@@ -162,7 +166,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
         {
           base: clean,
           lang,
-          admins: pairLogin.admin !== "none" ? emails.join(",") : "-",
+          admins: adminByEmail ? emails.join(",") : "-",
           push: usePush,
           description: fullDescription,
           customerName,
@@ -175,8 +179,10 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
         await setClient(apps.customer, owner.name);
         await setClient(apps.admin, owner.name);
       }
-      // Admin app without sign-in: it opens with the admin PIN (anyone could install it).
-      if (pairLogin.admin === "none") await setAdminPin(clean.replace(/[^a-z0-9_]/g, "_"), dbRef, pin.trim());
+      // Admin app without admin emails: it opens with the admin PIN (anyone could install it).
+      // With admin emails, a secret random PIN: only those emails are admins (nobody else can claim it).
+      const secretPin = Array.from({ length: 12 }, () => "abcdefghjkmnpqrstuvwxyz23456789"[Math.floor(Math.random() * 31)]).join("");
+      await setAdminPin(clean.replace(/[^a-z0-9_]/g, "_"), dbRef, adminByEmail ? secretPin : pin.trim());
       designTargets.forEach((t) => clearDraft(t));
       setPhase("done");
       clearWork("pair");
@@ -190,7 +196,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
   // What the owner chose in the sign-in sheet, so the understood list matches it.
   const loginNote =
     `${description.trim()}\n\nتسجيل الدخول (اختيار صاحب التطبيق): تطبيق الزبون: ${LOGIN_LABELS[pairLogin.customer]}، ` +
-    `تطبيق الإدارة: ${LOGIN_LABELS[pairLogin.admin]}${pairLogin.admin === "none" ? " (يفتح برمز الإدارة)" : ""}.`;
+    `تطبيق الإدارة: ${LOGIN_LABELS[pairLogin.admin]}${!adminByEmail ? " (يفتح برمز الإدارة)" : ""}.`;
   // The owner's words plus the requirements they approved: the database, the designs and both apps follow it.
   const fullDescription =
     (spec ? `${description.trim()}\n${specText(spec)}` : description.trim()) + `\n${loginLine(pairLogin)}`;
@@ -390,9 +396,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
             </View>
 
             <Text style={styles.namesHint}>
-              {mode === "none"
-                ? "تسجيل الدخول: ما ذكرته في الوصف، فالتطبيقين بدون تسجيل دخول. لو تبغاه اكتبه في الوصف (مثلاً: تسجيل دخول بالبريد ورمز تحقق، أو بكلمة مرور)."
-                : `تسجيل الدخول من وصفك: ${LOGIN_LABELS[mode]}. بعد «افهم فكرتي» بتختار لأي تطبيق.`}
+              تسجيل الدخول: بعد «افهم فكرتي» بتختار الطريقة (بالهاتف، أو بالهاتف والبريد ورمز تأكيد، أو بالبريد) ولأي تطبيق.
             </Text>
 
             <Pressable onPress={() => setOwnerState(null)} accessibilityRole="button">
@@ -435,7 +439,10 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
           <Button
             title="افهم فكرتي"
             icon="bulb-outline"
-            onPress={() => setLoginSheet(true)}
+            onPress={() => {
+              if (!method) setMethod(suggestedChoice(description));
+              setLoginSheet(true);
+            }}
             disabled={!canSubmit}
             style={{ flex: 1 }}
           />
@@ -476,11 +483,28 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
       </Sheet>
 
       <Sheet visible={loginSheet} title="تسجيل الدخول" onClose={() => setLoginSheet(false)}>
-        {mode !== "none" ? (
+        <Text style={styles.sheetText}>المستخدم يسجّل حسابه جوه التطبيق بأي طريقة؟</Text>
+        <View style={{ gap: space.sm, marginBottom: space.md }}>
+          {LOGIN_CHOICES.map((m) => (
+            <Pressable
+              key={m}
+              onPress={() => setMethod(m)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: method === m }}
+              style={[styles.choice, method === m && styles.choiceOn]}
+            >
+              <Ionicons
+                name={method === m ? "radio-button-on" : "radio-button-off"}
+                size={20}
+                color={method === m ? colors.primary : colors.textMuted}
+              />
+              <Text style={styles.choiceText}>{LOGIN_LABELS[m]}</Text>
+            </Pressable>
+          ))}
+        </View>
+        {method && method !== "none" ? (
           <>
-            <Text style={styles.sheetText}>
-              كتبت في الوصف تسجيل دخول ({LOGIN_LABELS[mode]}). تبغاه لأي تطبيق؟
-            </Text>
+            <Text style={styles.sheetText}>لأي تطبيق؟</Text>
             <View style={[styles.chips, { marginTop: 0, marginBottom: space.md }]}>
               {(
                 [
@@ -493,12 +517,8 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
               ))}
             </View>
           </>
-        ) : (
-          <Text style={styles.sheetText}>
-            وصفك ما فيه تسجيل دخول، فالتطبيقين بيفتحوا على طول بدون تسجيل دخول. لو تبغاه، ارجع واكتبه في الوصف.
-          </Text>
-        )}
-        {mode !== "none" && pairLogin.admin !== "none" ? (
+        ) : null}
+        {!method ? null : adminByEmail ? (
           <Field
             label="بريد الإدارة"
             icon="shield-outline"
@@ -529,7 +549,11 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
             autoCapitalize="none"
             maxLength={12}
             error={pin && !pinValid ? "من 4 إلى 12 حرف إنجليزي أو رقم" : null}
-            helper="تطبيق الإدارة بدون تسجيل دخول، فبيطلب الرمز ده مرة واحدة على كل جهاز عشان ما يدخل الإدارة غيرك."
+            helper={
+              pairLogin.admin === "none"
+                ? "تطبيق الإدارة بدون تسجيل دخول، فبيطلب الرمز ده مرة واحدة على كل جهاز عشان ما يدخل الإدارة غيرك."
+                : "بعد ما يسجّل حسابه في تطبيق الإدارة، بيطلب الرمز ده مرة واحدة عشان يصير مدير. ما تديه لأي زول."
+            }
           />
         ) : null}
         <Button
@@ -549,6 +573,18 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
 }
 
 const styles = StyleSheet.create({
+  choice: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: space.sm,
+    padding: space.md,
+    borderRadius: radius.field,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
+  },
+  choiceOn: { borderColor: colors.primary },
+  choiceText: { ...type.body, color: colors.text, textAlign: "right", flex: 1 },
   sheetText: { ...type.body, color: colors.textMuted, textAlign: "right", marginBottom: space.md },
   root: { flex: 1, backgroundColor: colors.bg },
   top: { paddingHorizontal: space.lg, paddingBottom: space.md },

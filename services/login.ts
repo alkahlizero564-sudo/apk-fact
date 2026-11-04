@@ -5,7 +5,18 @@
 //    both -> password + a code to confirm the email; neither -> a code (no password).
 // For a pair, the owner then picks which app gets it (customer, admin or both); that choice is written in the
 // description as "LOGIN: customer=<mode> admin=<mode>" and wins over the words.
-export type LoginMode = "none" | "code" | "password" | "password_code";
+// The three ways the owner picks in the sign-in sheet (the others are kept for apps made before):
+//  phone_password   الاسم + رقم الهاتف + كلمة مرور (no email; the account is made by the pair's <p>-auth function)
+//  phone_email_code الاسم + رقم الهاتف + البريد + رمز تأكيد للبريد + كلمة مرور
+//  email_password   الاسم + البريد + كلمة مرور (no code)
+export type LoginMode =
+  | "none"
+  | "phone_password"
+  | "phone_email_code"
+  | "email_password"
+  | "code"
+  | "password"
+  | "password_code";
 export type PairLogin = { customer: LoginMode; admin: LoginMode };
 
 const NO = /(بدون|بلا|من غير|ما في|مافي|ما يحتاج|لا يحتاج|مش محتاج|ما فيه|without|no)\s+(أي\s+|اي\s+)?(تسجيل|login|log in|sign)/i;
@@ -19,7 +30,31 @@ export const LOGIN_LABELS: Record<LoginMode, string> = {
   code: "البريد + رمز من 6 أرقام يوصل على البريد",
   password: "البريد + كلمة مرور",
   password_code: "البريد + كلمة مرور، ورمز من 6 أرقام لتأكيد البريد",
+  phone_password: "الاسم + رقم الهاتف + كلمة مرور (بدون بريد)",
+  phone_email_code: "الاسم + رقم الهاتف + البريد + رمز تأكيد للبريد + كلمة مرور",
+  email_password: "الاسم + البريد + كلمة مرور",
 };
+
+/** What the sign-in sheet offers. */
+export const LOGIN_CHOICES: LoginMode[] = ["phone_password", "phone_email_code", "email_password", "none"];
+
+/** Sign-in that uses an email (the admin app then makes admins from the emails the owner writes). */
+export const usesEmail = (m: LoginMode) => m !== "none" && m !== "phone_password";
+
+/** Sign-in that sends emails (needs working SMTP). */
+export const sendsEmail = (m: LoginMode) => m === "code" || m === "password_code" || m === "phone_email_code";
+
+/** The choice the sheet starts with, from the description: none when it asks for no sign-in, else unset. */
+export function suggestedChoice(text: string): LoginMode | "" {
+  const t = String(text);
+  if (loginFromText(t) === "none") return "none";
+  const phone = /(رقم\s*(ال)?(هاتف|جوال|موبايل|تلفون)|phone)/i.test(t);
+  const code = CODE.test(t);
+  if (phone && code) return "phone_email_code";
+  if (phone) return "phone_password";
+  if (PASSWORD.test(t) && !code) return "email_password";
+  return "";
+}
 
 /** The sign-in the description asks for (before the owner picks the apps). */
 export function loginFromText(text: string): LoginMode {

@@ -49,6 +49,20 @@ def required(st):
     if role == "admin":
         req.append((f"after sign-in / session start, calling rpc {p}_claim_admin (and the admin PIN screen when it "
                     f"returns false)", rf"{p}_claim_admin"))
+    import pair
+    mode, fn = pair.state_login(st)[role], f"{p.replace('_', '-')}-auth"
+    if mode in pair.VIA_FUNCTION:
+        req.append((f"the sign-up of the contract: POST <SUPABASE_URL>/functions/v1/{fn} with action \"signup\" "
+                    f"(name, {'phone' if mode == 'phone_password' else 'email'}, password)", rf"{fn}"))
+    if mode == "phone_password":
+        req.append((f"signing in with the phone and the password: POST .../functions/v1/{fn} body "
+                    "{\"action\": \"login\", \"phone\": phone, \"password\": password}", r"[\"']login[\"']"))
+    if mode == "phone_email_code":
+        req.append(("confirming the email with the 6-digit code: POST /auth/v1/verify with type \"signup\"",
+                    r"auth/v1/verify"))
+    if role == "admin" and pair.state_login(st)["customer"] == "phone_password":
+        req.append((f"'تغيير كلمة مرور زبون' in the admin app: POST .../functions/v1/{fn} with action \"set_password\"",
+                    r"set_password"))
     if st.get("push") and lang != "python":
         req.append((f"registering this device for push after sign-in: rpc {p}_register_device", rf"{p}_register_device"))
         if lang == "flutter":

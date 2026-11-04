@@ -99,6 +99,7 @@ async function syncSecrets(push: boolean, supabaseRef?: string) {
 const STEP_KEYS: Record<string, string> = {
   "Supabase: tables and roles": "backend",
   "Supabase: email code login": "auth",
+  "Supabase: sign-in (and its self-test)": "auth",
   "Firebase: notifications": "firebase",
   "Generate customer app": "customer",
   "Generate admin app": "admin",

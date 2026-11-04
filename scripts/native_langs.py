@@ -30,6 +30,9 @@ LANGS = {
             "sqflite", "go_router", "cached_network_image", "flutter_svg",
             # Push for connected app pairs (initialized from lib/firebase_config.dart, no Gradle plugin).
             "firebase_core", "firebase_messaging",
+            # Camera / gallery and location; they ask Android for the permission themselves (scripts/perms.py adds
+            # it to the manifest).
+            "image_picker", "geolocator",
         ],
         "rules": (
             "Write a Flutter app in a single file lib/main.dart, with Material 3 (useMaterial3: true), "
@@ -37,7 +40,13 @@ LANGS = {
             "and clean widget structure (StatelessWidget/StatefulWidget classes, no giant build methods). "
             "You MAY use these pub.dev packages when they clearly help, and only these: {deps}. "
             "List every package you import in \"deps\". Never import any other package. "
-            "If the description is Arabic, make the UI RTL (Directionality / locale) and texts Arabic."
+            "If the description is Arabic, make the UI RTL (Directionality / locale) and texts Arabic. "
+            "Phone permissions are asked at the moment a feature needs them, never all at start-up: photos with "
+            "image_picker (ImagePicker().pickImage(source: ImageSource.camera or .gallery) shows Android's own "
+            "permission prompt); location with geolocator (Geolocator.checkPermission() then "
+            "Geolocator.requestPermission(); handle denied and deniedForever with an Arabic message and a button "
+            "that opens Geolocator.openAppSettings()); notifications with FirebaseMessaging.instance."
+            "requestPermission(). When the user refuses, the app keeps working and explains in Arabic what needs it."
         ),
     },
     "python": {

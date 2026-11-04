@@ -141,8 +141,12 @@ def designs_note(base):
 
 
 # The owner decides sign-in in the description (same rules as services/login.ts). APK Fact adds the apps the owner
-# picked as "LOGIN: customer=<mode> admin=<mode>"; modes: none, code, password, password_code.
-MODES = ("none", "code", "password", "password_code")
+# picked as "LOGIN: customer=<mode> admin=<mode>". The sheet offers: phone_password (name + phone + password),
+# phone_email_code (name + phone + email + email code + password), email_password (name + email + password), none.
+# code, password and password_code are the modes of pairs made before.
+MODES = ("none", "phone_password", "phone_email_code", "email_password", "code", "password", "password_code")
+SENDS_EMAIL = {"code", "password_code", "phone_email_code"}  # needs working SMTP
+VIA_FUNCTION = {"phone_password", "email_password"}  # accounts made by the <p>-auth Edge Function
 LOGIN_NO = re.compile(r"(بدون|بلا|من غير|ما في|مافي|ما يحتاج|لا يحتاج|مش محتاج|ما فيه|without|no)\s+(أي\s+|اي\s+)?(تسجيل|login|log in|sign)", re.I)
 LOGIN_YES = re.compile(r"تسجيل\s*(ال)?دخول|دخول\s*(بال)?(بريد|ايميل|إيميل)|login|log ?in|sign ?in|sign ?up|إنشاء حساب|انشاء حساب|"
                        r"حساب جديد|كلم[ةه]\s*(ال)?(مرور|سر)|password|رمز\s*(ال)?تحقق|\botp\b", re.I)
@@ -187,10 +191,10 @@ def cmd_backend(a):
     p = sb.prefix_of(a.base)
     login = login_modes(description)
     admins = [e.strip() for e in a.admins.split(",") if "@" in e]
-    if login["admin"] != "none" and not admins:
+    if login["admin"] not in ("none", "phone_password") and not admins:
         raise SystemExit("Add at least one admin email")
     print(f"Sign-in: customer app {login['customer']}, admin app {login['admin']}"
-          + (" (admin app opens with the admin PIN)" if login["admin"] == "none" else ""), flush=True)
+          + (" (admin app opens with the admin PIN)" if login["admin"] in ("none", "phone_password") else ""), flush=True)
     url, anon = (os.environ.get("PAIR_TEST_URL"), "test-anon") if os.environ.get("PAIR_TEST_PSQL") else sb.api_keys(ref, token)
 
     print("Creating accounts, roles, devices and notifications tables…", flush=True)
@@ -228,18 +232,122 @@ def cmd_backend(a):
 
 def cmd_auth(a):
     ref, token = need("SUPABASE_PROJECT_REF"), need("SUPABASE_ACCESS_TOKEN")
-    modes = set(state_login(load_state(a.base)).values())
+    st = load_state(a.base)
+    login = state_login(st)
+    modes = set(login.values())
     if "none" in modes:
         sb.configure_anonymous(ref, token)
         print("Apps without sign-in: each install gets an invisible account", flush=True)
     if modes == {"none"}:
         return
-    # Only "password" signs up without a code; any app that confirms the email with a code needs confirmation on.
-    sb.configure_email_otp(ref, token, sb.env_smtp(), autoconfirm=modes.isdisjoint({"code", "password_code"}))
-    if not sb.env_smtp():
-        print("::warning::No custom SMTP set: Supabase's built-in mailer sends only a few emails per hour and only "
-              "to your team's addresses. Add SMTP in APK Fact > الإعدادات > Supabase for real customers.")
-    print("Email sign-in is on: " + ", ".join(f"{r} {m}" for r, m in state_login(load_state(a.base)).items()), flush=True)
+    smtp = sb.env_smtp()
+    if modes & SENDS_EMAIL:
+        # The apps send emails (codes): check now that the mail server accepts the login, not when a customer tries.
+        if not smtp:
+            print("::warning::No custom SMTP set: Supabase's built-in mailer sends only a few emails per hour and only "
+                  "to your team's addresses. Add SMTP in APK Fact > الإعدادات > Supabase for real customers.")
+        else:
+            check_smtp(smtp)
+    # Only an app that confirms the email with a code needs confirmation on; the other accounts are made confirmed
+    # by the <p>-auth function.
+    sb.configure_email_otp(ref, token, smtp, autoconfirm=modes.isdisjoint(SENDS_EMAIL))
+    if modes & VIA_FUNCTION:
+        deploy_auth(st, ref)
+        save_state(a.base, st)
+        auth_selftest(st)
+    print("Sign-in is on: " + ", ".join(f"{r} {m}" for r, m in login.items()), flush=True)
+
+
+def check_smtp(smtp):
+    """Logs in to the mail server with the saved SMTP settings (sends nothing). A wrong app password otherwise
+    shows up only when a customer waits for a code that never comes."""
+    import smtplib
+    import ssl
+    host, port = smtp["host"], int(smtp.get("port") or 587)
+    pwd = str(smtp.get("pass", "")).replace(" ", "") if "gmail" in host else smtp.get("pass", "")
+    try:
+        if port == 465:
+            s = smtplib.SMTP_SSL(host, port, timeout=30, context=ssl.create_default_context())
+        else:
+            s = smtplib.SMTP(host, port, timeout=30)
+            s.starttls(context=ssl.create_default_context())
+        s.login(smtp.get("user", ""), pwd)
+        s.quit()
+        print(f"Mail server OK: {host} accepts the login of {smtp.get('user', '')}", flush=True)
+    except smtplib.SMTPAuthenticationError as e:
+        raise SystemExit(
+            f"The mail server {host} refused the SMTP login ({e.smtp_code}): the email codes would never arrive. "
+            "For Gmail use an App Password (Google account > Security > 2-Step Verification > App passwords), "
+            "then save it in APK Fact > الإعدادات > Supabase > SMTP and create the pair again.")
+    except Exception as e:  # network errors: do not block, but say it
+        print(f"::warning::Could not check the mail server {host}:{port} ({e})", flush=True)
+
+
+def deploy_auth(st, ref):
+    """Deploys the pair's <p>-auth Edge Function (accounts with a phone or an email and a password, no code)."""
+    p = st["prefix"]
+    modes = set(state_login(st).values())
+    fn = f"{p.replace('_', '-')}-auth"
+    src = ((ROOT / "scripts" / "templates" / "auth_function.ts").read_text(encoding="utf-8")
+           .replace("__PREFIX__", p)
+           .replace("__ALLOW_PHONE__", "true" if "phone_password" in modes else "false")
+           .replace("__ALLOW_EMAIL__", "true" if "email_password" in modes else "false"))
+    with tempfile.TemporaryDirectory() as tmp:
+        fdir = Path(tmp) / "supabase" / "functions" / fn
+        fdir.mkdir(parents=True)
+        (fdir / "index.ts").write_text(src, encoding="utf-8")
+        print(f"Deploying the {fn} Edge Function (sign-up and sign-in)…", flush=True)
+        supabase_cli(["functions", "deploy", fn, "--project-ref", ref, "--no-verify-jwt", "--use-api"], cwd=tmp)
+    st["authFunction"] = fn
+
+
+def _post(url, body, headers):
+    req = urllib.request.Request(url, method="POST", data=json.dumps(body).encode(),
+                                 headers={"Content-Type": "application/json", **headers})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return r.status, json.loads(r.read().decode() or "{}")
+    except urllib.error.HTTPError as e:
+        raw = e.read().decode()
+        try:
+            return e.code, json.loads(raw or "{}")
+        except ValueError:
+            return e.code, {"error": raw[:300]}
+
+
+def auth_selftest(st):
+    """Makes a test account the way the apps will (sign-up, then sign-in), then removes it. A broken sign-in stops
+    here, before the apps reach a customer."""
+    p, url, anon = st["prefix"], st["supabase"]["url"], st["supabase"]["anonKey"]
+    fn = f"{url}/functions/v1/{st['authFunction']}"
+    modes = set(state_login(st).values())
+    hdr = {"apikey": anon}
+    tag = secrets.token_hex(4)
+    tests = []
+    if "phone_password" in modes:
+        tests.append(("phone", {"full_name": "APK Fact test", "phone": "00999" + str(int(tag, 16))[:8].rjust(8, "0")}))
+    if "email_password" in modes:
+        tests.append(("email", {"full_name": "APK Fact test", "email": f"apkfact-test-{tag}@example.com"}))
+    for kind, who in tests:
+        pwd = secrets.token_urlsafe(12)
+        status, out = 0, {}
+        for attempt in range(6):  # a just-deployed function can take a few seconds to answer
+            status, out = _post(fn, {"action": "signup", "password": pwd, **who}, hdr)
+            if status not in (404, 502, 503, 546):
+                break
+            time.sleep(5)
+        if status != 200:
+            raise SystemExit(f"Sign-in self-test failed: sign-up with {kind} -> {status} {out}")
+        if kind == "phone":
+            status, out = _post(fn, {"action": "login", "phone": who["phone"], "password": pwd}, hdr)
+        else:
+            status, out = _post(f"{url}/auth/v1/token?grant_type=password", {"email": who["email"], "password": pwd}, hdr)
+        uid = (out.get("user") or {}).get("id")
+        if uid:
+            run_sql(f"delete from auth.users where id = '{uid}';")
+        if status != 200 or not out.get("access_token"):
+            raise SystemExit(f"Sign-in self-test failed: sign-in with {kind} -> {status} {out}")
+        print(f"Sign-in self-test OK: an account with {kind} + password signs up and signs in", flush=True)
 
 
 # ---------------- firebase ----------------
@@ -389,8 +497,11 @@ def cmd_push(a):
 NO_FAKE_SIGNIN = (
     "\n  NEVER fake the sign-in: no demo, offline or fallback mode. The user counts as signed in ONLY with a real "
     "access_token returned by Supabase; never make a random user id, never set signed-in or admin after a failed or "
-    "skipped request, never use a default code. When a request fails, show the server's error message in Arabic "
-    "(e.g. a wrong or expired code, too many emails: 'email rate limit exceeded') and stay on the same screen."
+    "skipped request, never use a default code. When a request fails, stay on the same screen and show a message "
+    "that matches WHICH request failed: a failed send of a code (otp / signup / resend / recover) is NEVER 'wrong "
+    "code' — 'rate limit' means 'اتبعتت رسائل كتير، استنى دقايق', 'sending' / 'smtp' means 'ما قدرنا نرسل البريد'; "
+    "only a failed verify means a wrong or expired code; otherwise show the server's own message (its error, msg, "
+    "message or error_description field)."
 )
 
 
@@ -415,6 +526,10 @@ def _signin_rules(st, role):
                  ("When the customer creates a record that needs their name or phone, ask for them in that form and keep "
                   f"them with PATCH {p}_profiles?id=eq.<id> so they are filled in next time." if mode == "none" else
                   f"Let the customer fill full_name and phone in a profile screen (PATCH {p}_profiles?id=eq.<id>)."))
+    if role == "admin" and state_login(st)["customer"] == "phone_password":
+        after += (f" Customers sign in with their phone and there is no SMS, so the admin app has 'تغيير كلمة مرور زبون' "
+                  f"(phone + new password) -> POST {url}/functions/v1/{p.replace('_', '-')}-auth body "
+                  '{"action": "set_password", "phone": phone, "password": new} with the admin\'s access token.')
     profile = f"Read the profile: GET {p}_profiles?id=eq.<user.id>  (role is 'customer' or 'admin'). {after}"
     session = "-> {access_token, refresh_token, expires_in, user: {id, email}}. Save the session on the device."
     if mode == "none":
@@ -425,6 +540,54 @@ def _signin_rules(st, role):
             f"  2. {refresh}if that fails, create a new invisible session as in step 1.\n"
             f"  3. {profile}\n"
             "  Wherever these rules say 'after sign-in', it means 'after the session is ready'.")
+    fn = f"{url}/functions/v1/{p.replace('_', '-')}-auth"
+    fields = ("Sign-up fields (Arabic labels, a clear error under each wrong field): الاسم الكامل (required), ")
+    pwd_rule = "كلمة المرور (6+ characters, with show/hide) and تأكيد كلمة المرور (must match)"
+    if mode == "phone_password":
+        return (
+            "Sign-in with the name, the PHONE NUMBER and a password (no email anywhere, no codes), on polished screens:\n"
+            f"  1. 'حساب جديد': {fields}رقم الهاتف (phone keyboard, required), {pwd_rule} -> POST {fn} body "
+            '{"action": "signup", "full_name": name, "phone": phone, "password": password} (headers: apikey only) '
+            "-> {\"ok\": true}; then sign in right away with step 2 using the same phone and password.\n"
+            f"  2. 'تسجيل الدخول': رقم الهاتف + كلمة المرور -> POST {fn} body "
+            '{"action": "login", "phone": phone, "password": password} (headers: apikey only) '
+            f"{session}\n"
+            "  Errors of these two calls come as {\"error\": \"<Arabic message>\"}: show that text as it is.\n"
+            "  3. 'نسيت كلمة المرور؟': there is no SMS; show 'تواصل مع الإدارة عشان تغيّر كلمة المرور' (the admin app can set "
+            "a new one).\n"
+            f"  4. {refresh}if that fails, go back to sign-in. Provide sign out (forget the session).\n"
+            f"  5. After sign-in: {profile} Show the name and phone from the profile.")
+    if mode == "email_password":
+        return (
+            "Sign-in with the name, the EMAIL and a password (no codes), on polished screens:\n"
+            f"  1. 'حساب جديد': {fields}البريد الإلكتروني (required), {pwd_rule} -> POST {fn} body "
+            '{"action": "signup", "full_name": name, "email": email, "password": password} (headers: apikey only) '
+            "-> {\"ok\": true} (errors come as {\"error\": \"<Arabic message>\"}: show it as it is); then sign in right "
+            "away with step 2.\n"
+            f"  2. 'تسجيل الدخول': POST {url}/auth/v1/token?grant_type=password body {{\"email\": email, \"password\": "
+            f"password}} {session}\n"
+            f"  3. 'نسيت كلمة المرور': POST {url}/auth/v1/recover body {{\"email\": email}}, then a 6-digit code input -> "
+            f"POST {url}/auth/v1/verify body {{\"type\": \"recovery\", \"email\": email, \"token\": code}} (gives a "
+            f"session), then a new password -> PUT {url}/auth/v1/user body {{\"password\": new}} with the session token.\n"
+            f"  4. {refresh}if that fails, go back to sign-in. Provide sign out (forget the session).\n"
+            f"  5. After sign-in: {profile}")
+    if mode == "phone_email_code":
+        return (
+            "Sign-in with the name, the phone, the EMAIL confirmed by a 6-digit code, and a password (polished screens):\n"
+            f"  1. 'حساب جديد': {fields}رقم الهاتف (required), البريد الإلكتروني (required), {pwd_rule} -> POST "
+            f"{url}/auth/v1/signup body {{\"email\": email, \"password\": password, \"data\": {{\"full_name\": name, "
+            "\"phone\": phone}} (headers: apikey only).\n"
+            "     Then a 6-digit code screen ('بعتنا رمز على بريدك'; resend after 60 s: POST "
+            f"{url}/auth/v1/resend body {{\"type\": \"signup\", \"email\": email}}) -> POST {url}/auth/v1/verify body "
+            f"{{\"type\": \"signup\", \"email\": email, \"token\": code}} {session}\n"
+            f"  2. 'تسجيل الدخول': البريد + كلمة المرور -> POST {url}/auth/v1/token?grant_type=password body "
+            f"{{\"email\": email, \"password\": password}} {session} If the error says the email is not confirmed, "
+            "resend the code and open the code screen.\n"
+            f"  3. 'نسيت كلمة المرور': POST {url}/auth/v1/recover body {{\"email\": email}}, then a 6-digit code input -> "
+            f"POST {url}/auth/v1/verify body {{\"type\": \"recovery\", \"email\": email, \"token\": code}} (gives a "
+            f"session), then a new password -> PUT {url}/auth/v1/user body {{\"password\": new}} with the session token.\n"
+            f"  4. {refresh}if that fails, go back to sign-in. Provide sign out (forget the session).\n"
+            f"  5. After sign-in: {profile}")
     if mode == "code":
         return (
             "Sign-in with the email and a 6-digit code (no passwords), on a polished first screen:\n"

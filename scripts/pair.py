@@ -386,8 +386,20 @@ def cmd_push(a):
 
 # ---------------- generate ----------------
 
+NO_FAKE_SIGNIN = (
+    "\n  NEVER fake the sign-in: no demo, offline or fallback mode. The user counts as signed in ONLY with a real "
+    "access_token returned by Supabase; never make a random user id, never set signed-in or admin after a failed or "
+    "skipped request, never use a default code. When a request fails, show the server's error message in Arabic "
+    "(e.g. a wrong or expired code, too many emails: 'email rate limit exceeded') and stay on the same screen."
+)
+
+
 def signin_rules(st, role):
     """How THIS app signs in: the mode the owner picked for it (none, code, password, password_code)."""
+    return _signin_rules(st, role) + NO_FAKE_SIGNIN
+
+
+def _signin_rules(st, role):
     p, url = st["prefix"], st["supabase"]["url"]
     mode = state_login(st)[role]
     refresh = (f"When a request returns 401, refresh: POST {url}/auth/v1/token?grant_type=refresh_token body "

@@ -228,7 +228,28 @@ class AppNotification {
 // ============================================================================
 // STATE MANAGEMENT & ADMIN PROVIDER
 // ============================================================================
+
+/// The server's reason, in Arabic, when sending or checking the sign-in code fails.
+String authErrorMessage(http.Response r) {
+  try {
+    final d = jsonDecode(r.body);
+    final m = (d['msg'] ?? d['error_description'] ?? d['message'] ?? d['error'] ?? '').toString();
+    final low = m.toLowerCase();
+    if (low.contains('rate limit') || r.statusCode == 429) {
+      return 'اتبعتت رسائل كتير للبريد ده. استنى دقايق وجرّب تاني.';
+    }
+    if (low.contains('expired') || low.contains('invalid') || low.contains('token')) {
+      return 'الرمز غلط أو انتهت صلاحيته. اطلب رمز جديد.';
+    }
+    return m.isEmpty ? 'حصل خطأ من السيرفر (${r.statusCode})' : m;
+  } catch (_) {
+    return 'حصل خطأ من السيرفر (${r.statusCode})';
+  }
+}
+
 class AdminStateProvider extends ChangeNotifier {
+  String? authError; // why sending/checking the code failed (shown to the user)
+
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
@@ -517,10 +538,13 @@ class AdminStateProvider extends ChangeNotifier {
         body: jsonEncode({"email": email, "create_user": true}),
       );
       _setLoading(false);
-      return res.statusCode == 200 || res.statusCode == 201;
+      final ok = res.statusCode == 200 || res.statusCode == 201;
+      authError = ok ? null : authErrorMessage(res);
+      return ok;
     } catch (_) {
       _setLoading(false);
-      return true; // Graceful demo fallback
+      authError = 'تأكد من اتصال الإنترنت وجرّب تاني.';
+      return false;
     }
   }
 
@@ -553,18 +577,19 @@ class AdminStateProvider extends ChangeNotifier {
 
         await claimAdminCheck();
         _registerDeviceToken();
+        authError = null;
         _setLoading(false);
         return true;
       }
-    } catch (_) {}
+      authError = authErrorMessage(res);
+    } catch (_) {
+      authError = 'تأكد من اتصال الإنترنت وجرّب تاني.';
+    }
 
-    _userId = const Uuid().v4();
-    _userEmail = email;
-    _isAuthenticated = true;
-    _isAdminClaimed = true;
+    // Never signed in (and never admin) without a real session from the server.
     _setLoading(false);
     notifyListeners();
-    return true;
+    return false;
   }
 
   // RPC: Claim Admin Check
@@ -585,9 +610,10 @@ class AdminStateProvider extends ChangeNotifier {
         return _isAdminClaimed;
       }
     } catch (_) {}
-    _isAdminClaimed = true; // Fallback for local demo mode
+    // Admin only when the server says so (a failed check never makes anyone admin).
+    _isAdminClaimed = false;
     notifyListeners();
-    return true;
+    return false;
   }
 
   Future<void> signOut() async {
@@ -940,10 +966,14 @@ class _AdminAuthScreenState extends State<AdminAuthScreen> {
                   onPressed: provider.isLoading
                       ? null
                       : () async {
-                          final ok = await provider.sendOtp(_emailController.text);
+                          final ok = await provider.sendOtp(_emailController.text.trim());
                           if (ok) {
                             setState(() => _codeSent = true);
                             _startCooldown();
+                          } else if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(provider.authError ?? "ما قدرنا نرسل الرمز")),
+                            );
                           }
                         },
                   style: ElevatedButton.styleFrom(
@@ -1005,7 +1035,18 @@ class _AdminAuthScreenState extends State<AdminAuthScreen> {
                       : () async {
                           final code =
                               _codeControllers.map((c) => c.text).join();
-                          await provider.verifyOtp(_emailController.text, code.isEmpty ? "123456" : code);
+                          if (code.length < 6) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("اكتب الرمز كامل (6 أرقام) اللي وصلك على البريد")),
+                            );
+                            return;
+                          }
+                          final ok = await provider.verifyOtp(_emailController.text.trim(), code);
+                          if (!ok && mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(provider.authError ?? "الرمز غلط")),
+                            );
+                          }
                         },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),

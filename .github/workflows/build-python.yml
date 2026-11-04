@@ -130,8 +130,14 @@ jobs:
           git config user.email "actions@github.com"
           git add "apps/$APP" fixes
           git commit -m "Auto-fix build errors: $APP" || echo "no code changes"
-          git pull --rebase
-          git push
+          # GitHub sometimes answers a push with a temporary error (500): retry instead of losing the fixed code.
+          for i in 1 2 3 4 5; do
+            git pull --rebase -X theirs && git push && exit 0
+            git rebase --abort 2>/dev/null || true
+            echo "Push failed (attempt $i), retrying"
+            sleep $((i * 5))
+          done
+          exit 1
 
       - name: Sign with the app's permanent key (private vault)
         env:

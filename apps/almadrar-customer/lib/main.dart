@@ -177,7 +177,28 @@ class AppNotification {
 // ============================================================================
 // APP STATE & SUPABASE PROVIDER
 // ============================================================================
+
+/// The server's reason, in Arabic, when sending or checking the sign-in code fails.
+String authErrorMessage(http.Response r) {
+  try {
+    final d = jsonDecode(r.body);
+    final m = (d['msg'] ?? d['error_description'] ?? d['message'] ?? d['error'] ?? '').toString();
+    final low = m.toLowerCase();
+    if (low.contains('rate limit') || r.statusCode == 429) {
+      return 'اتبعتت رسائل كتير للبريد ده. استنى دقايق وجرّب تاني.';
+    }
+    if (low.contains('expired') || low.contains('invalid') || low.contains('token')) {
+      return 'الرمز غلط أو انتهت صلاحيته. اطلب رمز جديد.';
+    }
+    return m.isEmpty ? 'حصل خطأ من السيرفر (${r.statusCode})' : m;
+  } catch (_) {
+    return 'حصل خطأ من السيرفر (${r.statusCode})';
+  }
+}
+
 class AppStateProvider extends ChangeNotifier {
+  String? authError; // why sending/checking the code failed (shown to the user)
+
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
@@ -542,11 +563,13 @@ class AppStateProvider extends ChangeNotifier {
         }),
       );
       _setLoading(false);
-      return response.statusCode == 200 || response.statusCode == 201;
+      final ok = response.statusCode == 200 || response.statusCode == 201;
+      authError = ok ? null : authErrorMessage(response);
+      return ok;
     } catch (e) {
       _setLoading(false);
-      // Fallback for offline demo mode
-      return true;
+      authError = 'تأكد من اتصال الإنترنت وجرّب تاني.';
+      return false;
     }
   }
 
@@ -582,18 +605,19 @@ class AppStateProvider extends ChangeNotifier {
         await prefs.setString('user_email', _userEmail!);
 
         _registerDeviceToken();
+        authError = null;
         _setLoading(false);
         return true;
       }
-    } catch (_) {}
+      authError = authErrorMessage(response);
+    } catch (_) {
+      authError = 'تأكد من اتصال الإنترنت وجرّب تاني.';
+    }
 
-    // Graceful demo fallback for non-strict network environments
-    _userId = const Uuid().v4();
-    _userEmail = email;
-    _isAuthenticated = true;
+    // Never signed in without a real session from the server.
     _setLoading(false);
     notifyListeners();
-    return true;
+    return false;
   }
 
   Future<void> signOut() async {
@@ -675,7 +699,7 @@ class AppStateProvider extends ChangeNotifier {
         },
         body: jsonEncode({
           "request_code": newProject.requestCode,
-          "customer_id": _userId ?? const Uuid().v4(),
+          if (_userId != null) "customer_id": _userId,
           "service_type": serviceType,
           "approximate_area": area,
           "location_details": location,
@@ -1044,6 +1068,10 @@ class _AuthScreenState extends State<AuthScreen> {
                                         ),
                                       );
                                     }
+                                  } else if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(provider.authError ?? "ما قدرنا نرسل الرمز")),
+                                    );
                                   }
                                 },
                           style: ElevatedButton.styleFrom(
@@ -1134,10 +1162,21 @@ class _AuthScreenState extends State<AuthScreen> {
                               : () async {
                                   final code =
                                       otpCtrls.map((c) => c.text).join();
+                                  if (code.length < 6) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text("اكتب الرمز كامل (6 أرقام) اللي وصلك على البريد")),
+                                    );
+                                    return;
+                                  }
                                   final verified = await provider.verifyOtp(
                                     emailCtrl.text.trim(),
-                                    code.isEmpty ? "123456" : code,
+                                    code,
                                   );
+                                  if (!verified && mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(provider.authError ?? "الرمز غلط")),
+                                    );
+                                  }
                                   if (verified && isSignUp) {
                                     provider.updateProfile(
                                         nameCtrl.text, "0912345678");

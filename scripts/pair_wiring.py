@@ -62,12 +62,34 @@ def required(st):
     return req
 
 
+# Things that must NOT be in a pair app. Found in almadrar: when the sign-in code was wrong or the request failed,
+# the app signed in anyway ("demo fallback") with a random user id, and the admin app also made itself admin and
+# sent "123456" when the code box was empty. Anyone could open the admin app; and with no real session every
+# order and notification was silently refused by the database.
+FAKE_SIGNIN = (
+    "a fake / demo / offline sign-in: the app must NEVER count the user as signed in (or as admin) without a real "
+    "access_token from Supabase. Remove every fallback that sets the user signed in, makes a random user id "
+    "(Uuid().v4()) or sets admin after a failed or skipped verify/sign-in, and any default code like \"123456\". "
+    "On failure show the server's error message in Arabic and stay on the same screen"
+)
+FORBIDDEN = [
+    (FAKE_SIGNIN, r"(?i)(demo|offline|fallback)[^\n]{0,80}\n?[^\n]{0,200}(isAuthenticated|_isLoggedIn|loggedIn|signedIn)\s*=\s*true"),
+    (FAKE_SIGNIN, r"(?i)(_?user_?id|uid)\s*=\s*(const\s+)?Uuid\(\)\.v4\(\)"),
+    (FAKE_SIGNIN, r"[\"']123456[\"']"),
+    (FAKE_SIGNIN, r"(?i)(demo|offline)\s*(mode|fallback)"),
+]
+
+
 def missing(app):
     st = state(app)
     if not st:
         return []
     code = code_path(app, st).read_text(encoding="utf-8", errors="ignore")
-    return [d for d, rx in required(st) if not re.search(rx, code)]
+    gaps = [d for d, rx in required(st) if not re.search(rx, code)]
+    for d, rx in FORBIDDEN:
+        if re.search(rx, code) and d not in gaps:
+            gaps.append(d)
+    return gaps
 
 
 def sure_fixes(app):
@@ -132,9 +154,9 @@ def ai_complete(app, gaps):
     rules = rules_for(st["lang"]) if st["lang"] in LANGS else ""
     prompt = (
         f"This is the {st['role'].upper()} app of a connected pair (customer + admin on one Supabase backend). It "
-        f"does not do everything the pair contract asks, so the two apps are not really connected. ADD these "
-        f"missing pieces exactly as the contract below says, wired into the existing screens and navigation, and "
-        f"keep everything else (screens, design, texts, data) as it is:\n- " + "\n- ".join(gaps) +
+        f"does not do everything the pair contract asks, so the two apps are not really connected. FIX these "
+        f"exactly as the contract below says (add what is missing, remove what is forbidden), wired into the existing "
+        f"screens and navigation, and keep everything else (screens, design, texts, data) as it is:\n- " + "\n- ".join(gaps) +
         f"\n\n{rules}\n\n{pair.contract_text(st, st['role'])}\n\n"
         f"Reply with exactly one ```{fence} code block with the complete updated file"
         + (" and a last line `DEPS: ` with the packages used, comma separated" if st["lang"] != "html" else "") +

@@ -347,6 +347,14 @@ def cmd_firebase(a):
             (d / "lib").mkdir(exist_ok=True)
             (d / "lib" / "firebase_config.dart").write_text(flutter_options(gs, app["packageId"]), encoding="utf-8")
 
+    deploy_push(st, ref, token, sa)
+    save_state(a.base, st)
+    print("Push notifications are connected", flush=True)
+
+
+def deploy_push(st, ref, token, sa):
+    """Deploys (or redeploys) the pair's push Edge Function, its secrets and the database trigger."""
+    p = st["prefix"]
     fn = f"{p.replace('_', '-')}-push"
     secret = secrets.token_urlsafe(32)
     with tempfile.TemporaryDirectory() as tmp:
@@ -361,8 +369,19 @@ def cmd_firebase(a):
     run_sql("create extension if not exists pg_net;\n" +
             sb.push_sql(p, f"{st['supabase']['url']}/functions/v1/{fn}", secret))
     st["pushFunction"] = fn
-    save_state(a.base, st)
-    print("Push notifications are connected", flush=True)
+
+
+def cmd_push(a):
+    """Redeploy the push function of an existing pair (after a fix to scripts/templates/push_function.ts)."""
+    st = load_state(a.base)
+    if not st.get("push"):
+        raise SystemExit("Notifications are off for this pair")
+    ref = st["supabase"]["ref"]
+    os.environ["SUPABASE_PROJECT_REF"] = ref  # run_sql() works on the pair's own project
+    token = need("SUPABASE_ACCESS_TOKEN")
+    sa = json.loads(need("FIREBASE_SERVICE_ACCOUNT"))
+    deploy_push(st, ref, token, sa)
+    print(f"Push function of {a.base} redeployed in project {ref}", flush=True)
 
 
 # ---------------- generate ----------------
@@ -541,7 +560,7 @@ def main():
         print(edit_rules(sys.argv[2]) if len(sys.argv) > 2 else "")
         return
     ap = argparse.ArgumentParser()
-    ap.add_argument("command", choices=["backend", "auth", "firebase", "generate"])
+    ap.add_argument("command", choices=["backend", "auth", "firebase", "generate", "push"])
     ap.add_argument("--base", required=True)
     ap.add_argument("--lang", default="html", choices=["html", "flutter", "python"])
     ap.add_argument("--admins", default="")
@@ -551,7 +570,7 @@ def main():
     a = ap.parse_args()
     if not re.fullmatch(r"[a-z][a-z0-9-]{1,30}", a.base):
         raise SystemExit("Project name: lowercase English letters, digits and -, starting with a letter")
-    {"backend": cmd_backend, "auth": cmd_auth, "firebase": cmd_firebase, "generate": cmd_generate}[a.command](a)
+    {"backend": cmd_backend, "auth": cmd_auth, "firebase": cmd_firebase, "generate": cmd_generate, "push": cmd_push}[a.command](a)
 
 
 if __name__ == "__main__":

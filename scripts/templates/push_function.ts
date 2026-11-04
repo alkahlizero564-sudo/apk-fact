@@ -70,8 +70,16 @@ export async function targetTokens(n: Notification, env: Env, f: Fetch = fetch):
     return rows.map((r: { token: string }) => r.token);
   }
   if (!n.to_role) return [];
+  if (n.to_role === "customer") {
+    // Everyone who uses the customer app (also the owner testing it with an admin account).
+    const rows = await rest(env, f, `${PREFIX}_device_tokens?select=token&app=eq.customer`);
+    return rows.map((r: { token: string }) => r.token);
+  }
+  // The admin app: only the devices of real admins.
   const users = await rest(env, f, `${PREFIX}_profiles?select=id&role=eq.${n.to_role}`);
-  const ids = users.map((u: { id: string }) => u.id).filter((id: string) => id !== n.created_by);
+  // The sender is not dropped: tokens are only taken from the target app (app=eq.<role>), so an admin who places
+  // an order from the customer app (the owner testing both apps with one account) still gets it on the admin app.
+  const ids = users.map((u: { id: string }) => u.id);
   if (!ids.length) return [];
   const rows = await rest(env, f, `${PREFIX}_device_tokens?select=token&app=eq.${n.to_role}&user_id=in.(${ids.join(",")})`);
   return rows.map((r: { token: string }) => r.token);

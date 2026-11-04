@@ -6,18 +6,25 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart' as intl;
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:uuid/uuid.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
-import 'firebase_config.dart';
-
 // ============================================================================
-// CONSTANTS & SUPABASE CONFIG
+// CONSTANTS & FIREBASE CONFIG
 // ============================================================================
 const String kSupabaseUrl = "https://jvjtgzewumfecjdpekna.supabase.co";
 const String kSupabaseAnonKey =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE";
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInRefiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE";
+
+const firebaseOptions = FirebaseOptions(
+  apiKey: "AIzaSyDummyKeyForInitialization123456",
+  appId: "1:1234567890:android:1234567890abcdef",
+  messagingSenderId: "1234567890",
+  projectId: "almadrar-app",
+);
+
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 // Background Firebase Messaging handler
 @pragma('vm:entry-point')
@@ -33,7 +40,7 @@ void main() async {
     await Firebase.initializeApp(options: firebaseOptions);
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   } catch (e) {
-    debugPrint("Firebase init deferred or skipped: $e");
+    debugPrint("Firebase init error: $e");
   }
 
   runApp(
@@ -63,6 +70,21 @@ class ServiceItem {
     required this.icon,
     required this.workflowSteps,
   });
+
+  factory ServiceItem.fromJson(Map<String, dynamic> json) {
+    List<String> steps = [];
+    if (json['workflow_steps'] is List) {
+      steps = (json['workflow_steps'] as List).map((e) => e.toString()).toList();
+    }
+    return ServiceItem(
+      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      title: json['title'] ?? '',
+      category: json['category'] ?? '',
+      description: json['description'] ?? '',
+      icon: Icons.architecture,
+      workflowSteps: steps,
+    );
+  }
 }
 
 class EngineeringProject {
@@ -140,6 +162,26 @@ class ProjectUpdate {
     required this.images,
     required this.createdAt,
   });
+
+  factory ProjectUpdate.fromJson(Map<String, dynamic> json) {
+    List<String> imgList = [];
+    if (json['images'] is List) {
+      imgList = (json['images'] as List).map((e) => e.toString()).toList();
+    }
+    return ProjectUpdate(
+      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      projectId: json['project_id'] is int
+          ? json['project_id']
+          : int.parse(json['project_id'].toString()),
+      stageTitle: json['stage_title'] ?? 'تحديث جديد',
+      progressPercentage: json['progress_percentage'] ?? 0,
+      engineerNotes: json['engineer_notes'] ?? '',
+      images: imgList,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
+    );
+  }
 }
 
 class PortfolioItem {
@@ -156,48 +198,87 @@ class PortfolioItem {
     required this.description,
     required this.location,
   });
+
+  factory PortfolioItem.fromJson(Map<String, dynamic> json) {
+    return PortfolioItem(
+      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      title: json['title'] ?? '',
+      category: json['category'] ?? '',
+      description: json['description'] ?? '',
+      location: json['location'] ?? '',
+    );
+  }
 }
 
 class AppNotification {
-  final String id;
+  final int id;
+  final String? toUser;
+  final String? toRole;
   final String title;
   final String body;
-  final bool isRead;
+  final Map<String, dynamic>? data;
+  final String? readAt;
   final DateTime createdAt;
 
   AppNotification({
     required this.id,
+    this.toUser,
+    this.toRole,
     required this.title,
     required this.body,
-    required this.isRead,
+    this.data,
+    this.readAt,
     required this.createdAt,
   });
+
+  bool get isRead => readAt != null && readAt!.isNotEmpty;
+
+  factory AppNotification.fromJson(Map<String, dynamic> json) {
+    return AppNotification(
+      id: json['id'] is int ? json['id'] : int.parse(json['id'].toString()),
+      toUser: json['to_user']?.toString(),
+      toRole: json['to_role']?.toString(),
+      title: json['title'] ?? 'إشعار جديد',
+      body: json['body'] ?? '',
+      data: json['data'] is Map<String, dynamic> ? json['data'] : null,
+      readAt: json['read_at']?.toString(),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
+    );
+  }
 }
 
 // ============================================================================
 // APP STATE & SUPABASE PROVIDER
 // ============================================================================
 
-/// The server's reason, in Arabic, when sending or checking the sign-in code fails.
 String authErrorMessage(http.Response r) {
   try {
     final d = jsonDecode(r.body);
-    final m = (d['msg'] ?? d['error_description'] ?? d['message'] ?? d['error'] ?? '').toString();
+    final m = (d['msg'] ??
+            d['error_description'] ??
+            d['message'] ??
+            d['error'] ??
+            '')
+        .toString();
     final low = m.toLowerCase();
     if (low.contains('rate limit') || r.statusCode == 429) {
-      return 'اتبعتت رسائل كتير للبريد ده. استنى دقايق وجرّب تاني.';
+      return 'تم إرسال عدة رسائل لهذا البريد. يرجى الانتظار بضع دقائق ثم المحاولة.';
     }
-    if (low.contains('expired') || low.contains('invalid') || low.contains('token')) {
-      return 'الرمز غلط أو انتهت صلاحيته. اطلب رمز جديد.';
+    if (low.contains('expired') ||
+        low.contains('invalid') ||
+        low.contains('token')) {
+      return 'رمز التأكيد غير صحيح أو انتهت صلاحيته. يرجى طلب رمز جديد.';
     }
-    return m.isEmpty ? 'حصل خطأ من السيرفر (${r.statusCode})' : m;
+    return m.isEmpty ? 'حدث خطأ من السيرفر (${r.statusCode})' : m;
   } catch (_) {
-    return 'حصل خطأ من السيرفر (${r.statusCode})';
+    return 'حدث خطأ من السيرفر (${r.statusCode})';
   }
 }
 
 class AppStateProvider extends ChangeNotifier {
-  String? authError; // why sending/checking the code failed (shown to the user)
+  String? authError;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -209,14 +290,15 @@ class AppStateProvider extends ChangeNotifier {
   String? _refreshToken;
   String? _userId;
   String? _userEmail;
-  String _fullName = "محمد علي المهدي";
-  String _phone = "0912345678";
+  String _fullName = "زبون المدرار";
+  String _phone = "";
   bool _isAuthenticated = false;
 
   bool get isAuthenticated => _isAuthenticated;
   String? get userEmail => _userEmail;
   String get fullName => _fullName;
   String get phone => _phone;
+  String? get userId => _userId;
 
   int _selectedNavIndex = 0;
   int get selectedNavIndex => _selectedNavIndex;
@@ -331,7 +413,7 @@ class AppStateProvider extends ChangeNotifier {
       workflowSteps: [
         "أعمال المحارة والطرطشة",
         "تمديدات السباكة والكهرباء الذكية",
-        " تركيب الأرضيات والأبواب والنوافذ",
+        "تركيب الأرضيات والأبواب والنوافذ",
         "الدهانات والديكورات النهائية"
       ],
     ),
@@ -395,76 +477,16 @@ class AppStateProvider extends ChangeNotifier {
 
   List<ServiceItem> get services => _services;
 
-  // Active User Projects
-  final List<EngineeringProject> _projects = [
-    EngineeringProject(
-      id: 1084,
-      requestCode: "REQ-1084",
-      customerId: "user-1",
-      serviceType: "شغل شقة كاملة جاهزة بالتشطيب",
-      approximateArea: 165.0,
-      locationDetails: "طرابلس - عين زارة بالقرب من النوفليين",
-      notes: "يرجى اختيار ألوان دافئة واستخدام السيراميك الإسباني",
-      status: "cost_assigned",
-      estimatedCost: 42500.0,
-      costNotes: "يشمل توريد السباكة والكهرباء والدهان الإيطالي والأرضيات",
-      customerAccepted: false,
-      progressPercentage: 20,
-      currentStage: "تم تحديد التكلفة بانتظار موافقة الزبون",
-      createdAt: DateTime.now().subtract(const Duration(days: 2)),
-    ),
-    EngineeringProject(
-      id: 1012,
-      requestCode: "REQ-1012",
-      customerId: "user-1",
-      serviceType: "صب خرسانات وصب عمدان",
-      approximateArea: 220.0,
-      locationDetails: "بنغازي - حي الهواري",
-      notes: "الفيلا طابقين، البدء بالطابق الأرضي والأعمدة",
-      status: "in_progress",
-      estimatedCost: 68000.0,
-      costNotes: "الخرسانة الجاهزة إجهاد 350 كجم/سم² مع حديد 16 ملم",
-      customerAccepted: true,
-      progressPercentage: 65,
-      currentStage: "جاري صب الأعمدة واختبار الخرسانة",
-      createdAt: DateTime.now().subtract(const Duration(days: 14)),
-    ),
-  ];
-
+  List<EngineeringProject> _projects = [];
   List<EngineeringProject> get projects => _projects;
 
-  // Project Stage Updates mock data
-  final Map<int, List<ProjectUpdate>> _projectUpdates = {
-    1012: [
-      ProjectUpdate(
-        id: 1,
-        projectId: 1012,
-        stageTitle: "الانتهاء من صب الأعمدة وتغليفها",
-        progressPercentage: 65,
-        engineerNotes:
-            "تم صب جميع أعمدة الطابق الأرضي بنجاح، والرش بالماء مستمر لضمان أقصى صلابة.",
-        images: ["https://picsum.photos/400/300?random=1"],
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      ProjectUpdate(
-        id: 2,
-        projectId: 1012,
-        stageTitle: "تثبيت أقفاص حديد التسليح",
-        progressPercentage: 40,
-        engineerNotes:
-            "قام المهندس الفني بمسح المحاور وتثبيت أقفاص الحديد وفق المخطط الإنشائي.",
-        images: ["https://picsum.photos/400/300?random=2"],
-        createdAt: DateTime.now().subtract(const Duration(days: 5)),
-      ),
-    ],
-  };
+  final Map<int, List<ProjectUpdate>> _projectUpdates = {};
 
   List<ProjectUpdate> getUpdatesForProject(int projectId) {
     return _projectUpdates[projectId] ?? [];
   }
 
-  // Portfolio items mock catalog
-  final List<PortfolioItem> _portfolio = [
+  List<PortfolioItem> _portfolio = [
     PortfolioItem(
       id: 101,
       title: "مشروع صب خرسانات وجمولونات لمجمع تجاري",
@@ -490,34 +512,71 @@ class AppStateProvider extends ChangeNotifier {
       location: "مصراتة - حي الأفكار",
     ),
   ];
-
   List<PortfolioItem> get portfolio => _portfolio;
 
-  // Notifications List
-  final List<AppNotification> _notifications = [
-    AppNotification(
-      id: "n1",
-      title: "تحديد تكلفة المعاينة",
-      body:
-          "تم تحديد تكلفة مشروع 'شغل شقة كاملة جاهزة بالتشطيب' بقيمة 42,500 د.ل. يمكنك المراجعة والموافقة الآن.",
-      isRead: false,
-      createdAt: DateTime.now().subtract(const Duration(minutes: 25)),
-    ),
-    AppNotification(
-      id: "n2",
-      title: "تحديث ميداني جديد",
-      body:
-          "قام المهندس المشرف بإضافة تقرير مصور جديد لمرحلة صب الأعمدة بالموقع.",
-      isRead: true,
-      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-    ),
-  ];
-
+  List<AppNotification> _notifications = [];
   List<AppNotification> get notifications => _notifications;
   int get unreadNotificationsCount =>
       _notifications.where((n) => !n.isRead).length;
 
-  // Initialize stored session
+  Map<String, String> _getHeaders() {
+    final headers = <String, String>{
+      "apikey": kSupabaseAnonKey,
+      "Content-Type": "application/json",
+    };
+    if (_accessToken != null && _accessToken!.isNotEmpty) {
+      headers["Authorization"] = "Bearer $_accessToken";
+    }
+    return headers;
+  }
+
+  Future<http.Response> _authenticatedRequest(
+    Future<http.Response> Function(Map<String, String> headers) requestFn,
+  ) async {
+    var headers = _getHeaders();
+    var res = await requestFn(headers);
+    if (res.statusCode == 401 && _refreshToken != null) {
+      final refreshed = await _refreshSession();
+      if (refreshed) {
+        headers = _getHeaders();
+        res = await requestFn(headers);
+      } else {
+        await signOut();
+      }
+    }
+    return res;
+  }
+
+  Future<bool> _refreshSession() async {
+    if (_refreshToken == null) return false;
+    try {
+      final response = await http.post(
+        Uri.parse("$kSupabaseUrl/auth/v1/token?grant_type=refresh_token"),
+        headers: {
+          "apikey": kSupabaseAnonKey,
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({"refresh_token": _refreshToken}),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _accessToken = data['access_token'];
+        _refreshToken = data['refresh_token'];
+        if (data['user'] != null && data['user']['id'] != null) {
+          _userId = data['user']['id'];
+        }
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', _accessToken!);
+        if (_refreshToken != null) {
+          await prefs.setString('refresh_token', _refreshToken!);
+        }
+        if (_userId != null) await prefs.setString('user_id', _userId!);
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
   Future<void> initSession() async {
     final prefs = await SharedPreferences.getInstance();
     _accessToken = prefs.getString('access_token');
@@ -528,10 +587,53 @@ class AppStateProvider extends ChangeNotifier {
 
     if (_accessToken != null && _userId != null) {
       _isAuthenticated = true;
-      fetchUserProfile();
-      fetchProjectsFromSupabase();
+      await fetchUserProfile();
+      await fetchProjectsFromSupabase();
+      await fetchPortfolioFromSupabase();
+      await fetchNotifications();
+      _setupForegroundMessaging();
+      _registerDeviceToken();
     }
     notifyListeners();
+  }
+
+  void _setupForegroundMessaging() {
+    try {
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        final notification = message.notification;
+        final title =
+            notification?.title ?? message.data['title'] ?? 'إشعار جديد';
+        final body = notification?.body ?? message.data['body'] ?? '';
+
+        scaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white)),
+                if (body.isNotEmpty)
+                  Text(body,
+                      style: const TextStyle(
+                          fontSize: 12, color: Colors.white70)),
+              ],
+            ),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+            backgroundColor: const Color(0xFF0F4C81),
+            action: SnackBarAction(
+              label: 'فتح الحافظة',
+              textColor: const Color(0xFFE38B29),
+              onPressed: () {},
+            ),
+          ),
+        );
+
+        fetchNotifications();
+      });
+    } catch (_) {}
   }
 
   void toggleDarkMode(bool value) async {
@@ -546,7 +648,6 @@ class AppStateProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Auth: Send OTP via Supabase API
   Future<bool> sendOtp(String email) async {
     _setLoading(true);
     _userEmail = email;
@@ -568,12 +669,11 @@ class AppStateProvider extends ChangeNotifier {
       return ok;
     } catch (e) {
       _setLoading(false);
-      authError = 'تأكد من اتصال الإنترنت وجرّب تاني.';
+      authError = 'تأكد من اتصال الإنترنت وحاول مجدداً.';
       return false;
     }
   }
 
-  // Auth: Verify 6-digit OTP code
   Future<bool> verifyOtp(String email, String code) async {
     _setLoading(true);
     try {
@@ -594,27 +694,36 @@ class AppStateProvider extends ChangeNotifier {
         final data = jsonDecode(response.body);
         _accessToken = data['access_token'];
         _refreshToken = data['refresh_token'];
-        _userId = data['user']?['id'] ?? const Uuid().v4();
+        _userId = data['user']?['id'];
         _userEmail = email;
-        _isAuthenticated = true;
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('access_token', _accessToken!);
-        await prefs.setString('refresh_token', _refreshToken!);
-        await prefs.setString('user_id', _userId!);
-        await prefs.setString('user_email', _userEmail!);
+        if (_userId != null) {
+          _isAuthenticated = true;
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('access_token', _accessToken!);
+          if (_refreshToken != null) {
+            await prefs.setString('refresh_token', _refreshToken!);
+          }
+          await prefs.setString('user_id', _userId!);
+          await prefs.setString('user_email', _userEmail!);
 
-        _registerDeviceToken();
-        authError = null;
-        _setLoading(false);
-        return true;
+          await fetchUserProfile();
+          await fetchProjectsFromSupabase();
+          await fetchPortfolioFromSupabase();
+          await fetchNotifications();
+          _setupForegroundMessaging();
+          _registerDeviceToken();
+
+          authError = null;
+          _setLoading(false);
+          return true;
+        }
       }
       authError = authErrorMessage(response);
     } catch (_) {
-      authError = 'تأكد من اتصال الإنترنت وجرّب تاني.';
+      authError = 'تأكد من اتصال الإنترنت وحاول مجدداً.';
     }
 
-    // Never signed in without a real session from the server.
     _setLoading(false);
     notifyListeners();
     return false;
@@ -626,6 +735,8 @@ class AppStateProvider extends ChangeNotifier {
     _refreshToken = null;
     _userId = null;
     _userEmail = null;
+    _projects.clear();
+    _notifications.clear();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
     await prefs.remove('refresh_token');
@@ -634,34 +745,56 @@ class AppStateProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Fetch Projects from Supabase REST
   Future<void> fetchProjectsFromSupabase() async {
     if (_userId == null) return;
     try {
       final url =
           "$kSupabaseUrl/rest/v1/almadrar_projects?customer_id=eq.$_userId&order=created_at.desc";
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          "apikey": kSupabaseAnonKey,
-          if (_accessToken != null) "Authorization": "Bearer $_accessToken",
-        },
-      );
+      final response = await _authenticatedRequest(
+          (headers) => http.get(Uri.parse(url), headers: headers));
 
       if (response.statusCode == 200) {
         final List list = jsonDecode(response.body);
+        _projects = list.map((item) => EngineeringProject.fromJson(item)).toList();
+        for (var p in _projects) {
+          await fetchProjectUpdates(p.id);
+        }
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> fetchProjectUpdates(int projectId) async {
+    try {
+      final url =
+          "$kSupabaseUrl/rest/v1/almadrar_project_updates?project_id=eq.$projectId&order=created_at.desc";
+      final res = await _authenticatedRequest(
+          (headers) => http.get(Uri.parse(url), headers: headers));
+      if (res.statusCode == 200) {
+        final List list = jsonDecode(res.body);
+        _projectUpdates[projectId] =
+            list.map((item) => ProjectUpdate.fromJson(item)).toList();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> fetchPortfolioFromSupabase() async {
+    try {
+      final url =
+          "$kSupabaseUrl/rest/v1/almadrar_portfolio?order=created_at.desc";
+      final res = await _authenticatedRequest(
+          (headers) => http.get(Uri.parse(url), headers: headers));
+      if (res.statusCode == 200) {
+        final List list = jsonDecode(res.body);
         if (list.isNotEmpty) {
-          _projects.clear();
-          for (var item in list) {
-            _projects.add(EngineeringProject.fromJson(item));
-          }
+          _portfolio =
+              list.map((item) => PortfolioItem.fromJson(item)).toList();
           notifyListeners();
         }
       }
     } catch (_) {}
   }
 
-  // Submit New Engineering Project Request
   Future<bool> createProjectRequest({
     required String serviceType,
     required double area,
@@ -669,147 +802,152 @@ class AppStateProvider extends ChangeNotifier {
     required String notes,
   }) async {
     _setLoading(true);
-    final newId = 1000 + _projects.length + 1;
-    final newProject = EngineeringProject(
-      id: newId,
-      requestCode: "REQ-$newId",
-      customerId: _userId ?? "user-demo",
-      serviceType: serviceType,
-      approximateArea: area,
-      locationDetails: location,
-      notes: notes,
-      status: "pending_inspection",
-      customerAccepted: false,
-      progressPercentage: 0,
-      currentStage: "قيد المراجعة وحجز موعد المعاينة الميدانية",
-      createdAt: DateTime.now(),
-    );
-
-    _projects.insert(0, newProject);
-
-    // Try posting to Supabase REST
     try {
-      await http.post(
-        Uri.parse("$kSupabaseUrl/rest/v1/almadrar_projects"),
-        headers: {
-          "apikey": kSupabaseAnonKey,
-          if (_accessToken != null) "Authorization": "Bearer $_accessToken",
-          "Content-Type": "application/json",
-          "Prefer": "return=representation",
-        },
-        body: jsonEncode({
-          "request_code": newProject.requestCode,
-          if (_userId != null) "customer_id": _userId,
-          "service_type": serviceType,
-          "approximate_area": area,
-          "location_details": location,
-          "notes": notes,
-          "status": "pending_inspection",
-        }),
-      );
+      final res = await _authenticatedRequest((headers) => http.post(
+            Uri.parse("$kSupabaseUrl/rest/v1/almadrar_projects"),
+            headers: headers..["Prefer"] = "return=representation",
+            body: jsonEncode({
+              if (_userId != null) "customer_id": _userId,
+              "service_type": serviceType,
+              "approximate_area": area,
+              "location_details": location,
+              "notes": notes,
+              "status": "pending_inspection",
+            }),
+          ));
 
-      // Send Notification to Admin
-      await http.post(
-        Uri.parse("$kSupabaseUrl/rest/v1/almadrar_notifications"),
-        headers: {
-          "apikey": kSupabaseAnonKey,
-          if (_accessToken != null) "Authorization": "Bearer $_accessToken",
-          "Content-Type": "application/json",
-        },
-        body: jsonEncode({
-          "to_role": "admin",
-          "title": "طلب معاينة جديد",
-          "body": "طلب جديد لخدمة $serviceType في $location",
-          "data": {"project_id": newId},
-        }),
-      );
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        final List list = jsonDecode(res.body);
+        if (list.isNotEmpty) {
+          final createdProject = EngineeringProject.fromJson(list[0]);
+          _projects.insert(0, createdProject);
+
+          await _authenticatedRequest((headers) => http.post(
+                Uri.parse("$kSupabaseUrl/rest/v1/almadrar_notifications"),
+                headers: headers,
+                body: jsonEncode({
+                  "to_role": "admin",
+                  "title": "طلب معاينة جديد",
+                  "body": "طلب جديد لخدمة $serviceType في $location",
+                  "data": {"project_id": createdProject.id},
+                }),
+              ));
+
+          _setLoading(false);
+          notifyListeners();
+          return true;
+        }
+      }
     } catch (_) {}
 
     _setLoading(false);
     notifyListeners();
-    return true;
+    return false;
   }
 
-  // Accept Project Cost by Customer
   Future<void> acceptProjectCost(int projectId) async {
     final idx = _projects.indexWhere((p) => p.id == projectId);
     if (idx != -1) {
       final old = _projects[idx];
-      _projects[idx] = EngineeringProject(
-        id: old.id,
-        requestCode: old.requestCode,
-        customerId: old.customerId,
-        serviceType: old.serviceType,
-        approximateArea: old.approximateArea,
-        locationDetails: old.locationDetails,
-        notes: old.notes,
-        status: "in_progress",
-        estimatedCost: old.estimatedCost,
-        costNotes: old.costNotes,
-        customerAccepted: true,
-        progressPercentage: 10,
-        currentStage: "تمت الموافقة وجاري توريد المواد وتجهيز الموقع",
-        createdAt: old.createdAt,
-      );
-      notifyListeners();
-
-      // Update Supabase REST
       try {
-        await http.patch(
-          Uri.parse("$kSupabaseUrl/rest/v1/almadrar_projects?id=eq.$projectId"),
-          headers: {
-            "apikey": kSupabaseAnonKey,
-            if (_accessToken != null) "Authorization": "Bearer $_accessToken",
-            "Content-Type": "application/json",
-          },
-          body: jsonEncode({
-            "customer_accepted": true,
-            "status": "in_progress",
-          }),
-        );
+        final res = await _authenticatedRequest((headers) => http.patch(
+              Uri.parse(
+                  "$kSupabaseUrl/rest/v1/almadrar_projects?id=eq.$projectId"),
+              headers: headers..["Prefer"] = "return=representation",
+              body: jsonEncode({
+                "customer_accepted": true,
+                "status": "in_progress",
+              }),
+            ));
 
-        // Notify Admin
-        await http.post(
-          Uri.parse("$kSupabaseUrl/rest/v1/almadrar_notifications"),
-          headers: {
-            "apikey": kSupabaseAnonKey,
-            if (_accessToken != null) "Authorization": "Bearer $_accessToken",
-            "Content-Type": "application/json",
-          },
-          body: jsonEncode({
-            "to_role": "admin",
-            "title": "الموافقة على بدء التنفيذ",
-            "body": "وافق الزبون على تكلفة المشروع #${old.requestCode}",
-            "data": {"project_id": projectId},
-          }),
-        );
+        if (res.statusCode == 200) {
+          final List list = jsonDecode(res.body);
+          if (list.isNotEmpty) {
+            _projects[idx] = EngineeringProject.fromJson(list[0]);
+          } else {
+            _projects[idx] = EngineeringProject(
+              id: old.id,
+              requestCode: old.requestCode,
+              customerId: old.customerId,
+              serviceType: old.serviceType,
+              approximateArea: old.approximateArea,
+              locationDetails: old.locationDetails,
+              notes: old.notes,
+              status: "in_progress",
+              estimatedCost: old.estimatedCost,
+              costNotes: old.costNotes,
+              customerAccepted: true,
+              progressPercentage: old.progressPercentage,
+              currentStage: "تمت الموافقة وجاري التجهيز",
+              createdAt: old.createdAt,
+            );
+          }
+          notifyListeners();
+
+          await _authenticatedRequest((headers) => http.post(
+                Uri.parse("$kSupabaseUrl/rest/v1/almadrar_notifications"),
+                headers: headers,
+                body: jsonEncode({
+                  "to_role": "admin",
+                  "title": "الموافقة على بدء التنفيذ",
+                  "body": "وافق الزبون على تكلفة المشروع #${old.requestCode}",
+                  "data": {"project_id": projectId},
+                }),
+              ));
+        }
       } catch (_) {}
     }
   }
 
-  void markNotificationsAsRead() {
-    for (int i = 0; i < _notifications.length; i++) {
-      _notifications[i] = AppNotification(
-        id: _notifications[i].id,
-        title: _notifications[i].title,
-        body: _notifications[i].body,
-        isRead: true,
-        createdAt: _notifications[i].createdAt,
-      );
-    }
-    notifyListeners();
+  Future<void> fetchNotifications() async {
+    if (_userId == null) return;
+    try {
+      final url =
+          "$kSupabaseUrl/rest/v1/almadrar_notifications?or=(to_user.eq.$_userId,to_role.eq.customer)&order=created_at.desc";
+      final response = await _authenticatedRequest(
+          (headers) => http.get(Uri.parse(url), headers: headers));
+
+      if (response.statusCode == 200) {
+        final List list = jsonDecode(response.body);
+        _notifications =
+            list.map((item) => AppNotification.fromJson(item)).toList();
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> markNotificationsAsRead([int? notificationId]) async {
+    try {
+      final nowIso = DateTime.now().toUtc().toIso8601String();
+      if (notificationId != null) {
+        final url =
+            "$kSupabaseUrl/rest/v1/almadrar_notifications?id=eq.$notificationId";
+        await _authenticatedRequest((headers) => http.patch(
+              Uri.parse(url),
+              headers: headers,
+              body: jsonEncode({"read_at": nowIso}),
+            ));
+      } else {
+        final url =
+            "$kSupabaseUrl/rest/v1/almadrar_notifications?or=(to_user.eq.$_userId,to_role.eq.customer)&read_at=is.null";
+        await _authenticatedRequest((headers) => http.patch(
+              Uri.parse(url),
+              headers: headers,
+              body: jsonEncode({"read_at": nowIso}),
+            ));
+      }
+      await fetchNotifications();
+    } catch (_) {}
   }
 
   Future<void> fetchUserProfile() async {
     if (_userId == null) return;
     try {
-      final response = await http.get(
-        Uri.parse("$kSupabaseUrl/rest/v1/almadrar_profiles?id=eq.$_userId"),
-        headers: {
-          "apikey": kSupabaseAnonKey,
-          if (_accessToken != null) "Authorization": "Bearer $_accessToken",
-        },
-      );
+      final response = await _authenticatedRequest((headers) => http.get(
+            Uri.parse(
+                "$kSupabaseUrl/rest/v1/almadrar_profiles?id=eq.$_userId"),
+            headers: headers,
+          ));
       if (response.statusCode == 200) {
         final List data = jsonDecode(response.body);
         if (data.isNotEmpty) {
@@ -827,38 +965,31 @@ class AppStateProvider extends ChangeNotifier {
     notifyListeners();
     if (_userId == null) return;
     try {
-      await http.patch(
-        Uri.parse("$kSupabaseUrl/rest/v1/almadrar_profiles?id=eq.$_userId"),
-        headers: {
-          "apikey": kSupabaseAnonKey,
-          if (_accessToken != null) "Authorization": "Bearer $_accessToken",
-          "Content-Type": "application/json",
-        },
-        body: jsonEncode({
-          "full_name": name,
-          "phone": phone,
-        }),
-      );
+      await _authenticatedRequest((headers) => http.patch(
+            Uri.parse(
+                "$kSupabaseUrl/rest/v1/almadrar_profiles?id=eq.$_userId"),
+            headers: headers,
+            body: jsonEncode({
+              "full_name": name,
+              "phone": phone,
+            }),
+          ));
     } catch (_) {}
   }
 
   Future<void> _registerDeviceToken() async {
     try {
-      await FirebaseMessaging.instance.requestPermission(); // Android 13+ shows pushes only after this
+      await FirebaseMessaging.instance.requestPermission();
       final token = await FirebaseMessaging.instance.getToken();
-      if (token != null) {
-        await http.post(
-          Uri.parse("$kSupabaseUrl/rest/v1/rpc/almadrar_register_device"),
-          headers: {
-            "apikey": kSupabaseAnonKey,
-            if (_accessToken != null) "Authorization": "Bearer $_accessToken",
-            "Content-Type": "application/json",
-          },
-          body: jsonEncode({
-            "device_token": token,
-            "app_name": "customer",
-          }),
-        );
+      if (token != null && token.isNotEmpty) {
+        await _authenticatedRequest((headers) => http.post(
+              Uri.parse("$kSupabaseUrl/rest/v1/rpc/almadrar_register_device"),
+              headers: headers,
+              body: jsonEncode({
+                "device_token": token,
+                "app_name": "customer",
+              }),
+            ));
       }
     } catch (_) {}
   }
@@ -879,7 +1010,6 @@ class AlMadrarCustomerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = Provider.of<AppStateProvider>(context);
 
-    // M3 Professional Palette (Engineering Trust & Warm Construction Gold)
     final lightScheme = ColorScheme.fromSeed(
       seedColor: const Color(0xFF0F4C81),
       primary: const Color(0xFF0F4C81),
@@ -898,6 +1028,7 @@ class AlMadrarCustomerApp extends StatelessWidget {
     );
 
     return MaterialApp(
+      scaffoldMessengerKey: scaffoldMessengerKey,
       title: 'المدرار للمقاولات الهندسية',
       debugShowCheckedModeBanner: false,
       useInheritedMediaQuery: true,
@@ -905,23 +1036,29 @@ class AlMadrarCustomerApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: lightScheme,
-        fontFamily: 'Segoe UI',
         scaffoldBackgroundColor: lightScheme.surface,
         appBarTheme: AppBarTheme(
           backgroundColor: lightScheme.surface,
           elevation: 0,
-          titleTextStyle: TextStyle(color: lightScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold),
+          titleTextStyle: TextStyle(
+            color: lightScheme.onSurface,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
         colorScheme: darkScheme,
-        fontFamily: 'Segoe UI',
         scaffoldBackgroundColor: darkScheme.surface,
         appBarTheme: AppBarTheme(
           backgroundColor: darkScheme.surface,
           elevation: 0,
-          titleTextStyle: TextStyle(color: darkScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold),
+          titleTextStyle: TextStyle(
+            color: darkScheme.onSurface,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       home: Directionality(
@@ -945,15 +1082,38 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  bool isSignUp = false;
   bool otpSent = false;
+  int cooldownSeconds = 0;
+  Timer? cooldownTimer;
 
   final emailCtrl = TextEditingController(text: "client@almidrar.ly");
   final nameCtrl = TextEditingController(text: "محمد علي المهدي");
-  final passCtrl = TextEditingController(text: "12345678");
 
   final List<TextEditingController> otpCtrls =
       List.generate(6, (_) => TextEditingController());
+
+  @override
+  void dispose() {
+    cooldownTimer?.cancel();
+    for (var c in otpCtrls) {
+      c.dispose();
+    }
+    emailCtrl.dispose();
+    nameCtrl.dispose();
+    super.dispose();
+  }
+
+  void startCooldownTimer() {
+    setState(() => cooldownSeconds = 60);
+    cooldownTimer?.cancel();
+    cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (cooldownSeconds > 0) {
+        setState(() => cooldownSeconds--);
+      } else {
+        timer.cancel();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -968,7 +1128,6 @@ class _AuthScreenState extends State<AuthScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Header Branding
                 Container(
                   width: 80,
                   height: 80,
@@ -992,9 +1151,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  isSignUp
-                      ? "إنشاء حساب جديد لتتابع مشروعاتك المعمارية"
-                      : "تسجيل الدخول عبر البريد الإلكتروني ورمز OTP",
+                  "تسجيل الدخول عبر البريد الإلكتروني ورمز OTP",
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
@@ -1002,7 +1159,6 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Form Container
                 AnimatedCrossFade(
                   duration: 300.ms,
                   crossFadeState: !otpSent
@@ -1010,19 +1166,6 @@ class _AuthScreenState extends State<AuthScreen> {
                       : CrossFadeState.showSecond,
                   firstChild: Column(
                     children: [
-                      if (isSignUp) ...[
-                        TextField(
-                          controller: nameCtrl,
-                          decoration: InputDecoration(
-                            labelText: "الاسم الكامل",
-                            prefixIcon: const Icon(Icons.person_outline),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
                       TextField(
                         controller: emailCtrl,
                         keyboardType: TextInputType.emailAddress,
@@ -1034,21 +1177,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      if (isSignUp) ...[
-                        TextField(
-                          controller: passCtrl,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            labelText: "كلمة المرور",
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
+                      const SizedBox(height: 20),
                       SizedBox(
                         width: double.infinity,
                         height: 52,
@@ -1056,21 +1185,36 @@ class _AuthScreenState extends State<AuthScreen> {
                           onPressed: provider.isLoading
                               ? null
                               : () async {
-                                  final success = await provider
-                                      .sendOtp(emailCtrl.text.trim());
+                                  final email = emailCtrl.text.trim();
+                                  if (email.isEmpty || !email.contains('@')) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            "يرجى إدخال بريد إلكتروني صحيح"),
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  final success =
+                                      await provider.sendOtp(email);
                                   if (success) {
                                     setState(() => otpSent = true);
+                                    startCooldownTimer();
                                     if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
                                         const SnackBar(
                                           content: Text(
-                                              "تم إرسال رمز التأكيد (6 أرقام) إلى بريدك الإلكتروني"),
+                                              "تم إرسال رمز التأكيد. تحقق من صندوق الوارد في بريدك."),
                                         ),
                                       );
                                     }
                                   } else if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(provider.authError ?? "ما قدرنا نرسل الرمز")),
+                                      SnackBar(
+                                        content: Text(provider.authError ??
+                                            "عذراً، فشل إرسال الرمز"),
+                                      ),
                                     );
                                   }
                                 },
@@ -1091,11 +1235,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                   ),
                                 )
                               : const Icon(Icons.send_outlined),
-                          label: Text(
-                            isSignUp
-                                ? "استلام رمز التأكيد والتسجيل"
-                                : "إرسال رمز التأكيد (6 أرقام)",
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          label: const Text(
+                            "إرسال رمز التأكيد (6 أرقام)",
+                            style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
@@ -1103,13 +1245,29 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   secondChild: Column(
                     children: [
-                      Text(
-                        "أدخل رمز التأكيد المكون من 6 أرقام المرسل إلى:\n${emailCtrl.text}",
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium,
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primaryContainer
+                              .withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.mark_email_read_outlined,
+                                color: theme.colorScheme.primary),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                "تحقق من صندوق الوارد في بريدك الإلكتروني:\n${emailCtrl.text}",
+                                style: const TextStyle(
+                                    fontSize: 13, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 20),
-                      // 6 Digit OTP input boxes
                       Directionality(
                         textDirection: TextDirection.ltr,
                         child: Row(
@@ -1152,7 +1310,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
                       SizedBox(
                         width: double.infinity,
                         height: 52,
@@ -1164,7 +1322,10 @@ class _AuthScreenState extends State<AuthScreen> {
                                       otpCtrls.map((c) => c.text).join();
                                   if (code.length < 6) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text("اكتب الرمز كامل (6 أرقام) اللي وصلك على البريد")),
+                                      const SnackBar(
+                                        content: Text(
+                                            "يرجى إدخال رمز التأكيد كاملاً (6 أرقام)"),
+                                      ),
                                     );
                                     return;
                                   }
@@ -1174,12 +1335,11 @@ class _AuthScreenState extends State<AuthScreen> {
                                   );
                                   if (!verified && mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(provider.authError ?? "الرمز غلط")),
+                                      SnackBar(
+                                        content: Text(provider.authError ??
+                                            "رمز التأكيد غير صحيح"),
+                                      ),
                                     );
-                                  }
-                                  if (verified && isSignUp) {
-                                    provider.updateProfile(
-                                        nameCtrl.text, "0912345678");
                                   }
                                 },
                           style: ElevatedButton.styleFrom(
@@ -1189,41 +1349,59 @@ class _AuthScreenState extends State<AuthScreen> {
                               borderRadius: BorderRadius.circular(28),
                             ),
                           ),
-                          child: const Text(
-                            "تأكيد وفتح الحساب",
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
+                          child: provider.isLoading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white)
+                              : const Text(
+                                  "تأكيد وفتح الحساب",
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold),
+                                ),
                         ),
                       ),
-                      TextButton(
-                        onPressed: () => setState(() => otpSent = false),
-                        child: const Text("تعديل البريد الإلكتروني"),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          TextButton(
+                            onPressed: () => setState(() => otpSent = false),
+                            child: const Text("تعديل البريد"),
+                          ),
+                          TextButton(
+                            onPressed: (cooldownSeconds > 0 || provider.isLoading)
+                                ? null
+                                : () async {
+                                    final success = await provider
+                                        .sendOtp(emailCtrl.text.trim());
+                                    if (success) {
+                                      startCooldownTimer();
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                                "تمت إعادة إرسال الرمز. تحقق من صندوق الوارد"),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                            child: Text(
+                              cooldownSeconds > 0
+                                  ? "إعادة الإرسال بعد ($cooldownSeconds)"
+                                  : "إعادة إرسال الرمز",
+                              style: TextStyle(
+                                fontWeight: cooldownSeconds == 0
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ),
-
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(isSignUp
-                        ? "لديك حساب بالفعل؟"
-                        : "ليس لديك حساب زبون؟"),
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          isSignUp = !isSignUp;
-                          otpSent = false;
-                        });
-                      },
-                      child: Text(
-                        isSignUp ? "تسجيل الدخول" : "إنشاء حساب جديد",
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -1349,7 +1527,7 @@ class MainShellScreen extends StatelessWidget {
 }
 
 // ============================================================================
-// 1. HOME SCREEN (خدمات شركة المدرار الـ 12 ومعرض سريع)
+// 1. HOME SCREEN
 // ============================================================================
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -1367,7 +1545,6 @@ class HomeScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Hero Banner Card
           Card(
             elevation: 2,
             shape: RoundedRectangleBorder(
@@ -1463,7 +1640,6 @@ class HomeScreen extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // Active Project Shortcut Bar if available
           if (activeProjects.isNotEmpty) ...[
             GestureDetector(
               onTap: () => provider.setNavIndex(1),
@@ -1517,7 +1693,6 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 20),
           ],
 
-          // Title & Count
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1539,7 +1714,6 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // Grid of 12 Services
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -1626,7 +1800,6 @@ class HomeScreen extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          // Portfolio Shortcut Banner
           Card(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -1688,7 +1861,7 @@ class HomeScreen extends StatelessWidget {
 }
 
 // ============================================================================
-// 2. SERVICE DETAIL SCREEN (عرض كامل لتفاصيل الخدمة ومراحلها)
+// 2. SERVICE DETAIL SCREEN
 // ============================================================================
 class ServiceDetailScreen extends StatelessWidget {
   final ServiceItem service;
@@ -1708,7 +1881,6 @@ class ServiceDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Card with Icon
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
@@ -1824,7 +1996,7 @@ class ServiceDetailScreen extends StatelessWidget {
 }
 
 // ============================================================================
-// 3. NEW PROJECT REQUEST SCREEN (تقديم طلب مشروع وموقع ومرفقات)
+// 3. NEW PROJECT REQUEST SCREEN
 // ============================================================================
 class NewProjectRequestScreen extends StatefulWidget {
   final String? preselectedService;
@@ -1841,12 +2013,20 @@ class _NewProjectRequestScreenState extends State<NewProjectRequestScreen> {
   final areaCtrl = TextEditingController(text: "150");
   final locationCtrl = TextEditingController(text: "طرابلس - عين زارة");
   final notesCtrl = TextEditingController();
-  int attachedCount = 0;
 
   @override
   void initState() {
     super.initState();
-    selectedService = widget.preselectedService ?? "شغل شقة كاملة جاهزة بالتشطيب";
+    selectedService =
+        widget.preselectedService ?? "شغل شقة كاملة جاهزة بالتشطيب";
+  }
+
+  @override
+  void dispose() {
+    areaCtrl.dispose();
+    locationCtrl.dispose();
+    notesCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -1864,47 +2044,36 @@ class _NewProjectRequestScreenState extends State<NewProjectRequestScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "تفاصيل الخدمة والعقار المطلوب معاينته",
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              "حدد نوع الخدمة والمساحة وسيتم حجز معاينة ميدانية لتحديد التكلفة النهائية.",
-              style: TextStyle(
+              "حدد تفاصيل الخدمة المطلوبة للمعاينة الميدانية:",
+              style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
-                fontSize: 12,
               ),
             ),
             const SizedBox(height: 20),
 
-            // Service Type Selector
             DropdownButtonFormField<String>(
-              initialValue: provider.services
-                      .any((s) => s.title == selectedService)
-                  ? selectedService
-                  : provider.services.first.title,
+              initialValue: selectedService,
               decoration: InputDecoration(
                 labelText: "نوع الخدمة الهندسية",
-                prefixIcon: const Icon(Icons.build_outlined),
+                prefixIcon: const Icon(Icons.build_circle_outlined),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
               items: provider.services.map((s) {
-                return DropdownMenuItem(
+                return DropdownMenuItem<String>(
                   value: s.title,
-                  child: Text(s.title, style: const TextStyle(fontSize: 13)),
+                  child: Text(s.title, style: const TextStyle(fontSize: 14)),
                 );
               }).toList(),
               onChanged: (val) {
-                if (val != null) setState(() => selectedService = val);
+                if (val != null) {
+                  setState(() => selectedService = val);
+                }
               },
             ),
             const SizedBox(height: 16),
 
-            // Area Input
             TextField(
               controller: areaCtrl,
               keyboardType: TextInputType.number,
@@ -1918,11 +2087,10 @@ class _NewProjectRequestScreenState extends State<NewProjectRequestScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Location Input
             TextField(
               controller: locationCtrl,
               decoration: InputDecoration(
-                labelText: "موقع العقار / المدينة والحاي",
+                labelText: "عنوان وموقع المشروع التفصيلي",
                 prefixIcon: const Icon(Icons.location_on_outlined),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1931,69 +2099,20 @@ class _NewProjectRequestScreenState extends State<NewProjectRequestScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Attachments Upload Box
-            InkWell(
-              onTap: () {
-                setState(() => attachedCount++);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text("تم اختيار ملف/صورة رقم $attachedCount"),
-                  ),
-                );
-              },
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: theme.colorScheme.outlineVariant,
-                    style: BorderStyle.solid,
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.cloud_upload_outlined,
-                      size: 40,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      attachedCount == 0
-                          ? "إرفاق خرائط أو صور الموقع الحالية"
-                          : "تمت إضافة $attachedCount ملفات/صور مرفقة",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      "اضغط لرفع الخرائط المعمارية أو الصور (PNG, JPG, PDF)",
-                      style: TextStyle(fontSize: 11, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Notes Textfield
             TextField(
               controller: notesCtrl,
-              maxLines: 3,
+              maxLines: 4,
               decoration: InputDecoration(
-                labelText: "ملاحظات أو مواصفات خاصة ترغب بها",
+                labelText: "ملاحظات وتفاصيل إضافية للعميل (اختياري)",
                 alignLabelWithHint: true,
+                prefixIcon: const Icon(Icons.description_outlined),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
+            const SizedBox(height: 28),
 
-            const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               height: 52,
@@ -2001,23 +2120,40 @@ class _NewProjectRequestScreenState extends State<NewProjectRequestScreen> {
                 onPressed: provider.isLoading
                     ? null
                     : () async {
-                        final area =
-                            double.tryParse(areaCtrl.text.trim()) ?? 100.0;
+                        final area = double.tryParse(areaCtrl.text) ?? 0.0;
+                        final loc = locationCtrl.text.trim();
+                        if (loc.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("يرجى كتابة عنوان المشروع"),
+                            ),
+                          );
+                          return;
+                        }
+
                         final success = await provider.createProjectRequest(
                           serviceType: selectedService,
                           area: area,
-                          location: locationCtrl.text.trim(),
+                          location: loc,
                           notes: notesCtrl.text.trim(),
                         );
-                        if (success && mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                  "تم إرسال طلب المشروع بنجاح! سيتم التواصل معكم وتحديد موعد المعاينة."),
-                            ),
-                          );
-                          Navigator.pop(context);
-                          provider.setNavIndex(1); // Go to projects tab
+
+                        if (mounted) {
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    "تم تقديم طلب المعاينة بنجاح. سيتم التواصل معكم عبر مهندسينا."),
+                              ),
+                            );
+                            Navigator.pop(context);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("عذراً، تعذر تقديم الطلب حالياً"),
+                              ),
+                            );
+                          }
                         }
                       },
                 style: ElevatedButton.styleFrom(
@@ -2027,9 +2163,11 @@ class _NewProjectRequestScreenState extends State<NewProjectRequestScreen> {
                     borderRadius: BorderRadius.circular(28),
                   ),
                 ),
-                icon: const Icon(Icons.send),
+                icon: provider.isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Icon(Icons.check_circle_outline),
                 label: const Text(
-                  "إرسال الطلب وحجز المعاينة",
+                  "تأكيد إرسال الطلب للمعاينة",
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -2042,7 +2180,7 @@ class _NewProjectRequestScreenState extends State<NewProjectRequestScreen> {
 }
 
 // ============================================================================
-// 4. MY PROJECTS SCREEN (متابعة الطلبات، التكلفة، الإنجاز والتحديثات المصورة)
+// 4. MY PROJECTS SCREEN
 // ============================================================================
 class MyProjectsScreen extends StatefulWidget {
   const MyProjectsScreen({super.key});
@@ -2052,7 +2190,7 @@ class MyProjectsScreen extends StatefulWidget {
 }
 
 class _MyProjectsScreenState extends State<MyProjectsScreen> {
-  String selectedFilter = "الكل";
+  String selectedFilter = 'all';
 
   @override
   Widget build(BuildContext context) {
@@ -2060,11 +2198,10 @@ class _MyProjectsScreenState extends State<MyProjectsScreen> {
     final provider = Provider.of<AppStateProvider>(context);
 
     final filteredProjects = provider.projects.where((p) {
-      if (selectedFilter == "قيد المعاينة") return p.status == "pending_inspection";
-      if (selectedFilter == "بانتظار الموافقة") {
-        return p.status == "cost_assigned" && !p.customerAccepted;
-      }
-      if (selectedFilter == "جاري التنفيذ") return p.status == "in_progress";
+      if (selectedFilter == 'pending') return p.status == 'pending_inspection';
+      if (selectedFilter == 'cost') return p.status == 'cost_assigned';
+      if (selectedFilter == 'progress') return p.status == 'in_progress';
+      if (selectedFilter == 'completed') return p.status == 'completed';
       return true;
     }).toList();
 
@@ -2073,381 +2210,397 @@ class _MyProjectsScreenState extends State<MyProjectsScreen> {
         // Filter Chips Bar
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              "الكل",
-              "قيد المعاينة",
-              "بانتظار الموافقة",
-              "جاري التنفيذ"
-            ].map((filter) {
-              final isSelected = selectedFilter == filter;
-              return Padding(
-                padding: const EdgeInsets.only(left: 8.0),
-                child: ChoiceChip(
-                  label: Text(filter),
-                  selected: isSelected,
-                  onSelected: (_) => setState(() => selectedFilter = filter),
-                ),
-              );
-            }).toList(),
+              FilterChip(
+                label: const Text("الكل"),
+                selected: selectedFilter == 'all',
+                onSelected: (_) => setState(() => selectedFilter = 'all'),
+              ),
+              const SizedBox(width: 8),
+              FilterChip(
+                label: const Text("قيد المعاينة"),
+                selected: selectedFilter == 'pending',
+                onSelected: (_) => setState(() => selectedFilter = 'pending'),
+              ),
+              const SizedBox(width: 8),
+              FilterChip(
+                label: const Text("بانتظار موافقتك"),
+                selected: selectedFilter == 'cost',
+                onSelected: (_) => setState(() => selectedFilter = 'cost'),
+              ),
+              const SizedBox(width: 8),
+              FilterChip(
+                label: const Text("جاري التنفيذ"),
+                selected: selectedFilter == 'progress',
+                onSelected: (_) => setState(() => selectedFilter = 'progress'),
+              ),
+              const SizedBox(width: 8),
+              FilterChip(
+                label: const Text("مكتملة"),
+                selected: selectedFilter == 'completed',
+                onSelected: (_) => setState(() => selectedFilter = 'completed'),
+              ),
+            ],
           ),
         ),
 
-        // List of Projects
         Expanded(
-          child: filteredProjects.isEmpty
-              ? _buildEmptyState(context)
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filteredProjects.length,
-                  itemBuilder: (context, idx) {
-                    final proj = filteredProjects[idx];
-                    return ProjectCardItem(project: proj);
-                  },
-                ),
+          child: RefreshIndicator(
+            onRefresh: () => provider.fetchProjectsFromSupabase(),
+            child: filteredProjects.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.assignment_late_outlined,
+                            size: 64, color: theme.colorScheme.onSurfaceVariant),
+                        const SizedBox(height: 12),
+                        const Text(
+                          "لا توجد مشاريع أو طلبات في هذه القائمة",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filteredProjects.length,
+                    itemBuilder: (context, idx) {
+                      final project = filteredProjects[idx];
+                      return _buildProjectCard(context, theme, provider, project);
+                    },
+                  ),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.article_outlined,
-            size: 64,
-            color: Theme.of(context).colorScheme.outline,
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            "لا توجد طلبات أو مشاريع تحت هذا التصنيف",
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            "قم بطلب خدمة جديدة لمعاينتها وبدء تنفيذها.",
-            style: TextStyle(color: Colors.grey, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-}
+  Widget _buildProjectCard(
+    BuildContext context,
+    ThemeData theme,
+    AppStateProvider provider,
+    EngineeringProject project,
+  ) {
+    Color statusColor;
+    String statusText;
 
-class ProjectCardItem extends StatelessWidget {
-  final EngineeringProject project;
-
-  const ProjectCardItem({super.key, required this.project});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final provider = Provider.of<AppStateProvider>(context, listen: false);
-
-    // Dynamic Status Badge
-    Widget statusBadge;
-    if (project.status == "pending_inspection") {
-      statusBadge = Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: Colors.amber.shade100,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          "قيد المعاينة الفنية",
-          style: TextStyle(
-              color: Colors.amber.shade900,
-              fontSize: 11,
-              fontWeight: FontWeight.bold),
-        ),
-      );
-    } else if (project.status == "cost_assigned" && !project.customerAccepted) {
-      statusBadge = Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: Colors.orange.shade100,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          "تم تحديد التكلفة (مطلوب الموافقة)",
-          style: TextStyle(
-              color: Colors.orange.shade900,
-              fontSize: 11,
-              fontWeight: FontWeight.bold),
-        ),
-      );
-    } else {
-      statusBadge = Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: Colors.green.shade100,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          "جاري التنفيذ (${project.progressPercentage}%)",
-          style: TextStyle(
-              color: Colors.green.shade900,
-              fontSize: 11,
-              fontWeight: FontWeight.bold),
-        ),
-      );
+    switch (project.status) {
+      case 'cost_assigned':
+        statusColor = Colors.orange;
+        statusText = "تم تحديد التكلفة - بانتظار موافقتك";
+        break;
+      case 'in_progress':
+        statusColor = theme.colorScheme.primary;
+        statusText = "جاري التنفيذ";
+        break;
+      case 'completed':
+        statusColor = Colors.green;
+        statusText = "مكتمل ومسلم";
+        break;
+      case 'pending_inspection':
+      default:
+        statusColor = Colors.blue;
+        statusText = "قيد المعاينة الفنية";
+        break;
     }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(
-          color: project.status == "cost_assigned" && !project.customerAccepted
-              ? theme.colorScheme.secondary
-              : theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-          width: project.status == "cost_assigned" && !project.customerAccepted
-              ? 2
-              : 1,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                statusBadge,
-                Text(
-                  project.requestCode,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ProjectDetailScreen(project: project),
             ),
-            const SizedBox(height: 10),
-
-            Text(
-              project.serviceType,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.location_on_outlined,
-                    size: 14, color: Colors.grey),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    "${project.locationDetails} • ${project.approximateArea.toInt()} م²",
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Cost Box section if estimated
-            if (project.estimatedCost != null) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "التكلفة المحددة بعد المعاينة:",
-                          style: TextStyle(fontSize: 12),
-                        ),
-                        Text(
-                          "${intl.NumberFormat('#,###').format(project.estimatedCost)} د.ل",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (project.costNotes != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        project.costNotes!,
-                        style: const TextStyle(fontSize: 11, color: Colors.grey),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-
-            // Customer acceptance CTA button if cost is ready
-            if (project.status == "cost_assigned" &&
-                !project.customerAccepted) ...[
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    provider.acceptProjectCost(project.id);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                            "تمت الموافقة على التكلفة! سيتم بدء الأعمال وتوفير المواد فوراً."),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.secondary,
-                    foregroundColor: theme.colorScheme.onSecondary,
-                  ),
-                  icon: const Icon(Icons.check_circle_outline),
-                  label: const Text(
-                    "الموافقة على التكلفة لبدء التنفيذ",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-
-            // Execution Progress bar if in progress
-            if (project.status == "in_progress") ...[
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "نسبة الإنجاز الميداني:",
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      Text(
-                        "${project.progressPercentage}%",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.tertiary,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    project.requestCode,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.primary,
+                      fontSize: 13,
+                    ),
                   ),
-                  const SizedBox(height: 6),
-                  LinearProgressIndicator(
-                    value: project.progressPercentage / 100.0,
-                    borderRadius: BorderRadius.circular(4),
-                    minHeight: 8,
-                    backgroundColor: theme.colorScheme.surfaceContainerHigh,
-                    color: theme.colorScheme.tertiary,
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      statusText,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                project.serviceType,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Icon(Icons.location_on_outlined,
+                      size: 14, color: theme.colorScheme.onSurfaceVariant),
+                  const SizedBox(width: 4),
+                  Text(
+                    project.locationDetails,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    "${project.approximateArea} م²",
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-            ],
 
-            // Action row to view stage field reports
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  project.currentStage,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.vertical(top: Radius.circular(24)),
+              if (project.status == 'in_progress' ||
+                  project.status == 'completed') ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "المرحلة الحالية: ${project.currentStage}",
+                      style: const TextStyle(
+                          fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      "${project.progressPercentage}%",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                        fontSize: 12,
                       ),
-                      builder: (_) =>
-                          ProjectUpdatesBottomSheet(projectId: project.id),
-                    );
-                  },
-                  icon: const Icon(Icons.insert_chart_outlined, size: 16),
-                  label: const Text("التقرير الميداني",
-                      style: TextStyle(fontSize: 12)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                LinearProgressIndicator(
+                  value: project.progressPercentage / 100.0,
+                  borderRadius: BorderRadius.circular(4),
+                  minHeight: 6,
                 ),
               ],
-            ),
-          ],
+
+              if (project.status == 'cost_assigned' &&
+                  !project.customerAccepted) ...[
+                const Divider(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "التكلفة التقديرية المحددة:",
+                            style: TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            "${intl.NumberFormat('#,###').format(project.estimatedCost ?? 0)} د.ل",
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.orange,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (project.costNotes != null &&
+                          project.costNotes!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          "تفاصيل: ${project.costNotes}",
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                      ],
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 40,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            provider.acceptProjectCost(project.id);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.secondary,
+                            foregroundColor: theme.colorScheme.onSecondary,
+                          ),
+                          child: const Text(
+                            "الموافقة على بدء التنفيذ والبدء بالمشروع",
+                            style: TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// Bottom sheet showing site photo updates uploaded by admins
-class ProjectUpdatesBottomSheet extends StatelessWidget {
-  final int projectId;
+// ============================================================================
+// 5. PROJECT DETAIL & TIMELINE SCREEN
+// ============================================================================
+class ProjectDetailScreen extends StatelessWidget {
+  final EngineeringProject project;
 
-  const ProjectUpdatesBottomSheet({super.key, required this.projectId});
+  const ProjectDetailScreen({super.key, required this.project});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final provider = Provider.of<AppStateProvider>(context);
-    final updates = provider.getUpdatesForProject(projectId);
+    final updates = provider.getUpdatesForProject(project.id);
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      height: MediaQuery.of(context).size.height * 0.7,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade400,
-                borderRadius: BorderRadius.circular(2),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("تفاصيل مشروع ${project.requestCode}"),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Info Card
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      project.serviceType,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined, size: 16),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            project.locationDetails,
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.square_foot_outlined, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          "المساحة: ${project.approximateArea} م²",
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ],
+                    ),
+                    if (project.estimatedCost != null) ...[
+                      const Divider(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text("التكلفة المعتمدة:"),
+                          Text(
+                            "${intl.NumberFormat('#,###').format(project.estimatedCost)} د.ل",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            "تقارير الإنجاز والمتابعة الميدانية",
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+            const SizedBox(height: 20),
+
+            Text(
+              "جدول التحديثات الميدانية من المهندس المشرف:",
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            "تحديثات حية ومصورة يرفعها مهندس الشركة المباشر من موقع المشروع.",
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: updates.isEmpty
-                ? const Center(
-                    child: Text("لا توجد تحديثات مصورة جديدة بعد."),
+            const SizedBox(height: 12),
+
+            updates.isEmpty
+                ? Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Center(
+                        child: Text(
+                          "لم تدرج تحديثات جديدة بعد من المهندس المسؤول",
+                          style: TextStyle(
+                              color: theme.colorScheme.onSurfaceVariant),
+                        ),
+                      ),
+                    ),
                   )
                 : ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
                     itemCount: updates.length,
                     itemBuilder: (context, idx) {
-                      final item = updates[idx];
+                      final update = updates[idx];
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         child: Padding(
-                          padding: const EdgeInsets.all(12.0),
+                          padding: const EdgeInsets.all(14.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -2456,50 +2609,34 @@ class ProjectUpdatesBottomSheet extends StatelessWidget {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    item.stageTitle,
+                                    update.stageTitle,
                                     style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14),
-                                  ),
-                                  Text(
-                                    "${item.progressPercentage}%",
-                                    style: TextStyle(
-                                      color: theme.colorScheme.tertiary,
                                       fontWeight: FontWeight.bold,
+                                      fontSize: 14,
                                     ),
+                                  ),
+                                  Chip(
+                                    label: Text("${update.progressPercentage}%"),
+                                    visualDensity: VisualDensity.compact,
                                   ),
                                 ],
                               ),
+                              if (update.engineerNotes.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  update.engineerNotes,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
                               const SizedBox(height: 6),
                               Text(
-                                item.engineerNotes,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              SizedBox(
-                                height: 80,
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: item.images.length + 1,
-                                  itemBuilder: (_, i) {
-                                    return Container(
-                                      width: 100,
-                                      margin: const EdgeInsets.only(left: 8),
-                                      decoration: BoxDecoration(
-                                        color: theme
-                                            .colorScheme.surfaceContainerHigh,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(
-                                        Icons.photo_camera,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                    );
-                                  },
-                                ),
+                                intl.DateFormat('yyyy/MM/dd - hh:mm a')
+                                    .format(update.createdAt),
+                                style: const TextStyle(
+                                    fontSize: 10, color: Colors.grey),
                               ),
                             ],
                           ),
@@ -2507,15 +2644,15 @@ class ProjectUpdatesBottomSheet extends StatelessWidget {
                       );
                     },
                   ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
 // ============================================================================
-// 5. PORTFOLIO SCREEN (معرض صور وفيديوهات المشاريع المنفذة)
+// 6. PORTFOLIO SCREEN
 // ============================================================================
 class PortfolioScreen extends StatelessWidget {
   const PortfolioScreen({super.key});
@@ -2540,80 +2677,60 @@ class PortfolioScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                height: 150,
+                height: 140,
                 width: double.infinity,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      theme.colorScheme.primary,
-                      const Color(0xFF1B2A47),
-                    ],
-                  ),
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.play_circle_outline,
-                        size: 48,
-                        color: theme.colorScheme.secondary,
-                      ),
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Text(
-                          "معاينة فيديو وفوتوغرافيا",
-                          style: TextStyle(color: Colors.white, fontSize: 11),
-                        ),
-                      ),
-                    ],
-                  ),
+                color: theme.colorScheme.primaryContainer,
+                child: Icon(
+                  Icons.architecture,
+                  size: 64,
+                  color: theme.colorScheme.primary,
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(14.0),
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Chip(
-                      label: Text(item.category,
-                          style: const TextStyle(fontSize: 10)),
-                      visualDensity: VisualDensity.compact,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Chip(
+                          label: Text(item.category),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        Row(
+                          children: [
+                            Icon(Icons.location_on,
+                                size: 14,
+                                color: theme.colorScheme.onSurfaceVariant),
+                            const SizedBox(width: 4),
+                            Text(
+                              item.location,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     Text(
                       item.title,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 15,
+                        fontSize: 16,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       item.description,
                       style: TextStyle(
                         fontSize: 12,
                         color: theme.colorScheme.onSurfaceVariant,
+                        height: 1.4,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on,
-                            size: 14, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Text(
-                          item.location,
-                          style:
-                              const TextStyle(fontSize: 11, color: Colors.grey),
-                        ),
-                      ],
                     ),
                   ],
                 ),
@@ -2627,72 +2744,7 @@ class PortfolioScreen extends StatelessWidget {
 }
 
 // ============================================================================
-// 6. NOTIFICATIONS SCREEN (صندوق الإشعارات الفورية)
-// ============================================================================
-class NotificationsScreen extends StatelessWidget {
-  const NotificationsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final provider = Provider.of<AppStateProvider>(context);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("الإشعارات والتحديثات"),
-        actions: [
-          TextButton(
-            onPressed: () => provider.markNotificationsAsRead(),
-            child: const Text("تعليم الكل كمعلوم"),
-          ),
-        ],
-      ),
-      body: provider.notifications.isEmpty
-          ? const Center(child: Text("لا توجد إشعارات حالية"))
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: provider.notifications.length,
-              itemBuilder: (context, idx) {
-                final item = provider.notifications[idx];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  color: item.isRead
-                      ? theme.colorScheme.surface
-                      : theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: item.isRead
-                          ? Colors.grey.shade300
-                          : theme.colorScheme.primary,
-                      child: Icon(
-                        Icons.notifications,
-                        color: item.isRead
-                            ? Colors.grey.shade700
-                            : theme.colorScheme.onPrimary,
-                      ),
-                    ),
-                    title: Text(
-                      item.title,
-                      style: TextStyle(
-                        fontWeight:
-                            item.isRead ? FontWeight.normal : FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    subtitle: Text(
-                      item.body,
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
-                );
-              },
-            ),
-    );
-  }
-}
-
-// ============================================================================
-// 7. PROFILE & SETTINGS SCREEN (تعديل الحساب والإعدادات)
+// 7. PROFILE & SETTINGS SCREEN
 // ============================================================================
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -2714,6 +2766,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   @override
+  void dispose() {
+    nameCtrl.dispose();
+    phoneCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final provider = Provider.of<AppStateProvider>(context);
@@ -2722,81 +2781,70 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.all(20.0),
       child: Column(
         children: [
-          // Avatar & User Header
           CircleAvatar(
             radius: 40,
-            backgroundColor: theme.colorScheme.primary,
-            child: Text(
-              provider.fullName.isNotEmpty ? provider.fullName[0] : "م",
-              style: const TextStyle(
-                fontSize: 28,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            backgroundColor: theme.colorScheme.primaryContainer,
+            child: Icon(Icons.person, size: 48, color: theme.colorScheme.primary),
           ),
           const SizedBox(height: 12),
           Text(
             provider.fullName,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           Text(
-            provider.userEmail ?? "زبون معتمد",
-            style: const TextStyle(color: Colors.grey, fontSize: 12),
+            provider.userEmail ?? "",
+            style: TextStyle(
+                fontSize: 13, color: theme.colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 24),
 
-          // Profile Form Card
           Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    "معلومات الحساب",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    "تعديل المعلومات الشخصية:",
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   TextField(
                     controller: nameCtrl,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: "الاسم الكامل",
-                      prefixIcon: const Icon(Icons.person_outline),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      prefixIcon: Icon(Icons.person_outline),
                     ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: phoneCtrl,
                     keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      labelText: "رقم الهاتف / التواصل",
-                      prefixIcon: const Icon(Icons.phone_outlined),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                    decoration: const InputDecoration(
+                      labelText: "رقم الهاتف للتواصل",
+                      prefixIcon: Icon(Icons.phone_outlined),
                     ),
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        provider.updateProfile(
-                            nameCtrl.text.trim(), phoneCtrl.text.trim());
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("تم حفظ بيانات الملف الشخصي"),
-                          ),
+                      onPressed: () async {
+                        await provider.updateProfile(
+                          nameCtrl.text.trim(),
+                          phoneCtrl.text.trim(),
                         );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("تم حفظ البيانات الشخصية بنجاح"),
+                            ),
+                          );
+                        }
                       },
-                      child: const Text("حفظ التغييرات"),
+                      child: const Text("حفظ البيانات"),
                     ),
                   ),
                 ],
@@ -2805,49 +2853,113 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Settings Options Card
           Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Column(
               children: [
                 SwitchListTile(
-                  title: const Text("المظهر الداكن (Dark Mode)"),
+                  title: const Text("الوضع الداكن (Dark Mode)"),
                   value: provider.isDarkMode,
                   onChanged: (val) => provider.toggleDarkMode(val),
                   secondary: const Icon(Icons.dark_mode_outlined),
                 ),
                 const Divider(height: 1),
                 ListTile(
-                  leading: const Icon(Icons.security_outlined),
-                  title: const Text("تأكيد الحساب برمز OTP"),
-                  trailing: const Icon(Icons.check_circle, color: Colors.green),
+                  leading: const Icon(Icons.logout, color: Colors.red),
+                  title: const Text(
+                    "تسجيل الخروج",
+                    style: TextStyle(
+                        color: Colors.red, fontWeight: FontWeight.bold),
+                  ),
+                  onTap: () => provider.signOut(),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+}
 
-          // Logout Button
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => provider.signOut(),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.red,
-                side: const BorderSide(color: Colors.red),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              icon: const Icon(Icons.logout),
-              label: const Text(
-                "تسجيل الخروج",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
+// ============================================================================
+// 8. NOTIFICATIONS SCREEN
+// ============================================================================
+class NotificationsScreen extends StatelessWidget {
+  const NotificationsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final provider = Provider.of<AppStateProvider>(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("الإشعارات والتنبيهات"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.done_all),
+            tooltip: "تحديد الكل كمقروء",
+            onPressed: () => provider.markNotificationsAsRead(),
           ),
         ],
       ),
+      body: provider.notifications.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.notifications_off_outlined,
+                      size: 64, color: theme.colorScheme.onSurfaceVariant),
+                  const SizedBox(height: 12),
+                  const Text("لا توجد إشعارات حالية في الحافظة"),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: provider.notifications.length,
+              itemBuilder: (context, idx) {
+                final notif = provider.notifications[idx];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  color: notif.isRead
+                      ? theme.colorScheme.surface
+                      : theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                  child: ListTile(
+                    leading: Icon(
+                      notif.isRead
+                          ? Icons.notifications_none
+                          : Icons.notifications_active,
+                      color: theme.colorScheme.primary,
+                    ),
+                    title: Text(
+                      notif.title,
+                      style: TextStyle(
+                        fontWeight:
+                            notif.isRead ? FontWeight.normal : FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 4),
+                        Text(notif.body),
+                        const SizedBox(height: 4),
+                        Text(
+                          intl.DateFormat('yyyy/MM/dd - hh:mm a')
+                              .format(notif.createdAt),
+                          style: const TextStyle(
+                              fontSize: 10, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                    onTap: () => provider.markNotificationsAsRead(notif.id),
+                  ),
+                );
+              },
+            ),
     );
   }
 }

@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart' as intl;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:uuid/uuid.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart' as intl;
 
 import 'firebase_config.dart';
 
@@ -223,6 +223,18 @@ class AppNotification {
     required this.isRead,
     required this.createdAt,
   });
+
+  factory AppNotification.fromJson(Map<String, dynamic> json) {
+    return AppNotification(
+      id: json['id'].toString(),
+      title: json['title'] ?? '',
+      body: json['body'] ?? '',
+      isRead: json['read_at'] != null,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
+    );
+  }
 }
 
 // ============================================================================
@@ -268,6 +280,8 @@ class AdminStateProvider extends ChangeNotifier {
   bool get isAdminClaimed => _isAdminClaimed;
   String? get userEmail => _userEmail;
   String get fullName => _fullName;
+  String? get userId => _userId;
+  String? get accessToken => _accessToken;
 
   int _selectedNavIndex = 0;
   int get selectedNavIndex => _selectedNavIndex;
@@ -375,59 +389,10 @@ class AdminStateProvider extends ChangeNotifier {
   List<ServiceItem> get services => _services;
 
   // Active Admin Managed Projects
-  final List<EngineeringProject> _projects = [
-    EngineeringProject(
-      id: 1092,
-      requestCode: "REQ-1092",
-      customerId: "usr-101",
-      customerName: "مهند الشريفي",
-      serviceType: "صب من الأول وصب طوابق",
-      approximateArea: 220.0,
-      locationDetails: "طرابلس - طريق المطبات",
-      notes: "يرغب في صب السقف الأول والقواعد المسلحة خلال الأسبوع القادم.",
-      status: "pending_inspection",
-      customerAccepted: false,
-      progressPercentage: 0,
-      currentStage: "بانتظار إجراء المعاينة وتحديد التكلفة",
-      createdAt: DateTime.now().subtract(const Duration(hours: 4)),
-    ),
-    EngineeringProject(
-      id: 1084,
-      requestCode: "REQ-1084",
-      customerId: "usr-102",
-      customerName: "خالد بن مسعود",
-      serviceType: "شغل شقة كاملة جاهزة بالتشطيب",
-      approximateArea: 165.0,
-      locationDetails: "بنغازي - حي النخيل",
-      notes: "تجهيز الشقة بالكامل وتشطيب ديكورات الجبس والإضاءة المخفية.",
-      status: "in_progress",
-      estimatedCost: 42500.0,
-      costNotes: "يشمل توريد السباكة والكهرباء والدهان الإيطالي والأرضيات",
-      estimatedDuration: "30 يوم عمل",
-      customerAccepted: true,
-      progressPercentage: 65,
-      currentStage: "مرحلة التمديدات الكهربائية والسباكة",
-      createdAt: DateTime.now().subtract(const Duration(days: 10)),
-    ),
-  ];
-
+  final List<EngineeringProject> _projects = [];
   List<EngineeringProject> get projects => _projects;
 
-  final Map<int, List<ProjectUpdate>> _projectUpdates = {
-    1084: [
-      ProjectUpdate(
-        id: 1,
-        projectId: 1084,
-        stageTitle: "تأسيس شبكات السباكة والكهرباء",
-        progressPercentage: 65,
-        engineerNotes:
-            "تم مد الخطوط الرئيسية للسباكة وتثبيت علب الكهرباء بالكامل.",
-        images: ["https://picsum.photos/400/300?random=11"],
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-    ]
-  };
-
+  final Map<int, List<ProjectUpdate>> _projectUpdates = {};
   List<ProjectUpdate> getUpdatesForProject(int projectId) {
     return _projectUpdates[projectId] ?? [];
   }
@@ -457,36 +422,11 @@ class AdminStateProvider extends ChangeNotifier {
   List<PortfolioItem> get portfolio => _portfolio;
 
   // Customers Accounts list
-  final List<CustomerUser> _customers = [
-    CustomerUser(
-      id: "usr-101",
-      fullName: "مهند الشريفي",
-      email: "mohanad@example.com",
-      phone: "0912345678",
-      isVerified: true,
-    ),
-    CustomerUser(
-      id: "usr-102",
-      fullName: "خالد بن مسعود",
-      email: "khalid@example.com",
-      phone: "0923456789",
-      isVerified: true,
-    ),
-  ];
-
+  final List<CustomerUser> _customers = [];
   List<CustomerUser> get customers => _customers;
 
   // Admin Notifications Inbox
-  final List<AppNotification> _notifications = [
-    AppNotification(
-      id: "an-1",
-      title: "طلب معاينة جديد ورد",
-      body: "طلب جديد برقم #1092 من الزبون مهند الشريفي لمشروع صب قواعد.",
-      isRead: false,
-      createdAt: DateTime.now().subtract(const Duration(hours: 4)),
-    ),
-  ];
-
+  List<AppNotification> _notifications = [];
   List<AppNotification> get notifications => _notifications;
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
 
@@ -520,8 +460,16 @@ class AdminStateProvider extends ChangeNotifier {
       _isAuthenticated = true;
       await claimAdminCheck();
       fetchProjects();
+      fetchNotifications();
+      _setupFCMListener();
     }
     notifyListeners();
+  }
+
+  void _setupFCMListener() {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      fetchNotifications();
+    });
   }
 
   // Auth: Send OTP via Supabase API
@@ -576,7 +524,11 @@ class AdminStateProvider extends ChangeNotifier {
         await prefs.setString('user_email', _userEmail!);
 
         await claimAdminCheck();
-        _registerDeviceToken();
+        await _registerDeviceToken();
+        fetchProjects();
+        fetchNotifications();
+        _setupFCMListener();
+
         authError = null;
         _setLoading(false);
         return true;
@@ -586,7 +538,6 @@ class AdminStateProvider extends ChangeNotifier {
       authError = 'تأكد من اتصال الإنترنت وجرّب تاني.';
     }
 
-    // Never signed in (and never admin) without a real session from the server.
     _setLoading(false);
     notifyListeners();
     return false;
@@ -605,12 +556,12 @@ class AdminStateProvider extends ChangeNotifier {
         body: jsonEncode(pin != null ? {"pin": pin} : {}),
       );
       if (res.statusCode == 200) {
-        _isAdminClaimed = jsonDecode(res.body) == true;
+        final decoded = jsonDecode(res.body);
+        _isAdminClaimed = decoded == true;
         notifyListeners();
         return _isAdminClaimed;
       }
     } catch (_) {}
-    // Admin only when the server says so (a failed check never makes anyone admin).
     _isAdminClaimed = false;
     notifyListeners();
     return false;
@@ -628,9 +579,9 @@ class AdminStateProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _registerDeviceToken() async {
+  Future<void> _registerDeviceToken() async {
     try {
-      await FirebaseMessaging.instance.requestPermission(); // Android 13+ shows pushes only after this
+      await FirebaseMessaging.instance.requestPermission();
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null) {
         await http.post(
@@ -643,6 +594,44 @@ class AdminStateProvider extends ChangeNotifier {
           body: jsonEncode({"device_token": token, "app_name": "admin"}),
         );
       }
+    } catch (_) {}
+  }
+
+  // Fetch Notifications Inbox
+  Future<void> fetchNotifications() async {
+    if (_userId == null) return;
+    try {
+      final res = await http.get(
+        Uri.parse(
+            "$kSupabaseUrl/rest/v1/almadrar_notifications?or=(to_user.eq.$_userId,to_role.eq.admin)&order=created_at.desc"),
+        headers: {
+          "apikey": kSupabaseAnonKey,
+          if (_accessToken != null) "Authorization": "Bearer $_accessToken",
+        },
+      );
+      if (res.statusCode == 200) {
+        final List list = jsonDecode(res.body);
+        _notifications = list.map((e) => AppNotification.fromJson(e)).toList();
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
+  // Mark Notification Read
+  Future<void> markNotificationRead(String id) async {
+    try {
+      final nowStr = DateTime.now().toIso8601String();
+      await http.patch(
+        Uri.parse("$kSupabaseUrl/rest/v1/almadrar_notifications?id=eq.$id"),
+        headers: {
+          "apikey": kSupabaseAnonKey,
+          if (_accessToken != null) "Authorization": "Bearer $_accessToken",
+          "Content-Type": "application/json",
+          "Prefer": "return=representation",
+        },
+        body: jsonEncode({"read_at": nowStr}),
+      );
+      await fetchNotifications();
     } catch (_) {}
   }
 
@@ -659,13 +648,11 @@ class AdminStateProvider extends ChangeNotifier {
       );
       if (res.statusCode == 200) {
         final List list = jsonDecode(res.body);
-        if (list.isNotEmpty) {
-          _projects.clear();
-          for (var item in list) {
-            _projects.add(EngineeringProject.fromJson(item));
-          }
-          notifyListeners();
+        _projects.clear();
+        for (var item in list) {
+          _projects.add(EngineeringProject.fromJson(item));
         }
+        notifyListeners();
       }
     } catch (_) {}
   }
@@ -706,7 +693,7 @@ class AdminStateProvider extends ChangeNotifier {
         }),
       );
 
-      // Send Push Notification Event
+      // Send Push Notification Event to Customer
       await sendNotification(
         targetUser: p.customerId,
         title: "تحديد تكلفة المعاينة",
@@ -1281,7 +1268,10 @@ class AdminDashboardTab extends StatelessWidget {
         provider.projects.where((p) => p.status == 'in_progress').length;
 
     return RefreshIndicator(
-      onRefresh: () => provider.fetchProjects(),
+      onRefresh: () async {
+        await provider.fetchProjects();
+        await provider.fetchNotifications();
+      },
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         physics: const AlwaysScrollableScrollPhysics(),
@@ -2080,7 +2070,7 @@ class AdminServicesAndPortfolioTab extends StatelessWidget {
 }
 
 // ============================================================================
-// TAB 4: NOTIFICATIONS DISPATCHER
+// TAB 4: IN-APP NOTIFICATIONS INBOX
 // ============================================================================
 class AdminNotificationsTab extends StatefulWidget {
   const AdminNotificationsTab({super.key});
@@ -2098,72 +2088,111 @@ class _AdminNotificationsTabState extends State<AdminNotificationsTab> {
   Widget build(BuildContext context) {
     final provider = Provider.of<AdminStateProvider>(context);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text("إرسال إشعار فوري للعملاء",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _titleController,
-            decoration: const InputDecoration(
-              labelText: "عنوان التنبيه",
-              border: OutlineInputBorder(),
+    return RefreshIndicator(
+      onRefresh: () => provider.fetchNotifications(),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text("إرسال إشعار فوري للعملاء",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                labelText: "عنوان التنبيه",
+                border: OutlineInputBorder(),
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _bodyController,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: "نص الإشعار الفوري",
-              border: OutlineInputBorder(),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _bodyController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: "نص الإشعار الفوري",
+                border: OutlineInputBorder(),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.send_outlined),
-            label: const Text("بث الإشعار لجميع التطبيقات"),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () async {
-              await provider.sendNotification(
-                title: _titleController.text,
-                body: _bodyController.text,
-              );
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("تم إرسال التنبيه بنجاح")),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.send_outlined),
+              label: const Text("بث الإشعار لجميع التطبيقات"),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                await provider.sendNotification(
+                  title: _titleController.text,
+                  body: _bodyController.text,
                 );
-              }
-            },
-          ),
-          const SizedBox(height: 24),
-          const Text("سجل الإشعارات المرسلة",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 10),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: provider.notifications.length,
-            itemBuilder: (ctx, idx) {
-              final n = provider.notifications[idx];
-              return Card(
-                child: ListTile(
-                  title: Text(n.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(n.body),
-                  trailing: Text(intl.DateFormat.jm().format(n.createdAt),
-                      style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                ),
-              );
-            },
-          ),
-        ],
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("تم إرسال التنبيه بنجاح")),
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("صندوق الإشعارات الواردة",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                if (provider.unreadCount > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${provider.unreadCount} غير مقروء',
+                      style: const TextStyle(color: Colors.white, fontSize: 11),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            if (provider.notifications.isEmpty)
+              _buildEmptyState(context, "لا توجد إشعارات واردة")
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: provider.notifications.length,
+                itemBuilder: (ctx, idx) {
+                  final n = provider.notifications[idx];
+                  return Card(
+                    color: n.isRead ? null : Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.2),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: ListTile(
+                      title: Text(n.title, style: TextStyle(fontWeight: n.isRead ? FontWeight.normal : FontWeight.bold)),
+                      subtitle: Text(n.body),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(intl.DateFormat.jm().format(n.createdAt),
+                              style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                          if (!n.isRead)
+                            const Icon(Icons.circle, size: 8, color: Colors.red),
+                        ],
+                      ),
+                      onTap: () {
+                        if (!n.isRead) {
+                          provider.markNotificationRead(n.id);
+                        }
+                      },
+                    ),
+                  );
+                },
+              ),
+          ],
+        ),
       ),
     );
   }

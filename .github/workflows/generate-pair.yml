@@ -75,8 +75,8 @@ jobs:
         with:
           channel: stable
           cache: true
-      - if: inputs.push == 'true' && inputs.lang != 'python'
-        uses: supabase/setup-cli@v1
+      # Push and the phone / password sign-in both deploy an Edge Function.
+      - uses: supabase/setup-cli@v1
         with:
           version: latest
 
@@ -89,7 +89,7 @@ jobs:
         run: |
           printf '%s' "$DESCRIPTION" > "$RUNNER_TEMP/description.txt"
           python scripts/pair.py backend --base "$BASE" --lang "$LANG_CHOICE" --admins "$ADMINS" --push "$PUSH" --description-file "$RUNNER_TEMP/description.txt"
-      - name: "Supabase: email code login"
+      - name: "Supabase: sign-in (and its self-test)"
         run: python scripts/pair.py auth --base "$BASE"
       - name: "Firebase: notifications"
         run: python scripts/pair.py firebase --base "$BASE"

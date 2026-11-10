@@ -1,0 +1,17 @@
+provider
+shared_preferences
+http
+intl
+fl_chart
+url_launcher
+flutter_animate
+uuid
+path_provider
+sqflite
+go_router
+cached_network_image
+flutter_svg
+firebase_core
+firebase_messaging
+image_picker
+geolocator

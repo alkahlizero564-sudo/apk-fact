@@ -1,0 +1,6 @@
+shared_preferences
+http
+firebase_core
+firebase_messaging
+image_picker
+geolocator

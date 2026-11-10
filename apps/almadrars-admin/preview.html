@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>إدارة المدرار للمقاولات الهندسية - almadrars Admin</title>
+  <style>
+    :root {
+      --m3-primary: #3A86FF;
+      --m3-primary-container: rgba(58, 134, 255, 0.18);
+      --m3-secondary: #FF006E;
+      --m3-accent: #FFBE0B;
+      --m3-bg-gradient: linear-gradient(145deg, #070B14 0%, #0F172A 50%, #172554 100%);
+      --m3-surface-glass-card: rgba(30, 41, 59, 0.65);
+      --m3-border-glass: rgba(255, 255, 255, 0.12);
+      --m3-text-high: #F8FAFC;
+      --m3-text-medium: #94A3B8;
+      --m3-success: #10B981;
+      --m3-warning: #F59E0B;
+      --m3-error: #EF4444;
+      --m3-radius-full: 9999px;
+      --font-family: system-ui, -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-family); }
+    body { background-color: #030712; color: var(--m3-text-high); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    
+    #apkfact-screens {
+      position: fixed; top: 0; left: 0; right: 0; height: 44px;
+      background: rgba(3, 7, 18, 0.94); backdrop-filter: blur(12px);
+      z-index: 9999; display: flex; align-items: center; padding: 0 10px; gap: 8px; overflow-x: auto;
+      border-bottom: 1px solid rgba(255,255,255,0.1); scrollbar-width: none;
+    }
+    .screen-pill {
+      background: rgba(255,255,255,0.08); color: #CBD5E1; border: 1px solid rgba(255,255,255,0.12);
+      padding: 5px 14px; border-radius: var(--m3-radius-full); font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer;
+    }
+    .screen-pill.active { background: var(--m3-primary); color: #FFF; border-color: var(--m3-primary); }
+
+    .app-viewport {
+      width: 100%; max-width: 430px; height: calc(100vh - 44px); margin-top: 44px;
+      background: var(--m3-bg-gradient); position: relative; display: flex; flex-direction: column; overflow: hidden;
+      border-left: 1px solid rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.05);
+    }
+    @media (min-width: 431px) {
+      .app-viewport { height: 880px; margin-top: 54px; border-radius: 36px; border: 2px solid rgba(255,255,255,0.12); }
+    }
+
+    .app-content { flex: 1; position: relative; overflow-y: auto; display: flex; flex-direction: column; scrollbar-width: none; }
+    .view { display: none; flex-direction: column; width: 100%; min-height: 100%; padding-bottom: 90px; }
+    .view.active { display: flex; }
+
+    .glass-card {
+      background: var(--m3-surface-glass-card); backdrop-filter: blur(16px);
+      border: 1px solid var(--m3-border-glass); border-radius: 16px; padding: 16px; margin-bottom: 12px;
+    }
+    .app-header {
+      padding: 14px 20px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 40; background: rgba(10, 15, 29, 0.88); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .btn-m3-primary {
+      width: 100%; height: 48px; background: linear-gradient(135deg, #3A86FF 0%, #2563EB 100%); color: #FFF;
+      border: none; border-radius: 12px; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .flutter-nav-bar {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 70px;
+      background: rgba(10, 15, 29, 0.94); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex; justify-content: space-around; align-items: center; z-index: 100;
+    }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--m3-text-medium); cursor: pointer; }
+    .nav-item.active { color: var(--m3-primary); }
+    .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .kpi-card { background: rgba(30,41,59,0.6); border: 1px solid var(--m3-border-glass); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+    .form-input { width: 100%; height: 48px; background: rgba(15,23,42,0.7); border: 1px solid var(--m3-border-glass); border-radius: 12px; padding: 0 14px; color: #FFF; outline: none; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+
+  <div id="apkfact-screens">
+    <div class="screen-pill active" onclick="switchView('screen-dashboard', this)">📊 اللوحة</div>
+    <div class="screen-pill" onclick="switchView('screen-auth', this)">🔐 حساب الإدارة والدخول</div>
+    <div class="screen-pill" onclick="switchView('screen-requests', this)">📋 الطلبات</div>
+    <div class="screen-pill" onclick="switchView('screen-services', this)">🏗️ الخدمات</div>
+    <div class="screen-pill" onclick="switchView('screen-customers', this)">👥 الزبائن</div>
+    <div class="screen-pill" onclick="switchView('screen-notifications', this)">🔔 الإشعارات</div>
+    <div class="screen-pill" onclick="switchView('screen-settings', this)">⚙️ الإعدادات</div>
+    <div class="screen-pill" onclick="switchView('screen-skeleton', this)">⏳ Skeleton</div>
+    <div class="screen-pill" onclick="switchView('screen-empty', this)">📭 Empty</div>
+  </div>
+
+  <div class="app-viewport">
+    <div class="app-content">
+
+      <!-- DASHBOARD -->
+      <div id="screen-dashboard" class="view active">
+        <div class="app-header"><div style="font-weight:800;">إدارة المدرار للمقاولات الهندسية</div></div>
+        <div style="padding: 16px;">
+          <div class="glass-card" style="background: linear-gradient(135deg, rgba(58,134,255,0.2) 0%, rgba(15,23,42,0.9) 100%);">
+            <div style="color:var(--m3-primary); font-weight:700; font-size:12px;">مرحباً م. عبد الله الورفلي 👋</div>
+            <h2 style="font-size:18px; margin-top:2px;">لوحة متابعة المشاريع والإحصائيات</h2>
+          </div>
+          <div class="kpi-grid">
+            <div class="kpi-card"><div style="font-size:12px; color:grey;">إجمالي طلبات المقاولات</div><div style="font-size:20px; font-weight:800;">148</div><div style="font-size:10px; color:var(--m3-success);">▲ +14%</div></div>
+            <div class="kpi-card"><div style="font-size:12px; color:grey;">بانتظار عرض السعر</div><div style="font-size:20px; font-weight:800; color:var(--m3-warning);">5</div><div style="font-size:10px; color:var(--m3-warning);">● تحرك عاجل</div></div>
+            <div class="kpi-card"><div style="font-size:12px; color:grey;">مشاريع قيد التنفيذ</div><div style="font-size:20px; font-weight:800; color:var(--m3-success);">18</div><div style="font-size:10px; color:var(--m3-success);">▲ صب وعمدان</div></div>
+            <div class="kpi-card"><div style="font-size:12px; color:grey;">قيمة العقود النشطة</div><div style="font-size:16px; font-weight:800;">1,850,000 د.ل</div><div style="font-size:10px; color:grey;">إجمالي العقود</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AUTH -->
+      <div id="screen-auth" class="view">
+        <div class="app-header"><div style="font-weight:800;">حساب الإدارة والدخول</div></div>
+        <div style="padding: 20px;">
+          <div class="glass-card">
+            <h3 style="margin-bottom:12px;">تسجيل دخول الإدارة</h3>
+            <input type="email" class="form-input" value="admin@almadrars.ly">
+            <input type="password" class="form-input" placeholder="كلمة المرور">
+            <button class="btn-m3-primary" onclick="switchView('screen-dashboard', document.querySelectorAll('.screen-pill')[0])">دخول لوحة التحكم</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- REQUESTS -->
+      <div id="screen-requests" class="view">
+        <div class="app-header"><div style="font-weight:800;">إدارة طلبات الزبائن والتسعير</div></div>
+        <div style="padding: 16px;">
+          <input type="text" class="form-input" placeholder="🔍 بحث باسم الزبون...">
+          <div class="glass-card">
+            <div style="display:flex; justify-content:space-between;"><span style="color:grey; font-size:12px;">طلب #MD-9042</span><span style="color:var(--m3-warning); font-size:11px; font-weight:bold;">بانتظار عرض السعر</span></div>
+            <h4 style="margin-top:4px;">م. سالم الفيتوري</h4>
+            <div style="font-size:12px; color:grey; margin-bottom:12px;">الخدمة: صب من الأول وصب طوابق</div>
+            <button class="btn-m3-primary" style="height:36px; font-size:12px;">💵 إضافة عرض السعر</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SERVICES -->
+      <div id="screen-services" class="view">
+        <div class="app-header"><div style="font-weight:800;">إدارة الخدمات والتشطيبات</div></div>
+        <div style="padding: 16px;">
+          <div class="glass-card">
+            <h4 style="margin-bottom:6px;">تشطيب داخلي وخارجي</h4>
+            <p style="font-size:12px; color:grey; margin-bottom:10px;">أعمال الدهانات والديكورات الحديثة وواجهات الحجر.</p>
+            <button class="btn-m3-primary" style="height:36px; font-size:12px;">✏️ تعديل تفاصيل الخدمة</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CUSTOMERS -->
+      <div id="screen-customers" class="view">
+        <div class="app-header"><div style="font-weight:800;">قائمة الزبائن والعملاء</div></div>
+        <div style="padding: 16px;">
+          <div class="glass-card" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <h4 style="font-size:14px;">م. سالم الفيتوري</h4>
+              <div style="font-size:11px; color:grey;">0912345678 • طرابلس - السراج</div>
+            </div>
+            <button class="btn-m3-primary" style="width:auto; padding:6px 12px; font-size:11px;">اتصال</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTIFICATIONS -->
+      <div id="screen-notifications" class="view">
+        <div class="app-header"><div style="font-weight:800;">الإشعارات وتنبيهات الزبائن</div></div>
+        <div style="padding: 16px;">
+          <div class="glass-card">
+            <h4 style="font-size:13px; margin-bottom:8px;">📣 إرسال إشعار عام للزبائن</h4>
+            <input type="text" class="form-input" value="تخفيض خاص على خدمات الصب">
+            <button class="btn-m3-primary" style="height:38px; font-size:12px;" onclick="alert('تم إرسال التنبيه الفوري')">إرسال التنبيه الفوري 🚀</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="screen-settings" class="view">
+        <div class="app-header"><div style="font-weight:800;">إعدادات النظام الإداري</div></div>
+        <div style="padding: 16px;">
+          <div class="glass-card">
+            <h4 style="margin-bottom:10px;">م. عبد الله الورفلي</h4>
+            <div style="font-size:12px; color:var(--m3-primary); margin-bottom:14px;">admin@almadrars.ly</div>
+            <button class="btn-m3-primary" style="background:var(--m3-error); height:38px; font-size:12px;" onclick="switchView('screen-auth', document.querySelectorAll('.screen-pill')[1])">تسجيل الخروج</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SKELETON -->
+      <div id="screen-skeleton" class="view">
+        <div class="app-header"><div style="font-weight:800;">حالة التحميل</div></div>
+        <div style="padding: 16px;">
+          <div class="glass-card"><div style="width:50%; height:16px; background:rgba(255,255,255,0.1); border-radius:4px; margin-bottom:10px;"></div><div style="width:90%; height:12px; background:rgba(255,255,255,0.05); border-radius:4px;"></div></div>
+        </div>
+      </div>
+
+      <!-- EMPTY -->
+      <div id="screen-empty" class="view">
+        <div class="app-header"><div style="font-weight:800;">حالة الفارغ</div></div>
+        <div style="padding: 40px 16px; text-align:center;">
+          <h3 style="margin-bottom:6px;">لا توجد طلبات جديدة حالياً</h3>
+          <p style="font-size:12px; color:grey; margin-bottom:16px;">جميع الطلبات تم التعامل معها.</p>
+          <button class="btn-m3-primary" style="width:auto; display:inline-flex; padding:0 24px;" onclick="switchView('screen-dashboard', document.querySelectorAll('.screen-pill')[0])">العودة للوحة التحكم</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="flutter-nav-bar">
+      <div class="nav-item active" onclick="switchView('screen-dashboard', document.querySelectorAll('.screen-pill')[0])"><span>📊</span><span style="font-size:10px; font-weight:700;">اللوحة</span></div>
+      <div class="nav-item" onclick="switchView('screen-requests', document.querySelectorAll('.screen-pill')[2])"><span>📋</span><span style="font-size:10px; font-weight:700;">الطلبات</span></div>
+      <div class="nav-item" onclick="switchView('screen-services', document.querySelectorAll('.screen-pill')[3])"><span>🏗️</span><span style="font-size:10px; font-weight:700;">الخدمات</span></div>
+      <div class="nav-item" onclick="switchView('screen-settings', document.querySelectorAll('.screen-pill')[6])"><span>⚙️</span><span style="font-size:10px; font-weight:700;">الإعدادات</span></div>
+    </div>
+  </div>
+
+  <script>
+    function switchView(viewId, pillElem) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+      if (pillElem) {
+        document.querySelectorAll('.screen-pill').forEach(p => p.classList.remove('active'));
+        pillElem.classList.add('active');
+      }
+    }
+  </script>
+</body>
+</html>

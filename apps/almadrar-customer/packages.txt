@@ -1,8 +1,0 @@
-provider
-shared_preferences
-http
-intl
-flutter_animate
-uuid
-firebase_core
-firebase_messaging

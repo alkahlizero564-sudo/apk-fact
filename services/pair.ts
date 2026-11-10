@@ -93,6 +93,22 @@ async function syncSecrets(push: boolean, supabaseRef?: string) {
     parseServiceAccount(sa);
     await setRepoSecret("FIREBASE_SERVICE_ACCOUNT", sa);
   }
+  // The pair is generated on GitHub, so the AI keys must be repo secrets too — Settings only keeps them on the
+  // phone (for the instant preview). Push every key the user entered, so all of them are available to the build
+  // (more keys = far fewer failures when a model is busy/rate-limited). Without this, only a manually-set key works.
+  const geminiKeys = (
+    await Promise.all(["GEMINI_API_KEY", "GEMINI_API_KEY_2", "GEMINI_API_KEY_3"].map((k) => get(k)))
+  ).filter(Boolean);
+  if (!geminiKeys.length) throw new Error("أضف مفتاح Gemini واحداً على الأقل من الإعدادات.");
+  await Promise.all([
+    setRepoSecret("GEMINI_API_KEY", geminiKeys[0]),
+    geminiKeys[1] ? setRepoSecret("GEMINI_API_KEY_2", geminiKeys[1]) : Promise.resolve(),
+    geminiKeys[2] ? setRepoSecret("GEMINI_API_KEY_3", geminiKeys[2]) : Promise.resolve(),
+  ]);
+  const claude = await get("CLAUDE_API_KEY");
+  if (claude) await setRepoSecret("CLAUDE_API_KEY", claude);
+  const model = await get("GEMINI_MODEL");
+  if (model) await setRepoVariable("GEMINI_MODEL", model);
 }
 
 // Workflow step name -> timeline step key.

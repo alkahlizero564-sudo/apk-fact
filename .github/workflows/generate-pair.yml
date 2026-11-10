@@ -109,5 +109,14 @@ jobs:
           git config user.email "actions@github.com"
           git add apps fixes
           git commit -m "Generate connected apps: $BASE" || echo "nothing to commit"
-          git pull --rebase
-          git push
+          # main may have moved while we generated (merged PRs, or a duplicate run of this same pair). Sync with a
+          # merge that keeps THIS run's freshly generated files on any conflict (-X ours), and retry the push a few
+          # times for the normal race where someone pushes between our fetch and push.
+          pushed=0
+          for i in 1 2 3 4 5; do
+            git fetch origin main || true
+            git merge -X ours --no-edit origin/main || { git merge --abort || true; }
+            if git push origin HEAD:main; then echo "saved on attempt $i"; pushed=1; break; fi
+            sleep $((i * 3))
+          done
+          if [ "$pushed" != 1 ]; then echo "::error::could not push the generated apps to main after retries"; exit 1; fi

@@ -1,0 +1,125 @@
+{
+ "pair": "almadrars",
+ "prefix": "almadrars",
+ "lang": "flutter",
+ "push": true,
+ "admins": [
+  "awadaljied8@gmail.com"
+ ],
+ "description": "المدرار للمقاولات الهندسية\nعندنا تشطيب داخلي وخارجب\nوعندنا صب من الاول وصب طوابق\nوشغل شقه كامله جاهزه بالتشطيب\nوصب عمدان\nوغيرها\n\n=== المواصفات اللي وافق عليها صاحب التطبيق (نفّذها كلها بند بند، ولا تضيف تطبيق مختلف) ===\nالفكرة: تطبيق 'المدرار للمقاولات الهندسية' هو نظام مكون من تطبيقين (للزبون وللإدارة) يعتمدان على قاعدة بيانات واحدة لتصفح وطلب خدمات المقاولات والتشطيبات والخرسانات وإدارتها والتواصل عبر الواتساب والمكالمات.\nالشاشات:\n- «الزبون: » شاشة التسجيل وتأكيد البريد الإلكتروني (الاسم، رقم الهاتف، البريد الإلكتروني، رمز التأكيد، كلمة المرور)\n- «الإدارة: » شاشة تسجيل دخول وإنشاء حساب الإدارة (الاسم، رقم الهاتف، البريد الإلكتروني، رمز التأكيد، كلمة المرور)\n- «الزبون: » الشاشة الرئيسية وتعرض أقسام خدمات المقاولات والتشطيبات\n- «الزبون: » شاشة تفاصيل الخدمة وتقديم طلب معاينة أو مشروع جديد مع رفع الصور والمخططات الهندسية\n- «الزبون: » شاشة طلباتي وتتبع حالة تنفيذ مشروعات المقاولات مع خيارات التواصل عبر الواتساب والمكالمات\n- «الزبون: » شاشة الملف الشخصي وتعديل البيانات\n- «الإدارة: » شاشة لوحة التحكم وإحصائيات طلبات المقاولات والمشاريع\n- «الإدارة: » شاشة إدارة طلبات الزبائن وتحديد التكلفة واستعراض الصور والمخططات المرفقة وتحديث حالة التنفيذ والتواصل مع الزبون\n- «الإدارة: » شاشة إدارة الخدمات (إضافة وتعديل خدمات التشطيب والصب)\nالميزات والوظائف:\n- «الزبون: » إنشاء حساب جديد وتسجيل الدخول عبر البريد الإلكتروني ورمز التأكيد وكلمة المرور ورقم الهاتف والاسم.\n- «الإدارة: » إنشاء حساب وتسجيل دخول مدراء النظام عبر البريد الإلكتروني ورمز التأكيد وكلمة المرور ورقم الهاتف والاسم.\n- «الزبون: » تصفح قائمة خدمات المقاولات (تشطيب داخلي وخارجي، صب من الأول وصب طوابق، شغل شقة كاملة جاهزة بالتشطيب، صب عمدان).\n- «الزبون: » إرسال طلب مشروع أو معاينة مع تحديد نوع الخدمة والتفاصيل والموقع وإرفاق صور المبنى والمخططات الهندسية من الهاتف.\n- «الزبون: » تتبع مراحل طلب المقاولات (قيد المراجعة، تم التسعير، قيد التنفيذ، مكتمل).\n- «الزبون: » التواصل المباشر مع الإدارة لمتابعة تفاصيل المشروع عبر الاتصال الهاتفي وتطبيق الواتساب.\n- «الإدارة: » استقبال طلبات المقاولات والاطلاع على تفاصيل الزبون والموقع والمعاينة للصور والمخططات المرفقة.\n- «الإدارة: » إضافة عروض الأسعار والمواصفات الفنية لطلبات الزبائن.\n- «الإدارة: » التواصل السريع مع الزبون عبر الواتساب أو المكالمة الهاتفية بنقرة واحدة من شاشة الطلب.\n- «الإدارة: » التحكم بقائمة الخدمات وتحديد الخدمات المتاحة.\n- «الاثنين: » إرسال إشعارات فورية عند تغيير حالة الطلب أو إضافة عرض سعر.\nالبيانات اللي التطبيق بيحفظها:\n- «الاثنين: » بيانات الحساب (الاسم الكامل، رقم الهاتف، البريد الإلكتروني، كلمة المرور، نوع الحساب زبون/إدارة)\n- «الاثنين: » بيانات الخدمة (اسم الخدمة، الوصف، الصور، الحالة)\n- «الاثنين: » بيانات طلب المقاولات (معرف الزبون، نوع الخدمة، تفاصيل المشروع، صور المبنى والمخططات الهندسية المرفقة، الموقع، السعر التقديري، حالة الطلب، تاريخ الطلب)\nالأسماء والنصوص والأرقام والألوان:\n- almadrars\n- المدرار للمقاولات الهندسية\n- تشطيب داخلي وخارجي\n- صب من الأول وصب طوابق\n- شغل شقة كاملة جاهزة بالتشطيب\n- صب عمدان\nالصلاحيات: الإشعارات، الموقع، الكاميرا، الصور والملفات، الاتصال المباشر\nANDROID_PERMISSIONS: NOTIFICATIONS, LOCATION, CAMERA, STORAGE, CALL_PHONE\nLOGIN: customer=phone_email_code admin=phone_email_code",
+ "login": {
+  "customer": "phone_email_code",
+  "admin": "phone_email_code"
+ },
+ "supabase": {
+  "url": "https://jvjtgzewumfecjdpekna.supabase.co",
+  "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE",
+  "ref": "jvjtgzewumfecjdpekna"
+ },
+ "schemaSql": "-- ==========================================\n-- المدرار للمقاولات الهندسية (almadrars)\n-- Database Schema for Customer & Admin Apps\n-- ==========================================\n\n-- إعادة تهيئة الجداول لضمان تطابق أنواع البيانات (UUID)\ndrop table if exists public.almadrars_project_stages cascade;\ndrop table if exists public.almadrars_requests cascade;\ndrop table if exists public.almadrars_services cascade;\ndrop table if exists public.almadrars_settings cascade;\n\n-- 1. جدول خدمات المقاولات والتشطيبات والخرسانات (Catalog)\ncreate table public.almadrars_services (\n    id uuid primary key default gen_random_uuid(),\n    title text not null,\n    category text not null, -- تشطيبات وديكور، صب وخرسانات مسلحة، تسليم مفتاح\n    description text,\n    image_url text,\n    projects_count integer not null default 0,\n    is_available boolean not null default true,\n    created_at timestamptz not null default now()\n);\n\nalter table public.almadrars_services enable row level security;\n\ndrop policy if exists \"almadrars_services_select_authenticated\" on public.almadrars_services;\ncreate policy \"almadrars_services_select_authenticated\" on public.almadrars_services\n    for select to authenticated using (true);\n\ndrop policy if exists \"almadrars_services_admin_all\" on public.almadrars_services;\ncreate policy \"almadrars_services_admin_all\" on public.almadrars_services\n    for all to authenticated using (public.almadrars_is_admin()) with check (public.almadrars_is_admin());\n\n\n-- 2. جدول طلبات المعاينة والمشاريع والتسعير (Customer Data)\ncreate table public.almadrars_requests (\n    id uuid primary key default gen_random_uuid(),\n    customer_id uuid not null default auth.uid() references auth.users(id) on delete cascade,\n    request_number text not null, -- e.g. MD-9042, MD-8841\n    service_id uuid references public.almadrars_services(id) on delete set null,\n    service_type text not null, -- نوع الخدمة المطلوبة\n    location text not null, -- المدينة والحي\n    area_sqm numeric, -- المساحة التقديرية (متر مربع)\n    details text, -- تفاصيل المشروع والاحتياجات\n    attachments jsonb not null default '[]'::jsonb, -- أسماء وصور ومخططات الخرسانات والمبنى\n    status text not null default 'pending_review', -- pending_review (قيد المراجعة), priced (تم التسعير), in_progress (قيد التنفيذ), completed (مكتمل)\n    status_notes text, -- ملاحظات التحديث للزبون\n    estimated_cost numeric(12,2), -- التكلفة التقديرية / عرض السعر (دينار ليبي)\n    estimated_duration text, -- المدة التقديرية للتنفيذ (أيام/أشهر)\n    technical_specs text, -- المواصفات الفنية المعتمدة للمشروع\n    completion_percentage integer not null default 0, -- نسبة الإنجاز الميداني\n    created_at timestamptz not null default now(),\n    updated_at timestamptz not null default now()\n);\n\nalter table public.almadrars_requests enable row level security;\n\ndrop policy if exists \"almadrars_requests_customer_select\" on public.almadrars_requests;\ncreate policy \"almadrars_requests_customer_select\" on public.almadrars_requests\n    for select to authenticated using (customer_id = auth.uid());\n\ndrop policy if exists \"almadrars_requests_customer_insert\" on public.almadrars_requests;\ncreate policy \"almadrars_requests_customer_insert\" on public.almadrars_requests\n    for insert to authenticated with check (customer_id = auth.uid());\n\ndrop policy if exists \"almadrars_requests_customer_update\" on public.almadrars_requests;\ncreate policy \"almadrars_requests_customer_update\" on public.almadrars_requests\n    for update to authenticated using (customer_id = auth.uid()) with check (customer_id = auth.uid());\n\ndrop policy if exists \"almadrars_requests_admin_all\" on public.almadrars_requests;\ncreate policy \"almadrars_requests_admin_all\" on public.almadrars_requests\n    for all to authenticated using (public.almadrars_is_admin()) with check (public.almadrars_is_admin());\n\n\n-- 3. جدول مراحل تتبع المشروعات (Project Tracking Stages)\ncreate table public.almadrars_project_stages (\n    id uuid primary key default gen_random_uuid(),\n    customer_id uuid not null default auth.uid() references auth.users(id) on delete cascade,\n    request_id uuid not null references public.almadrars_requests(id) on delete cascade,\n    stage_key text not null, -- inspection, priced, in_progress, completed\n    stage_title text not null,\n    stage_description text,\n    is_current boolean not null default false,\n    is_completed boolean not null default false,\n    created_at timestamptz not null default now()\n);\n\nalter table public.almadrars_project_stages enable row level security;\n\ndrop policy if exists \"almadrars_project_stages_customer_select\" on public.almadrars_project_stages;\ncreate policy \"almadrars_project_stages_customer_select\" on public.almadrars_project_stages\n    for select to authenticated using (customer_id = auth.uid());\n\ndrop policy if exists \"almadrars_project_stages_customer_insert\" on public.almadrars_project_stages;\ncreate policy \"almadrars_project_stages_customer_insert\" on public.almadrars_project_stages\n    for insert to authenticated with check (customer_id = auth.uid());\n\ndrop policy if exists \"almadrars_project_stages_admin_all\" on public.almadrars_project_stages;\ncreate policy \"almadrars_project_stages_admin_all\" on public.almadrars_project_stages\n    for all to authenticated using (public.almadrars_is_admin()) with check (public.almadrars_is_admin());\n\n\n-- 4. جدول إعدادات النظام ومزامنة قاعدة البيانات الإدارية (Admin Config)\ncreate table public.almadrars_settings (\n    id uuid primary key default gen_random_uuid(),\n    key text unique not null,\n    value jsonb not null,\n    created_at timestamptz not null default now(),\n    updated_at timestamptz not null default now()\n);\n\nalter table public.almadrars_settings enable row level security;\n\ndrop policy if exists \"almadrars_settings_select_authenticated\" on public.almadrars_settings;\ncreate policy \"almadrars_settings_select_authenticated\" on public.almadrars_settings\n    for select to authenticated using (true);\n\ndrop policy if exists \"almadrars_settings_admin_all\" on public.almadrars_settings;\ncreate policy \"almadrars_settings_admin_all\" on public.almadrars_settings\n    for all to authenticated using (public.almadrars_is_admin()) with check (public.almadrars_is_admin());\n\n\n-- ==========================================\n-- البيانات الأولية (Sample Rows)\n-- ==========================================\n\ninsert into public.almadrars_services (id, title, category, description, projects_count, is_available)\nvalues \n  ('11111111-1111-1111-1111-111111111111', 'تشطيب داخلي وخارجي', 'تشطيبات وديكور', 'مستعدون لاستلام أعمال الدهانات، الديكورات الحديثة، واجهات الحجر، السيراميك، والكهرباء والسباكة بأعلى جودة.', 42, true),\n  ('22222222-2222-2222-2222-222222222222', 'صب من الأول وصب طوابق', 'صب وخرسانات مسلحة', 'صب القواعد والأساسات والأسقف الهندسية المسلحة حسب أحدث المخططات المعمارية المعتمدة.', 65, true),\n  ('33333333-3333-3333-3333-333333333333', 'شغل شقة كاملة جاهزة بالتشطيب', 'تسليم مفتاح', 'تسليم مفتاح متكامل شامل الهيكل الخرساني العظم والتشطيب الفاخر والمواصفات العصرية.', 28, true),\n  ('44444444-4444-4444-4444-444444444444', 'صب عمدان', 'صب وخرسانات مسلحة', 'تنفيذ وصب الأعمدة الخرسانية باستخدام الخرسانة الجاهزة بدقة وقوالب عالية التحمل للمباني.', 31, true)\non conflict (id) do update set\n  title = excluded.title,\n  category = excluded.category,\n  description = excluded.description,\n  projects_count = excluded.projects_count,\n  is_available = excluded.is_available;\n\ninsert into public.almadrars_settings (key, value)\nvalues \n  ('notifications_enabled', 'true'::jsonb),\n  ('whatsapp_auto_alert', 'true'::jsonb),\n  ('database_sync', '{\"connected\": true, \"status\": \"active\"}'::jsonb)\non conflict (key) do update set value = excluded.value;",
+ "contract": {
+  "tables": [
+   {
+    "name": "almadrars_services",
+    "purpose": "دليل خدمات المقاولات والتشطيبات والخرسانات المتاحة للطلب من الزبائن",
+    "columns": [
+     "id uuid",
+     "title text",
+     "category text",
+     "description text",
+     "image_url text",
+     "projects_count integer",
+     "is_available boolean",
+     "created_at timestamptz"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "almadrars_requests",
+    "purpose": "بيانات طلبات المعاينة والمشاريع والتسعير والموقع والمرفقات وحالة التنفيذ",
+    "columns": [
+     "id uuid",
+     "customer_id uuid",
+     "request_number text",
+     "service_id uuid",
+     "service_type text",
+     "location text",
+     "area_sqm numeric",
+     "details text",
+     "attachments jsonb",
+     "status text",
+     "status_notes text",
+     "estimated_cost numeric",
+     "estimated_duration text",
+     "technical_specs text",
+     "completion_percentage integer",
+     "created_at timestamptz",
+     "updated_at timestamptz"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "almadrars_project_stages",
+    "purpose": "تسجيل مراحل تتبع تنفيذ مشروعات المقاولات وتفاصيل المعاينة والتسعير للزبون",
+    "columns": [
+     "id uuid",
+     "customer_id uuid",
+     "request_id uuid",
+     "stage_key text",
+     "stage_title text",
+     "stage_description text",
+     "is_current boolean",
+     "is_completed boolean",
+     "created_at timestamptz"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "almadrars_settings",
+    "purpose": "إعدادات النظام والتنبيهات الموحدة ومزامنة لوحة تحكم الإدارة",
+    "columns": [
+     "id uuid",
+     "key text",
+     "value jsonb",
+     "created_at timestamptz",
+     "updated_at timestamptz"
+    ],
+    "owner": "admin"
+   }
+  ],
+  "events": [
+   {
+    "when": "إرسال طلب مشروع أو معاينة جديدة من شاشة طلب الخدمة بالتطبيق",
+    "notify": "admin",
+    "title": "طلب معاينة جديد"
+   },
+   {
+    "when": "إضافة عرض سعر ومواصفات فنية للمشروع من لوحة الإدارة",
+    "notify": "customer",
+    "title": "إضافة عرض سعر جديد"
+   },
+   {
+    "when": "تحديث حالة التنفيذ أو نسبة الإنجاز الميداني من لوحة الإدارة",
+    "notify": "customer",
+    "title": "تحديث حالة المشروع"
+   },
+   {
+    "when": "إرسال تنبيه جماعي فوري لجميع الزبائن من شاشة الإشعارات",
+    "notify": "customer",
+    "title": "تنبيه من المدرار للمقاولات"
+   }
+  ]
+ },
+ "apps": {
+  "customer": {
+   "name": "almadrars-customer",
+   "packageId": "com.generated.app_almadrars_customer"
+  },
+  "admin": {
+   "name": "almadrars-admin",
+   "packageId": "com.generated.app_almadrars_admin"
+  }
+ },
+ "role": "customer",
+ "pushFunction": "almadrars-push"
+}

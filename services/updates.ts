@@ -13,7 +13,7 @@ export type Snapshot = { path: string; content: string }[];
 export type PublishedVersion = { version: number; versionName?: string; notes?: string; at?: string };
 export type PairInfo = { role: "customer" | "admin"; partner: string; lang: Lang; prefix: string; ref: string };
 
-const DEPS_FILE: Record<Lang, string | null> = { html: null, flutter: "packages.txt", python: "requirements.txt", kotlin: null };
+const DEPS_FILE: Record<Lang, string | null> = { html: null, react: null, flutter: "packages.txt", python: "requirements.txt", kotlin: null };
 
 function codeFiles(t: Target) {
   const files = [LANGS[t.lang].mainFile(t.name)];

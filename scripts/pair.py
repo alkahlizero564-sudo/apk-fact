@@ -642,17 +642,18 @@ def contract_text(st, role):
             "and the data of the current screen (the status/record it is about), so the change shows at once."
         ),
         "python": "",
-    }[lang]
+    }[("html" if lang == "react" else lang)]  # React ships as a Capacitor/JS app, same as HTML
     signin = signin_rules(st, role)
     live_hint = {
         "flutter": "start a Timer.periodic(const Duration(seconds: 15), ...) after sign-in, in a StatefulWidget, and "
                    "cancel it in dispose() and on sign out; also refresh in didChangeAppLifecycleState when the app "
                    "resumes (WidgetsBindingObserver)",
-        "html": "use setInterval(..., 15000) while signed in (store the id and clearInterval it on sign out), and also "
-                "refresh on the 'visibilitychange'/'focus' event when the page comes back to the foreground",
+        "html": "use setInterval(..., 15000) while signed in (store the id and clearInterval it on sign out) — in React, "
+                "from a useEffect that returns the clearInterval — and also refresh on the 'visibilitychange'/'focus' "
+                "event when the page comes back to the foreground",
         "python": "run a repeating refresh (e.g. page.run_task with asyncio.sleep(15) in a loop, or threading.Timer) "
                   "while signed in, and stop it on sign out",
-    }[lang]
+    }[("html" if lang == "react" else lang)]
     return f"""
 === CONNECTED PAIR CONTRACT (follow exactly) ===
 This is the {role.upper()} app of a pair; the {other} app is built separately against the SAME backend.
@@ -724,7 +725,10 @@ def cmd_generate(a):
         f.write(f"{name}\n{related}{request}\n\n(request id: {int(time.time())})\n")
         req = f.name
     env = {**os.environ, "REQUEST_FILE": req}
-    if lang == "html":
+    if lang in ("html", "react"):
+        # React, like HTML, is one self-contained index.html built by generate.js (React via CDN).
+        if lang == "react":
+            env["GEN_FRAMEWORK"] = "react"
         subprocess.run(["node", str(ROOT / "generate.js")], cwd=ROOT, env=env, check=True)
     else:
         subprocess.run([sys.executable, str(ROOT / "scripts" / "generate_native.py"), lang], cwd=ROOT, env=env, check=True)
@@ -756,7 +760,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("command", choices=["backend", "auth", "firebase", "generate", "push"])
     ap.add_argument("--base", required=True)
-    ap.add_argument("--lang", default="html", choices=["html", "flutter", "python"])
+    ap.add_argument("--lang", default="html", choices=["html", "react", "flutter", "python"])
     ap.add_argument("--admins", default="")
     ap.add_argument("--push", default="true")
     ap.add_argument("--description-file")

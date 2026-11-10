@@ -7,7 +7,7 @@ on:
         description: "Project name (the apps become <base>-customer and <base>-admin)"
         required: true
       lang:
-        description: "html | flutter | python"
+        description: "html | react | flutter | python"
         required: true
         default: "flutter"
       admins:
@@ -59,7 +59,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - if: inputs.lang == 'html'
+      - if: inputs.lang == 'html' || inputs.lang == 'react'
         name: Browser for the HTML runtime check
         run: |
           npm i --no-save --no-package-lock --prefix "$RUNNER_TEMP/pw" playwright-core@1.48.2 > /dev/null || echo "playwright-core not installed: only the syntax check will run"

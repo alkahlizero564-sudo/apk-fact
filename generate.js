@@ -17,6 +17,8 @@ const request = lines.join("\n").trim();
 // What the AI reads: without the lines meant only for the build (permissions, sign-in mode), so they never end up
 // on a screen. The raw request is still saved and used for the permissions (scripts/perms.py).
 const aiRequest = request.replace(/^\s*(ANDROID_PERMISSIONS|LOGIN):.*$/gm, "").trim();
+// React apps are also one self-contained index.html (React via CDN), so they build and preview like HTML.
+const framework = /^react$/i.test(process.env.GEN_FRAMEWORK || "") ? "react" : "html";
 if (!name || !request) {
   console.error("السطر الأول اسم التطبيق (إنجليزي) والباقي الوصف");
   process.exit(1);
@@ -53,17 +55,41 @@ const designBrief = JSON.parse(
     .replace(/;\s*$/, "")
 );
 
-const system =
+const deviceNote =
+  "\nDevice features: when the owner asks for the camera, location, microphone, notifications, photos/files, " +
+  "vibration, calls or SMS, really implement them with the web APIs (getUserMedia, <input type=file capture>, " +
+  "navigator.geolocation, Notification, navigator.vibrate, tel:/sms: links). The Android permissions are added " +
+  "automatically; ask right before the feature is used and show a clear message with a retry when refused.\n";
+
+const htmlSystem =
   "You are an expert mobile app designer and web developer. Output ONE complete, self-contained HTML file " +
   "(inline CSS and JS, no external resources), built as a mobile app screen: full-height layout, " +
   "CSS variables for the palette, prefers-color-scheme for dark mode, localStorage for the user's data, " +
   "inline SVG or emoji for icons, and RTL Arabic support when the request is in Arabic.\n\n" +
   designBrief +
-  "\nDevice features: when the owner asks for the camera, location, microphone, notifications, photos/files, " +
-  "vibration, calls or SMS, really implement them with the web APIs (getUserMedia, <input type=file capture>, " +
-  "navigator.geolocation, Notification, navigator.vibrate, tel:/sms: links). The Android permissions are added " +
-  "automatically; ask right before the feature is used and show a clear message with a retry when refused.\n" +
+  deviceNote +
   "\nReply with ONLY the full file inside a single ```html code block. No explanations.";
+
+const reactSystem =
+  "You are an expert mobile app designer and React engineer. Output ONE complete, self-contained index.html that " +
+  "is a React 18 single-page mobile app. Load React from a CDN and write JSX — NO build step, NO bundler, NO npm:\n" +
+  "- In <head>, load these EXACT pinned scripts in this order: " +
+  "https://unpkg.com/react@18.3.1/umd/react.production.min.js then " +
+  "https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js then " +
+  "https://unpkg.com/@babel/standalone@7.26.4/babel.min.js . You MAY also add https://cdn.tailwindcss.com for styling.\n" +
+  "- Put ALL app code in ONE <script type=\"text/babel\" data-presets=\"react\"> … </script> that renders into " +
+  "<div id=\"root\"></div> via ReactDOM.createRoot. Use function components and hooks. Babel standalone runs a CLASSIC " +
+  "script, so use NO import/export, NO require, NO ES modules: read React, ReactDOM and hooks from globals " +
+  "(e.g. const { useState, useEffect, useMemo } = React;).\n" +
+  "- Mobile-app feel: full-height layout, CSS variables for the palette, prefers-color-scheme dark mode, a bottom " +
+  "tab bar or mobile navigation, large touch targets, smooth CSS transitions, inline SVG or emoji icons, and RTL " +
+  "Arabic when the request is Arabic. Persist the user's data with localStorage.\n" +
+  "- If a backend is needed, call it with fetch() (for Supabase use the REST API with the given URL and anon key).\n\n" +
+  designBrief +
+  deviceNote +
+  "\nReply with ONLY the full index.html inside a single ```html code block. No explanations.";
+
+const system = framework === "react" ? reactSystem : htmlSystem;
 
 // The design the owner approved in APK Fact (apps/<name>/design.html): build the real app from it.
 function designBlock() {
@@ -95,7 +121,7 @@ const prompt = existing
 // apps/<name>/meta.json keeps the app's description and every requested change (copied to the vault).
 function recordHistory(kind) {
   const metaFile = path.join(dir, "meta.json");
-  let meta = { name, lang: "html", history: [] };
+  let meta = { name, lang: framework, history: [] };
   try {
     meta = { ...meta, ...JSON.parse(fs.readFileSync(metaFile, "utf8")) };
   } catch {}

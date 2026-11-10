@@ -1,0 +1,38 @@
+name: Generate React App
+on:
+  push:
+    # Only requests on main: other branches merge main's request files and must not regenerate apps.
+    branches: [main]
+    paths: ["request-react.txt"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Browser for the HTML runtime check
+        run: |
+          npm i --no-save --no-package-lock --prefix "$RUNNER_TEMP/pw" playwright-core@1.48.2 > /dev/null || echo "playwright-core not installed: only the syntax check will run"
+          echo "NODE_PATH=$RUNNER_TEMP/pw/node_modules" >> "$GITHUB_ENV"
+      - name: Generate (React -> one self-contained index.html)
+        run: node generate.js
+        env:
+          GEN_FRAMEWORK: react
+          REQUEST_FILE: request-react.txt
+          AI_PROVIDER: claude
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+          GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+      - name: Commit
+        run: |
+          git config user.name "bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add apps
+          git diff --cached --quiet || (git commit -m "auto: update react app" && git push)

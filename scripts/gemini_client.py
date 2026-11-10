@@ -52,7 +52,7 @@ def _classify(e):
     return "retry"              # 503, timeout, unknown model: next model now
 
 
-def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=3, json_mode=True):
+def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=5, json_mode=True):
     models = [model] + [m for m in FALLBACK_MODELS if m != model]
     dead_keys = set()
     dead_pairs = set()
@@ -91,7 +91,8 @@ def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=3, json_mode=Tr
         )
         if all_dead or round_no == max_rounds - 1:
             break
-        wait = min(10 * (2 ** round_no), 60)
-        print(f"No model or key available, waiting {wait}s before the next round", flush=True)
+        # 503 "model overloaded" / timeouts can last a few minutes; back off patiently (15,30,60,90,90…) before giving up.
+        wait = min(15 * (2 ** round_no), 90)
+        print(f"No model or key available (service busy), waiting {wait}s before the next round", flush=True)
         time.sleep(wait)
     raise SystemExit(f"Gemini failed on all keys and models. Last error: {last}")

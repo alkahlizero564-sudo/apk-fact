@@ -628,8 +628,8 @@ def contract_text(st, role):
             "Push notifications (Capacitor, Android): when `window.Capacitor` exists use `const { PushNotifications } = "
             "Capacitor.Plugins;` -> `await PushNotifications.requestPermissions()` -> `await PushNotifications.register()`; "
             "on the 'registration' event call the RPC below with the token; on 'pushNotificationReceived' show an in-app "
-            "toast and refresh the inbox; on 'pushNotificationActionPerformed' open the inbox. Skip all of this when "
-            "Capacitor is missing (browser preview)."
+            "toast and re-fetch BOTH the inbox and the data of the current screen; on 'pushNotificationActionPerformed' "
+            "open the inbox. Skip all of this when Capacitor is missing (browser preview)."
         ),
         "flutter": (
             "Push notifications (Firebase): add packages firebase_core and firebase_messaging (put them in DEPS). "
@@ -638,11 +638,21 @@ def contract_text(st, role):
             "FirebaseMessaging.onBackgroundMessage(_bg);` where `_bg` is a top-level `@pragma('vm:entry-point')` "
             "function that also calls Firebase.initializeApp(options: firebaseOptions). After sign-in: "
             "`await FirebaseMessaging.instance.requestPermission(); final t = await FirebaseMessaging.instance.getToken();` "
-            "then call the RPC below; `FirebaseMessaging.onMessage.listen` shows a SnackBar and refreshes the inbox."
+            "then call the RPC below; `FirebaseMessaging.onMessage.listen` shows a SnackBar and re-fetches BOTH the inbox "
+            "and the data of the current screen (the status/record it is about), so the change shows at once."
         ),
         "python": "",
     }[lang]
     signin = signin_rules(st, role)
+    live_hint = {
+        "flutter": "start a Timer.periodic(const Duration(seconds: 15), ...) after sign-in, in a StatefulWidget, and "
+                   "cancel it in dispose() and on sign out; also refresh in didChangeAppLifecycleState when the app "
+                   "resumes (WidgetsBindingObserver)",
+        "html": "use setInterval(..., 15000) while signed in (store the id and clearInterval it on sign out), and also "
+                "refresh on the 'visibilitychange'/'focus' event when the page comes back to the foreground",
+        "python": "run a repeating refresh (e.g. page.run_task with asyncio.sleep(15) in a loop, or threading.Timer) "
+                  "while signed in, and stop it on sign out",
+    }[lang]
     return f"""
 === CONNECTED PAIR CONTRACT (follow exactly) ===
 This is the {role.upper()} app of a pair; the {other} app is built separately against the SAME backend.
@@ -674,6 +684,15 @@ Notifications:
     or {{"to_user": "<customer uuid>", …}} (admin -> one customer). The backend delivers it as a push notification.
   - Register this device after sign-in: rpc {p}_register_device {{"device_token": token, "app_name": "{role}"}}.
   {push_rules if push else ("Push is not available here: refresh the inbox every 30 seconds while the app is open and show new ones as an in-app banner." if lang == "python" else "Push notifications are off for this pair: refresh the inbox when the app opens.")}
+
+Live data — the two apps MUST stay in sync; this is the whole point of a connected pair:
+  - Always read from the backend, never trust a stale local copy: right after every insert/update/delete THIS app
+    makes, re-read the affected list so the screen shows the saved server state, not a guess.
+  - A repeating sync while the app is open and signed in: every 15 seconds re-fetch the notifications inbox AND the
+    list(s) the CURRENT screen shows. To do that, {live_hint}.
+  - When a notification arrives, refresh the data of the current screen too, not only the inbox (see Notifications).
+  So the admin sees a new customer record, and the customer sees the admin's status change, within seconds and
+  without anyone pressing refresh. Keep each refresh quiet (no full-screen spinner, no flicker, keep scroll position).
 
 Build the complete {role} experience for this business with real screens backed by these tables
 (the admin app manages everything and changes statuses; the customer app browses, creates and follows its own records).

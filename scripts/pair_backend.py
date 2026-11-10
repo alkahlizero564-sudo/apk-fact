@@ -65,14 +65,6 @@ language sql stable security definer set search_path = public as $$
   select case when exists (select 1 from public.{p}_admins a where lower(a.email) = lower(mail)) then 'admin' else 'customer' end
 $$;
 
--- The admin app gates its sign-in with this: only a configured admin email may get a code / sign in.
--- Callable before sign-in (anon), so the admin login screen can refuse a non-admin email before sending a code.
-create or replace function public.{p}_is_admin_email(mail text) returns boolean
-language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.{p}_admins a where lower(a.email) = lower(mail))
-$$;
-grant execute on function public.{p}_is_admin_email(text) to anon, authenticated;
-
 create or replace function public.{p}_handle_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin

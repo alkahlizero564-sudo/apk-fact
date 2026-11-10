@@ -59,10 +59,6 @@ def required(st):
                     f"returns false)", rf"{p}_claim_admin"))
     import pair
     mode, fn = pair.state_login(st)[role], f"{p.replace('_', '-')}-auth"
-    if role == "admin" and mode not in ("none", "phone_password"):
-        req.append((f"the admin login must accept ONLY an admin email: call rpc {p}_is_admin_email with the typed "
-                    f"email BEFORE sending any code or signing in, and refuse other emails with a clear message "
-                    f"(never send them a code)", rf"{p}_is_admin_email"))
     if mode in pair.VIA_FUNCTION:
         req.append((f"the sign-up of the contract: POST <SUPABASE_URL>/functions/v1/{fn} with action \"signup\" "
                     f"(name, {'phone' if mode == 'phone_password' else 'email'}, password)", rf"{fn}"))

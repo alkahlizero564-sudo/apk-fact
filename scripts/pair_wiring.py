@@ -45,6 +45,14 @@ def required(st):
         (f"sending a notification (POST {p}_notifications with to_role / to_user) whenever an event of the contract "
          f"happens in this app",
          r"to_(role|user)"),
+        # Live sync: both apps must re-fetch data on a short repeating interval, else a change in one app only
+        # appears in the other on a manual refresh (the almadrar complaint: weak send/receive between the pair).
+        ("keeping the two apps in sync: a repeating timer that, every ~15 seconds while signed in, re-fetches the "
+         "notifications inbox AND the lists the current screen shows (cancelled on dispose / sign out) — so a record "
+         "or a status change in one app appears in the other within seconds, not only on a manual refresh",
+         {"flutter": r"Timer\.periodic\(\s*(?:const\s+)?Duration\(seconds:\s*(?!1\b)\d+",
+          "html": r"setInterval\(",
+          "python": r"(Timer\.periodic|run_task|asyncio\.sleep|threading\.Timer)"}[lang]),
     ]
     if role == "admin":
         req.append((f"after sign-in / session start, calling rpc {p}_claim_admin (and the admin PIN screen when it "

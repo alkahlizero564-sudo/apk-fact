@@ -133,6 +133,29 @@ def missing_requirements(model, keys, cfg, task, code, is_edit):
         return []
 
 
+def design_gaps(model, keys, cfg, design_html, code):
+    """Ask the AI where the built app would LOOK different from the approved design the owner signed off on.
+
+    Fidelity to the approved design.html is what the user sees when the app is installed; without this check the
+    native code only loosely follows the prototype and drifts (the reported 'installed app is not like the preview').
+    """
+    prompt = (f"The owner reviewed and APPROVED the design prototype below (an HTML clickable mock). A {cfg['title']} "
+              "app was then built to match it. List every difference the user WOULD SEE when the app is installed: "
+              "screens that are in the design but missing or clearly different in the app; and differences in layout, "
+              "structure, colors, typography, spacing, corner radius, icons, components, texts and navigation. Ignore "
+              "the prototype's top reviewer switcher (id apkfact-screens) and tiny pixel differences. Be concrete "
+              "(name the screen and what differs). Reply with JSON only: {\"diffs\": [\"...\"]} (empty list when the "
+              "app already looks like the design).\n\n"
+              f"APPROVED DESIGN:\n```html\n{design_html}\n```\n\nAPP CODE:\n```{cfg['fence']}\n{code}\n```\n")
+    try:
+        text = call_gemini(model, prompt, keys, temperature=0.1, json_mode=True)
+        data = json.loads(re.sub(r"^[^{]*|[^}]*$", "", text))
+        return [d.strip() for d in data.get("diffs", []) if isinstance(d, str) and d.strip()][:15]
+    except Exception as e:
+        print(f"Design-fidelity check skipped ({e})")
+        return []
+
+
 def check_kotlin_app(app_dir, name):
     """Compile (and fix) the Kotlin app with Gradle when it is installed; never fails generation."""
     if not shutil.which("gradle"):
@@ -165,6 +188,7 @@ def main():
     base = Path("apps") / name
     code_path = base / cfg["code_file"]
     existing = code_path.read_text(encoding="utf-8") if code_path.exists() else ""
+    design_html = ""  # set in the create branch when an approved design.html exists (used for the fidelity pass)
 
     if preview_only:
         if not existing:
@@ -181,13 +205,14 @@ def main():
         return
 
     deps_text = ", ".join(cfg["allowed_deps"])
+    reply_fmt = reply_format([(cfg["fence"], f"the complete {cfg['code_file']}"), ("html", PREVIEW_RULES)])
     prompt = f"""{rules_for(lang)}
 
 {DESIGN_BRIEF}
 
 {PERMISSIONS_RULE}
 
-{reply_format([(cfg['fence'], f"the complete {cfg['code_file']}"), ("html", PREVIEW_RULES)])}
+{reply_fmt}
 
 App name: {name}
 """
@@ -202,12 +227,15 @@ App name: {name}
         prompt += f"\nDescription of the app to create:\n{task}\n"
         design = base / "design.html"
         if design.exists():
+            design_html = design.read_text(encoding="utf-8")[:90000]
             prompt += (f"\nAPPROVED DESIGN - the owner reviewed and approved this clickable design prototype. Build the "
                        f"real {cfg['title']} app so it looks exactly like it: the same screens, navigation, layout, colors, "
                        f"typography, spacing, corner radius, icons, texts and components (map them to the closest "
-                       f"{cfg['title']} widgets). Ignore the prototype's top 'screens' switcher (id apkfact-screens): it "
-                       f"is only for reviewing. Make every screen fully functional with real state and stored data.\n"
-                       f"```html\n{design.read_text(encoding='utf-8')[:60000]}\n```\n")
+                       f"{cfg['title']} widgets). Do NOT drop, merge or restyle any screen, and do not substitute a "
+                       f"generic layout — the installed app must match this design screen for screen. Ignore the "
+                       f"prototype's top 'screens' switcher (id apkfact-screens): it is only for reviewing. Make every "
+                       f"screen fully functional with real state and stored data.\n"
+                       f"```html\n{design_html}\n```\n")
 
     blocks, deps = parse_reply(call_gemini(model, prompt, keys, temperature=0.4, json_mode=False))
     code = blocks.get(cfg["fence"], "")
@@ -234,6 +262,32 @@ App name: {name}
             print(f"Warning: could not add the missing parts ({e})")
     else:
         print("Request check: everything asked for is implemented", flush=True)
+
+    # Fidelity to the approved design: on a fresh build (not an edit), make the installed app match the prototype
+    # the owner signed off on — the reported 'it looked different once installed'. One repair round fixes the gaps.
+    if design_html and not existing:
+        diffs = design_gaps(model, keys, cfg, design_html, code)
+        if diffs:
+            print("Differs from the approved design:\n- " + "\n- ".join(diffs), flush=True)
+            fixup = (f"{rules_for(lang)}\n\nThe {cfg['title']} app below was built from the APPROVED design, but a "
+                     f"reviewer found these VISIBLE differences from it. Fix every one so the installed app matches the "
+                     f"design exactly (same screens, layout, colors, typography, spacing, corner radius, icons, texts and "
+                     f"components), and keep everything else — all features and stored data — working:\n- "
+                     + "\n- ".join(diffs) +
+                     f"\n\n{reply_fmt}\n\n"
+                     f"APPROVED DESIGN:\n```html\n{design_html}\n```\n\n"
+                     f"CURRENT {cfg['code_file']}:\n```{cfg['fence']}\n{code}\n```\n")
+            try:
+                blocks3, deps3 = parse_reply(call_gemini(model, fixup, keys, temperature=0.3, json_mode=False))
+                if blocks3.get(cfg["fence"]):
+                    code = blocks3[cfg["fence"]]
+                    preview = blocks3.get("html") or preview
+                    deps = deps3 if deps3 is not None else deps
+                    print("Brought the app closer to the approved design", flush=True)
+            except Exception as e:  # keep the current version
+                print(f"Warning: could not apply the design fixes ({e})")
+        else:
+            print("Design check: the app matches the approved design", flush=True)
 
     code_path.parent.mkdir(parents=True, exist_ok=True)
     code_path.write_text(code + "\n", encoding="utf-8")

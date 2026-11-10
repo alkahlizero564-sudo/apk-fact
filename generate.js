@@ -367,6 +367,53 @@ async function completeRequirements(code, order) {
   return code;
 }
 
+// On a fresh build, make the app match the design the owner approved (not only the feature list): the reported
+// "the installed app did not look like the preview". One repair round fixes the visible differences.
+async function matchDesign(code, order) {
+  if (geminiKeys.length === 0 || existing) return code;
+  const f = path.join(dir, "design.html");
+  if (!fs.existsSync(f)) return code;
+  const design = fs.readFileSync(f, "utf8").slice(0, 80000);
+  const check = await tryGeminiKeys(
+    geminiKeys,
+    geminiModels,
+    2,
+    `The owner reviewed and APPROVED the design prototype below (an HTML clickable mock). An app was then built ` +
+      `to match it. List every difference the user WOULD SEE: screens in the design that are missing or clearly ` +
+      `different in the app, and differences in layout, structure, colors, typography, spacing, corner radius, ` +
+      `icons, components, texts and navigation. Ignore the top reviewer switcher (id apkfact-screens) and tiny ` +
+      `pixel differences. Be concrete (name the screen and what differs). Reply with JSON only: ` +
+      `{"diffs": ["..."]} (an empty list when the app already looks like the design).\n\nAPPROVED DESIGN:\n` +
+      "```html\n" + design + "\n```\n\nAPP CODE:\n" + "```html\n" + code + "\n```",
+    true
+  );
+  let diffs = [];
+  try {
+    diffs = JSON.parse((check.code || "").replace(/^[^{]*/, "").replace(/[^}]*$/, "")).diffs || [];
+  } catch {
+    return code;
+  }
+  diffs = diffs.filter((d) => typeof d === "string" && d.trim()).slice(0, 15);
+  if (!diffs.length) {
+    console.log("مراجعة التصميم: التطبيق مطابق للتصميم المعتمد");
+    return code;
+  }
+  console.log("يختلف عن التصميم المعتمد:\n- " + diffs.join("\n- "));
+  const fixPrompt =
+    `${prompt}\n\nYour previous version is below, but it looks different from the APPROVED design in these ways:\n- ` +
+    `${diffs.join("\n- ")}\n\nReturn the FULL file again, fixing every one so it matches the design exactly (same ` +
+    `screens, layout, colors, typography, spacing, corner radius, icons, texts and components), keeping all ` +
+    `features and stored data working.\n\nPREVIOUS VERSION:\n` + "```html\n" + code + "\n```";
+  for (const label of order) {
+    const res = await runProvider(label, fixPrompt);
+    if (res.code) {
+      console.log("قرّبنا التطبيق من التصميم المعتمد");
+      return res.code;
+    }
+  }
+  return code;
+}
+
 (async () => {
   const order = process.env.AI_PROVIDER === "gemini" ? ["Gemini", "Claude"] : ["Claude", "Gemini"];
 
@@ -375,6 +422,7 @@ async function completeRequirements(code, order) {
     const res = await runProvider(label);
     if (res.code) {
       res.code = await completeRequirements(res.code, order);
+      res.code = await matchDesign(res.code, order);
       const problems = await checkHtmlFull(res.code);
       if (problems.length) res.code = await repair(res.code, problems, order);
       fs.mkdirSync(dir, { recursive: true });

@@ -252,9 +252,34 @@ _SQL_NOT_READY = (
 )
 
 
+# When a project is paused/inactive, the SQL endpoint keeps returning 28P01 forever (not a transient wait),
+# so retrying is pointless; the owner must resume it. These are the Management API statuses that mean "not usable".
+_PAUSED_STATES = ("INACTIVE", "PAUSING", "PAUSE_FAILED", "GOING_DOWN", "REMOVED", "RESTORING", "RESTORE_FAILED",
+                  "INIT_FAILED", "UPGRADING", "RESTARTING")
+
+
+def project_status(ref, token):
+    """The Management API status of a project (ACTIVE_HEALTHY, INACTIVE/paused, COMING_UP, …); '' if unknown."""
+    try:
+        info = _request("GET", f"/projects/{ref}", token)
+        return str((info or {}).get("status", "")).upper()
+    except Exception:
+        return ""
+
+
+def _paused_error(ref, status):
+    nice = status or "paused or unavailable"
+    return RuntimeError(
+        f"Supabase project {ref} is {nice}: its database refuses the connection (password authentication failed "
+        "for user 'postgres'). Open the Supabase dashboard for this project and press Restore/Resume until its "
+        "status is Active (ACTIVE_HEALTHY), then create the pair again. In APK Fact you can also pick a different, "
+        "active Supabase project. This is a project-state issue on Supabase, not a problem with your app or data."
+    )
+
+
 def run_sql(ref, token, sql):
     last = None
-    for attempt in range(7):  # ~ up to 3 minutes while the new project's database comes up
+    for attempt in range(7):  # ~ up to 3 minutes while a newly created project's database comes up
         try:
             return _request("POST", f"/projects/{ref}/database/query", token, {"query": sql})
         except RuntimeError as e:
@@ -262,14 +287,16 @@ def run_sql(ref, token, sql):
             if not any(s in msg for s in _SQL_NOT_READY):
                 raise  # a real SQL/API error: fail fast with the real message
             last = e
+            # Tell a paused project apart from a just-provisioning one so we don't wait 3 minutes for nothing.
+            if attempt == 0:
+                status = project_status(ref, token)
+                if status in _PAUSED_STATES:
+                    raise _paused_error(ref, status)
             wait = min(5 * (2 ** attempt), 40)
             print(f"Supabase database not ready yet ({str(e)[:140]}); waiting {wait}s and retrying…", flush=True)
             time.sleep(wait)
-    raise RuntimeError(
-        "Supabase project's database did not become ready in time (password authentication failed for user "
-        "'postgres'). The project may have just been created or is paused/restoring — wait a minute and try "
-        f"creating the pair again. Last error: {last}"
-    )
+    # Still failing after the retries: almost always a paused/inactive project the owner must resume.
+    raise _paused_error(ref, project_status(ref, token))
 
 
 def pick_client_key(keys):

@@ -20,6 +20,8 @@ function systemFor(lang: Lang) {
   const what =
     lang === "html"
       ? "Build the app itself as ONE complete, self-contained HTML file (inline CSS and JS)."
+      : lang === "react"
+      ? "Build the app itself as ONE complete, self-contained index.html using React 18 + ReactDOM + Babel (JSX) loaded from a CDN (no build step): a single-page mobile app with components and hooks, styled to look and behave like a native mobile app in a WebView."
       : `Build an interactive PREVIEW of a ${lang === "flutter" ? "Flutter (Material 3)" : lang === "kotlin" ? "native Android Kotlin Jetpack Compose (Material 3)" : "Python Flet (Material 3)"} ` +
         "mobile app as ONE self-contained HTML file (inline CSS and JS) that looks and behaves like that native app: " +
         "Material 3 components, app bar, bottom navigation, cards, FAB, ripple-like pressed states.";

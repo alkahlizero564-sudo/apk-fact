@@ -28,6 +28,7 @@ export const gradient = ["#6E4BFF", "#2563EB"] as const;
 // Brand color of each code language, used for its badge and picker card.
 export const langColors = {
   html: "#F06529",
+  react: "#61DAFB",
   flutter: "#42A5F5",
   python: "#FFD43B",
   kotlin: "#A97BFF",

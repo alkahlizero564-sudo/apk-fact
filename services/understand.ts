@@ -30,6 +30,7 @@ const permLabel = (k: string) => PERM_RULES.keys.find((p) => p.key === k)?.label
 
 const LANG_NAME: Record<Lang, string> = {
   html: "an HTML mobile web app",
+  react: "a React single-page mobile web app",
   flutter: "a Flutter app",
   python: "a Python (Flet) app",
   kotlin: "a native Android Kotlin (Jetpack Compose) app",

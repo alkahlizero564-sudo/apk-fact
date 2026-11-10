@@ -8,6 +8,7 @@ import { Badge, IconName } from "./ui";
 
 export const LANG_ICONS: Record<Lang, IconName> = {
   html: "logo-html5",
+  react: "logo-react",
   flutter: "layers-outline",
   python: "logo-python",
   kotlin: "logo-android",

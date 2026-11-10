@@ -22,8 +22,8 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
 
-CODE_FILE = {"flutter": "lib/main.dart", "python": "main.py", "html": "index.html"}
-FENCE = {"flutter": "dart", "python": "python", "html": "html"}
+CODE_FILE = {"flutter": "lib/main.dart", "python": "main.py", "html": "index.html", "react": "index.html"}
+FENCE = {"flutter": "dart", "python": "python", "html": "html", "react": "html"}
 
 
 def state(app):
@@ -52,6 +52,7 @@ def required(st):
          "or a status change in one app appears in the other within seconds, not only on a manual refresh",
          {"flutter": r"Timer\.periodic\(\s*(?:const\s+)?Duration\(seconds:\s*(?!1\b)\d+",
           "html": r"setInterval\(",
+          "react": r"setInterval\(",
           "python": r"(Timer\.periodic|run_task|asyncio\.sleep|threading\.Timer)"}[lang]),
     ]
     if role == "admin":
@@ -82,7 +83,7 @@ def required(st):
                         "await FirebaseMessaging.instance.requestPermission()", r"requestPermission\("))
             req.append(("showing a push that arrives while the app is open: FirebaseMessaging.onMessage.listen(...) "
                         "shows a SnackBar/banner and refreshes the inbox", r"onMessage\b"))
-        if lang == "html":
+        if lang in ("html", "react"):
             req.append(("asking for the notification permission: PushNotifications.requestPermissions() before "
                         "PushNotifications.register()", r"requestPermissions\("))
     return req
@@ -145,7 +146,7 @@ def problems(app, st):
     if st["lang"] == "python":
         r = subprocess.run([sys.executable, str(HERE / "check_python.py"), str(f)], capture_output=True, text=True)
         return "" if r.returncode == 0 else (r.stdout + r.stderr)[-3000:]
-    if st["lang"] == "html":
+    if st["lang"] in ("html", "react"):
         r = subprocess.run(["node", str(HERE / "check_html.js"), str(f)], capture_output=True, text=True)
         return "" if r.returncode == 0 else (r.stdout + r.stderr)[-3000:]
     import shutil

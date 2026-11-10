@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>المدرار للمقاولات الهندسية - almadrars</title>
+  <style>
+    /* ==========================================
+       MATERIAL 3 & GLASSMORPHISM DESIGN SYSTEM
+       App Name: المدرار للمقاولات الهندسية (almadrars)
+       ========================================== */
+    :root {
+      /* Color Tokens (M3 Dark Glass & Blueprint Luxe Palette) */
+      --m3-primary: #3A86FF;
+      --m3-primary-container: rgba(58, 134, 255, 0.18);
+      --m3-on-primary: #FFFFFF;
+      --m3-secondary: #FF006E;
+      --m3-accent: #FFBE0B;
+      --m3-accent-container: rgba(255, 190, 11, 0.15);
+      --m3-surface-tint: rgba(58, 134, 255, 0.05);
+
+      --m3-bg-dark: #0A0F1D;
+      --m3-bg-gradient: linear-gradient(145deg, #070B14 0%, #0F172A 50%, #172554 100%);
+      --m3-surface-glass: rgba(255, 255, 255, 0.07);
+      --m3-surface-glass-heavy: rgba(255, 255, 255, 0.12);
+      --m3-surface-glass-card: rgba(30, 41, 59, 0.65);
+      --m3-border-glass: rgba(255, 255, 255, 0.12);
+      --m3-border-glow: rgba(58, 134, 255, 0.4);
+
+      --m3-text-high: #F8FAFC;
+      --m3-text-medium: #94A3B8;
+      --m3-text-muted: #64748B;
+      
+      --m3-success: #10B981;
+      --m3-success-container: rgba(16, 185, 129, 0.15);
+      --m3-warning: #F59E0B;
+      --m3-warning-container: rgba(245, 158, 11, 0.15);
+      --m3-error: #EF4444;
+
+      /* Material 3 Shapes & Radii */
+      --m3-radius-xs: 4px;
+      --m3-radius-s: 8px;
+      --m3-radius-m: 12px;
+      --m3-radius-l: 16px;
+      --m3-radius-xl: 24px;
+      --m3-radius-full: 9999px;
+
+      /* Elevation & Shadows */
+      --m3-shadow-1: 0 4px 20px rgba(0, 0, 0, 0.25);
+      --m3-shadow-2: 0 8px 32px rgba(0, 0, 0, 0.35);
+      --m3-shadow-glow: 0 0 25px rgba(58, 134, 255, 0.25);
+
+      /* Typography Font Stack */
+      --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans Arabic', 'Tahoma', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      font-family: var(--font-family);
+    }
+
+    body {
+      background-color: #030712;
+      color: var(--m3-text-high);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      overflow-x: hidden;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    /* ==========================================
+       TOP SCREEN SWITCHER BAR (id="apkfact-screens")
+       ========================================== */
+    #apkfact-screens {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 44px;
+      background: rgba(3, 7, 18, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      gap: 8px;
+      overflow-x: auto;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      scrollbar-width: none;
+    }
+    #apkfact-screens::-webkit-scrollbar { display: none; }
+    
+    .screen-pill {
+      background: rgba(255, 255, 255, 0.08);
+      color: #CBD5E1;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 5px 14px;
+      border-radius: var(--m3-radius-full);
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .screen-pill:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #FFF;
+    }
+    .screen-pill.active {
+      background: var(--m3-primary);
+      color: #FFF;
+      border-color: var(--m3-primary);
+      box-shadow: 0 0 12px rgba(58, 134, 255, 0.4);
+    }
+
+    /* ==========================================
+       APP CONTAINER / VIEWPORT
+       ========================================== */
+    .app-viewport {
+      width: 100%;
+      max-width: 430px;
+      height: calc(100vh - 44px);
+      margin-top: 44px;
+      background: var(--m3-bg-gradient);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 0 50px rgba(0,0,0,0.8);
+      border-left: 1px solid rgba(255,255,255,0.05);
+      border-right: 1px solid rgba(255,255,255,0.05);
+    }
+
+    @media (min-width: 431px) {
+      .app-viewport {
+        height: 880px;
+        margin-top: 54px;
+        border-radius: 36px;
+        border: 2px solid rgba(255, 255, 255, 0.12);
+      }
+    }
+
+    /* STATUS BAR (FLUTTER M3 STYLE SIMULATION) */
+    .status-bar {
+      height: 38px;
+      padding: 10px 20px 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--m3-text-medium);
+      z-index: 50;
+      flex-shrink: 0;
+    }
+    .status-bar-icons {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    /* MAIN CONTENT VIEW HOLDER */
+    .app-content {
+      flex: 1;
+      position: relative;
+      overflow-y: auto;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      scrollbar-width: none;
+    }
+    .app-content::-webkit-scrollbar { display: none; }
+
+    /* SCREEN VIEWS */
+    .view {
+      display: none;
+      flex-direction: column;
+      width: 100%;
+      min-height: 100%;
+      padding-bottom: 90px; /* Space for M3 bottom navigation */
+      animation: fadeIn 0.25s ease-out forwards;
+    }
+    .view.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==========================================
+       REUSABLE FLUTTER M3 COMPONENTS & GLASS CARDS
+       ========================================== */
+    /* Glass Panel */
+    .glass-card {
+      background: var(--m3-surface-glass-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--m3-border-glass);
+      border-radius: var(--m3-radius-xl);
+      padding: 16px;
+      box-shadow: var(--m3-shadow-1);
+      position: relative;
+      overflow: hidden;
+    }
+    .glass-card-interactive {
+      cursor: pointer;
+      transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), border-color 0.2s, box-shadow 0.2s;
+    }
+    .glass-card-interactive:active {
+      transform: scale(0.98);
+      border-color: var(--m3-border-glow);
+    }
+
+    /* Standard Header */
+    .app-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(10, 15, 29, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .app-header-title {
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--m3-text-high);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-tag {
+      font-size: 10px;
+      background: var(--m3-primary-container);
+      color: var(--m3-primary);
+      border: 1px solid rgba(58, 134, 255, 0.3);
+      padding: 2px 8px;
+      border-radius: var(--m3-radius-full);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--m3-radius-full);
+      background: var(--m3-surface-glass);
+      border: 1px solid var(--m3-border-glass);
+      color: var(--m3-text-high);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.2s;
+    }
+    .icon-btn:active {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .badge-dot {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 9px;
+      height: 9px;
+      background: var(--m3-secondary);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--m3-secondary);
+    }
+
+    /* Dynamic Buttons (Flutter Elevated & Tonal Buttons) */
+    .btn-m3-primary {
+      width: 100%;
+      height: 52px;
+      background: linear-gradient(135deg, #3A86FF 0%, #2563EB 100%);
+      color: #FFF;
+      border: none;
+      border-radius: var(--m3-radius-l);
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(58, 134, 255, 0.4);
+      transition: all 0.2s;
+    }
+    .btn-m3-primary:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 8px rgba(58, 134, 255, 0.3);
+    }
+
+    .btn-m3-secondary {
+      width: 100%;
+      height: 48px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--m3-text-high);
+      border: 1px solid var(--m3-border-glass);
+      border-radius: var(--m3-radius-l);
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-m3-secondary:active {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-whatsapp {
+      background: rgba(37, 211, 102, 0.15);
+      border: 1px solid rgba(37, 211, 102, 0.4);
+      color: #25D366;
+    }
+    .btn-whatsapp:hover, .btn-whatsapp:active {
+      background: rgba(37, 211, 102, 0.25);
+    }
+
+    .btn-call {
+      background: rgba(58, 134, 255, 0.15);
+      border: 1px solid rgba(58, 134, 255, 0.4);
+      color: #60A5FA;
+    }
+
+    /* Inputs (M3 TextField Outlined) */
+    .form-group {
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--m3-text-medium);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      height: 50px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--m3-border-glass);
+      border-radius: var(--m3-radius-m);
+      padding: 0 16px;
+      color: var(--m3-text-high);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-textarea {
+      height: 100px;
+      padding: 12px 16px;
+      resize: none;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--m3-primary);
+      box-shadow: 0 0 12px rgba(58, 134, 255, 0.3);
+    }
+    .form-input::placeholder, .form-textarea::placeholder {
+      color: var(--m3-text-muted);
+    }
+
+    /* M3 Flutter Navigation Bar (Bottom Bar) */
+    .flutter-nav-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 72px;
+      background: rgba(10, 15, 29, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0 8px;
+      z-index: 100;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--m3-text-muted);
+      cursor: pointer;
+      text-decoration: none;
+      width: 25%;
+      transition: color 0.2s;
+    }
+    .nav-indicator {
+      width: 54px;
+      height: 30px;
+      border-radius: var(--m3-radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, width 0.2s;
+    }
+    .nav-item.active .nav-indicator {
+      background: var(--m3-primary-container);
+    }
+    .nav-item.active {
+      color: var(--m3-primary);
+    }
+    .nav-item.active svg {
+      stroke: var(--m3-primary);
+    }
+    .nav-label {
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* M3 Status Chips */
+    .status-chip {
+      padding: 4px 10px;
+      border-radius: var(--m3-radius-full);
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-review {
+      background: var(--m3-warning-container);
+      color: #FBBF24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .status-priced {
+      background: rgba(168, 85, 247, 0.15);
+      color: #C084FC;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+    .status-progress {
+      background: var(--m3-primary-container);
+      color: #60A5FA;
+      border: 1px solid rgba(58, 134, 255, 0.3);
+    }
+    .status-completed {
+      background: var(--m3-success-container);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    /* Timeline Stepper for Project Tracking */
+    .stepper {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+      margin: 12px 0;
+      padding-right: 18px;
+    }
+    .stepper::before {
+      content: '';
+      position: absolute;
+      right: 7px;
+      top: 10px;
+      bottom: 10px;
+      width: 2px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      position: relative;
+    }
+    .step-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #1E293B;
+      border: 2px solid var(--m3-text-muted);
+      margin-top: 2px;
+      z-index: 2;
+      flex-shrink: 0;
+    }
+    .step-item.active .step-dot {
+      background: var(--m3-primary);
+      border-color: #93C5FD;
+      box-shadow: 0 0 10px var(--m3-primary);
+    }
+    .step-item.completed .step-dot {
+      background: var(--m3-success);
+      border-color: #A7F3D0;
+    }
+    .step-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--m3-text-high);
+    }
+    .step-desc {
+      font-size: 11px;
+      color: var(--m3-text-muted);
+    }
+
+    /* Modal / Bottom Sheet Component */
+    .sheet-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(3, 7, 18, 0.7);
+      backdrop-filter: blur(8px);
+      z-index: 500;
+      display: none;
+      align-items: flex-end;
+      animation: fadeIn 0.2s ease;
+    }
+    .sheet-overlay.active {
+      display: flex;
+    }
+    .bottom-sheet {
+      width: 100%;
+      background: #0F172A;
+      border-top: 1px solid var(--m3-border-glass);
+      border-radius: 28px 28px 0 0;
+      padding: 20px 20px 30px 20px;
+      max-height: 85%;
+      overflow-y: auto;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
+      animation: slideUp 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .sheet-handle {
+      width: 38px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+      margin: 0 auto 16px auto;
+    }
+
+    /* Grid & Cards Spec */
+    .services-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .service-card {
+      background: linear-gradient(160deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+      border: 1px solid var(--m3-border-glass);
+      border-radius: var(--m3-radius-xl);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s;
+    }
+    .service-card:hover {
+      border-color: var(--m3-primary);
+      transform: translateY(-2px);
+    }
+    .service-card-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: var(--m3-radius-l);
+      background: var(--m3-primary-container);
+      color: var(--m3-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Skeleton Loading Helper */
+    .skeleton {
+      background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.05) 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+      border-radius: 6px;
+    }
+    @keyframes loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* File Attachment Box */
+    .file-upload-box {
+      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border-radius: var(--m3-radius-l);
+      padding: 18px;
+      text-align: center;
+      background: rgba(15, 23, 42, 0.4);
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .file-upload-box:hover {
+      border-color: var(--m3-primary);
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: absolute;
+      top: 50px;
+      left: 20px;
+      right: 20px;
+      background: var(--m3-primary);
+      color: #FFF;
+      padding: 12px 18px;
+      border-radius: var(--m3-radius-l);
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      animation: fadeIn 0.3s;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================
+       SCREENS SWITCHER (FIXED TOP ROW)
+       ========================================== -->
+  <div id="apkfact-screens">
+    <div class="screen-pill active" onclick="switchView('screen-home', this)">🏠 الرئيسية</div>
+    <div class="screen-pill" onclick="switchView('screen-auth', this)">🔐 التسجيل والدخول</div>
+    <div class="screen-pill" onclick="switchView('screen-service-detail', this)">🏗️ تفاصيل الخدمة والطلب</div>
+    <div class="screen-pill" onclick="switchView('screen-orders', this)">📋 تتبع الطلبات والمشاريع</div>
+    <div class="screen-pill" onclick="switchView('screen-notifications', this)">🔔 الإشعارات</div>
+    <div class="screen-pill" onclick="switchView('screen-profile', this)">👤 الملف الشخصي</div>
+    <div class="screen-pill" onclick="switchView('screen-skeleton', this)">⏳ حالة التحميل (Skeleton)</div>
+    <div class="screen-pill" onclick="switchView('screen-empty', this)">📭 حالة الفارغ (Empty)</div>
+  </div>
+
+  <!-- ==========================================
+       FLUTTER APP CONTAINER
+       ========================================== -->
+  <div class="app-viewport">
+    
+    <!-- Status Bar Simulation -->
+    <div class="status-bar">
+      <span>9:41</span>
+      <span style="font-weight:700; color:var(--m3-accent);">المدرار almadrars</span>
+      <div class="status-bar-icons">
+        <span>5G</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 18c-.2-.2-.2-.51 0-.71.2-.2.51-.2.71 0l.77.77C7.15 19.16 9.46 20 12 20s4.85-.84 6.17-1.94l.77-.77c.2-.2.51-.2.71 0 .2.2.2.51 0 .71l-.62.61C20.26 17.07 21 15.12 21 13c0-4.97-4.03-9-9-9z"/></svg>
+      </div>
+    </div>
+
+    <!-- Toast Notification Banner -->
+    <div id="toast" class="toast">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <span id="toast-msg">تم تنفيذ الإجراء بنجاح</span>
+    </div>
+
+    <!-- MAIN VIEWS CONTAINER -->
+    <div class="app-content">
+
+      <!-- ==========================================
+           VIEW 1: HOME SCREEN (الشاشة الرئيسية)
+           ========================================== -->
+      <div id="screen-home" class="view active">
+        <!-- App Header -->
+        <div class="app-header">
+          <div class="app-header-title">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--m3-primary)" stroke-width="2"><path d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
+            <div>
+              <div style="font-size:16px;">المدرار للمقاولات</div>
+              <div style="font-size:10px; color:var(--m3-text-muted); font-weight:400;">الهندسية والتشطيبات • almadrars</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="icon-btn" onclick="switchView('screen-notifications', getNavPill(4))">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <div class="badge-dot"></div>
+            </button>
+          </div>
+        </div>
+
+        <div style="padding: 16px 20px; display:flex; flex-direction:column; gap: 20px;">
+          
+          <!-- Hero Architectural Banner -->
+          <div class="glass-card" style="background: linear-gradient(135deg, rgba(58, 134, 255, 0.25) 0%, rgba(15, 23, 42, 0.9) 100%); border-color: rgba(58, 134, 255, 0.3);">
+            <div class="brand-tag" style="margin-bottom:8px;">المدرار almadrars</div>
+            <h2 style="font-size:20px; font-weight:800; margin-bottom:6px; color:#FFF;">نفّذ مشروعك الهندسي بأعلى معايير الدقة</h2>
+            <p style="font-size:12px; color:var(--m3-text-medium); margin-bottom:14px;">متخصصون في الخرسانات، الصب المسلح، والتشطيبات الفاخرة للداخل والخارج.</p>
+            <button class="btn-m3-primary" style="height:44px; font-size:13px;" onclick="switchView('screen-service-detail', getNavPill(2))">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              طلب معاينة / مشروع جديد
+            </button>
+          </div>
+
+          <!-- Services Categories (Exact Owner Specifications) -->
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <h3 style="font-size:16px; font-weight:700; color:var(--m3-text-high);">أقسام خدمات المقاولات</h3>
+              <span style="font-size:12px; color:var(--m3-primary); font-weight:600;">4 خدمات رئيسية</span>
+            </div>
+
+            <div class="services-grid">
+              
+              <!-- 1. تشطيب داخلي وخارجي -->
+              <div class="service-card" onclick="openServiceDetail('تشطيب داخلي وخارجي', 'مستعدون لاستلام أعمال الدهانات، الديكورات، واجهات الحجر، السيراميك، والكهرباء والسباكة بأعلى جودة.')">
+                <div class="service-card-icon" style="background: rgba(244, 162, 97, 0.15); color:#F4A261;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                </div>
+                <h4 style="font-size:14px; font-weight:700;">تشطيب داخلي وخارجي</h4>
+                <p style="font-size:11px; color:var(--m3-text-muted);">ديكورات، واجهات، دهانات وسباكة وتأثيث</p>
+                <div style="font-size:11px; color:var(--m3-primary); font-weight:700; margin-top:auto;">طلب تسعير ←</div>
+              </div>
+
+              <!-- 2. صب من الأول وصب طوابق -->
+              <div class="service-card" onclick="openServiceDetail('صب من الأول وصب طوابق', 'صب القواعد والأساسات والأسقف الهندسية المسلحة حسب أحدث المخططات المعمارية.')">
+                <div class="service-card-icon" style="background: rgba(58, 134, 255, 0.15); color:#3A86FF;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>
+                </div>
+                <h4 style="font-size:14px; font-weight:700;">صب من الأول وصب طوابق</h4>
+                <p style="font-size:11px; color:var(--m3-text-muted);">أساسات، سقف خرساني، وهياكل خرسانية</p>
+                <div style="font-size:11px; color:var(--m3-primary); font-weight:700; margin-top:auto;">طلب تسعير ←</div>
+              </div>
+
+              <!-- 3. شغل شقة كاملة جاهزة بالتشطيب -->
+              <div class="service-card" onclick="openServiceDetail('شغل شقة كاملة جاهزة بالتشطيب', 'تسليم مفتاح شامل العظم والتشطيب الفاخر والمواصفات العصرية المعتمدة.')">
+                <div class="service-card-icon" style="background: rgba(16, 185, 129, 0.15); color:#10B981;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                </div>
+                <h4 style="font-size:14px; font-weight:700;">شغل شقة كاملة جاهزة بالتشطيب</h4>
+                <p style="font-size:11px; color:var(--m3-text-muted);">تسليم مفتاح متكامل ومجرب من الألف للياء</p>
+                <div style="font-size:11px; color:var(--m3-primary); font-weight:700; margin-top:auto;">طلب تسعير ←</div>
+              </div>
+
+              <!-- 4. صب عمدان -->
+              <div class="service-card" onclick="openServiceDetail('صب عمدان', 'تنفيذ وصب الأعمدة الخرسانية الخرسانة الجاهزة بدقة ومقاومة عالية للمباني.')">
+                <div class="service-card-icon" style="background: rgba(236, 72, 153, 0.15); color:#EC4899;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H7M17 19H7"/></svg>
+                </div>
+                <h4 style="font-size:14px; font-weight:700;">صب عمدان</h4>
+                <p style="font-size:11px; color:var(--m3-text-muted);">أعمدة خرسانية، قوالب حديدية شديدة التحمل</p>
+                <div style="font-size:11px; color:var(--m3-primary); font-weight:700; margin-top:auto;">طلب تسعير ←</div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Active Project Tracking Card Quick Peek -->
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <h3 style="font-size:15px; font-weight:700;">آخر مشروع نشط</h3>
+              <span style="font-size:12px; color:var(--m3-primary); cursor:pointer;" onclick="switchView('screen-orders', getNavPill(3))">عرض الكل (2)</span>
+            </div>
+            
+            <div class="glass-card glass-card-interactive" onclick="switchView('screen-orders', getNavPill(3))">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                <div>
+                  <div style="font-size:12px; color:var(--m3-text-muted);">طلب رقم #MD-8841</div>
+                  <div style="font-size:15px; font-weight:700; color:#FFF;">صب عمدان وطابق ثاني</div>
+                </div>
+                <span class="status-chip status-progress">
+                  <span style="width:6px; height:6px; border-radius:50%; background:#60A5FA;"></span>
+                  قيد التنفيذ
+                </span>
+              </div>
+              
+              <div style="font-size:12px; color:var(--m3-text-medium); margin-bottom:12px; display:flex; gap:16px;">
+                <span>📍 طرابلس - حي الأندلس</span>
+                <span>💰 45,000 د.ل</span>
+              </div>
+
+              <!-- Quick Progress bar -->
+              <div style="background:rgba(255,255,255,0.1); height:6px; border-radius:3px; overflow:hidden;">
+                <div style="width:65%; background:var(--m3-primary); height:100%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Direct Communication Header Banner -->
+          <div class="glass-card" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+            <div>
+              <div style="font-size:14px; font-weight:700;">هل لديك استفسار مباشر؟</div>
+              <div style="font-size:11px; color:var(--m3-text-muted);">فريق المهندسين الميدانيين جاهز للرد</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <a href="https://wa.me/218910000000" target="_blank" style="text-decoration:none;" class="icon-btn btn-whatsapp">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              </a>
+              <a href="tel:+218910000000" class="icon-btn btn-call">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ==========================================
+           VIEW 2: AUTH & OTP VERIFICATION (التسجيل)
+           ========================================== -->
+      <div id="screen-auth" class="view">
+        <div class="app-header">
+          <div class="app-header-title">
+            <span>تسجيل حساب جديد / الدخول</span>
+          </div>
+          <span class="brand-tag">almadrars</span>
+        </div>
+
+        <div style="padding: 20px;">
+          
+          <!-- Segmented Tab Toggle -->
+          <div style="background:rgba(255,255,255,0.06); padding:4px; border-radius:var(--m3-radius-l); display:flex; margin-bottom:20px; border:1px solid var(--m3-border-glass);">
+            <button id="auth-tab-1" class="btn-m3-secondary" style="flex:1; height:38px; border:none; background:var(--m3-primary);" onclick="switchAuthTab(1)">إنشاء حساب</button>
+            <button id="auth-tab-2" class="btn-m3-secondary" style="flex:1; height:38px; border:none; background:transparent;" onclick="switchAuthTab(2)">تسجيل الدخول</button>
+          </div>
+
+          <!-- Register Form Container -->
+          <div id="form-register" class="glass-card">
+            <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; color:#FFF;">انضم لعملاء المدرار للمقاولات</h3>
+            
+            <div class="form-group">
+              <label class="form-label">الاسم الكامل</label>
+              <input type="text" class="form-input" id="reg-name" placeholder="مثال: المهندس أحمد سالم">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">رقم الهاتف</label>
+              <input type="tel" class="form-input" id="reg-phone" placeholder="091XXXXXXX" dir="ltr" style="text-align:right;">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">البريد الإلكتروني</label>
+              <input type="email" class="form-input" id="reg-email" placeholder="example@domain.com" dir="ltr" style="text-align:right;">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">كلمة المرور</label>
+              <input type="password" class="form-input" id="reg-pass" placeholder="••••••••">
+            </div>
+
+            <div class="form-group" style="margin-top:10px;">
+              <button class="btn-m3-primary" onclick="triggerOtpStep()">
+                إرسال رمز التأكيد البريدي ✉️
+              </button>
+            </div>
+          </div>
+
+          <!-- OTP Box Modal Simulation -->
+          <div id="otp-section" class="glass-card" style="margin-top:16px; display:none; border-color:var(--m3-primary);">
+            <div style="text-align:center; margin-bottom:14px;">
+              <div style="font-size:14px; font-weight:700;">رمز التأكيد البريدي (OTP)</div>
+              <div style="font-size:12px; color:var(--m3-text-muted);">تم إرسال رمز مكون من 4 أرقام لبريدك الإلكتروني</div>
+            </div>
+
+            <div style="display:flex; justify-content:center; gap:10px; margin-bottom:16px;" dir="ltr">
+              <input type="text" maxlength="1" class="form-input" style="width:48px; text-align:center; font-size:20px; font-weight:800;" value="4">
+              <input type="text" maxlength="1" class="form-input" style="width:48px; text-align:center; font-size:20px; font-weight:800;" value="9">
+              <input type="text" maxlength="1" class="form-input" style="width:48px; text-align:center; font-size:20px; font-weight:800;" value="1">
+              <input type="text" maxlength="1" class="form-input" style="width:48px; text-align:center; font-size:20px; font-weight:800;" value="8">
+            </div>
+
+            <button class="btn-m3-primary" onclick="completeRegistration()">
+              تأكيد وإنشاء الحساب
+            </button>
+          </div>
+
+          <!-- Login Form (Hidden initially) -->
+          <div id="form-login" class="glass-card" style="display:none;">
+            <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; color:#FFF;">تسجيل الدخول لطبيعة حسابك</h3>
+            
+            <div class="form-group">
+              <label class="form-label">البريد الإلكتروني</label>
+              <input type="email" class="form-input" placeholder="example@domain.com" dir="ltr" style="text-align:right;">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">كلمة المرور</label>
+              <input type="password" class="form-input" placeholder="••••••••">
+            </div>
+
+            <button class="btn-m3-primary" style="margin-top:10px;" onclick="showToast('تم تسجيل الدخول بنجاح'); switchView('screen-home', getNavPill(1));">
+              دخول الحساب
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ==========================================
+           VIEW 3: SERVICE DETAILS & NEW REQUEST (تفاصيل الخدمة والطلب)
+           ========================================== -->
+      <div id="screen-service-detail" class="view">
+        <div class="app-header">
+          <div class="icon-btn" onclick="switchView('screen-home', getNavPill(1))">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          </div>
+          <div class="app-header-title">
+            <span id="service-title-display">تقديم طلب مشروع / معاينة</span>
+          </div>
+          <span class="brand-tag">المدرار</span>
+        </div>
+
+        <div style="padding:20px; display:flex; flex-direction:column; gap:16px;">
+          
+          <!-- Banner dynamic info -->
+          <div class="glass-card" style="background: linear-gradient(135deg, rgba(30,41,59,0.9) 0%, rgba(15,23,42,0.9) 100%);">
+            <div id="service-badge-pill" class="status-chip status-progress" style="margin-bottom:8px;">خدمة هندسية معتمدة</div>
+            <h2 id="service-heading-text" style="font-size:18px; font-weight:800; color:#FFF; margin-bottom:6px;">تشطيب داخلي وخارجي</h2>
+            <p id="service-desc-text" style="font-size:12px; color:var(--m3-text-medium);">قم بتعبئة النموذج وسيقوم المهندس المختص بزيارة الموقع وتزويدك بتقرير وتسعير دقيق.</p>
+          </div>
+
+          <!-- Form Fields -->
+          <div class="glass-card">
+            <h4 style="font-size:14px; font-weight:700; margin-bottom:12px; color:var(--m3-accent);">تفاصيل طلب المقاولات والمعاينة</h4>
+
+            <div class="form-group">
+              <label class="form-label">نوع الخدمة المطلوبة</label>
+              <select class="form-select" id="req-type">
+                <option selected>تشطيب داخلي وخارجي</option>
+                <option>صب من الأول وصب طوابق</option>
+                <option>شغل شقة كاملة جاهزة بالتشطيب</option>
+                <option>صب عمدان</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">الموقع / المدينة والحي</label>
+              <input type="text" class="form-input" id="req-location" value="طرابلس - عين زارة بالقرب من جامع القواسم">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">المساحة التقديرية (متر مربع)</label>
+              <input type="number" class="form-input" id="req-area" placeholder="مثال: 250">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">تفاصيل المشروع والاحتياجات</label>
+              <textarea class="form-textarea" id="req-notes" placeholder="اكتب تفاصيل إضافية عن حالة المبنى، نوع الخرسانة، أو تشطيبات الكهرباء والديكور..."></textarea>
+            </div>
+
+            <!-- Upload File Simulation (Blueprints & Site Photos) -->
+            <div class="form-group">
+              <label class="form-label">إرفاق صور المبنى والمخططات الهندسية</label>
+              <div class="file-upload-box" onclick="simulateFileUpload()">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--m3-primary)" stroke-width="2" style="margin: 0 auto 6px auto; display:block;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <div style="font-size:13px; font-weight:700; color:#FFF;">اضغط لاختيار المخططات أو الصور</div>
+                <div style="font-size:11px; color:var(--m3-text-muted); margin-top:2px;">(PDF, PNG, JPG - حد أقصى 25 ميجابايت)</div>
+              </div>
+              <div id="file-list-preview" style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+                <!-- Attachments render here via JS -->
+              </div>
+            </div>
+
+            <button class="btn-m3-primary" style="margin-top:10px;" onclick="submitProjectRequest()">
+              إرسال طلب المعاينة والتسعير 🚀
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ==========================================
+           VIEW 4: ORDERS & TRACKING (طلباني وتتبع الحالة)
+           ========================================== -->
+      <div id="screen-orders" class="view">
+        <div class="app-header">
+          <div class="app-header-title">
+            <span>مشاريعي وطلبات المقاولات</span>
+          </div>
+          <span class="brand-tag">تتبع حي</span>
+        </div>
+
+        <div style="padding: 16px 20px; display:flex; flex-direction:column; gap:16px;">
+          
+          <!-- Filter Tabs -->
+          <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none;">
+            <span class="screen-pill active" onclick="filterOrders('all', this)">الكل (2)</span>
+            <span class="screen-pill" onclick="filterOrders('review', this)">قيد المراجعة</span>
+            <span class="screen-pill" onclick="filterOrders('priced', this)">تم التسعير</span>
+            <span class="screen-pill" onclick="filterOrders('progress', this)">قيد التنفيذ</span>
+            <span class="screen-pill" onclick="filterOrders('completed', this)">مكتمل</span>
+          </div>
+
+          <!-- PROJECT ITEM 1: IN PROGRESS -->
+          <div class="glass-card order-card-item" data-status="progress">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <div>
+                <span style="font-size:11px; color:var(--m3-text-muted);">#MD-8841 • 14 أكتوبر 2024</span>
+                <h4 style="font-size:16px; font-weight:800; color:#FFF;">صب عمدان وطابق ثاني</h4>
+              </div>
+              <span class="status-chip status-progress">قيد التنفيذ</span>
+            </div>
+
+            <div style="font-size:12px; color:var(--m3-text-medium); margin-bottom:12px;">
+              الخدمة: <strong>صب عمدان</strong> | الموقع: <strong>طرابلس - حي الأندلس</strong>
+            </div>
+
+            <!-- Estimated Price Box -->
+            <div style="background:rgba(58, 134, 255, 0.1); border:1px solid rgba(58, 134, 255, 0.2); padding:10px 14px; border-radius:var(--m3-radius-m); display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+              <span style="font-size:12px; color:var(--m3-text-medium);">السعر التقديري المتفق عليه:</span>
+              <span style="font-size:16px; font-weight:800; color:var(--m3-accent);">45,000 د.ل</span>
+            </div>
+
+            <!-- Stepper stages -->
+            <div style="font-size:12px; font-weight:700; color:var(--m3-text-high); margin-bottom:8px;">مراحل تتبع المشروع:</div>
+            <div class="stepper">
+              <div class="step-item completed">
+                <div class="step-dot"></div>
+                <div>
+                  <div class="step-title">قيد المراجعة والمعاينة الميدانية</div>
+                  <div class="step-desc">تمت زيارة الموقع وحساب كميات الخرسانة المطلوبة.</div>
+                </div>
+              </div>
+              <div class="step-item completed">
+                <div class="step-dot"></div>
+                <div>
+                  <div class="step-title">تم التسعير واعتتماد المخطط</div>
+                  <div class="step-desc">تم الموافقة على العرض التقديري وإعداد الخلطة.</div>
+                </div>
+              </div>
+              <div class="step-item active">
+                <div class="step-dot"></div>
+                <div>
+                  <div class="step-title">قيد التنفيذ (مرحلة صب العمدان)</div>
+                  <div class="step-desc">جاري تركيب القوالب الخشبية وصب الخرسانة الجاهزة.</div>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-dot"></div>
+                <div>
+                  <div class="step-title">مكتمل والتسليم النهائي</div>
+                  <div class="step-desc">التأكد من جودة التصلد وتسليم المشروع للزبون.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- WhatsApp & Direct Call Buttons -->
+            <div style="display:flex; gap:10px; margin-top:14px; border-top:1px solid var(--m3-border-glass); padding-top:12px;">
+              <a href="https://wa.me/218910000000?text=مرحباً%20إدارة%20المدرار،%20أستفسر%20عن%20مشروعي%20رقم%208841" target="_blank" style="flex:1; text-decoration:none;" class="btn-m3-secondary btn-whatsapp">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                واتساب الإدارة
+              </a>
+              <a href="tel:+218910000000" style="flex:1; text-decoration:none;" class="btn-m3-secondary btn-call">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                اتصال مباشر
+              </a>
+            </div>
+          </div>
+
+          <!-- PROJECT ITEM 2: PRICED / UNDER REVIEW -->
+          <div class="glass-card order-card-item" data-status="priced">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <div>
+                <span style="font-size:11px; color:var(--m3-text-muted);">#MD-9022 • 02 نوفمبر 2024</span>
+                <h4 style="font-size:16px; font-weight:800; color:#FFF;">شغل شقة كاملة جاهزة بالتشطيب</h4>
+              </div>
+              <span class="status-chip status-priced">تم التسعير</span>
+            </div>
+
+            <div style="font-size:12px; color:var(--m3-text-medium); margin-bottom:12px;">
+              الخدمة: <strong>تشطيب مفتاح</strong> | الموقع: <strong>بنغازي - الكويفية</strong>
+            </div>
+
+            <div style="background:rgba(168, 85, 247, 0.1); border:1px solid rgba(168, 85, 247, 0.3); padding:12px; border-radius:var(--m3-radius-m); margin-bottom:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:12px; color:var(--m3-text-medium);">عرض السعر المقدم من المدرار:</span>
+                <span style="font-size:16px; font-weight:800; color:#C084FC;">82,000 د.ل</span>
+              </div>
+              <div style="font-size:11px; color:var(--m3-text-muted); margin-top:4px;">يشمل المواد السيراميك، السباكة الإيطالية، والدهانات الفاخرة.</div>
+            </div>
+
+            <div style="display:flex; gap:8px;">
+              <button class="btn-m3-primary" style="height:40px; font-size:13px;" onclick="showToast('تم قبول عرض السعر وجاري تحويل الطلب لتنفيذ!');">قبول العرض وبدء التنفيذ</button>
+              <button class="btn-m3-secondary" style="height:40px; font-size:13px; width:auto; padding:0 14px;" onclick="showToast('تم إرسال طلب التفاوض');">تفاوض</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ==========================================
+           VIEW 5: NOTIFICATIONS INBOX (الإشعارات)
+           ========================================== -->
+      <div id="screen-notifications" class="view">
+        <div class="app-header">
+          <div class="app-header-title">
+            <span>مركز الإشعارات والتنبيهات</span>
+          </div>
+          <span class="brand-tag">تحديثات فورية</span>
+        </div>
+
+        <div style="padding: 16px 20px; display:flex; flex-direction:column; gap:12px;">
+          
+          <div class="glass-card" style="display:flex; gap:12px; align-items:flex-start;">
+            <div style="width:40px; height:40px; border-radius:50%; background:rgba(168, 85, 247, 0.2); color:#C084FC; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h4 style="font-size:14px; font-weight:700; color:#FFF;">إضافة عرض سعر جديد</h4>
+                <span style="font-size:10px; color:var(--m3-text-muted);">منذ 10 دقائق</span>
+              </div>
+              <p style="font-size:12px; color:var(--m3-text-medium); margin-top:2px;">قامت إدارة 'المدرار للمقاولات الهندسية' بإضافة عرض سعر لمشروعك "شغل شقة كاملة جاهزة بالتشطيب".</p>
+            </div>
+          </div>
+
+          <div class="glass-card" style="display:flex; gap:12px; align-items:flex-start;">
+            <div style="width:40px; height:40px; border-radius:50%; background:var(--m3-primary-container); color:var(--m3-primary); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h4 style="font-size:14px; font-weight:700; color:#FFF;">تحديث حالة المشروع #MD-8841</h4>
+                <span style="font-size:10px; color:var(--m3-text-muted);">أمس 4:30 م</span>
+              </div>
+              <p style="font-size:12px; color:var(--m3-text-medium); margin-top:2px;">تم الانتقال إلى مرحلة "قيد التنفيذ" لعملية صب العمدان والطابق الثاني.</p>
+            </div>
+          </div>
+
+          <div class="glass-card" style="display:flex; gap:12px; align-items:flex-start;">
+            <div style="width:40px; height:40px; border-radius:50%; background:rgba(244, 162, 97, 0.2); color:#F4A261; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h4 style="font-size:14px; font-weight:700; color:#FFF;">تأكيد موعد المعاينة الميدانية</h4>
+                <span style="font-size:10px; color:var(--m3-text-muted);">منذ يومين</span>
+              </div>
+              <p style="font-size:12px; color:var(--m3-text-medium); margin-top:2px;">سيصل المهندس المعماري إلى موقع البناء المحدد غداً في تمام الساعة 11:00 صباحاً.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ==========================================
+           VIEW 6: PROFILE (الملف الشخصي)
+           ========================================== -->
+      <div id="screen-profile" class="view">
+        <div class="app-header">
+          <div class="app-header-title">
+            <span>الملف الشخصي والإعدادات</span>
+          </div>
+          <span class="brand-tag">زبون المدرار</span>
+        </div>
+
+        <div style="padding:20px; display:flex; flex-direction:column; gap:16px;">
+          
+          <!-- User Profile Banner -->
+          <div class="glass-card" style="display:flex; align-items:center; gap:16px;">
+            <div style="width:60px; height:60px; border-radius:50%; background:linear-gradient(135deg, var(--m3-primary), var(--m3-secondary)); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:800; color:#FFF; box-shadow:0 0 15px rgba(58,134,255,0.4);">
+              م.أ
+            </div>
+            <div>
+              <h3 style="font-size:17px; font-weight:800; color:#FFF;">م. طارق علي الأوجلي</h3>
+              <div style="font-size:12px; color:var(--m3-text-muted);" dir="ltr">tareq.almadrars@gmail.com</div>
+              <div style="font-size:12px; color:var(--m3-primary); margin-top:2px;">+218 91 234 5678</div>
+            </div>
+          </div>
+
+          <!-- Account Settings List -->
+          <div class="glass-card">
+            <h4 style="font-size:13px; font-weight:700; color:var(--m3-text-muted); margin-bottom:12px;">إدارة الحساب</h4>
+            
+            <div style="display:flex; flex-direction:column; gap:14px;">
+              
+              <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="showToast('تعديل البيانات متاح الأن')">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--m3-primary)" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <span style="font-size:14px; font-weight:600;">تعديل البيانات الشخصية</span>
+                </div>
+                <span style="color:var(--m3-text-muted);">←</span>
+              </div>
+              <hr style="border:none; border-bottom:1px solid rgba(255,255,255,0.06);">
+
+              <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="showToast('شاشة تغيير كلمة المرور')">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--m3-primary)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <span style="font-size:14px; font-weight:600;">تغيير كلمة المرور</span>
+                </div>
+                <span style="color:var(--m3-text-muted);">←</span>
+              </div>
+              <hr style="border:none; border-bottom:1px solid rgba(255,255,255,0.06);">
+
+              <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="openWhatsAppDirect()">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                  <span style="font-size:14px; font-weight:600;">الدعم الفني المباشر (واتساب)</span>
+                </div>
+                <span style="color:var(--m3-text-muted);">←</span>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- App Version / Signout -->
+          <button class="btn-m3-secondary" style="color:var(--m3-error); border-color:rgba(239, 68, 68, 0.3);" onclick="switchView('screen-auth', getNavPill(2))">
+            تسجيل الخروج من الحساب
+          </button>
+
+          <div style="text-align:center; font-size:11px; color:var(--m3-text-muted); margin-top:8px;">
+            تطبيق المدرار للمقاولات الهندسية v2.4.0 • almadrars
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ==========================================
+           VIEW 7: SKELETON LOADING STATE (حالة التحميل)
+           ========================================== -->
+      <div id="screen-skeleton" class="view">
+        <div class="app-header">
+          <div class="app-header-title">
+            <span>جاري تحميل البيانات...</span>
+          </div>
+        </div>
+
+        <div style="padding:20px; display:flex; flex-direction:column; gap:16px;">
+          <!-- Skeleton Hero Banner -->
+          <div class="skeleton" style="height:140px; border-radius:24px;"></div>
+          
+          <!-- Skeleton Grid -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="skeleton" style="height:120px; border-radius:24px;"></div>
+            <div class="skeleton" style="height:120px; border-radius:24px;"></div>
+            <div class="skeleton" style="height:120px; border-radius:24px;"></div>
+            <div class="skeleton" style="height:120px; border-radius:24px;"></div>
+          </div>
+
+          <!-- Skeleton List items -->
+          <div class="skeleton" style="height:80px; border-radius:16px;"></div>
+          <div class="skeleton" style="height:80px; border-radius:16px;"></div>
+        </div>
+      </div>
+
+      <!-- ==========================================
+           VIEW 8: EMPTY STATE (حالة الفارغ)
+           ========================================== -->
+      <div id="screen-empty" class="view">
+        <div class="app-header">
+          <div class="app-header-title">
+            <span>المشاريع السابقة</span>
+          </div>
+        </div>
+
+        <div style="padding: 40px 20px; text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1;">
+          <div style="width:100px; height:100px; border-radius:50%; background:var(--m3-surface-glass-heavy); display:flex; align-items:center; justify-content:center; margin-bottom:20px; color:var(--m3-text-muted);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          </div>
+          
+          <h3 style="font-size:18px; font-weight:800; color:#FFF; margin-bottom:8px;">لا توجد مشاريع أو طلبات مسجلة حالياً</h3>
+          <p style="font-size:13px; color:var(--m3-text-muted); max-width:280px; margin-bottom:24px;">
+            لم تقم بإرسال أي طلب مشروع مقاولات أو تشطيب حتى الآن. ابدأ بإرسال طلبك الأول معنا.
+          </p>
+
+          <button class="btn-m3-primary" style="max-width:240px;" onclick="switchView('screen-service-detail', getNavPill(2))">
+            طلب مشروع جديد الآن
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==========================================
+         FLUTTER MATERIAL 3 BOTTOM NAVIGATION BAR
+         ========================================== -->
+    <div class="flutter-nav-bar">
+      <div class="nav-item active" onclick="switchView('screen-home', this, true)">
+        <div class="nav-indicator">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <span class="nav-label">الرئيسية</span>
+      </div>
+
+      <div class="nav-item" onclick="switchView('screen-service-detail', this, true)">
+        <div class="nav-indicator">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+        </div>
+        <span class="nav-label">طلب خدمة</span>
+      </div>
+
+      <div class="nav-item" onclick="switchView('screen-orders', this, true)">
+        <div class="nav-indicator">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <span class="nav-label">طلباتي</span>
+      </div>
+
+      <div class="nav-item" onclick="switchView('screen-profile', this, true)">
+        <div class="nav-indicator">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <span class="nav-label">حسابي</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ==========================================
+       JAVASCRIPT LOGIC & INTERACTION HANDLERS
+       ========================================== -->
+  <script>
+    // View Switcher logic
+    function switchView(viewId, el, isBottomNav = false) {
+      // Hide all views
+      const views = document.querySelectorAll('.view');
+      views.forEach(v => v.classList.remove('active'));
+
+      // Show requested view
+      const targetView = document.getElementById(viewId);
+      if (targetView) {
+        targetView.classList.add('active');
+        // Scroll content to top
+        document.querySelector('.app-content').scrollTop = 0;
+      }
+
+      // Update top switcher pills
+      const pills = document.querySelectorAll('.screen-pill');
+      pills.forEach(p => p.classList.remove('active'));
+
+      if (!isBottomNav && el) {
+        el.classList.add('active');
+      } else {
+        // Sync top pill if bottom nav clicked
+        syncTopPill(viewId);
+      }
+
+      // Sync Bottom Nav Active States
+      updateBottomNavActive(viewId);
+    }
+
+    function getNavPill(index) {
+      return document.querySelectorAll('#apkfact-screens .screen-pill')[index - 1];
+    }
+
+    function syncTopPill(viewId) {
+      const map = {
+        'screen-home': 0,
+        'screen-auth': 1,
+        'screen-service-detail': 2,
+        'screen-orders': 3,
+        'screen-notifications': 4,
+        'screen-profile': 5,
+        'screen-skeleton': 6,
+        'screen-empty': 7
+      };
+      const idx = map[viewId];
+      if (idx !== undefined) {
+        const pills = document.querySelectorAll('#apkfact-screens .screen-pill');
+        pills.forEach((p, i) => {
+          if (i === idx) p.classList.add('active');
+          else p.classList.remove('active');
+        });
+      }
+    }
+
+    function updateBottomNavActive(viewId) {
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(n => n.classList.remove('active'));
+
+      if (viewId === 'screen-home') navItems[0].classList.add('active');
+      else if (viewId === 'screen-service-detail') navItems[1].classList.add('active');
+      else if (viewId === 'screen-orders') navItems[2].classList.add('active');
+      else if (viewId === 'screen-profile') navItems[3].classList.add('active');
+    }
+
+    // Auth screen tab switcher
+    function switchAuthTab(tab) {
+      const regForm = document.getElementById('form-register');
+      const loginForm = document.getElementById('form-login');
+      const btn1 = document.getElementById('auth-tab-1');
+      const btn2 = document.getElementById('auth-tab-2');
+
+      if (tab === 1) {
+        regForm.style.display = 'block';
+        loginForm.style.display = 'none';
+        btn1.style.background = 'var(--m3-primary)';
+        btn2.style.background = 'transparent';
+      } else {
+        regForm.style.display = 'none';
+        loginForm.style.display = 'block';
+        btn2.style.background = 'var(--m3-primary)';
+        btn1.style.background = 'transparent';
+      }
+    }
+
+    function triggerOtpStep() {
+      const name = document.getElementById('reg-name').value;
+      if (!name) {
+        showToast('يرجى كتابة الاسم الكامل أولاً');
+        return;
+      }
+      document.getElementById('otp-section').style.display = 'block';
+      showToast('تم إرسال رمز OTP مكون من 4 أرقام لبريدك');
+    }
+
+    function completeRegistration() {
+      showToast('تم إنشاء الحساب وتأكيده بنجاح! مرحباً بك');
+      switchView('screen-home', getNavPill(1));
+    }
+
+    // Open dynamic service details
+    function openServiceDetail(serviceName, desc) {
+      document.getElementById('service-title-display').innerText = serviceName;
+      document.getElementById('service-heading-text').innerText = serviceName;
+      document.getElementById('service-desc-text').innerText = desc;
+      
+      const select = document.getElementById('req-type');
+      for(let i=0; i<select.options.length; i++) {
+        if(select.options[i].text === serviceName) {
+          select.selectedIndex = i;
+          break;
+        }
+      }
+      switchView('screen-service-detail', getNavPill(3));
+    }
+
+    // File Upload Handler Simulation
+    let uploadedFiles = [];
+    function simulateFileUpload() {
+      const filenames = ['مخطط_الخرسانة_المسلحة.pdf', 'صورة_موقع_البناء.jpg', 'تصميم_واجهة_3D.png'];
+      const randomFile = filenames[Math.floor(Math.random() * filenames.length)];
+      uploadedFiles.push(randomFile);
+
+      renderFileList();
+      showToast('تم إرفاق الملف: ' + randomFile);
+    }
+
+    function renderFileList() {
+      const list = document.getElementById('file-list-preview');
+      list.innerHTML = '';
+      uploadedFiles.forEach((file, idx) => {
+        list.innerHTML += `
+          <div style="background:rgba(255,255,255,0.08); padding:8px 12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+            <span>📎 ${file}</span>
+            <span style="color:var(--m3-error); cursor:pointer;" onclick="removeFile(${idx})">حذف</span>
+          </div>
+        `;
+      });
+    }
+
+    function removeFile(index) {
+      uploadedFiles.splice(index, 1);
+      renderFileList();
+    }
+
+    function submitProjectRequest() {
+      showToast('تم إرسال طلب مشروع المقاولات للإدارة بنجاح');
+      setTimeout(() => {
+        switchView('screen-orders', getNavPill(4));
+      }, 800);
+    }
+
+    // Filter projects logic
+    function filterOrders(status, pillEl) {
+      const pills = pillEl.parentElement.querySelectorAll('.screen-pill');
+      pills.forEach(p => p.classList.remove('active'));
+      pillEl.classList.add('active');
+
+      const items = document.querySelectorAll('.order-card-item');
+      items.forEach(item => {
+        if (status === 'all' || item.dataset.status === status) {
+          item.style.display = 'block';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    function openWhatsAppDirect() {
+      window.open("https://wa.me/218910000000", "_blank");
+    }
+
+    // Toast Notification helper
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').innerText = message;
+      toast.style.display = 'flex';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 2500);
+    }
+  </script>
+
+</body>
+</html>

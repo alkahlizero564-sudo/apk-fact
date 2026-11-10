@@ -12,6 +12,7 @@ Business tables are designed by the AI on top of these (see pair.py).
 import json
 import os
 import re
+import time
 import urllib.error
 import urllib.request
 
@@ -234,8 +235,41 @@ def set_function_secrets(ref, token, values):
     return _request("POST", f"/projects/{ref}/secrets", token, [{"name": k, "value": v} for k, v in values.items()])
 
 
+# Right after a Supabase project is created (or resumed), its database is not ready for a moment and the
+# Management API's SQL endpoint answers with one of these; Supabase itself says to wait and retry. The SQL we
+# run is idempotent (create ... if not exists / or replace / drop ... if exists), so retrying is safe.
+_SQL_NOT_READY = (
+    "28p01",                        # password authentication failed for user "postgres"
+    "password authentication failed",
+    "wait a moment",
+    "tenant or user not found",
+    "502 bad gateway",
+    "503",
+    "upstream connect error",
+    "max client connections",
+    "the database is not",
+    "database is starting",
+)
+
+
 def run_sql(ref, token, sql):
-    return _request("POST", f"/projects/{ref}/database/query", token, {"query": sql})
+    last = None
+    for attempt in range(7):  # ~ up to 3 minutes while the new project's database comes up
+        try:
+            return _request("POST", f"/projects/{ref}/database/query", token, {"query": sql})
+        except RuntimeError as e:
+            msg = str(e).lower()
+            if not any(s in msg for s in _SQL_NOT_READY):
+                raise  # a real SQL/API error: fail fast with the real message
+            last = e
+            wait = min(5 * (2 ** attempt), 40)
+            print(f"Supabase database not ready yet ({str(e)[:140]}); waiting {wait}s and retrying…", flush=True)
+            time.sleep(wait)
+    raise RuntimeError(
+        "Supabase project's database did not become ready in time (password authentication failed for user "
+        "'postgres'). The project may have just been created or is paused/restoring — wait a minute and try "
+        f"creating the pair again. Last error: {last}"
+    )
 
 
 def pick_client_key(keys):

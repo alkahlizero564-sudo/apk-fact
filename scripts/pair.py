@@ -505,9 +505,25 @@ NO_FAKE_SIGNIN = (
 )
 
 
+def admin_email_gate(st):
+    """The admin app refuses any email that is not a configured admin email, before a code is even sent."""
+    p = st["prefix"]
+    return (
+        "ADMIN LOGIN IS RESTRICTED to the business's admin email(s): any other email must be refused here, in this "
+        "admin app, before anything is sent. The VERY FIRST step after the user types their email and taps continue — "
+        f"BEFORE any POST to otp / signup / login / token / recover — call rpc {p}_is_admin_email with body "
+        '{"mail": email} (headers: apikey only, no Authorization). If it returns false, show '
+        "«البريد ده مش مخوّل لدخول الإدارة، تواصل مع مالك التطبيق» and STOP: never send a code, never create an "
+        "account, never sign in. Continue with the steps below only when it returns true.\n"
+    )
+
+
 def signin_rules(st, role):
     """How THIS app signs in: the mode the owner picked for it (none, code, password, password_code)."""
-    return _signin_rules(st, role) + NO_FAKE_SIGNIN
+    rules = _signin_rules(st, role)
+    if role == "admin" and state_login(st)[role] not in ("none", "phone_password"):
+        rules = admin_email_gate(st) + rules
+    return rules + NO_FAKE_SIGNIN
 
 
 def _signin_rules(st, role):

@@ -61,6 +61,24 @@ function hash(s: string) {
   return (h >>> 0).toString(36);
 }
 
+// Design directions to nudge each app towards a different look, so two apps never come out the same.
+const SCHOOLS = [
+  "Minimal / Swiss (airy, strong type hierarchy, few colors, hairlines)",
+  "Editorial / Magazine (big display headings, serif accents, asymmetric layouts)",
+  "Soft & rounded friendly (large radii, pastel tints, playful rounded icons)",
+  "Neo-brutalist bold (high contrast, solid borders, blocky flat colors, chunky buttons)",
+  "Glass & depth (translucent layered surfaces, blur, soft glows, gradients)",
+  "Premium dark luxe (dark surfaces, gold/metallic accents, elegant type, generous spacing)",
+  "Vibrant gradient (energetic gradient hero, bold accent, geometric shapes)",
+  "Expressive tonal / Material-you (dynamic tonal palette, large rounded components)",
+];
+
+// A stable-but-varied design direction for this specific app (same app -> same seed, different apps -> different).
+function seedSchool(t: DesignTarget) {
+  const n = parseInt(hash(`${t.key}|${t.description}`), 36) || 0;
+  return SCHOOLS[n % SCHOOLS.length];
+}
+
 // Drafts survive closing APK Fact; they belong to one app name + language + description.
 const draftKey = (t: DesignTarget) => `design-draft:${t.key}:${hash(`${t.lang}|${t.role ?? ""}|${t.description}`)}`;
 
@@ -94,13 +112,21 @@ export async function designApp(t: DesignTarget, onStatus: (s: string) => void, 
         `The other app of the pair is designed separately; do not put its screens here.\n`
       : "");
   if (brandFrom) {
+    // The second app of a pair must share the first app's brand, so no new direction here.
     prompt +=
       "\nThis app belongs to the same business as the design below. Use the SAME brand: palette, fonts, " +
       "corner radius, icon style and component look, so the two apps feel like one product:\n```html\n" +
       brandFrom.slice(0, 40000) +
       "\n```\n";
+  } else {
+    // Push this app towards its own identity, nudged to a different design direction than other apps.
+    prompt +=
+      `\nMake THIS app visually unique to «${t.title}» and its audience: choose a design direction and a signature ` +
+      "look, and commit to it on every screen (palette, typography personality, shape language, and one signature " +
+      "element). Do NOT produce a generic template — another app must look clearly different. Unless the business " +
+      `clearly calls for another style, lean towards a ${seedSchool(t)} direction and adapt it to fit this business.\n`;
   }
-  return askGeminiHtml(DESIGNER, prompt, onStatus, "يصمّم الواجهات", 0.7);
+  return askGeminiHtml(DESIGNER, prompt, onStatus, "يصمّم الواجهات", brandFrom ? 0.7 : 0.85);
 }
 
 /** Applies a requested change to an existing design and returns the full new design. */

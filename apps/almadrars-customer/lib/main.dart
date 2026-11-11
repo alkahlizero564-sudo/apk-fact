@@ -84,8 +84,12 @@ class SupabaseService {
   static String parseErrorMessage(dynamic body, String defaultMsg) {
     if (body is Map) {
       final msg = (body['msg'] ?? body['message'] ?? body['error_description'] ?? body['error'] ?? '').toString();
-      if (msg.contains('rate limit')) return 'اتبعتت رسائل كتير، استنى دقايق';
-      if (msg.contains('smtp') || msg.contains('sending') || msg.contains('email')) return 'ما قدرنا نرسل البريد';
+      if (msg.contains('rate limit') || msg.contains('over_email_send_rate_limit')) {
+        return 'اتبعتت رسائل كتير، استنى دقايق';
+      }
+      if (msg.contains('smtp') || msg.contains('sending') || msg.contains('email')) {
+        return 'ما قدرنا نرسل البريد';
+      }
       if (msg.isNotEmpty) return msg;
     }
     return defaultMsg;
@@ -226,7 +230,8 @@ class SupabaseService {
   }
 
   static Future<List<dynamic>> getTable(String table, {String query = ''}) async {
-    final url = Uri.parse('$kSupabaseUrl/rest/v1/$table?select=*&$query');
+    final q = query.isNotEmpty ? '?$query' : '';
+    final url = Uri.parse('$kSupabaseUrl/rest/v1/$table$q');
     var response = await http.get(url, headers: headers);
     if (response.statusCode == 401) {
       if (await tryRefreshToken()) {
@@ -313,7 +318,21 @@ class AlmadrarsCustomerApp extends StatelessWidget {
           child: child!,
         );
       },
-      themeMode: ThemeMode.dark,
+      theme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.light,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF3A86FF),
+          brightness: Brightness.light,
+          primary: const Color(0xFF3A86FF),
+          secondary: const Color(0xFFFF006E),
+        ),
+        fontFamily: 'Noto Sans Arabic',
+        appBarTheme: const AppBarTheme(
+          elevation: 0,
+          centerTitle: true,
+        ),
+      ),
       darkTheme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
@@ -332,6 +351,7 @@ class AlmadrarsCustomerApp extends StatelessWidget {
           centerTitle: true,
         ),
       ),
+      themeMode: ThemeMode.dark,
       home: const AuthWrapper(),
     );
   }
@@ -974,6 +994,7 @@ class MainNavigatorScreen extends StatefulWidget {
 
 class _MainNavigatorScreenState extends State<MainNavigatorScreen> with WidgetsBindingObserver {
   int _currentIndex = 0;
+  int _unreadCount = 0;
   Timer? _syncTimer;
   GlobalKey<HomeScreenState> homeKey = GlobalKey();
   GlobalKey<MyOrdersScreenState> ordersKey = GlobalKey();
@@ -994,6 +1015,7 @@ class _MainNavigatorScreenState extends State<MainNavigatorScreen> with WidgetsB
     ];
     _startPeriodicSync();
     _setupFirebaseListeners();
+    _fetchUnreadBadge();
   }
 
   @override
@@ -1011,7 +1033,22 @@ class _MainNavigatorScreenState extends State<MainNavigatorScreen> with WidgetsB
     });
   }
 
+  Future<void> _fetchUnreadBadge() async {
+    final uid = SupabaseService.userId;
+    if (uid == null) return;
+    try {
+      final notifs = await SupabaseService.getTable(
+        'almadrars_notifications',
+        query: 'or=(to_user.eq.$uid,to_role.eq.customer)&read_at=is.null',
+      );
+      if (mounted) {
+        setState(() => _unreadCount = notifs.length);
+      }
+    } catch (_) {}
+  }
+
   void _refreshCurrentScreen() {
+    _fetchUnreadBadge();
     homeKey.currentState?.refreshData();
     ordersKey.currentState?.refreshData();
     notificationsKey.currentState?.refreshNotifications();
@@ -1022,12 +1059,14 @@ class _MainNavigatorScreenState extends State<MainNavigatorScreen> with WidgetsB
       final title = message.notification?.title ?? message.data['title'] ?? 'تنبيه جديد';
       final body = message.notification?.body ?? message.data['body'] ?? '';
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$title: $body'),
-          backgroundColor: const Color(0xFF3A86FF),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$title: $body'),
+            backgroundColor: const Color(0xFF3A86FF),
+          ),
+        );
+      }
 
       _refreshCurrentScreen();
     });
@@ -1053,14 +1092,29 @@ class _MainNavigatorScreenState extends State<MainNavigatorScreen> with WidgetsB
           setState(() => _currentIndex = idx);
           if (idx == 0) homeKey.currentState?.refreshData();
           if (idx == 2) ordersKey.currentState?.refreshData();
-          if (idx == 3) notificationsKey.currentState?.refreshNotifications();
+          if (idx == 3) {
+            notificationsKey.currentState?.refreshNotifications();
+            _fetchUnreadBadge();
+          }
         },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'الرئيسية'),
-          NavigationDestination(icon: Icon(Icons.add_chart_outlined), selectedIcon: Icon(Icons.add_chart), label: 'طلب خدمة'),
-          NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: 'طلباتي'),
-          NavigationDestination(icon: Icon(Icons.notifications_outlined), selectedIcon: Icon(Icons.notifications), label: 'الإشعارات'),
-          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'حسابي'),
+        destinations: [
+          const NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'الرئيسية'),
+          const NavigationDestination(icon: Icon(Icons.add_chart_outlined), selectedIcon: Icon(Icons.add_chart), label: 'طلب خدمة'),
+          const NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: 'طلباتي'),
+          NavigationDestination(
+            icon: Badge(
+              isLabelVisible: _unreadCount > 0,
+              label: Text('$_unreadCount'),
+              child: const Icon(Icons.notifications_outlined),
+            ),
+            selectedIcon: Badge(
+              isLabelVisible: _unreadCount > 0,
+              label: Text('$_unreadCount'),
+              child: const Icon(Icons.notifications),
+            ),
+            label: 'الإشعارات',
+          ),
+          const NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'حسابي'),
         ],
       ),
     );
@@ -1979,10 +2033,36 @@ class NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  void _markAsRead(dynamic notif) async {
+    if (notif['read_at'] == null) {
+      final now = DateTime.now().toIso8601String();
+      try {
+        await SupabaseService.updateRow('almadrars_notifications', 'id=eq.${notif['id']}', {'read_at': now});
+        refreshNotifications();
+      } catch (_) {}
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final int unreadCount = _notifications.where((n) => n['read_at'] == null).length;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('مركز الإشعارات والتنبيهات')),
+      appBar: AppBar(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('مركز الإشعارات والتنبيهات'),
+            if (unreadCount > 0) ...[
+              const SizedBox(width: 8),
+              Badge(
+                label: Text('$unreadCount'),
+                backgroundColor: const Color(0xFFFF006E),
+              ),
+            ],
+          ],
+        ),
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _notifications.isEmpty
@@ -1995,38 +2075,41 @@ class NotificationsScreenState extends State<NotificationsScreen> {
                     itemBuilder: (context, index) {
                       final item = _notifications[index];
                       final isUnread = item['read_at'] == null;
-                      return Container(
-                        padding: const EdgeInsets.all(14),
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B).withValues(alpha: 0.7),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: isUnread ? const Color(0xFF3A86FF).withValues(alpha: 0.6) : Colors.white10),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    if (isUnread) ...[
-                                      const CircleAvatar(radius: 4, backgroundColor: Color(0xFF3A86FF)),
-                                      const SizedBox(width: 6),
+                      return InkWell(
+                        onTap: () => _markAsRead(item),
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E293B).withValues(alpha: 0.7),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: isUnread ? const Color(0xFF3A86FF).withValues(alpha: 0.6) : Colors.white10),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      if (isUnread) ...[
+                                        const CircleAvatar(radius: 4, backgroundColor: Color(0xFF3A86FF)),
+                                        const SizedBox(width: 6),
+                                      ],
+                                      Text(item['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                                     ],
-                                    Text(item['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                                  ],
-                                ),
-                                Text(
-                                  item['created_at'] != null ? item['created_at'].toString().substring(0, 10) : '',
-                                  style: const TextStyle(fontSize: 10, color: Colors.grey),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Text(item['body'] ?? '', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                          ],
+                                  ),
+                                  Text(
+                                    item['created_at'] != null ? item['created_at'].toString().substring(0, 10) : '',
+                                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(item['body'] ?? '', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                            ],
+                          ),
                         ),
                       );
                     },

@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_config.dart';
 
@@ -27,7 +27,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 // ---------------------------------------------------------------------------
-// DESIGN SYSTEM CONSTANTS & HELPERS
+// DESIGN SYSTEM CONSTANTS & THEMES
 // ---------------------------------------------------------------------------
 const Color kM3Primary = Color(0xFF2563EB);
 const Color kM3Secondary = Color(0xFFE11D48);
@@ -48,7 +48,7 @@ final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
 // ---------------------------------------------------------------------------
 const String kSupabaseUrl = "https://jvjtgzewumfecjdpekna.supabase.co";
 const String kSupabaseAnonKey =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFVNej_mptBE";
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE";
 
 class SupabaseService {
   static String? accessToken;
@@ -155,8 +155,7 @@ class SupabaseService {
     return false;
   }
 
-
-  // Claim Admin RPC
+  // Claim Admin RPC: OPEN TO ANY SIGNED IN USER
   static Future<bool> claimAdmin({String? pin}) async {
     try {
       final url = Uri.parse('$kSupabaseUrl/rest/v1/rpc/almadrars_claim_admin');
@@ -180,7 +179,7 @@ class SupabaseService {
     return false;
   }
 
-  // Read profile role
+  // Read profile role: GET almadrars_profiles?id=eq.<user.id>
   static Future<String?> getProfileRole(String uid) async {
     try {
       final res = await getTable('almadrars_profiles', query: 'id=eq.$uid');
@@ -339,7 +338,7 @@ class AlmadrarsAdminApp extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// AUTH WRAPPER
+// AUTH WRAPPER: ADMIN LOGIN IS OPEN TO ANY EMAIL
 // ---------------------------------------------------------------------------
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -414,7 +413,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
 }
 
 // ---------------------------------------------------------------------------
-// ADMIN PIN SCREEN
+// ADMIN PIN SCREEN (SHOWN ONLY IF PIN PROTECTION IS CONFIGURED)
 // ---------------------------------------------------------------------------
 class AdminPinScreen extends StatefulWidget {
   final VoidCallback onSuccess;
@@ -513,7 +512,7 @@ class _AdminPinScreenState extends State<AdminPinScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// AUTH SCREEN (LOGIN, SIGNUP, RECOVERY RESTRICTED TO ADMIN EMAIL)
+// AUTH SCREEN: OPEN SIGN-IN FOR ANY EMAIL (NO EMAIL RESTRICTION)
 // ---------------------------------------------------------------------------
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -547,11 +546,6 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isNewPasswordMode = false;
   final _newPasswordController = TextEditingController();
 
-  Future<bool> _verifyAdminEmailOrRefuse(String email) async {
-    // Open admin mode: any email may sign in to the admin app (it becomes admin via claim_admin).
-    return true;
-  }
-
   void _handleLogin() async {
     final email = _loginEmailController.text.trim();
     final pass = _loginPasswordController.text.trim();
@@ -564,12 +558,6 @@ class _AuthScreenState extends State<AuthScreen> {
       _isLoading = true;
       _error = null;
     });
-
-    final allowed = await _verifyAdminEmailOrRefuse(email);
-    if (!allowed) {
-      if (mounted) setState(() => _isLoading = false);
-      return;
-    }
 
     try {
       await SupabaseService.signIn(email: email, password: pass);
@@ -619,7 +607,7 @@ class _AuthScreenState extends State<AuthScreen> {
           _verifyEmail = email;
           _verifyType = 'signup';
           _isVerifyMode = true;
-          _error = 'البريد غير مؤكد. تم إعادة إرسال رمز التحقق.';
+          _error = 'البريد غير مؤكد. تم إرسال رمز التحقق مجدداً إلى بريدك.';
         });
       } else {
         setState(() => _error = msg);
@@ -653,12 +641,6 @@ class _AuthScreenState extends State<AuthScreen> {
       _isLoading = true;
       _error = null;
     });
-
-    final allowed = await _verifyAdminEmailOrRefuse(email);
-    if (!allowed) {
-      if (mounted) setState(() => _isLoading = false);
-      return;
-    }
 
     try {
       final url = Uri.parse('$kSupabaseUrl/auth/v1/signup');
@@ -786,12 +768,6 @@ class _AuthScreenState extends State<AuthScreen> {
       _error = null;
     });
 
-    final allowed = await _verifyAdminEmailOrRefuse(email);
-    if (!allowed) {
-      if (mounted) setState(() => _isLoading = false);
-      return;
-    }
-
     try {
       final url = Uri.parse('$kSupabaseUrl/auth/v1/recover');
       final response = await http.post(
@@ -910,7 +886,7 @@ class _AuthScreenState extends State<AuthScreen> {
               TextButton(
                 onPressed: () async {
                   try {
-                    await http.post(
+                    final response = await http.post(
                       Uri.parse('$kSupabaseUrl/auth/v1/resend'),
                       headers: {
                         'apikey': kSupabaseAnonKey,
@@ -919,9 +895,15 @@ class _AuthScreenState extends State<AuthScreen> {
                       body: jsonEncode(
                           {"type": _verifyType, "email": _verifyEmail}),
                     );
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('تم إعادة إرسال الرمز')));
+                    if (response.statusCode >= 200 && response.statusCode < 300) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('تم إعادة إرسال الرمز')));
+                      }
+                    } else {
+                      final decoded = jsonDecode(response.body);
+                      setState(() => _error =
+                          SupabaseService.parseErrorMessage(decoded, 'فشل إعادة الإرسال'));
                     }
                   } catch (e) {
                     setState(() => _error = 'اتبعتت رسائل كتير، استنى دقايق');
@@ -1022,7 +1004,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 TextField(
                   controller: _loginEmailController,
                   decoration: const InputDecoration(
-                      labelText: 'البريد الإلكتروني للإدارة',
+                      labelText: 'البريد الإلكتروني',
                       border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 12),
@@ -1070,7 +1052,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 TextField(
                   controller: _signupEmailController,
                   decoration: const InputDecoration(
-                      labelText: 'البريد الإلكتروني المعتمد للإدارة',
+                      labelText: 'البريد الإلكتروني',
                       border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 12),
@@ -1107,13 +1089,13 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('تسجيل حساب إداري جديد'),
+                      : const Text('تسجيل حساب جديد'),
                 ),
               ] else if (_tabIndex == 2) ...[
                 TextField(
                   controller: _recoverEmailController,
                   decoration: const InputDecoration(
-                      labelText: 'البريد الإلكتروني الإداري للاستعادة',
+                      labelText: 'البريد الإلكتروني للاستعادة',
                       border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 20),

@@ -68,12 +68,13 @@ def call_vision(model, key, parts):
 
 def main():
     shots = Path(sys.argv[1]) if len(sys.argv) > 1 else None
-    man = shots / "manifest.json" if shots else None
-    if not man or not man.exists():
+    if not shots or not shots.exists():
         print("Visual check skipped (no screenshots)")
         return 0
-    m = json.loads(man.read_text())
-    design, app = m.get("design", [])[:6], m.get("app", [])[:6]
+    # The design shots are design_*.png (from qa_visual.js); the app shots are app_*.png — written by qa_visual.js
+    # for HTML/React, or by qa_native.py (the emulator) for a native app. Works the same for both.
+    design = sorted(str(p) for p in shots.glob("design_*.png"))[:6]
+    app = sorted(str(p) for p in shots.glob("app_*.png"))[:6]
     ks = keys()
     if not design or not app or not ks:
         print("Visual check skipped (need the design, the app, and a Gemini key)")

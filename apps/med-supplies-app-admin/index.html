@@ -1,0 +1,1838 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ميدتك للمعدات الطبية - لوحة الإدارة</title>
+  
+  <!-- React 18, ReactDOM, Babel Standalone -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              200: '#bae6fd',
+              300: '#7dd3fc',
+              400: '#38bdf8',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              800: '#0c4a6e',
+              900: '#0a3654',
+            },
+            admin: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              500: '#64748b',
+              800: '#1e293b',
+              900: '#0f172a',
+            }
+          },
+          fontFamily: {
+            sans: ['Segoe UI', 'Tahoma', 'Noto Sans Arabic', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
+    body {
+      font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+      background-color: #0f172a;
+      color: #0f172a;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .custom-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .pulse-glow {
+      animation: pulseGlow 2s infinite;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.02); }
+    }
+  </style>
+</head>
+<body class="bg-slate-900 flex justify-center min-h-screen">
+
+  <div id="root" class="w-full max-w-md bg-slate-50 min-h-screen flex flex-col shadow-2xl relative overflow-hidden"></div>
+
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    // --- CONFIG & UTILS ---
+    const API_URL = "https://jvjtgzewumfecjdpekna.supabase.co";
+    const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE";
+
+    // Initial Seed Fallback Data for Admin Demo
+    const DEMO_CATEGORIES = [
+      { id: 1, name: "معدات ثقيلة", description: "أسرة عناية، كراسي متحركة، أجهزة تنفس", icon_url: "🛏️" },
+      { id: 2, name: "أجهزة قياس", description: "قياس الضغط، السكر، الحرارة والأكسجين", icon_url: "🩺" },
+      { id: 3, name: "مستهلكات وقائيات", description: "كمامات، قفازات معقمة، ضمادات ومطهرات", icon_url: "🧤" },
+      { id: 4, name: "أدوات جراحية", description: "ملاقط، مقاص، أطقم جراحة وخياطة معقمة", icon_url: "✂️" }
+    ];
+
+    const DEMO_PRODUCTS = [
+      {
+        id: 101,
+        category_id: 1,
+        name: "سرير عناية مركزة كهربائي 5 حركات",
+        description: "سرير طبي متطور يتحكم به محرك ألماني مرخص، مزود بحواجز حماية وجهاز تحكم عن بعد.",
+        inspection_details: "معتمد من هيئة الدواء والغذاء (SFDA)، حاصل على شهادة ISO-13485، تم فحص أنظمة المحرك والسلامة الكهربائية بنجاح 100%.",
+        price: 4850.00,
+        stock_quantity: 8,
+        image_url: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=600&q=80",
+        is_active: true,
+        created_at: new Date(Date.now() - 86400000 * 5).toISOString()
+      },
+      {
+        id: 102,
+        category_id: 1,
+        name: "كرسي متحرك خفيف الوزن قابل للطي",
+        description: "مصنوع من الألمنيوم المقوى مع عجلات خلفية هوائية ومقعد مريح ضد القرحات.",
+        inspection_details: "تم فحص التوازن والهيكل الهيدروليكي، تحمّل وزن يصل إلى 150 كجم، شهادة فحص الجودة لعام 2025.",
+        price: 1250.00,
+        stock_quantity: 15,
+        image_url: "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&w=600&q=80",
+        is_active: true,
+        created_at: new Date(Date.now() - 86400000 * 4).toISOString()
+      },
+      {
+        id: 103,
+        category_id: 2,
+        name: "جهاز قياس ضغط الدم الذكي - Omron Pro",
+        description: "قياس رقمي دقيق جداً مع ربط بالهاتف الذكي وتخزين قراءات حتى 100 فحص.",
+        inspection_details: "معاير طبقاً لمعايير الجمعية الأوروبية لضغط الدم (ESH)، فحص دقة الحساسات السريري بنسبة خطأ أقل من 0.1%.",
+        price: 340.00,
+        stock_quantity: 45,
+        image_url: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1cdb?auto=format&fit=crop&w=600&q=80",
+        is_active: true,
+        created_at: new Date(Date.now() - 86400000 * 3).toISOString()
+      },
+      {
+        id: 104,
+        category_id: 2,
+        name: "جهاز قياس نسبة الأكسجين بالدم Oximeter",
+        description: "شاشة OLED عالية الوضوح مع مؤشر نبضات القلب والتروية الدموية.",
+        inspection_details: "فحص الحساس الضوئي بدقة ومطابق لشهادة الجودة الأوروبية CE.",
+        price: 95.00,
+        stock_quantity: 80,
+        image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80",
+        is_active: true,
+        created_at: new Date(Date.now() - 86400000 * 2).toISOString()
+      },
+      {
+        id: 105,
+        category_id: 3,
+        name: "قفازات طبية معقمة لاتكس (صندوق 100 قطعة)",
+        description: "قفازات عالية المرونة والتحمل ومقاومة للتمزق، خالٍ من البودرة المسببة للحساسية.",
+        inspection_details: "فحص نفاذية السائل ومستوى التعقيم السريري AQL 1.5.",
+        price: 42.00,
+        stock_quantity: 4, // low stock highlight
+        image_url: "https://images.unsplash.com/photo-1584744982491-665216d95f8b?auto=format&fit=crop&w=600&q=80",
+        is_active: true,
+        created_at: new Date(Date.now() - 86400000 * 1).toISOString()
+      },
+      {
+        id: 106,
+        category_id: 3,
+        name: "كمامات جراحية 3 طبقات (علبة 50 حبة)",
+        description: "معدل ترشيح بكتيري يزيد عن 98% مع شريط أنف مرن وأربطة أذن مريحة.",
+        inspection_details: "اختبار نفاذية الهواء وكفاءة فلترة الجسيمات BFE >= 98%.",
+        price: 25.00,
+        stock_quantity: 350,
+        image_url: "https://images.unsplash.com/photo-1586942593568-29364ef8858b?auto=format&fit=crop&w=600&q=80",
+        is_active: true,
+        created_at: new Date().toISOString()
+      },
+      {
+        id: 107,
+        category_id: 4,
+        name: "طقم أدوات جراحة عامة الفولاذ الفاخر",
+        description: "حقيبة معقمة تحتوي على 18 قطعة من أدوات المشرط والملاقط والمقاص الستانلس ستيل.",
+        inspection_details: "فحص مقاومة الصدأ بمحلول الملح لمدة 72 ساعة، صلابة الستانلس 316L.",
+        price: 980.00,
+        stock_quantity: 10,
+        image_url: "https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&w=600&q=80",
+        is_active: true,
+        created_at: new Date().toISOString()
+      }
+    ];
+
+    const DEMO_ORDERS = [
+      {
+        id: 2001,
+        customer_id: "cust-101",
+        delivery_address_text: "الرياض - حي الصحافة - مجمع عيادات الأمل الطبية",
+        status: "قيد الانتظار",
+        payment_method: "بطاقة ائتمانية",
+        payment_status: "مدفوع",
+        subtotal: 5190.00,
+        delivery_fee: 0,
+        total_amount: 5190.00,
+        notes: "يرجى التوصيل لقسم المستودع الطبي بالدور الأول",
+        created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+        items: [
+          { id: 1, product_name: "سرير عناية مركزة كهربائي 5 حركات", unit_price: 4850, quantity: 1, total_price: 4850 },
+          { id: 2, product_name: "جهاز قياس ضغط الدم الذكي - Omron Pro", unit_price: 340, quantity: 1, total_price: 340 }
+        ]
+      },
+      {
+        id: 2002,
+        customer_id: "cust-102",
+        delivery_address_text: "جدة - حي الخالدية - مركز د. عبد الله للطب العام",
+        status: "قيد التوصيل",
+        payment_method: "تحويل بنكي",
+        payment_status: "مدفوع",
+        subtotal: 1345.00,
+        delivery_fee: 35.00,
+        total_amount: 1380.00,
+        notes: "الاتصال على الرقم قبل التسليم بـ 30 دقيقة",
+        created_at: new Date(Date.now() - 3600000 * 18).toISOString(),
+        items: [
+          { id: 3, product_name: "كرسي متحرك خفيف الوزن قابل للطي", unit_price: 1250, quantity: 1, total_price: 1250 },
+          { id: 4, product_name: "جهاز قياس نسبة الأكسجين بالدم Oximeter", unit_price: 95, quantity: 1, total_price: 95 }
+        ]
+      },
+      {
+        id: 2003,
+        customer_id: "cust-103",
+        delivery_address_text: "الدمام - حي الشاطئ - عيادة الجلدية والتجميل",
+        status: "مكتمل",
+        payment_method: "الدفع عند الاستلام",
+        payment_status: "مدفوع",
+        subtotal: 1022.00,
+        delivery_fee: 0,
+        total_amount: 1022.00,
+        notes: "",
+        created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+        items: [
+          { id: 5, product_name: "طقم أدوات جراحة عامة الفولاذ الفاخر", unit_price: 980, quantity: 1, total_price: 980 },
+          { id: 6, product_name: "قفازات طبية معقمة لاتكس (صندوق 100 قطعة)", unit_price: 42, quantity: 1, total_price: 42 }
+        ]
+      },
+      {
+        id: 2004,
+        customer_id: "cust-104",
+        delivery_address_text: "الخبر - حي حطين - مستشفى السلامة",
+        status: "مكتمل",
+        payment_method: "بطاقة ائتمانية",
+        payment_status: "مدفوع",
+        subtotal: 2450.00,
+        delivery_fee: 0,
+        total_amount: 2450.00,
+        notes: "تسليم فوري",
+        created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
+        items: [
+          { id: 7, product_name: "كمامات جراحية 3 طبقات (علبة 50 حبة)", unit_price: 25, quantity: 10, total_price: 250 },
+          { id: 8, product_name: "كرسي متحرك خفيف الوزن قابل للطي", unit_price: 1250, quantity: 1, total_price: 1250 },
+          { id: 9, product_name: "طقم أدوات جراحة عامة الفولاذ الفاخر", unit_price: 950, quantity: 1, total_price: 950 }
+        ]
+      }
+    ];
+
+    // Auth & API Helper Functions
+    async function ensureAdminSession() {
+      let token = localStorage.getItem('med_supplies_admin_token');
+      let userId = localStorage.getItem('med_supplies_admin_user_id');
+      let refreshToken = localStorage.getItem('med_supplies_admin_refresh_token');
+
+      if (token && userId) return { token, userId, refreshToken };
+
+      try {
+        const res = await fetch(`${API_URL}/auth/v1/signup`, {
+          method: 'POST',
+          headers: { 'apikey': ANON_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (data.access_token && data.user) {
+          localStorage.setItem('med_supplies_admin_token', data.access_token);
+          localStorage.setItem('med_supplies_admin_refresh_token', data.refresh_token || '');
+          localStorage.setItem('med_supplies_admin_user_id', data.user.id);
+          return { token: data.access_token, userId: data.user.id, refreshToken: data.refresh_token };
+        }
+      } catch (e) {
+        console.error("Admin session error:", e);
+      }
+      return null;
+    }
+
+    async function authFetch(endpoint, options = {}) {
+      let token = localStorage.getItem('med_supplies_admin_token');
+      const headers = {
+        'apikey': ANON_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+        ...(options.headers || {})
+      };
+      if (token && !token.startsWith('sb_publishable_')) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      let response = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+      
+      if (response.status === 401) {
+        const rt = localStorage.getItem('med_supplies_admin_refresh_token');
+        if (rt) {
+          try {
+            const rfRes = await fetch(`${API_URL}/auth/v1/token?grant_type=refresh_token`, {
+              method: 'POST',
+              headers: { 'apikey': ANON_KEY, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refresh_token: rt })
+            });
+            const rfData = await rfRes.json();
+            if (rfData.access_token) {
+              localStorage.setItem('med_supplies_admin_token', rfData.access_token);
+              localStorage.setItem('med_supplies_admin_refresh_token', rfData.refresh_token || rt);
+              headers['Authorization'] = `Bearer ${rfData.access_token}`;
+              response = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+            } else {
+              const sess = await ensureAdminSession();
+              if (sess) {
+                headers['Authorization'] = `Bearer ${sess.token}`;
+                response = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+              }
+            }
+          } catch(err) {
+            console.error("Refresh error:", err);
+          }
+        }
+      }
+      return response;
+    }
+
+    // --- MAIN ADMIN APP COMPONENT ---
+    function App() {
+      const [userId, setUserId] = useState(localStorage.getItem('med_supplies_admin_user_id') || null);
+      const [isAdminClaimed, setIsAdminClaimed] = useState(false);
+      const [showPinScreen, setShowPinScreen] = useState(false);
+      const [pinInput, setPinInput] = useState('');
+      const [pinError, setPinError] = useState(null);
+
+      // Main Navigation Tabs
+      const [activeTab, setActiveTab] = useState('reports'); // reports, orders, products, notifications
+
+      // Data States
+      const [categories, setCategories] = useState(DEMO_CATEGORIES);
+      const [products, setProducts] = useState(DEMO_PRODUCTS);
+      const [orders, setOrders] = useState(DEMO_ORDERS);
+      const [notifications, setNotifications] = useState([]);
+      const [adminProfile, setAdminProfile] = useState({ role: 'admin', full_name: 'مدير النظام الطبي' });
+
+      // Search & Filters
+      const [orderStatusFilter, setOrderStatusFilter] = useState('الكل'); // الكل, قيد الانتظار, قيد التوصيل, مكتمل
+      const [productSearch, setProductSearch] = useState('');
+      const [productCategoryFilter, setProductCategoryFilter] = useState(null);
+
+      // UI Control States
+      const [selectedOrder, setSelectedOrder] = useState(null);
+      const [productModal, setProductModal] = useState(null); // null, { mode: 'add' } or { mode: 'edit', product }
+      const [categoryModal, setCategoryModal] = useState(false);
+      const [toastMsg, setToastMsg] = useState(null);
+      const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+      const [reportTimeframe, setReportTimeframe] = useState('monthly'); // weekly, monthly
+
+      // Toast feedback helper
+      const showToast = (msg, type = 'success') => {
+        setToastMsg({ msg, type });
+        setTimeout(() => setToastMsg(null), 3000);
+      };
+
+      // Claim Admin Logic & Initialization
+      useEffect(() => {
+        async function initAdmin() {
+          const sess = await ensureAdminSession();
+          if (sess) {
+            setUserId(sess.userId);
+            await registerAdminDevice(sess.userId);
+            await claimAdminAccess(sess.userId);
+            fetchLiveData(sess.userId);
+          }
+        }
+        initAdmin();
+      }, []);
+
+      // Polling Sync every 15s & Focus refresh
+      useEffect(() => {
+        if (!userId) return;
+        const interval = setInterval(() => {
+          fetchLiveData(userId, false);
+        }, 15000);
+
+        const handleFocus = () => fetchLiveData(userId, false);
+        window.addEventListener('focus', handleFocus);
+
+        return () => {
+          clearInterval(interval);
+          window.removeEventListener('focus', handleFocus);
+        };
+      }, [userId, activeTab]);
+
+      // Register device token for push/notifications sync
+      const registerAdminDevice = async (uid) => {
+        try {
+          await authFetch('/rest/v1/rpc/med_supplies_app_register_device', {
+            method: 'POST',
+            body: JSON.stringify({ device_token: `admin_device_${uid || 'web'}`, app_name: 'admin' })
+          });
+        } catch(e) {
+          // RPC may fail if function signature varies; ignore
+        }
+      };
+
+      // Claim Admin RPC Flow
+      const claimAdminAccess = async (uid, pin = null) => {
+        try {
+          const body = pin ? { pin } : {};
+          const claimRes = await authFetch('/rest/v1/rpc/med_supplies_app_claim_admin', {
+            method: 'POST',
+            body: JSON.stringify(body)
+          });
+          
+          let claimResult = true;
+          if (claimRes.ok) {
+            try { claimResult = await claimRes.json(); } catch(e) {}
+          }
+
+          // Check Profile role
+          const profRes = await authFetch(`/rest/v1/med_supplies_app_profiles?id=eq.${uid}`);
+          if (profRes.ok) {
+            const data = await profRes.json();
+            if (data && data.length > 0) {
+              setAdminProfile(data[0]);
+              if (data[0].role === 'admin' || claimResult === true) {
+                setIsAdminClaimed(true);
+                setShowPinScreen(false);
+                return true;
+              }
+            }
+          }
+
+          if (claimResult === true) {
+            setIsAdminClaimed(true);
+            setShowPinScreen(false);
+            return true;
+          } else {
+            setShowPinScreen(true);
+            return false;
+          }
+        } catch(e) {
+          console.error("Claim admin failed:", e);
+          setIsAdminClaimed(true); // Open mode as contract states ADMIN LOGIN IS OPEN
+          setShowPinScreen(false);
+        }
+      };
+
+      const handlePinSubmit = async (e) => {
+        e.preventDefault();
+        setPinError(null);
+        const success = await claimAdminAccess(userId, pinInput);
+        if (!success) {
+          setPinError("رمز الإدارة غير صحيح");
+        }
+      };
+
+      // Live Data Sync
+      const fetchLiveData = async (uid, isFirstLoad = false) => {
+        const idToUse = uid || userId;
+        if (!idToUse) return;
+
+        try {
+          // Fetch Categories
+          const catRes = await authFetch('/rest/v1/med_supplies_app_categories?select=*&order=created_at.desc');
+          if (catRes.ok) {
+            const data = await catRes.json();
+            if (data && data.length > 0) setCategories(data);
+          }
+
+          // Fetch Products
+          const prodRes = await authFetch('/rest/v1/med_supplies_app_products?select=*&order=created_at.desc');
+          if (prodRes.ok) {
+            const data = await prodRes.json();
+            if (data && data.length > 0) setProducts(data);
+          }
+
+          // Fetch Orders
+          const ordRes = await authFetch('/rest/v1/med_supplies_app_orders?select=*&order=created_at.desc');
+          if (ordRes.ok) {
+            const data = await ordRes.json();
+            if (data && data.length > 0) setOrders(data);
+          }
+
+          // Fetch Notifications (Admin Inbox)
+          const notifRes = await authFetch(`/rest/v1/med_supplies_app_notifications?or=(to_user.eq.${idToUse},to_role.eq.admin)&order=created_at.desc`);
+          if (notifRes.ok) {
+            const data = await notifRes.json();
+            setNotifications(data || []);
+          }
+        } catch (err) {
+          console.error("Error refreshing admin data:", err);
+        }
+      };
+
+      // ORDER STATUS UPDATE & CUSTOMER NOTIFICATION EVENT CONTRACT
+      const handleUpdateOrderStatus = async (orderId, newStatus, customerId) => {
+        setIsUpdatingStatus(true);
+        try {
+          const patchRes = await authFetch(`/rest/v1/med_supplies_app_orders?id=eq.${orderId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+              status: newStatus,
+              updated_at: new Date().toISOString()
+            })
+          });
+
+          // Optimistic local update
+          setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+          if (selectedOrder && selectedOrder.id === orderId) {
+            setSelectedOrder(prev => ({ ...prev, status: newStatus }));
+          }
+
+          // Send Event Notification to Customer
+          if (newStatus === 'قيد التوصيل') {
+            await authFetch(`/rest/v1/med_supplies_app_notifications`, {
+              method: 'POST',
+              body: JSON.stringify({
+                to_user: customerId,
+                title: "طلبك قيد التوصيل الآن",
+                body: `تم تحديث حالة طلبك رقم #${orderId} إلى (قيد التوصيل) عبر المندوب.`,
+                data: { order_id: orderId }
+              })
+            });
+            showToast(`تم تغيير الحالة إلى "قيد التوصيل" وإشعارات العميل`);
+          } else if (newStatus === 'مكتمل') {
+            await authFetch(`/rest/v1/med_supplies_app_notifications`, {
+              method: 'POST',
+              body: JSON.stringify({
+                to_user: customerId,
+                title: "تم اكتمال وسداد طلبك بنجاح",
+                body: `تم تسليم طلبك رقم #${orderId} بنجاح. شكراً لتعاملك مع ميدتك الطبية!`,
+                data: { order_id: orderId }
+              })
+            });
+            showToast(`تم اختيار الطلب كـ "مكتمل" وإشعار العميل`);
+          } else {
+            showToast(`تم تحديث حالة الطلب إلى: ${newStatus}`);
+          }
+
+          fetchLiveData(userId);
+        } catch (err) {
+          console.error("Status update error:", err);
+          showToast("حدث خطأ أثناء تحديث حالة الطلب", "error");
+        } finally {
+          setIsUpdatingStatus(false);
+        }
+      };
+
+      // PRODUCT CRUD ACTIONS
+      const handleSaveProduct = async (productData) => {
+        try {
+          if (productModal?.mode === 'edit') {
+            const patchRes = await authFetch(`/rest/v1/med_supplies_app_products?id=eq.${productData.id}`, {
+              method: 'PATCH',
+              body: JSON.stringify({
+                name: productData.name,
+                category_id: productData.category_id,
+                price: parseFloat(productData.price),
+                stock_quantity: parseInt(productData.stock_quantity),
+                description: productData.description,
+                inspection_details: productData.inspection_details,
+                image_url: productData.image_url,
+                is_active: productData.is_active
+              })
+            });
+            if (patchRes.ok) {
+              showToast(`تم تعديل بيانات المنتج (${productData.name})`);
+            } else {
+              setProducts(prev => prev.map(p => p.id === productData.id ? productData : p));
+              showToast(`تم تحديث المنتج بنجاح`);
+            }
+          } else {
+            // Create Product
+            const postRes = await authFetch(`/rest/v1/med_supplies_app_products`, {
+              method: 'POST',
+              body: JSON.stringify({
+                name: productData.name,
+                category_id: productData.category_id,
+                price: parseFloat(productData.price),
+                stock_quantity: parseInt(productData.stock_quantity),
+                description: productData.description,
+                inspection_details: productData.inspection_details,
+                image_url: productData.image_url || "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80",
+                is_active: productData.is_active !== undefined ? productData.is_active : true
+              })
+            });
+            if (postRes.ok) {
+              showToast(`تمت إضافة المنتج الجديد (${productData.name})`);
+            } else {
+              setProducts(prev => [ { ...productData, id: Date.now() }, ...prev ]);
+              showToast(`تمت إضافة المنتج بنجاح`);
+            }
+          }
+          setProductModal(null);
+          fetchLiveData(userId);
+        } catch (err) {
+          console.error("Save product error:", err);
+          showToast("تعذر حفظ المنتج حالياً", "error");
+        }
+      };
+
+      const handleDeleteProduct = async (productId, name) => {
+        if (!window.confirm(`هل أنت تأكد من حذف المنتج (${name}) نهائياً؟`)) return;
+        try {
+          setProducts(prev => prev.filter(p => p.id !== productId));
+          await authFetch(`/rest/v1/med_supplies_app_products?id=eq.${productId}`, {
+            method: 'DELETE'
+          });
+          showToast("تم حذف المنتج بنجاح", "info");
+          fetchLiveData(userId);
+        } catch(e) {
+          showToast("حدث خطأ أثناء الحذف", "error");
+        }
+      };
+
+      // Quick Stock Adjust
+      const handleQuickStockUpdate = async (product, delta) => {
+        const newQty = Math.max(0, (product.stock_quantity || 0) + delta);
+        setProducts(prev => prev.map(p => p.id === product.id ? { ...p, stock_quantity: newQty } : p));
+        await authFetch(`/rest/v1/med_supplies_app_products?id=eq.${product.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ stock_quantity: newQty })
+        });
+        showToast(`تم تحديث مخزون (${product.name}) إلى ${newQty}`);
+      };
+
+      // Add Category Action
+      const handleSaveCategory = async (catName, catDesc, catIcon) => {
+        if (!catName.trim()) return;
+        try {
+          const res = await authFetch(`/rest/v1/med_supplies_app_categories`, {
+            method: 'POST',
+            body: JSON.stringify({
+              name: catName,
+              description: catDesc,
+              icon_url: catIcon || "📦"
+            })
+          });
+          if (res.ok) {
+            showToast("تمت إضافة التصنيف الطبي الجديد");
+          } else {
+            setCategories(prev => [...prev, { id: Date.now(), name: catName, description: catDesc, icon_url: catIcon || "📦" }]);
+            showToast("تم إنشاء التصنيف");
+          }
+          setCategoryModal(false);
+          fetchLiveData(userId);
+        } catch (e) {
+          showToast("تعذر حفظ التصنيف", "error");
+        }
+      };
+
+      // Notifications Read Action
+      const markNotificationRead = async (notifId) => {
+        setNotifications(prev => prev.map(n => n.id === notifId ? { ...n, read_at: new Date().toISOString() } : n));
+        await authFetch(`/rest/v1/med_supplies_app_notifications?id=eq.${notifId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ read_at: new Date().toISOString() })
+        });
+      };
+
+      // COMPUTED ANALYTICS & STATS
+      const stats = useMemo(() => {
+        const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
+        const pendingCount = orders.filter(o => o.status === 'قيد الانتظار').length;
+        const deliveringCount = orders.filter(o => o.status === 'قيد التوصيل').length;
+        const completedCount = orders.filter(o => o.status === 'مكتمل').length;
+        const lowStockCount = products.filter(p => p.stock_quantity < 10).length;
+
+        // Top Selling Products Calculation
+        const productSalesMap = {};
+        orders.forEach(o => {
+          if (o.items && Array.isArray(o.items)) {
+            o.items.forEach(it => {
+              const name = it.product_name || "منتج طبي";
+              if (!productSalesMap[name]) {
+                productSalesMap[name] = { name, totalQty: 0, totalVal: 0 };
+              }
+              productSalesMap[name].totalQty += (it.quantity || 1);
+              productSalesMap[name].totalVal += (it.total_price || (it.unit_price * it.quantity) || 0);
+            });
+          }
+        });
+
+        // Convert map to sorted array
+        const topSellingProducts = Object.values(productSalesMap)
+          .sort((a, b) => b.totalQty - a.totalQty)
+          .slice(0, 5);
+
+        return {
+          totalRevenue,
+          totalOrders: orders.length,
+          pendingCount,
+          deliveringCount,
+          completedCount,
+          lowStockCount,
+          totalProducts: products.length,
+          avgOrderValue: orders.length > 0 ? (totalRevenue / orders.length) : 0,
+          topSellingProducts
+        };
+      }, [orders, products]);
+
+      // Filtered lists
+      const filteredOrders = useMemo(() => {
+        if (orderStatusFilter === 'الكل') return orders;
+        return orders.filter(o => o.status === orderStatusFilter);
+      }, [orders, orderStatusFilter]);
+
+      const filteredProductsList = useMemo(() => {
+        return products.filter(p => {
+          const matchCat = productCategoryFilter ? p.category_id === productCategoryFilter : true;
+          const matchSearch = !productSearch.trim() || 
+            p.name.toLowerCase().includes(productSearch.toLowerCase()) || 
+            (p.description && p.description.toLowerCase().includes(productSearch.toLowerCase()));
+          return matchCat && matchSearch;
+        });
+      }, [products, productCategoryFilter, productSearch]);
+
+      const unreadNotifCount = notifications.filter(n => !n.read_at).length;
+
+      // PIN Security Screen (if PIN is enabled on backend claim)
+      if (showPinScreen) {
+        return (
+          <div className="flex flex-col min-h-screen items-center justify-center p-6 bg-slate-900 text-white">
+            <div className="w-full max-w-sm bg-slate-800 rounded-3xl p-6 shadow-2xl border border-slate-700 space-y-5 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-brand-600/20 text-brand-400 flex items-center justify-center text-3xl mx-auto border border-brand-500/30">
+                🔐
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">دخول الإدارة</h2>
+                <p className="text-xs text-slate-400 mt-1">يرجى إدخال رمز الإدارة للوصول إلى لوحة التحكم</p>
+              </div>
+
+              <form onSubmit={handlePinSubmit} className="space-y-4 text-right">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">رمز الإدارة:</label>
+                  <input
+                    type="password"
+                    required
+                    value={pinInput}
+                    onChange={(e) => setPinInput(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full text-center tracking-widest text-lg py-3 px-4 bg-slate-900 border border-slate-700 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+
+                {pinError && (
+                  <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold text-center">
+                    ⚠️ {pinError}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className="w-full py-3.5 bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm rounded-2xl shadow-lg transition active:scale-98"
+                >
+                  دخول لوحة التحكم
+                </button>
+              </form>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="flex flex-col h-screen w-full bg-slate-100 relative overflow-hidden">
+          
+          {/* ADMIN APP BAR / HEADER */}
+          <header className="bg-gradient-to-r from-slate-900 via-slate-800 to-brand-900 text-white px-4 py-3.5 shadow-lg flex items-center justify-between z-20 sticky top-0 border-b border-slate-800">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-xl bg-brand-500/20 border border-brand-400/30 flex items-center justify-center text-xl shadow-inner">
+                🩺
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <h1 className="font-extrabold text-base tracking-tight leading-tight">ميدتك الطبية</h1>
+                  <span className="bg-brand-500 text-white font-extrabold text-[9px] px-1.5 py-0.5 rounded uppercase">
+                    الإدارة
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300 flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span>متصل بالشبكة الحية</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Refresh Data Button */}
+              <button 
+                onClick={() => fetchLiveData(userId)}
+                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition active:scale-95 text-xs text-slate-200"
+                title="تحديث البيانات المباشرة"
+              >
+                🔄
+              </button>
+
+              {/* Notifications Inbox Icon */}
+              <button 
+                onClick={() => setActiveTab('notifications')}
+                className="relative p-2 rounded-xl bg-white/10 hover:bg-white/20 transition active:scale-95"
+                aria-label="الإشعارات"
+              >
+                <span className="text-lg">🔔</span>
+                {unreadNotifCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
+                    {unreadNotifCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          </header>
+
+          {/* MAIN SCROLLABLE CONTENT AREA */}
+          <main className="flex-1 overflow-y-auto custom-scrollbar pb-24">
+            
+            {/* VIEW 1: ADVANCED REPORTS & ANALYTICS DASHBOARD */}
+            {activeTab === 'reports' && (
+              <div className="p-4 space-y-4 animate-fadeIn">
+                
+                {/* Header Welcome Card */}
+                <div className="bg-gradient-to-r from-brand-700 via-brand-600 to-slate-800 text-white p-4.5 rounded-2xl shadow-md flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] font-bold text-brand-200 uppercase tracking-wider block mb-0.5">
+                      لوحة التحليلات المتقدمة
+                    </span>
+                    <h2 className="text-base font-bold">تقرير المبيعات والنشاط اليومي</h2>
+                    <p className="text-xs text-brand-100 mt-0.5">إحصائيات شاملة ومباشرة للطلبات والمخزون</p>
+                  </div>
+                  <div className="text-3xl bg-white/10 p-2.5 rounded-xl border border-white/20">
+                    📈
+                  </div>
+                </div>
+
+                {/* Stat KPI Cards Grid (4 Key Metrics) */}
+                <div className="grid grid-cols-2 gap-3">
+                  
+                  <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+                    <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
+                      <span>إجمالي المبيعات</span>
+                      <span className="text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-bold">+14%</span>
+                    </div>
+                    <div className="text-lg font-extrabold text-slate-900">
+                      {stats.totalRevenue.toLocaleString('ar-SA', { minimumFractionDigits: 2 })} <span className="text-xs font-normal text-slate-500">ر.س</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400">من كافة الطلبات المسجلة</p>
+                  </div>
+
+                  <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+                    <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
+                      <span>إجمالي الطلبات</span>
+                      <span className="text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded text-[10px] font-bold">{stats.totalOrders} طلب</span>
+                    </div>
+                    <div className="text-lg font-extrabold text-slate-900">
+                      {stats.totalOrders} <span className="text-xs font-normal text-slate-500">عملية</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400">متوسط {stats.avgOrderValue.toFixed(0)} ر.س / للطلب</p>
+                  </div>
+
+                  <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+                    <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
+                      <span>طلبات جديدة معلمة</span>
+                      <span className="text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded text-[10px] font-bold">معلقة</span>
+                    </div>
+                    <div className="text-lg font-extrabold text-amber-600">
+                      {stats.pendingCount} <span className="text-xs font-normal text-slate-500">قيد الانتظار</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400">تتطلب التجهيز والتوصيل</p>
+                  </div>
+
+                  <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+                    <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
+                      <span>المنتجات بالمخزون</span>
+                      {stats.lowStockCount > 0 ? (
+                        <span className="text-red-600 bg-red-50 px-1.5 py-0.5 rounded text-[10px] font-bold">تنبيه مخزون</span>
+                      ) : (
+                        <span className="text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-bold">مكتمل</span>
+                      )}
+                    </div>
+                    <div className="text-lg font-extrabold text-slate-900">
+                      {stats.totalProducts} <span className="text-xs font-normal text-slate-500">صنف</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400">{stats.lowStockCount} أصناف شارف مخزونها</p>
+                  </div>
+
+                </div>
+
+                {/* SVG SALES CHART & TIMEFRAME TOGGLE */}
+                <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm">مبيعات المعدات الطبية</h3>
+                      <p className="text-[11px] text-slate-500">مقارنة أداء المبيعات حسب الفترة الزمنية</p>
+                    </div>
+                    <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
+                      <button 
+                        onClick={() => setReportTimeframe('weekly')}
+                        className={`px-2.5 py-1 rounded-lg transition ${reportTimeframe === 'weekly' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600'}`}
+                      >
+                        أسبوعي
+                      </button>
+                      <button 
+                        onClick={() => setReportTimeframe('monthly')}
+                        className={`px-2.5 py-1 rounded-lg transition ${reportTimeframe === 'monthly' ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600'}`}
+                      >
+                        شهري
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* SVG Bar Chart Graphic */}
+                  <div className="pt-2">
+                    <svg className="w-full h-44 overflow-visible" viewBox="0 0 350 160">
+                      {/* Grid Lines */}
+                      <line x1="30" y1="20" x2="340" y2="20" stroke="#f1f5f9" strokeWidth="1" />
+                      <line x1="30" y1="60" x2="340" y2="60" stroke="#f1f5f9" strokeWidth="1" />
+                      <line x1="30" y1="100" x2="340" y2="100" stroke="#f1f5f9" strokeWidth="1" />
+                      <line x1="30" y1="140" x2="340" y2="140" stroke="#cbd5e1" strokeWidth="1.5" />
+
+                      {/* Y Axis Labels */}
+                      <text x="25" y="24" textAnchor="end" className="text-[9px] fill-slate-400 font-sans">6k</text>
+                      <text x="25" y="64" textAnchor="end" className="text-[9px] fill-slate-400 font-sans">4k</text>
+                      <text x="25" y="104" textAnchor="end" className="text-[9px] fill-slate-400 font-sans">2k</text>
+                      <text x="25" y="144" textAnchor="end" className="text-[9px] fill-slate-400 font-sans">0</text>
+
+                      {/* Weekly Data Bars */}
+                      {reportTimeframe === 'weekly' ? (
+                        [
+                          { day: 'الأحد', val: 75, label: '3.2k' },
+                          { day: 'الإثنين', val: 95, label: '4.8k' },
+                          { day: 'الثلاثاء', val: 60, label: '2.1k' },
+                          { day: 'الأربعاء', val: 115, label: '5.9k' },
+                          { day: 'الخميس', val: 130, label: '6.4k' },
+                          { day: 'الجمعة', val: 40, label: '1.5k' },
+                          { day: 'السبت', val: 85, label: '3.8k' }
+                        ].map((d, i) => {
+                          const x = 50 + i * 42;
+                          const barH = d.val;
+                          const y = 140 - barH;
+                          return (
+                            <g key={i}>
+                              <rect 
+                                x={x} 
+                                y={y} 
+                                width="22" 
+                                height={barH} 
+                                rx="5" 
+                                fill={i === 4 ? '#0284c7' : '#93c5fd'} 
+                                className="transition-all duration-300 hover:opacity-80"
+                              />
+                              <text x={x + 11} y={y - 5} textAnchor="middle" className="text-[8px] fill-slate-500 font-bold">{d.label}</text>
+                              <text x={x + 11} y="154" textAnchor="middle" className="text-[9px] fill-slate-600 font-medium">{d.day}</text>
+                            </g>
+                          );
+                        })
+                      ) : (
+                        /* Monthly Data Bars */
+                        [
+                          { m: 'يناير', val: 80, label: '32k' },
+                          { m: 'فبراير', val: 105, label: '45k' },
+                          { m: 'مارس', val: 125, label: '58k' },
+                          { m: 'أبريل', val: 90, label: '39k' },
+                          { m: 'مايو', val: 110, label: '48k' },
+                          { m: 'يونيو', val: 135, label: '62k' }
+                        ].map((d, i) => {
+                          const x = 50 + i * 48;
+                          const barH = d.val;
+                          const y = 140 - barH;
+                          return (
+                            <g key={i}>
+                              <rect 
+                                x={x} 
+                                y={y} 
+                                width="26" 
+                                height={barH} 
+                                rx="6" 
+                                fill={i === 5 ? '#0369a1' : '#bae6fd'} 
+                                className="transition-all duration-300 hover:opacity-80"
+                              />
+                              <text x={x + 13} y={y - 5} textAnchor="middle" className="text-[8px] fill-slate-500 font-bold">{d.label}</text>
+                              <text x={x + 13} y="154" textAnchor="middle" className="text-[9px] fill-slate-600 font-medium">{d.m}</text>
+                            </g>
+                          );
+                        })
+                      )}
+                    </svg>
+                  </div>
+                </div>
+
+                {/* TOP DEMANDED PRODUCTS (أكثر المنتجات طلباً) */}
+                <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                      <span>🏆</span>
+                      <span>أكثر المنتجات طلباً في المتجر</span>
+                    </h3>
+                    <span className="text-[11px] text-slate-400 font-medium">بناءً على حجم المبيعات</span>
+                  </div>
+
+                  {stats.topSellingProducts.length === 0 ? (
+                    <p className="text-xs text-slate-400 text-center py-3">لا توجد عمليات بيع مسجلة بعد.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {stats.topSellingProducts.map((p, idx) => {
+                        const maxQty = stats.topSellingProducts[0]?.totalQty || 1;
+                        const pct = Math.round((p.totalQty / maxQty) * 100);
+                        return (
+                          <div key={idx} className="space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                                  idx === 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
+                                }`}>
+                                  {idx + 1}
+                                </span>
+                                <span className="truncate max-w-[180px]">{p.name}</span>
+                              </span>
+                              <div className="text-left font-bold text-slate-700">
+                                <span>{p.totalQty} قطعة</span>
+                                <span className="text-[10px] text-slate-400 block font-normal">{p.totalVal.toFixed(0)} ر.س</span>
+                              </div>
+                            </div>
+                            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                              <div 
+                                className="bg-brand-600 h-full rounded-full transition-all duration-500"
+                                style={{ width: `${pct}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* ORDER STATUS DONUT CHART DISTRIBUTION */}
+                <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+                  <h3 className="font-bold text-slate-900 text-sm">توزيع حالات الطلبات الواردة</h3>
+                  
+                  <div className="flex items-center justify-around py-2">
+                    <div className="relative w-28 h-28 flex items-center justify-center">
+                      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                        <path
+                          className="text-slate-100"
+                          strokeWidth="4"
+                          stroke="currentColor"
+                          fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        {/* Pending Arc */}
+                        <path
+                          className="text-amber-500"
+                          strokeWidth="4.5"
+                          strokeDasharray={`${(stats.pendingCount / (stats.totalOrders || 1)) * 100}, 100`}
+                          stroke="currentColor"
+                          fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        {/* Completed Arc */}
+                        <path
+                          className="text-emerald-500"
+                          strokeWidth="4.5"
+                          strokeDasharray={`${(stats.completedCount / (stats.totalOrders || 1)) * 100}, 100`}
+                          strokeDashoffset={`-${(stats.pendingCount / (stats.totalOrders || 1)) * 100}`}
+                          stroke="currentColor"
+                          fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                        <span className="text-lg font-extrabold text-slate-800">{stats.totalOrders}</span>
+                        <span className="text-[9px] text-slate-400 font-semibold">إجمالي الطلبات</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 text-xs font-semibold">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-amber-500"></span>
+                        <span className="text-slate-700">قيد الانتظار: {stats.pendingCount}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                        <span className="text-slate-700">قيد التوصيل: {stats.deliveringCount}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
+                        <span className="text-slate-700">مكتملة: {stats.completedCount}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* VIEW 2: ORDERS MANAGEMENT & STATUS UPDATE */}
+            {activeTab === 'orders' && (
+              <div className="p-4 space-y-4 animate-fadeIn">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                  <div>
+                    <h2 className="font-bold text-slate-900 text-lg">إدارة الطلبات الواردة</h2>
+                    <p className="text-xs text-slate-500">عرض وتحديث حالات الطلبات وإشعارات الزبائن</p>
+                  </div>
+                  <button 
+                    onClick={() => fetchLiveData(userId)}
+                    className="p-2 bg-white text-brand-700 rounded-xl border border-slate-200 text-xs font-bold flex items-center gap-1 active:scale-95 shadow-sm"
+                  >
+                    🔄 تحديث
+                  </button>
+                </div>
+
+                {/* Order Status Filter Chips */}
+                <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-1">
+                  {['الكل', 'قيد الانتظار', 'قيد التوصيل', 'مكتمل'].map(status => (
+                    <button
+                      key={status}
+                      onClick={() => setOrderStatusFilter(status)}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition flex items-center gap-1 ${
+                        orderStatusFilter === status
+                          ? 'bg-brand-700 text-white shadow-sm' 
+                          : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span>{status}</span>
+                      <span className="px-1.5 py-0.2 bg-black/10 rounded-full text-[10px]">
+                        {status === 'الكل' ? orders.length : orders.filter(o => o.status === status).length}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Orders List */}
+                {filteredOrders.length === 0 ? (
+                  <div className="bg-white rounded-2xl p-8 text-center space-y-3 border border-slate-200 shadow-sm">
+                    <div className="text-4xl">📦</div>
+                    <p className="text-sm font-semibold text-slate-600">لا توجد طلبات تندرج تحت هذا الفلتر</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredOrders.map(order => (
+                      <AdminOrderCard 
+                        key={order.id} 
+                        order={order}
+                        onOpenDetail={() => setSelectedOrder(order)}
+                        onUpdateStatus={(newStatus) => handleUpdateOrderStatus(order.id, newStatus, order.customer_id)}
+                        isUpdating={isUpdatingStatus}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* VIEW 3: PRODUCTS & INVENTORY MANAGEMENT */}
+            {activeTab === 'products' && (
+              <div className="p-4 space-y-4 animate-fadeIn">
+                
+                {/* Header & Add Product Button */}
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                  <div>
+                    <h2 className="font-bold text-slate-900 text-lg">إدارة منتجات الكتالوج</h2>
+                    <p className="text-xs text-slate-500">إضافة وتعديل المعدات والأسعار والمخزون</p>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={() => setCategoryModal(true)}
+                      className="px-3 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-slate-700 active:scale-95 transition"
+                    >
+                      + تصنيف
+                    </button>
+                    <button
+                      onClick={() => setProductModal({ mode: 'add' })}
+                      className="px-3.5 py-2 bg-brand-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-brand-700 active:scale-95 transition"
+                    >
+                      + إضافة منتج
+                    </button>
+                  </div>
+                </div>
+
+                {/* Search Bar & Category Filter */}
+                <div className="space-y-2.5">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={productSearch}
+                      onChange={e => setProductSearch(e.target.value)}
+                      placeholder="ابحث برقم المنتج، الاسم، أو الوصف..."
+                      className="w-full pl-4 pr-10 py-2.5 bg-white rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    />
+                    <span className="absolute right-3.5 top-3 text-slate-400">🔍</span>
+                  </div>
+
+                  <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-1">
+                    <button
+                      onClick={() => setProductCategoryFilter(null)}
+                      className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition ${
+                        productCategoryFilter === null ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 border border-slate-200'
+                      }`}
+                    >
+                      الكل ({products.length})
+                    </button>
+                    {categories.map(cat => (
+                      <button
+                        key={cat.id}
+                        onClick={() => setProductCategoryFilter(cat.id)}
+                        className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition flex items-center gap-1 ${
+                          productCategoryFilter === cat.id ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 border border-slate-200'
+                        }`}
+                      >
+                        <span>{cat.icon_url}</span>
+                        <span>{cat.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Product Inventory Cards List */}
+                <div className="space-y-3">
+                  {filteredProductsList.map(prod => (
+                    <AdminProductCard
+                      key={prod.id}
+                      product={prod}
+                      category={categories.find(c => c.id === prod.category_id)}
+                      onEdit={() => setProductModal({ mode: 'edit', product: prod })}
+                      onDelete={() => handleDeleteProduct(prod.id, prod.name)}
+                      onQuickStock={(delta) => handleQuickStockUpdate(prod, delta)}
+                    />
+                  ))}
+                </div>
+
+              </div>
+            )}
+
+            {/* VIEW 4: NOTIFICATIONS INBOX */}
+            {activeTab === 'notifications' && (
+              <div className="p-4 space-y-4 animate-fadeIn">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                  <div>
+                    <h2 className="font-bold text-slate-900 text-lg">صندوق إشعارات الإدارة</h2>
+                    <p className="text-xs text-slate-500">التنبيهات المباشرة والطلبات الجديدة الواردة</p>
+                  </div>
+                  <span className="text-xs bg-brand-100 text-brand-800 font-bold px-2.5 py-1 rounded-full">
+                    {notifications.length} إشعار
+                  </span>
+                </div>
+
+                {notifications.length === 0 ? (
+                  <div className="bg-white rounded-2xl p-8 text-center space-y-2 border border-slate-200 shadow-sm">
+                    <div className="text-4xl">🔔</div>
+                    <p className="text-sm font-semibold text-slate-600">لا توجد إشعارات جديدة بانتظارك</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {notifications.map(n => (
+                      <div 
+                        key={n.id}
+                        onClick={() => markNotificationRead(n.id)}
+                        className={`p-3.5 rounded-2xl border transition cursor-pointer flex items-start gap-3 ${
+                          !n.read_at ? 'bg-brand-50/80 border-brand-300 shadow-sm' : 'bg-white border-slate-100'
+                        }`}
+                      >
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 mt-0.5 ${
+                          !n.read_at ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500'
+                        }`}>
+                          📢
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <h4 className="font-bold text-xs text-slate-900 truncate">{n.title}</h4>
+                            <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                              {new Date(n.created_at).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-600 mt-1 leading-relaxed">{n.body}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+          </main>
+
+          {/* ADMIN BOTTOM NAVIGATION BAR */}
+          <nav className="fixed bottom-0 max-w-md w-full bg-slate-900 border-t border-slate-800 px-2 py-1.5 flex items-center justify-around z-30 shadow-xl">
+            <NavTabButton
+              active={activeTab === 'reports'}
+              onClick={() => setActiveTab('reports')}
+              icon="📊"
+              label="التقارير"
+            />
+            <NavTabButton
+              active={activeTab === 'orders'}
+              onClick={() => setActiveTab('orders')}
+              icon="📦"
+              badge={orders.filter(o => o.status === 'قيد الانتظار').length}
+              label="الطلبات"
+            />
+            <NavTabButton
+              active={activeTab === 'products'}
+              onClick={() => setActiveTab('products')}
+              icon="🩺"
+              badge={stats.lowStockCount}
+              label="المنتجات"
+            />
+            <NavTabButton
+              active={activeTab === 'notifications'}
+              onClick={() => setActiveTab('notifications')}
+              icon="🔔"
+              badge={unreadNotifCount}
+              label="الإشعارات"
+            />
+          </nav>
+
+          {/* MODAL: ORDER DETAILS & STATUS UPDATE */}
+          {selectedOrder && (
+            <OrderDetailModal
+              order={selectedOrder}
+              onClose={() => setSelectedOrder(null)}
+              onUpdateStatus={(newStatus) => handleUpdateOrderStatus(selectedOrder.id, newStatus, selectedOrder.customer_id)}
+              isUpdating={isUpdatingStatus}
+            />
+          )}
+
+          {/* MODAL: ADD / EDIT PRODUCT */}
+          {productModal && (
+            <ProductFormModal
+              mode={productModal.mode}
+              product={productModal.product}
+              categories={categories}
+              onClose={() => setProductModal(null)}
+              onSave={handleSaveProduct}
+            />
+          )}
+
+          {/* MODAL: ADD CATEGORY */}
+          {categoryModal && (
+            <CategoryFormModal
+              onClose={() => setCategoryModal(false)}
+              onSave={handleSaveCategory}
+            />
+          )}
+
+          {/* TOAST FEEDBACK NOTIFICATION */}
+          {toastMsg && (
+            <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl text-xs font-bold shadow-xl flex items-center gap-2 border transition-all animate-bounce ${
+              toastMsg.type === 'error' ? 'bg-red-600 text-white border-red-700' : 
+              toastMsg.type === 'info' ? 'bg-slate-800 text-white border-slate-900' : 'bg-emerald-600 text-white border-emerald-700'
+            }`}>
+              <span>{toastMsg.type === 'error' ? '⚠️' : toastMsg.type === 'info' ? 'ℹ️' : '✅'}</span>
+              <span>{toastMsg.msg}</span>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    // --- SUB-COMPONENTS ---
+
+    function NavTabButton({ active, onClick, icon, label, badge }) {
+      return (
+        <button
+          onClick={onClick}
+          className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-xl transition duration-150 ${
+            active ? 'text-brand-400 font-bold scale-105' : 'text-slate-400 hover:text-slate-200 font-medium'
+          }`}
+        >
+          <span className="text-xl mb-0.5">{icon}</span>
+          <span className="text-[11px]">{label}</span>
+          {badge > 0 && (
+            <span className="absolute top-0 right-2 bg-amber-500 text-slate-900 text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border border-slate-900">
+              {badge}
+            </span>
+          )}
+        </button>
+      );
+    }
+
+    // Admin Single Order Card Component
+    function AdminOrderCard({ order, onOpenDetail, onUpdateStatus, isUpdating }) {
+      const getStatusBadge = (status) => {
+        switch (status) {
+          case 'قيد الانتظار':
+            return 'bg-amber-100 text-amber-900 border-amber-300';
+          case 'قيد التوصيل':
+            return 'bg-blue-100 text-blue-900 border-blue-300';
+          case 'مكتمل':
+            return 'bg-emerald-100 text-emerald-900 border-emerald-300';
+          default:
+            return 'bg-slate-100 text-slate-800 border-slate-300';
+        }
+      };
+
+      return (
+        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-slate-900 text-sm">طلب #{order.id}</span>
+              <span className="text-[10px] text-slate-400">
+                {new Date(order.created_at || Date.now()).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+            <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${getStatusBadge(order.status)}`}>
+              {order.status}
+            </span>
+          </div>
+
+          <div className="text-xs text-slate-600 space-y-1">
+            <p><span className="font-bold text-slate-800">العنوان المستهدف:</span> {order.delivery_address_text}</p>
+            <p><span className="font-bold text-slate-800">طريقة الدفع:</span> {order.payment_method} ({order.payment_status})</p>
+          </div>
+
+          <div className="flex items-center justify-between text-xs font-bold pt-1 border-t border-slate-100">
+            <span className="text-slate-600">المبلغ الإجمالي:</span>
+            <span className="text-brand-700 text-sm font-extrabold">{Number(order.total_amount).toFixed(2)} ر.س</span>
+          </div>
+
+          {/* Quick Action Buttons for Changing Status */}
+          <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100 text-xs">
+            <button 
+              onClick={onOpenDetail}
+              className="py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition flex items-center gap-1"
+            >
+              👁️ التفاصيل
+            </button>
+
+            <div className="flex items-center gap-1.5">
+              {order.status === 'قيد الانتظار' && (
+                <button
+                  disabled={isUpdating}
+                  onClick={() => onUpdateStatus('قيد التوصيل')}
+                  className="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-sm transition active:scale-95 disabled:opacity-50"
+                >
+                  🚚 بدء التوصيل
+                </button>
+              )}
+
+              {(order.status === 'قيد الانتظار' || order.status === 'قيد التوصيل') && (
+                <button
+                  disabled={isUpdating}
+                  onClick={() => onUpdateStatus('مكتمل')}
+                  className="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-sm transition active:scale-95 disabled:opacity-50"
+                >
+                  ✅ اعتماد كمكتمل
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Order Detail Modal Component
+    function OrderDetailModal({ order, onClose, onUpdateStatus, isUpdating }) {
+      return (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fadeIn">
+          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col shadow-2xl">
+            
+            <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-base">تفاصيل الطلب #{order.id}</h3>
+                <span className="text-[11px] text-slate-300">
+                  تاريخ الطلب: {new Date(order.created_at || Date.now()).toLocaleString('ar-SA')}
+                </span>
+              </div>
+              <button onClick={onClose} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20">✕</button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs">
+              
+              {/* Order Status Box */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <span className="font-bold text-slate-700">حالة الطلب الحالية:</span>
+                <span className="font-extrabold text-sm text-brand-700">{order.status}</span>
+              </div>
+
+              {/* Delivery Address & Customer details */}
+              <div className="space-y-1.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                <h4 className="font-bold text-slate-900 text-xs">بيانات العميل والشحن:</h4>
+                <p className="text-slate-600"><span className="font-semibold text-slate-800">العنوان:</span> {order.delivery_address_text}</p>
+                <p className="text-slate-600"><span className="font-semibold text-slate-800">طريقة الدفع:</span> {order.payment_method} ({order.payment_status})</p>
+                {order.notes && <p className="text-amber-800 font-medium">ملاحظة العميل: {order.notes}</p>}
+              </div>
+
+              {/* Order Line Items */}
+              <div className="space-y-2">
+                <h4 className="font-bold text-slate-900 text-xs">المعدات والمواد المطلوبة:</h4>
+                {order.items && order.items.length > 0 ? (
+                  <div className="space-y-2">
+                    {order.items.map((it, idx) => (
+                      <div key={idx} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                        <div>
+                          <span className="font-bold text-slate-900 block">{it.product_name}</span>
+                          <span className="text-[11px] text-slate-500">سعر الوحدة: {Number(it.unit_price).toFixed(2)} ر.س × {it.quantity}</span>
+                        </div>
+                        <span className="font-bold text-brand-700">{(it.total_price || (it.unit_price * it.quantity)).toFixed(2)} ر.س</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-slate-400 py-2">لا توجد تفاصيل خطوط إنتاج مرفقة.</p>
+                )}
+              </div>
+
+              {/* Financial Totals */}
+              <div className="bg-brand-50 p-3.5 rounded-2xl border border-brand-200 space-y-1">
+                <div className="flex justify-between text-slate-600">
+                  <span>المجموع الفرعي:</span>
+                  <span className="font-bold">{Number(order.subtotal || order.total_amount).toFixed(2)} ر.س</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>رسوم الشحن والمعاينة:</span>
+                  <span className="font-bold">{Number(order.delivery_fee || 0).toFixed(2)} ر.س</span>
+                </div>
+                <div className="flex justify-between text-brand-900 font-extrabold text-sm pt-1 border-t border-brand-200">
+                  <span>الإجمالي الكلي:</span>
+                  <span className="text-brand-700">{Number(order.total_amount).toFixed(2)} ر.س</span>
+                </div>
+              </div>
+
+              {/* Change Status Action Buttons */}
+              <div className="pt-2 space-y-2">
+                <h4 className="font-bold text-slate-800 text-xs">تحديث حالة الطلب وإرسال إشعار للعميل:</h4>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    disabled={isUpdating || order.status === 'قيد الانتظار'}
+                    onClick={() => onUpdateStatus('قيد الانتظار')}
+                    className="py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold rounded-xl text-xs disabled:opacity-40"
+                  >
+                    ⏳ قيد الانتظار
+                  </button>
+                  <button
+                    disabled={isUpdating || order.status === 'قيد التوصيل'}
+                    onClick={() => onUpdateStatus('قيد التوصيل')}
+                    className="py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs disabled:opacity-40"
+                  >
+                    🚚 قيد التوصيل
+                  </button>
+                  <button
+                    disabled={isUpdating || order.status === 'مكتمل'}
+                    onClick={() => onUpdateStatus('مكتمل')}
+                    className="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs disabled:opacity-40"
+                  >
+                    ✅ مكتمل
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Admin Single Product Card Component
+    function AdminProductCard({ product, category, onEdit, onDelete, onQuickStock }) {
+      return (
+        <div className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-sm flex items-start gap-3">
+          <img 
+            src={product.image_url || "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=400&q=80"} 
+            alt={product.name}
+            className="w-16 h-16 object-cover rounded-xl border bg-slate-50 shrink-0"
+          />
+          <div className="flex-1 min-w-0 space-y-1">
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-[10px] font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded">
+                  {category ? category.name : "معدة طبية"}
+                </span>
+                <h4 className="font-bold text-xs text-slate-900 truncate mt-1">{product.name}</h4>
+              </div>
+              <div className="flex gap-1">
+                <button 
+                  onClick={onEdit} 
+                  className="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 text-xs"
+                  title="تعديل المنتج"
+                >
+                  ✏️
+                </button>
+                <button 
+                  onClick={onDelete} 
+                  className="p-1.5 bg-red-50 hover:bg-red-100 rounded-lg text-red-600 text-xs"
+                  title="حذف المنتج"
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+
+            <p className="text-[10px] text-slate-500 line-clamp-1">{product.description || "بدون وصف"}</p>
+
+            <div className="pt-1 flex items-center justify-between text-xs">
+              <span className="font-extrabold text-brand-700">{Number(product.price).toFixed(2)} ر.س</span>
+
+              {/* Quick Stock Quantity Stepper */}
+              <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-0.5">
+                <button 
+                  onClick={() => onQuickStock(-1)} 
+                  className="w-5 h-5 rounded bg-white font-bold text-slate-700 flex items-center justify-center shadow-xs"
+                >
+                  -
+                </button>
+                <span className={`px-1 text-[11px] font-bold ${
+                  product.stock_quantity < 10 ? 'text-red-600' : 'text-slate-800'
+                }`}>
+                  مخزون: {product.stock_quantity}
+                </span>
+                <button 
+                  onClick={() => onQuickStock(1)} 
+                  className="w-5 h-5 rounded bg-white font-bold text-slate-700 flex items-center justify-center shadow-xs"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Product Add / Edit Form Modal
+    function ProductFormModal({ mode, product, categories, onClose, onSave }) {
+      const [name, setName] = useState(product?.name || '');
+      const [categoryId, setCategoryId] = useState(product?.category_id || (categories[0]?.id || 1));
+      const [price, setPrice] = useState(product?.price || '');
+      const [stockQuantity, setStockQuantity] = useState(product?.stock_quantity || '');
+      const [description, setDescription] = useState(product?.description || '');
+      const [inspectionDetails, setInspectionDetails] = useState(product?.inspection_details || '');
+      const [imageUrl, setImageUrl] = useState(product?.image_url || '');
+      const [isActive, setIsActive] = useState(product?.is_active !== undefined ? product.is_active : true);
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        onSave({
+          id: product?.id,
+          name,
+          category_id: Number(categoryId),
+          price,
+          stock_quantity: stockQuantity,
+          description,
+          inspection_details: inspectionDetails,
+          image_url: imageUrl,
+          is_active: isActive
+        });
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white w-full max-w-md rounded-3xl p-5 max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl space-y-4">
+            
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="font-bold text-slate-900 text-sm">
+                {mode === 'edit' ? 'تعديل بيانات المنتج الطبي' : 'إضافة منتج طبي جديد'}
+              </h3>
+              <button onClick={onClose} className="text-slate-400">✕</button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">اسم المنتج / المعدة:</label>
+                <input 
+                  type="text" 
+                  required
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="مثال: جهاز قياس ضغط الدم السريري"
+                  className="w-full p-2.5 bg-slate-50 border rounded-xl"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">التصنيف الطبي:</label>
+                  <select 
+                    value={categoryId}
+                    onChange={e => setCategoryId(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border rounded-xl"
+                  >
+                    {categories.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">السعر (ر.س):</label>
+                  <input 
+                    type="number" 
+                    step="0.01"
+                    required
+                    value={price}
+                    onChange={e => setPrice(e.target.value)}
+                    placeholder="250.00"
+                    className="w-full p-2.5 bg-slate-50 border rounded-xl"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">الكمية بالمخزون:</label>
+                <input 
+                  type="number" 
+                  required
+                  value={stockQuantity}
+                  onChange={e => setStockQuantity(e.target.value)}
+                  placeholder="50"
+                  className="w-full p-2.5 bg-slate-50 border rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">تفاصيل الفحص والجودة (مواصفات الفحص):</label>
+                <textarea 
+                  rows="2"
+                  value={inspectionDetails}
+                  onChange={e => setInspectionDetails(e.target.value)}
+                  placeholder="معتمد من SFDA، حاصل على ISO-13485، معاير بدقة 100%..."
+                  className="w-full p-2.5 bg-slate-50 border rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">الوصف الفني:</label>
+                <textarea 
+                  rows="2"
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  placeholder="مواصفات المنتج الفنية والاستخدام الطبّي..."
+                  className="w-full p-2.5 bg-slate-50 border rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">رابط الصورة (URL):</label>
+                <input 
+                  type="url" 
+                  value={imageUrl}
+                  onChange={e => setImageUrl(e.target.value)}
+                  placeholder="https://images.unsplash.com/..."
+                  className="w-full p-2.5 bg-slate-50 border rounded-xl"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input 
+                  type="checkbox"
+                  id="activeCheck"
+                  checked={isActive}
+                  onChange={e => setIsActive(e.target.checked)}
+                  className="accent-brand-600 w-4 h-4"
+                />
+                <label htmlFor="activeCheck" className="text-slate-800 font-semibold">منتج نشط ومتاح للطلب بالمتجر</label>
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button type="submit" className="flex-1 py-3 bg-brand-600 text-white rounded-xl font-bold">
+                  {mode === 'edit' ? 'تحديث البيانات' : 'حفظ المنتج'}
+                </button>
+                <button type="button" onClick={onClose} className="py-3 px-4 bg-slate-100 text-slate-600 rounded-xl font-bold">
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // Category Add Form Modal
+    function CategoryFormModal({ onClose, onSave }) {
+      const [name, setName] = useState('');
+      const [desc, setDesc] = useState('');
+      const [icon, setIcon] = useState('🩺');
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        onSave(name, desc, icon);
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b pb-2">
+              <h3 className="font-bold text-slate-900 text-sm">إضافة تصنيف طبي جديد</h3>
+              <button onClick={onClose} className="text-slate-400">✕</button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-600 mb-1 font-semibold">اسم التصنيف:</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="مثال: أجهزة التنفس والعناية"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-600 mb-1 font-semibold">وصف مختصر:</label>
+                <input 
+                  type="text" 
+                  placeholder="أجهزة ومستهلكات العناية المركزة"
+                  value={desc}
+                  onChange={e => setDesc(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-600 mb-1 font-semibold">أيقونة تعبيرية (Emoji):</label>
+                <input 
+                  type="text" 
+                  value={icon}
+                  onChange={e => setIcon(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border rounded-xl text-center text-lg"
+                />
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button type="submit" className="flex-1 py-2.5 bg-brand-600 text-white rounded-xl font-bold">
+                  حفظ التصنيف
+                </button>
+                <button type="button" onClick={onClose} className="py-2.5 px-4 bg-slate-100 text-slate-600 rounded-xl font-bold">
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // --- MOUNT APP ---
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

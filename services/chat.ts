@@ -3,6 +3,7 @@
 // real app (one app, or a connected customer+admin pair). Multi-turn Gemini, with the same keys/models as the rest.
 import * as SecureStore from "expo-secure-store";
 import { Lang, LANGS } from "./langs";
+import { AiImage } from "./instantPreview";
 
 export type ChatMsg = { role: "user" | "model"; text: string };
 export type ChatSpec = {
@@ -62,12 +63,22 @@ async function callOnce(key: string, model: string, contents: any[]): Promise<st
   }
 }
 
-/** The AI's next message given the whole conversation so far. */
-export async function chatReply(history: ChatMsg[]): Promise<string> {
+/** The AI's next message given the whole conversation so far. `images` are reference pictures the owner attached
+ *  (sent as vision input on the latest user message). */
+export async function chatReply(history: ChatMsg[], images: AiImage[] = []): Promise<string> {
   const ks = await keys();
   const chosen = (await SecureStore.getItemAsync("GEMINI_MODEL")) || MODELS[0];
   const models = [chosen, ...MODELS.filter((m) => m !== chosen)];
-  const contents = history.map((m) => ({ role: m.role, parts: [{ text: m.text }] }));
+  const contents: any[] = history.map((m) => ({ role: m.role, parts: [{ text: m.text }] as any[] }));
+  // Attach the picture(s) to the owner's most recent message so the AI sees what they mean.
+  if (images.length) {
+    for (let i = contents.length - 1; i >= 0; i--) {
+      if (contents[i].role === "user") {
+        contents[i].parts = [...images.map((im) => ({ inline_data: { mime_type: im.mime || "image/jpeg", data: im.data } })), ...contents[i].parts];
+        break;
+      }
+    }
+  }
   let last = "";
   for (let round = 0; round < 2; round++) {
     for (const model of models) {

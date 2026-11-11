@@ -37,6 +37,18 @@ jobs:
         with:
           channel: stable
           cache: true
+      # Biggest speed-up: reuse Gradle (Android deps + plugin) and pub (Dart packages) between builds instead of
+      # re-downloading them every time. Each run restores the latest cache and saves an updated one.
+      - name: Cache Gradle and pub
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.pub-cache
+          key: flutter-build-${{ github.run_id }}
+          restore-keys: |
+            flutter-build-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -67,6 +79,8 @@ jobs:
           NAME="app_$(echo "$APP" | tr '-' '_')"
           flutter create --platforms=android --org com.generated --project-name "$NAME" "$PROJ"
           rm -rf "$PROJ/test"
+          # Reuse Gradle's build cache (kept warm by the actions/cache step) and build modules in parallel.
+          printf '\norg.gradle.caching=true\norg.gradle.parallel=true\n' >> "$PROJ/android/gradle.properties"
           # The name under the icon (can be Arabic), from apps/<app>/display-name.txt.
           python scripts/app_label.py android "$PROJ/android/app/src/main/res" "$APP"
           python scripts/app_label.py manifest "$PROJ/android/app/src/main/AndroidManifest.xml"

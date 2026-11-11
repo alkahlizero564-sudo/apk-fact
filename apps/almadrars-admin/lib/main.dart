@@ -27,23 +27,24 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 // ---------------------------------------------------------------------------
-// M3 & GLASSMORPHISM DESIGN SYSTEM CONSTANTS
+// DESIGN SYSTEM CONSTANTS & HELPERS
 // ---------------------------------------------------------------------------
-const Color kM3Primary = Color(0xFF3A86FF);
-const Color kM3Secondary = Color(0xFFFF006E);
-const Color kM3Accent = Color(0xFFFFBE0B);
-const Color kM3BgDark = Color(0xFF030712);
-const Color kM3SurfaceGlass = Color(0x991E293B);
-const Color kM3BorderGlass = Color(0x1FFFFFFF);
+const Color kM3Primary = Color(0xFF2563EB);
+const Color kM3Secondary = Color(0xFFE11D48);
+const Color kM3Accent = Color(0xFFF59E0B);
+const Color kM3BgDark = Color(0xFF090D16);
+const Color kM3SurfaceDark = Color(0xFF131B2E);
+const Color kM3SurfaceCard = Color(0xFF1E293B);
+const Color kM3BorderGlass = Color(0x2AFFFFFF);
 const Color kM3Success = Color(0xFF10B981);
 const Color kM3Warning = Color(0xFFF59E0B);
 const Color kM3Error = Color(0xFFEF4444);
 
-// Global Messenger Key for SnackBars from anywhere
-final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 // ---------------------------------------------------------------------------
-// SUPABASE / LOCAL API CLIENT
+// SUPABASE REST CLIENT SERVICE
 // ---------------------------------------------------------------------------
 const String kSupabaseUrl = "https://jvjtgzewumfecjdpekna.supabase.co";
 const String kSupabaseAnonKey =
@@ -67,7 +68,8 @@ class SupabaseService {
     return map;
   }
 
-  static Future<void> saveSession(String at, String rt, String uid, String email) async {
+  static Future<void> saveSession(
+      String at, String rt, String uid, String email) async {
     accessToken = at;
     refreshToken = rt;
     userId = uid;
@@ -97,25 +99,46 @@ class SupabaseService {
     await prefs.clear();
   }
 
-  static String parseErrorMessage(dynamic body, String defaultMsg) {
+  static String parseErrorMessage(dynamic body, String defaultMsg,
+      {bool isVerify = false}) {
     if (body is Map) {
-      final msg = (body['msg'] ?? body['message'] ?? body['error_description'] ?? body['error'] ?? '').toString();
-      if (msg.isNotEmpty) {
-        if (msg.contains('rate limit') || msg.contains('over_request')) return 'اتبعتت رسائل كتير، استنى دقايق';
-        if (msg.contains('smtp') || msg.contains('email')) return 'ما قدرنا نرسل البريد';
-        return msg;
+      final msg = (body['msg'] ??
+              body['message'] ??
+              body['error_description'] ??
+              body['error'] ??
+              '')
+          .toString();
+      final lower = msg.toLowerCase();
+      if (lower.contains('rate limit') ||
+          lower.contains('over_request') ||
+          lower.contains('too many requests')) {
+        return 'اتبعتت رسائل كتير، استنى دقايق';
       }
+      if (lower.contains('smtp') ||
+          lower.contains('sending') ||
+          lower.contains('error sending') ||
+          lower.contains('unable to send')) {
+        return 'ما قدرنا نرسل البريد';
+      }
+      if (isVerify) {
+        return 'رمز التحقق غير صحيح أو انتهت صلاحيته';
+      }
+      if (msg.isNotEmpty) return msg;
     }
-    return defaultMsg;
+    return isVerify ? 'رمز التحقق غير صحيح أو انتهت صلاحيته' : defaultMsg;
   }
 
   static Future<bool> tryRefreshToken() async {
     if (refreshToken == null || refreshToken!.isEmpty) return false;
     try {
-      final url = Uri.parse('$kSupabaseUrl/auth/v1/token?grant_type=refresh_token');
+      final url =
+          Uri.parse('$kSupabaseUrl/auth/v1/token?grant_type=refresh_token');
       final response = await http.post(
         url,
-        headers: {'apikey': kSupabaseAnonKey, 'Content-Type': 'application/json'},
+        headers: {
+          'apikey': kSupabaseAnonKey,
+          'Content-Type': 'application/json',
+        },
         body: jsonEncode({"refresh_token": refreshToken}),
       );
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -132,15 +155,38 @@ class SupabaseService {
     return false;
   }
 
+  // Mandatory Pair Rule: check if email is admin before any code/auth action
+  static Future<bool> isAdminEmail(String email) async {
+    try {
+      final url = Uri.parse('$kSupabaseUrl/rest/v1/rpc/almadrars_is_admin_email');
+      final response = await http.post(
+        url,
+        headers: {
+          'apikey': kSupabaseAnonKey,
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({"mail": email}),
+      );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final res = jsonDecode(response.body);
+        if (res is bool) return res;
+        if (res.toString() == 'true') return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
   // Claim Admin RPC
   static Future<bool> claimAdmin({String? pin}) async {
     try {
       final url = Uri.parse('$kSupabaseUrl/rest/v1/rpc/almadrars_claim_admin');
       final bodyMap = pin != null ? {"pin": pin} : <String, dynamic>{};
-      var response = await http.post(url, headers: headers, body: jsonEncode(bodyMap));
+      var response =
+          await http.post(url, headers: headers, body: jsonEncode(bodyMap));
       if (response.statusCode == 401) {
         if (await tryRefreshToken()) {
-          response = await http.post(url, headers: headers, body: jsonEncode(bodyMap));
+          response =
+              await http.post(url, headers: headers, body: jsonEncode(bodyMap));
         } else {
           return false;
         }
@@ -154,19 +200,37 @@ class SupabaseService {
     return false;
   }
 
-  // 3. Register device for push RPC
+  // Read profile role
+  static Future<String?> getProfileRole(String uid) async {
+    try {
+      final res = await getTable('almadrars_profiles', query: 'id=eq.$uid');
+      if (res.isNotEmpty && res.first is Map) {
+        return res.first['role'] as String?;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  // Register Device RPC
   static Future<void> registerDevice(String token) async {
     try {
-      final url = Uri.parse('$kSupabaseUrl/rest/v1/rpc/almadrars_register_device');
-      await http.post(url, headers: headers, body: jsonEncode({"device_token": token, "app_name": "admin"}));
+      final url =
+          Uri.parse('$kSupabaseUrl/rest/v1/rpc/almadrars_register_device');
+      await http.post(url,
+          headers: headers,
+          body: jsonEncode({"device_token": token, "app_name": "admin"}));
     } catch (_) {}
   }
 
-  static Future<void> signIn({required String email, required String password}) async {
+  static Future<void> signIn(
+      {required String email, required String password}) async {
     final url = Uri.parse('$kSupabaseUrl/auth/v1/token?grant_type=password');
     final response = await http.post(
       url,
-      headers: {'apikey': kSupabaseAnonKey, 'Content-Type': 'application/json'},
+      headers: {
+        'apikey': kSupabaseAnonKey,
+        'Content-Type': 'application/json',
+      },
       body: jsonEncode({"email": email, "password": password}),
     );
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -183,8 +247,10 @@ class SupabaseService {
     }
   }
 
-  static Future<List<dynamic>> getTable(String table, {String query = ''}) async {
-    final url = Uri.parse('$kSupabaseUrl/rest/v1/$table?select=*&$query');
+  static Future<List<dynamic>> getTable(String table,
+      {String query = ''}) async {
+    final queryString = query.isEmpty ? 'select=*' : 'select=*&$query';
+    final url = Uri.parse('$kSupabaseUrl/rest/v1/$table?$queryString');
     var response = await http.get(url, headers: headers);
     if (response.statusCode == 401) {
       if (await tryRefreshToken()) {
@@ -199,12 +265,15 @@ class SupabaseService {
     return [];
   }
 
-  static Future<dynamic> insertRow(String table, Map<String, dynamic> data) async {
+  static Future<dynamic> insertRow(
+      String table, Map<String, dynamic> data) async {
     final url = Uri.parse('$kSupabaseUrl/rest/v1/$table');
-    var response = await http.post(url, headers: headers, body: jsonEncode(data));
+    var response =
+        await http.post(url, headers: headers, body: jsonEncode(data));
     if (response.statusCode == 401) {
       if (await tryRefreshToken()) {
-        response = await http.post(url, headers: headers, body: jsonEncode(data));
+        response =
+            await http.post(url, headers: headers, body: jsonEncode(data));
       } else {
         throw Exception('401');
       }
@@ -220,12 +289,15 @@ class SupabaseService {
     throw Exception('فشل حفظ البيانات');
   }
 
-  static Future<void> updateRow(String table, String query, Map<String, dynamic> data) async {
+  static Future<void> updateRow(
+      String table, String query, Map<String, dynamic> data) async {
     final url = Uri.parse('$kSupabaseUrl/rest/v1/$table?$query');
-    var response = await http.patch(url, headers: headers, body: jsonEncode(data));
+    var response =
+        await http.patch(url, headers: headers, body: jsonEncode(data));
     if (response.statusCode == 401) {
       if (await tryRefreshToken()) {
-        response = await http.patch(url, headers: headers, body: jsonEncode(data));
+        response =
+            await http.patch(url, headers: headers, body: jsonEncode(data));
       } else {
         throw Exception('401');
       }
@@ -234,27 +306,10 @@ class SupabaseService {
       throw Exception('فشل تحديث البيانات');
     }
   }
-
-  static Future<dynamic> rpc(String fn, Map<String, dynamic> body) async {
-    final url = Uri.parse('$kSupabaseUrl/rest/v1/rpc/$fn');
-    var response = await http.post(url, headers: headers, body: jsonEncode(body));
-    if (response.statusCode == 401) {
-      if (await tryRefreshToken()) {
-        response = await http.post(url, headers: headers, body: jsonEncode(body));
-      } else {
-        throw Exception('401');
-      }
-    }
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      if (response.body.isNotEmpty) return jsonDecode(response.body);
-      return null;
-    }
-    throw Exception('فشل تنفيذ العملية');
-  }
 }
 
 // ---------------------------------------------------------------------------
-// MATERIAL 3 APP ENTRY & THEMES
+// MAIN APPLICATION
 // ---------------------------------------------------------------------------
 class AlmadrarsAdminApp extends StatelessWidget {
   const AlmadrarsAdminApp({super.key});
@@ -263,7 +318,7 @@ class AlmadrarsAdminApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       scaffoldMessengerKey: rootScaffoldMessengerKey,
-      title: 'إدارة المدرار للمقاولات الهندسية (almadrars Admin)',
+      title: 'إدارة المدرار للمقاولات الهندسية',
       debugShowCheckedModeBanner: false,
       locale: const Locale('ar', 'LY'),
       builder: (context, child) {
@@ -273,6 +328,14 @@ class AlmadrarsAdminApp extends StatelessWidget {
         );
       },
       themeMode: ThemeMode.dark,
+      theme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.light,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: kM3Primary,
+          brightness: Brightness.light,
+        ),
+      ),
       darkTheme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
@@ -281,12 +344,11 @@ class AlmadrarsAdminApp extends StatelessWidget {
           brightness: Brightness.dark,
           primary: kM3Primary,
           secondary: kM3Secondary,
-          surface: const Color(0xFF0F172A),
+          surface: kM3SurfaceDark,
         ),
         scaffoldBackgroundColor: kM3BgDark,
-        fontFamily: 'Noto Sans Arabic',
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF0A0F1D),
+          backgroundColor: Color(0xFF0C1322),
           elevation: 0,
           centerTitle: true,
         ),
@@ -297,7 +359,7 @@ class AlmadrarsAdminApp extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// AUTHENTICATION WRAPPER
+// AUTH WRAPPER
 // ---------------------------------------------------------------------------
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -319,10 +381,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   Future<void> _checkAuth() async {
     final hasSession = await SupabaseService.loadSession();
-    if (hasSession) {
-      // Call rpc almadrars_claim_admin
-      final isAdmin = await SupabaseService.claimAdmin();
-      if (!isAdmin) {
+    if (hasSession && SupabaseService.userId != null) {
+      // 1. Claim admin with {}
+      await SupabaseService.claimAdmin();
+      // 2. Read profile again
+      final role = await SupabaseService.getProfileRole(SupabaseService.userId!);
+      if (role != 'admin') {
         if (mounted) {
           setState(() {
             _isLoading = false;
@@ -332,7 +396,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         }
         return;
       }
-      // Register device for push
+      // Register Push
       try {
         await FirebaseMessaging.instance.requestPermission();
         final token = await FirebaseMessaging.instance.getToken();
@@ -370,7 +434,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
 }
 
 // ---------------------------------------------------------------------------
-// ADMIN PIN SCREEN (دخول الإدارة عبر الرمز السري)
+// ADMIN PIN SCREEN
 // ---------------------------------------------------------------------------
 class AdminPinScreen extends StatefulWidget {
   final VoidCallback onSuccess;
@@ -390,7 +454,8 @@ class _AdminPinScreenState extends State<AdminPinScreen> {
       _isLoading = true;
       _error = null;
     });
-    final success = await SupabaseService.claimAdmin(pin: _pinController.text.trim());
+    final success =
+        await SupabaseService.claimAdmin(pin: _pinController.text.trim());
     setState(() => _isLoading = false);
     if (success) {
       try {
@@ -416,32 +481,49 @@ class _AdminPinScreenState extends State<AdminPinScreen> {
           children: [
             const Icon(Icons.admin_panel_settings, size: 64, color: kM3Primary),
             const SizedBox(height: 24),
-            const Text('أدخل رمز الإدارة السري لتفعيل صلاحيات المدير على هذا الجهاز', textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: Colors.white70)),
+            const Text(
+              'أدخل رمز الإدارة لتفعيل صلاحيات الإدارة على هذا الجهاز',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.white70),
+            ),
             const SizedBox(height: 24),
             if (_error != null) ...[
-              Text(_error!, style: const TextStyle(color: kM3Error), textAlign: TextAlign.center),
+              Text(_error!,
+                  style: const TextStyle(color: kM3Error),
+                  textAlign: TextAlign.center),
               const SizedBox(height: 12),
             ],
             TextField(
               controller: _pinController,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'رمز الإدارة', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'رمز الإدارة',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _isLoading ? null : _submitPin,
-              style: ElevatedButton.styleFrom(backgroundColor: kM3Primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)),
-              child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('تأكيد رمز الإدارة'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kM3Primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: _isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('تأكيد رمز الإدارة'),
             ),
             const SizedBox(height: 12),
             TextButton(
               onPressed: () async {
                 await SupabaseService.signOut();
                 if (mounted) {
-                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AuthScreen()));
+                  Navigator.pushReplacement(context,
+                      MaterialPageRoute(builder: (_) => const AuthScreen()));
                 }
               },
-              child: const Text('تسجيل الخروج والرجوع', style: TextStyle(color: kM3Error)),
+              child: const Text('تسجيل الخروج والرجوع',
+                  style: TextStyle(color: kM3Error)),
             ),
           ],
         ),
@@ -451,7 +533,7 @@ class _AdminPinScreenState extends State<AdminPinScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// FULL AUTHENTICATION SCREEN (تسجيل الدخول / حساب جديد / نسيت كلمة المرور)
+// AUTH SCREEN (LOGIN, SIGNUP, RECOVERY RESTRICTED TO ADMIN EMAIL)
 // ---------------------------------------------------------------------------
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -465,11 +547,9 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isLoading = false;
   String? _error;
 
-  // Login controllers
   final _loginEmailController = TextEditingController();
   final _loginPasswordController = TextEditingController();
 
-  // Signup controllers
   final _signupNameController = TextEditingController();
   final _signupPhoneController = TextEditingController();
   final _signupEmailController = TextEditingController();
@@ -477,18 +557,27 @@ class _AuthScreenState extends State<AuthScreen> {
   final _signupConfirmController = TextEditingController();
   bool _obscurePassword = true;
 
-  // Recovery controllers
   final _recoverEmailController = TextEditingController();
 
-  // OTP Verification dialog/state
   bool _isVerifyMode = false;
   String _verifyEmail = '';
-  String _verifyType = 'signup'; // 'signup' or 'recovery'
+  String _verifyType = 'signup';
   final _otpController = TextEditingController();
 
-  // New password after recovery
   bool _isNewPasswordMode = false;
   final _newPasswordController = TextEditingController();
+
+  Future<bool> _verifyAdminEmailOrRefuse(String email) async {
+    final isAdmin = await SupabaseService.isAdminEmail(email);
+    if (!isAdmin) {
+      setState(() {
+        _isLoading = false;
+        _error = 'البريد ده مش مخوّل لدخول الإدارة، تواصل مع مالك التطبيق';
+      });
+      return false;
+    }
+    return true;
+  }
 
   void _handleLogin() async {
     final email = _loginEmailController.text.trim();
@@ -498,36 +587,55 @@ class _AuthScreenState extends State<AuthScreen> {
       return;
     }
 
-    setState(() { _isLoading = true; _error = null; });
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final allowed = await _verifyAdminEmailOrRefuse(email);
+    if (!allowed) return;
 
     try {
       await SupabaseService.signIn(email: email, password: pass);
-      // Claim admin & check
-      final isAdmin = await SupabaseService.claimAdmin();
-      if (!isAdmin) {
+      await SupabaseService.claimAdmin();
+      final role = await SupabaseService.getProfileRole(SupabaseService.userId!);
+      if (role != 'admin') {
         if (mounted) {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AdminPinScreen(onSuccess: () {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainContainerScreen()));
-          })));
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AdminPinScreen(
+                onSuccess: () => Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MainContainerScreen()),
+                ),
+              ),
+            ),
+          );
         }
         return;
       }
+
       try {
         await FirebaseMessaging.instance.requestPermission();
         final token = await FirebaseMessaging.instance.getToken();
         if (token != null) await SupabaseService.registerDevice(token);
       } catch (_) {}
+
       if (mounted) {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainContainerScreen()));
+        Navigator.pushReplacement(context,
+            MaterialPageRoute(builder: (_) => const MainContainerScreen()));
       }
     } catch (e) {
       final msg = e.toString().replaceAll('Exception: ', '');
       if (msg.contains('not confirmed') || msg.contains('Email not confirmed')) {
-        // Resend code and open verify
         try {
           await http.post(
             Uri.parse('$kSupabaseUrl/auth/v1/resend'),
-            headers: {'apikey': kSupabaseAnonKey, 'Content-Type': 'application/json'},
+            headers: {
+              'apikey': kSupabaseAnonKey,
+              'Content-Type': 'application/json'
+            },
             body: jsonEncode({"type": "signup", "email": email}),
           );
         } catch (_) {}
@@ -565,13 +673,22 @@ class _AuthScreenState extends State<AuthScreen> {
       return;
     }
 
-    setState(() { _isLoading = true; _error = null; });
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final allowed = await _verifyAdminEmailOrRefuse(email);
+    if (!allowed) return;
 
     try {
       final url = Uri.parse('$kSupabaseUrl/auth/v1/signup');
       final response = await http.post(
         url,
-        headers: {'apikey': kSupabaseAnonKey, 'Content-Type': 'application/json'},
+        headers: {
+          'apikey': kSupabaseAnonKey,
+          'Content-Type': 'application/json'
+        },
         body: jsonEncode({
           "email": email,
           "password": pass,
@@ -586,7 +703,8 @@ class _AuthScreenState extends State<AuthScreen> {
         });
       } else {
         final decoded = jsonDecode(response.body);
-        throw Exception(SupabaseService.parseErrorMessage(decoded, 'فشل إنشاء الحساب'));
+        throw Exception(
+            SupabaseService.parseErrorMessage(decoded, 'فشل إنشاء الحساب'));
       }
     } catch (e) {
       setState(() => _error = e.toString().replaceAll('Exception: ', ''));
@@ -602,13 +720,20 @@ class _AuthScreenState extends State<AuthScreen> {
       return;
     }
 
-    setState(() { _isLoading = true; _error = null; });
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
       final url = Uri.parse('$kSupabaseUrl/auth/v1/verify');
       final response = await http.post(
         url,
-        headers: {'apikey': kSupabaseAnonKey, 'Content-Type': 'application/json'},
-        body: jsonEncode({"type": _verifyType, "email": _verifyEmail, "token": code}),
+        headers: {
+          'apikey': kSupabaseAnonKey,
+          'Content-Type': 'application/json'
+        },
+        body: jsonEncode(
+            {"type": _verifyType, "email": _verifyEmail, "token": code}),
       );
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final data = jsonDecode(response.body);
@@ -626,13 +751,23 @@ class _AuthScreenState extends State<AuthScreen> {
           return;
         }
 
-        // Claim admin & check
-        final isAdmin = await SupabaseService.claimAdmin();
-        if (!isAdmin) {
+        await SupabaseService.claimAdmin();
+        final role =
+            await SupabaseService.getProfileRole(SupabaseService.userId!);
+        if (role != 'admin') {
           if (mounted) {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AdminPinScreen(onSuccess: () {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainContainerScreen()));
-            })));
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AdminPinScreen(
+                  onSuccess: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const MainContainerScreen()),
+                  ),
+                ),
+              ),
+            );
           }
           return;
         }
@@ -644,11 +779,14 @@ class _AuthScreenState extends State<AuthScreen> {
         } catch (_) {}
 
         if (mounted) {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainContainerScreen()));
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (_) => const MainContainerScreen()));
         }
       } else {
         final decoded = jsonDecode(response.body);
-        throw Exception(SupabaseService.parseErrorMessage(decoded, 'الرمز غير صحيح أو انتهت صلاحيته'));
+        throw Exception(SupabaseService.parseErrorMessage(
+            decoded, 'رمز التحقق غير صحيح أو انتهت صلاحيته',
+            isVerify: true));
       }
     } catch (e) {
       setState(() => _error = e.toString().replaceAll('Exception: ', ''));
@@ -664,13 +802,22 @@ class _AuthScreenState extends State<AuthScreen> {
       return;
     }
 
-    setState(() { _isLoading = true; _error = null; });
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final allowed = await _verifyAdminEmailOrRefuse(email);
+    if (!allowed) return;
 
     try {
       final url = Uri.parse('$kSupabaseUrl/auth/v1/recover');
       final response = await http.post(
         url,
-        headers: {'apikey': kSupabaseAnonKey, 'Content-Type': 'application/json'},
+        headers: {
+          'apikey': kSupabaseAnonKey,
+          'Content-Type': 'application/json'
+        },
         body: jsonEncode({"email": email}),
       );
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -681,7 +828,8 @@ class _AuthScreenState extends State<AuthScreen> {
         });
       } else {
         final decoded = jsonDecode(response.body);
-        throw Exception(SupabaseService.parseErrorMessage(decoded, 'فشل إرسال رمز استعادة كلمة المرور'));
+        throw Exception(SupabaseService.parseErrorMessage(
+            decoded, 'فشل إرسال رمز استعادة كلمة المرور'));
       }
     } catch (e) {
       setState(() => _error = e.toString().replaceAll('Exception: ', ''));
@@ -693,11 +841,15 @@ class _AuthScreenState extends State<AuthScreen> {
   void _handleUpdatePassword() async {
     final newPass = _newPasswordController.text.trim();
     if (newPass.length < 6) {
-      setState(() => _error = 'كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل');
+      setState(
+          () => _error = 'كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل');
       return;
     }
 
-    setState(() { _isLoading = true; _error = null; });
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
       final url = Uri.parse('$kSupabaseUrl/auth/v1/user');
       final response = await http.put(
@@ -707,12 +859,15 @@ class _AuthScreenState extends State<AuthScreen> {
       );
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث كلمة المرور بنجاح')));
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainContainerScreen()));
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تم تحديث كلمة المرور بنجاح')));
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (_) => const MainContainerScreen()));
         }
       } else {
         final decoded = jsonDecode(response.body);
-        throw Exception(SupabaseService.parseErrorMessage(decoded, 'فشل تحديث كلمة المرور'));
+        throw Exception(SupabaseService.parseErrorMessage(
+            decoded, 'فشل تحديث كلمة المرور'));
       }
     } catch (e) {
       setState(() => _error = e.toString().replaceAll('Exception: ', ''));
@@ -724,7 +879,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('إدارة المدرار - تسجيل الدخول')),
+      appBar: AppBar(title: const Text('إدارة المدرار للمقاولات')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -733,12 +888,18 @@ class _AuthScreenState extends State<AuthScreen> {
             if (_isVerifyMode) ...[
               const Icon(Icons.mark_email_read, size: 64, color: kM3Primary),
               const SizedBox(height: 16),
-              const Text('بعتنا رمز على بريدك', textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text('بعتنا رمز على بريدك',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text('أدخل الرمز المكون من 6 أرقام المرسل إلى: $_verifyEmail', textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              Text('أدخل الرمز المكون من 6 أرقام المرسل إلى: $_verifyEmail',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey)),
               const SizedBox(height: 24),
               if (_error != null) ...[
-                Text(_error!, style: const TextStyle(color: kM3Error), textAlign: TextAlign.center),
+                Text(_error!,
+                    style: const TextStyle(color: kM3Error),
+                    textAlign: TextAlign.center),
                 const SizedBox(height: 12),
               ],
               TextField(
@@ -746,14 +907,22 @@ class _AuthScreenState extends State<AuthScreen> {
                 maxLength: 6,
                 textAlign: TextAlign.center,
                 keyboardType: TextInputType.number,
-                style: const TextStyle(fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.bold),
-                decoration: const InputDecoration(border: OutlineInputBorder(), counterText: ''),
+                style: const TextStyle(
+                    fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.bold),
+                decoration: const InputDecoration(
+                    border: OutlineInputBorder(), counterText: ''),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _isLoading ? null : _handleVerifyCode,
-                style: ElevatedButton.styleFrom(backgroundColor: kM3Primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)),
-                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('تأكيد الرمز'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kM3Primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('تأكيد الرمز'),
               ),
               const SizedBox(height: 12),
               TextButton(
@@ -761,10 +930,17 @@ class _AuthScreenState extends State<AuthScreen> {
                   try {
                     await http.post(
                       Uri.parse('$kSupabaseUrl/auth/v1/resend'),
-                      headers: {'apikey': kSupabaseAnonKey, 'Content-Type': 'application/json'},
-                      body: jsonEncode({"type": _verifyType, "email": _verifyEmail}),
+                      headers: {
+                        'apikey': kSupabaseAnonKey,
+                        'Content-Type': 'application/json'
+                      },
+                      body: jsonEncode(
+                          {"type": _verifyType, "email": _verifyEmail}),
                     );
-                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إعادة إرسال الرمز بنجاح')));
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('تم إعادة إرسال الرمز')));
+                    }
                   } catch (e) {
                     setState(() => _error = 'اتبعتت رسائل كتير، استنى دقايق');
                   }
@@ -774,70 +950,98 @@ class _AuthScreenState extends State<AuthScreen> {
             ] else if (_isNewPasswordMode) ...[
               const Icon(Icons.lock_reset, size: 64, color: kM3Primary),
               const SizedBox(height: 16),
-              const Text('تعيين كلمة مرور جديدة', textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text('تعيين كلمة مرور جديدة',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 24),
               if (_error != null) ...[
-                Text(_error!, style: const TextStyle(color: kM3Error), textAlign: TextAlign.center),
+                Text(_error!,
+                    style: const TextStyle(color: kM3Error),
+                    textAlign: TextAlign.center),
                 const SizedBox(height: 12),
               ],
               TextField(
                 controller: _newPasswordController,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: 'كلمة المرور الجديدة (6+ أحرف)', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                    labelText: 'كلمة المرور الجديدة (6+ أحرف)',
+                    border: OutlineInputBorder()),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _isLoading ? null : _handleUpdatePassword,
-                style: ElevatedButton.styleFrom(backgroundColor: kM3Primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)),
-                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('حفظ وتحديث كلمة المرور'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kM3Primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('حفظ وتحديث كلمة المرور'),
               ),
             ] else ...[
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => setState(() { _tabIndex = 0; _error = null; }),
+                      onPressed: () =>
+                          setState(() { _tabIndex = 0; _error = null; }),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _tabIndex == 0 ? kM3Primary : Colors.transparent,
+                        backgroundColor: _tabIndex == 0
+                            ? kM3Primary
+                            : Colors.transparent,
                         foregroundColor: Colors.white,
                         elevation: 0,
                       ),
-                      child: const Text('تسجيل الدخول', style: TextStyle(fontSize: 12)),
+                      child: const Text('تسجيل الدخول',
+                          style: TextStyle(fontSize: 12)),
                     ),
                   ),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => setState(() { _tabIndex = 1; _error = null; }),
+                      onPressed: () =>
+                          setState(() { _tabIndex = 1; _error = null; }),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _tabIndex == 1 ? kM3Primary : Colors.transparent,
+                        backgroundColor: _tabIndex == 1
+                            ? kM3Primary
+                            : Colors.transparent,
                         foregroundColor: Colors.white,
                         elevation: 0,
                       ),
-                      child: const Text('حساب جديد', style: TextStyle(fontSize: 12)),
+                      child: const Text('حساب جديد',
+                          style: TextStyle(fontSize: 12)),
                     ),
                   ),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => setState(() { _tabIndex = 2; _error = null; }),
+                      onPressed: () =>
+                          setState(() { _tabIndex = 2; _error = null; }),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _tabIndex == 2 ? kM3Primary : Colors.transparent,
+                        backgroundColor: _tabIndex == 2
+                            ? kM3Primary
+                            : Colors.transparent,
                         foregroundColor: Colors.white,
                         elevation: 0,
                       ),
-                      child: const Text('نسيت المرور', style: TextStyle(fontSize: 11)),
+                      child: const Text('نسيت المرور',
+                          style: TextStyle(fontSize: 11)),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
               if (_error != null) ...[
-                Text(_error!, style: const TextStyle(color: kM3Error), textAlign: TextAlign.center),
+                Text(_error!,
+                    style: const TextStyle(color: kM3Error),
+                    textAlign: TextAlign.center),
                 const SizedBox(height: 12),
               ],
               if (_tabIndex == 0) ...[
                 TextField(
                   controller: _loginEmailController,
-                  decoration: const InputDecoration(labelText: 'البريد الإلكتروني', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                      labelText: 'البريد الإلكتروني للإدارة',
+                      border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -847,32 +1051,45 @@ class _AuthScreenState extends State<AuthScreen> {
                     labelText: 'كلمة المرور',
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      icon: Icon(_obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _handleLogin,
-                  style: ElevatedButton.styleFrom(backgroundColor: kM3Primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)),
-                  child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('تسجيل الدخول'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kM3Primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('دخول لوحة الإدارة'),
                 ),
               ] else if (_tabIndex == 1) ...[
                 TextField(
                   controller: _signupNameController,
-                  decoration: const InputDecoration(labelText: 'الاسم الكامل', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                      labelText: 'الاسم الكامل', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _signupPhoneController,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(labelText: 'رقم الهاتف', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                      labelText: 'رقم الهاتف', border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _signupEmailController,
-                  decoration: const InputDecoration(labelText: 'البريد الإلكتروني', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                      labelText: 'البريد الإلكتروني المعتمد للإدارة',
+                      border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -882,8 +1099,11 @@ class _AuthScreenState extends State<AuthScreen> {
                     labelText: 'كلمة المرور (6+ أحرف)',
                     border: const OutlineInputBorder(),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      icon: Icon(_obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                 ),
@@ -891,24 +1111,40 @@ class _AuthScreenState extends State<AuthScreen> {
                 TextField(
                   controller: _signupConfirmController,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'تأكيد كلمة المرور', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                      labelText: 'تأكيد كلمة المرور',
+                      border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _handleSignup,
-                  style: ElevatedButton.styleFrom(backgroundColor: kM3Primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)),
-                  child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('إنشاء الحساب'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kM3Primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('تسجيل حساب إداري جديد'),
                 ),
               ] else if (_tabIndex == 2) ...[
                 TextField(
                   controller: _recoverEmailController,
-                  decoration: const InputDecoration(labelText: 'البريد الإلكتروني لاستعادة كلمة المرور', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                      labelText: 'البريد الإلكتروني الإداري للاستعادة',
+                      border: OutlineInputBorder()),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _handleRecover,
-                  style: ElevatedButton.styleFrom(backgroundColor: kM3Primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)),
-                  child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('إرسال رمز الاستعادة'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kM3Primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('إرسال رمز الاستعادة'),
                 ),
               ],
             ],
@@ -920,7 +1156,7 @@ class _AuthScreenState extends State<AuthScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// MAIN CONTAINER SCREEN (UNIFIED TABS WITH 15s LIVE SYNC & NOTIFICATIONS INBOX)
+// MAIN CONTAINER SCREEN (15S SYNC + INBOX WITH UNREAD BADGE + REALTIME FCM)
 // ---------------------------------------------------------------------------
 class MainContainerScreen extends StatefulWidget {
   final int initialTab;
@@ -930,7 +1166,8 @@ class MainContainerScreen extends StatefulWidget {
   State<MainContainerScreen> createState() => _MainContainerScreenState();
 }
 
-class _MainContainerScreenState extends State<MainContainerScreen> with WidgetsBindingObserver {
+class _MainContainerScreenState extends State<MainContainerScreen>
+    with WidgetsBindingObserver {
   late int _currentIndex;
   List<dynamic> _requests = [];
   List<dynamic> _services = [];
@@ -976,7 +1213,8 @@ class _MainContainerScreenState extends State<MainContainerScreen> with WidgetsB
         if (notification != null) {
           rootScaffoldMessengerKey.currentState?.showSnackBar(
             SnackBar(
-              content: Text('${notification.title ?? 'تنبيه'}: ${notification.body ?? ''}'),
+              content: Text(
+                  '${notification.title ?? 'تنبيه'}: ${notification.body ?? ''}'),
               backgroundColor: kM3Primary,
               duration: const Duration(seconds: 4),
             ),
@@ -990,13 +1228,19 @@ class _MainContainerScreenState extends State<MainContainerScreen> with WidgetsB
   Future<void> _fetchAllDataQuiet() async {
     try {
       final uid = SupabaseService.userId ?? '';
-      final reqs = await SupabaseService.getTable('almadrars_requests', query: 'order=created_at.desc');
-      final srvs = await SupabaseService.getTable('almadrars_services', query: 'order=created_at.desc');
-      final custs = await SupabaseService.getTable('almadrars_profiles', query: 'role=eq.customer&order=created_at.desc');
-      
-      // Exact notifications query contract: GET almadrars_notifications?or=(to_user.eq.<uid>,to_role.eq.admin)&order=created_at.desc
-      final notifsUrlQuery = 'or=(to_user.eq.$uid,to_role.eq.admin)&order=created_at.desc';
-      final notifs = await SupabaseService.getTable('almadrars_notifications', query: notifsUrlQuery);
+      final reqs = await SupabaseService.getTable('almadrars_requests',
+          query: 'order=created_at.desc');
+      final srvs = await SupabaseService.getTable('almadrars_services',
+          query: 'order=created_at.desc');
+      final custs = await SupabaseService.getTable('almadrars_profiles',
+          query: 'role=eq.customer&order=created_at.desc');
+
+      // CONTRACT QUERY:
+      // GET almadrars_notifications?or=(to_user.eq.<uid>,to_role.eq.admin)&order=created_at.desc
+      final notifsUrlQuery =
+          'or=(to_user.eq.$uid,to_role.eq.admin)&order=created_at.desc';
+      final notifs = await SupabaseService.getTable('almadrars_notifications',
+          query: notifsUrlQuery);
 
       if (mounted) {
         setState(() {
@@ -1019,14 +1263,23 @@ class _MainContainerScreenState extends State<MainContainerScreen> with WidgetsB
   @override
   Widget build(BuildContext context) {
     final screens = [
-      DashboardTab(requests: _requests, services: _services, onNavigate: (idx) => setState(() => _currentIndex = idx), onRefresh: _fetchAllDataQuiet),
+      DashboardTab(
+        requests: _requests,
+        services: _services,
+        onNavigate: (idx) => setState(() => _currentIndex = idx),
+        onRefresh: _fetchAllDataQuiet,
+      ),
       RequestsTab(requests: _requests, onRefresh: _fetchAllDataQuiet),
       ServicesTab(services: _services, onRefresh: _fetchAllDataQuiet),
+      NotificationsInboxScreen(
+        notifications: _notifications,
+        onRefresh: _fetchAllDataQuiet,
+      ),
       CustomersTab(customers: _customers),
-      NotificationsInboxScreen(notifications: _notifications, onRefresh: _fetchAllDataQuiet),
       SettingsTab(onSignOut: () {
         _syncTimer?.cancel();
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AuthScreen()));
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (_) => const AuthScreen()));
       }),
       const SkeletonTab(),
       const EmptyTab(),
@@ -1034,15 +1287,16 @@ class _MainContainerScreenState extends State<MainContainerScreen> with WidgetsB
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('إدارة المدرار للمقاولات الهندسية (almadrars Admin)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+        title: const Text('إدارة المدرار للمقاولات الهندسية',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
         actions: [
-          // Notifications Inbox Icon with Unread Badge
           Stack(
             alignment: Alignment.center,
             children: [
               IconButton(
                 icon: const Icon(Icons.notifications_outlined),
-                onPressed: () => setState(() => _currentIndex = 4), // Inbox tab index
+                tooltip: 'صندوق الإشعارات',
+                onPressed: () => setState(() => _currentIndex = 3),
               ),
               if (_unreadNotificationsCount > 0)
                 Positioned(
@@ -1050,9 +1304,21 @@ class _MainContainerScreenState extends State<MainContainerScreen> with WidgetsB
                   right: 8,
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(color: kM3Secondary, shape: BoxShape.circle),
-                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                    child: Text('$_unreadNotificationsCount', style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                    decoration: const BoxDecoration(
+                      color: kM3Secondary,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints:
+                        const BoxConstraints(minWidth: 18, minHeight: 18),
+                    child: Text(
+                      '$_unreadNotificationsCount',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
             ],
@@ -1060,15 +1326,15 @@ class _MainContainerScreenState extends State<MainContainerScreen> with WidgetsB
           PopupMenuButton<int>(
             icon: const Icon(Icons.menu_rounded),
             onSelected: (idx) => setState(() => _currentIndex = idx),
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 0, child: Text('📊 لوحة التحكم والإحصائيات')),
-              const PopupMenuItem(value: 1, child: Text('📋 إدارة طلبات الزبائن والتسعير')),
-              const PopupMenuItem(value: 2, child: Text('🏗️ إدارة الخدمات والتشطيبات')),
-              const PopupMenuItem(value: 3, child: Text('👥 قائمة الزبائن والعملاء')),
-              const PopupMenuItem(value: 4, child: Text('🔔 صندوق الإشعارات الواردة')),
-              const PopupMenuItem(value: 5, child: Text('⚙️ إعدادات النظام الإداري')),
-              const PopupMenuItem(value: 6, child: Text('⏳ حالة التحميل (Skeleton)')),
-              const PopupMenuItem(value: 7, child: Text('📭 حالة الفارغ (Empty)')),
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 0, child: Text('📊 لوحة التحكم والإحصائيات')),
+              PopupMenuItem(value: 1, child: Text('📋 إدارة طلبات الزبائن والتسعير')),
+              PopupMenuItem(value: 2, child: Text('🏗️ إدارة الخدمات والتشطيبات')),
+              PopupMenuItem(value: 3, child: Text('🔔 صندوق الإشعارات الواردة')),
+              PopupMenuItem(value: 4, child: Text('👥 قائمة الزبائن والعملاء')),
+              PopupMenuItem(value: 5, child: Text('⚙️ إعدادات النظام الإداري')),
+              PopupMenuItem(value: 6, child: Text('⏳ حالة التحميل (Skeleton)')),
+              PopupMenuItem(value: 7, child: Text('📭 حالة الفارغ (Empty)')),
             ],
           ),
         ],
@@ -1077,19 +1343,35 @@ class _MainContainerScreenState extends State<MainContainerScreen> with WidgetsB
           ? const Center(child: CircularProgressIndicator(color: kM3Primary))
           : screens[_currentIndex < screens.length ? _currentIndex : 0],
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex > 5 ? 0 : _currentIndex,
+        selectedIndex: _currentIndex > 4 ? 0 : (_currentIndex == 3 ? 3 : (_currentIndex == 4 ? 0 : _currentIndex)),
         onDestinationSelected: (idx) {
-          if (idx == 0) {
-            setState(() => _currentIndex = 0);
-          } else if (idx == 1) setState(() => _currentIndex = 1);
-          else if (idx == 2) setState(() => _currentIndex = 2);
-          else if (idx == 3) setState(() => _currentIndex = 5); // Settings
+          setState(() => _currentIndex = idx);
         },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'اللوحة'),
-          NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: 'الطلبات'),
-          NavigationDestination(icon: Icon(Icons.architecture_outlined), selectedIcon: Icon(Icons.architecture), label: 'الخدمات'),
-          NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'الإعدادات'),
+        destinations: [
+          const NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard),
+              label: 'اللوحة'),
+          const NavigationDestination(
+              icon: Icon(Icons.assignment_outlined),
+              selectedIcon: Icon(Icons.assignment),
+              label: 'الطلبات'),
+          const NavigationDestination(
+              icon: Icon(Icons.architecture_outlined),
+              selectedIcon: Icon(Icons.architecture),
+              label: 'الخدمات'),
+          NavigationDestination(
+              icon: Badge(
+                isLabelVisible: _unreadNotificationsCount > 0,
+                label: Text('$_unreadNotificationsCount'),
+                child: const Icon(Icons.notifications_outlined),
+              ),
+              selectedIcon: Badge(
+                isLabelVisible: _unreadNotificationsCount > 0,
+                label: Text('$_unreadNotificationsCount'),
+                child: const Icon(Icons.notifications),
+              ),
+              label: 'الإشعارات'),
         ],
       ),
     );
@@ -1097,7 +1379,7 @@ class _MainContainerScreenState extends State<MainContainerScreen> with WidgetsB
 }
 
 // ---------------------------------------------------------------------------
-// SCREEN 1: DASHBOARD (لوحة التحكم والإحصائيات)
+// SCREEN 1: DASHBOARD
 // ---------------------------------------------------------------------------
 class DashboardTab extends StatelessWidget {
   final List<dynamic> requests;
@@ -1105,7 +1387,13 @@ class DashboardTab extends StatelessWidget {
   final Function(int) onNavigate;
   final VoidCallback onRefresh;
 
-  const DashboardTab({super.key, required this.requests, required this.services, required this.onNavigate, required this.onRefresh});
+  const DashboardTab({
+    super.key,
+    required this.requests,
+    required this.services,
+    required this.onNavigate,
+    required this.onRefresh,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1117,18 +1405,24 @@ class DashboardTab extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0x333A86FF), Color(0xCC0F172A)]),
+              gradient: const LinearGradient(
+                  colors: [Color(0x332563EB), Color(0xCC131B2E)]),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: kM3BorderGlass),
             ),
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('مرحباً م. عبد الله الورفلي 👋', style: TextStyle(fontSize: 12, color: kM3Primary, fontWeight: FontWeight.bold)),
-                SizedBox(height: 4),
-                Text('لوحة متابعة المشاريع والإحصائيات', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                SizedBox(height: 8),
-                Text('تتم مزامنة الطلبات والبيانات الحية مع الزبائن تلقائياً كل 15 ثانية.', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                Text('لوحة متابعة مشاريع المدرار للمقاولات 🏗️',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white)),
+                SizedBox(height: 6),
+                Text(
+                  'مزامنة فورية حية مع تطبيق الزبون كل 15 ثانية وتحديث لحظي لعروض الأسعار ومراحل الإنجاز.',
+                  style: TextStyle(fontSize: 12, color: Colors.white70),
+                ),
               ],
             ),
           ),
@@ -1141,30 +1435,49 @@ class DashboardTab extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             childAspectRatio: 1.3,
             children: [
-              _buildKpiCard('إجمالي طلبات المقاولات', '${requests.length}', Icons.description, kM3Primary, '▲ نشط ومحدث', kM3Success),
-              _buildKpiCard('الخدمات المتاحة', '${services.length}', Icons.architecture, kM3Warning, '● دليل الخدمات', kM3Warning),
-              _buildKpiCard('مشاريع قيد التنفيذ', '${requests.where((r) => r['status'] == 'progress').length}', Icons.verified, kM3Success, '▲ متابعة ميدانية', kM3Success),
-              _buildKpiCard('صندوق الإشعارات', 'مباشر', Icons.notifications_active, kM3Secondary, 'تزامن لحظي', Colors.grey),
+              _buildKpiCard('إجمالي طلبات المقاولات', '${requests.length}',
+                  Icons.description, kM3Primary, '▲ نشط ومحدث', kM3Success),
+              _buildKpiCard('الخدمات المتاحة', '${services.length}',
+                  Icons.architecture, kM3Warning, '● دليل الخدمات', kM3Warning),
+              _buildKpiCard(
+                  'قيد التنفيذ الميداني',
+                  '${requests.where((r) => r['status'] == 'progress').length}',
+                  Icons.verified,
+                  kM3Success,
+                  '▲ في الموقع',
+                  kM3Success),
+              _buildKpiCard(
+                  'بانتظار التسعير',
+                  '${requests.where((r) => r['status'] == 'review' || r['status'] == 'new').length}',
+                  Icons.pending_actions,
+                  kM3Secondary,
+                  'فوري',
+                  kM3Secondary),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => onNavigate(2),
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('إدارة الخدمات', style: TextStyle(fontSize: 12)),
-                  style: OutlinedButton.styleFrom(side: const BorderSide(color: kM3BorderGlass)),
+                child: ElevatedButton.icon(
+                  onPressed: () => onNavigate(1),
+                  icon: const Icon(Icons.price_change, size: 16),
+                  label: const Text('إدارة الطلبات والتسعير',
+                      style: TextStyle(fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: kM3Primary,
+                      foregroundColor: Colors.white),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => onNavigate(4),
+                  onPressed: () => onNavigate(3),
                   icon: const Icon(Icons.campaign, size: 16),
-                  label: const Text('صندوق الإشعارات', style: TextStyle(fontSize: 12)),
-                  style: OutlinedButton.styleFrom(side: const BorderSide(color: kM3BorderGlass)),
+                  label: const Text('إرسال تنبيه جماعي',
+                      style: TextStyle(fontSize: 12)),
+                  style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: kM3BorderGlass)),
                 ),
               ),
             ],
@@ -1173,55 +1486,62 @@ class DashboardTab extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('أحدث الطلبات القادمة', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              const Text('أحدث الطلبات الواردة',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
               TextButton(
                 onPressed: () => onNavigate(1),
-                child: const Text('إدارة الكل ←', style: TextStyle(fontSize: 12)),
+                child:
+                    const Text('عرض الكل ←', style: TextStyle(fontSize: 12)),
               ),
             ],
           ),
           ...requests.take(3).map((req) => Card(
-            margin: const EdgeInsets.only(bottom: 10),
-            color: kM3SurfaceGlass,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                margin: const EdgeInsets.only(bottom: 10),
+                color: kM3SurfaceCard,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('طلب #${req['request_number'] ?? '9042'}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                      Chip(
-                        label: Text(req['status'] ?? 'review', style: const TextStyle(fontSize: 10)),
-                        backgroundColor: kM3Primary.withValues(alpha: 0.2),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('طلب #${req['request_number'] ?? '9042'}',
+                              style: const TextStyle(
+                                  fontSize: 12, color: Colors.grey)),
+                          Chip(
+                            label: Text(req['status'] ?? 'review',
+                                style: const TextStyle(fontSize: 10)),
+                            backgroundColor: kM3Primary.withValues(alpha: 0.2),
+                          ),
+                        ],
                       ),
+                      Text(req['service_type'] ?? 'طلب أعمال هندسية',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Colors.white)),
+                      const SizedBox(height: 4),
+                      Text('📍 الموقع: ${req['location'] ?? 'طرابلس'}',
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.white70)),
                     ],
                   ),
-                  Text(req['service_type'] ?? 'خدمة مقاولات', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
-                  const SizedBox(height: 4),
-                  Text('📍 الموقع: ${req['location'] ?? 'غير محدد'}', style: const TextStyle(fontSize: 12, color: Colors.white70)),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: () => onNavigate(1),
-                    style: ElevatedButton.styleFrom(backgroundColor: kM3Primary, foregroundColor: Colors.white, minimumSize: const Size(double.infinity, 36)),
-                    child: const Text('متابعة وتسعير الطلب', style: TextStyle(fontSize: 12)),
-                  ),
-                ],
-              ),
-            ),
-          )),
+                ),
+              )),
         ],
       ),
     );
   }
 
-  Widget _buildKpiCard(String title, String val, IconData icon, Color iconColor, String trend, Color trendColor) {
+  Widget _buildKpiCard(String title, String val, IconData icon, Color iconColor,
+      String trend, Color trendColor) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0x991E293B),
+        color: kM3SurfaceCard,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: kM3BorderGlass),
       ),
@@ -1232,16 +1552,29 @@ class DashboardTab extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(child: Text(title, style: const TextStyle(fontSize: 11, color: Colors.grey))),
+              Expanded(
+                  child: Text(title,
+                      style:
+                          const TextStyle(fontSize: 11, color: Colors.grey))),
               Container(
                 padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8)),
                 child: Icon(icon, size: 16, color: iconColor),
               ),
             ],
           ),
-          Text(val, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-          Text(trend, style: TextStyle(fontSize: 10, color: trendColor, fontWeight: FontWeight.bold)),
+          Text(val,
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white)),
+          Text(trend,
+              style: TextStyle(
+                  fontSize: 10,
+                  color: trendColor,
+                  fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -1249,63 +1582,342 @@ class DashboardTab extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// NOTIFICATIONS INBOX SCREEN (صندوق الإشعارات الواردة)
+// IN-APP NOTIFICATIONS INBOX SCREEN (READS almadrars_notifications & MARKS READ)
 // ---------------------------------------------------------------------------
-class NotificationsInboxScreen extends StatelessWidget {
+class NotificationsInboxScreen extends StatefulWidget {
   final List<dynamic> notifications;
   final VoidCallback onRefresh;
 
-  const NotificationsInboxScreen({super.key, required this.notifications, required this.onRefresh});
+  const NotificationsInboxScreen({
+    super.key,
+    required this.notifications,
+    required this.onRefresh,
+  });
+
+  @override
+  State<NotificationsInboxScreen> createState() =>
+      _NotificationsInboxScreenState();
+}
+
+class _NotificationsInboxScreenState extends State<NotificationsInboxScreen> {
+  String _filter = 'all'; // 'all' or 'unread'
 
   Future<void> _markAsRead(String id) async {
     try {
       final nowIso = DateTime.now().toIso8601String();
-      await SupabaseService.updateRow('almadrars_notifications', 'id=eq.$id', {'read_at': nowIso});
-      onRefresh();
+      await SupabaseService.updateRow(
+        'almadrars_notifications',
+        'id=eq.$id',
+        {'read_at': nowIso},
+      );
+      widget.onRefresh();
     } catch (_) {}
+  }
+
+  Future<void> _markAllAsRead() async {
+    final unread =
+        widget.notifications.where((n) => n['read_at'] == null).toList();
+    if (unread.isEmpty) return;
+
+    final nowIso = DateTime.now().toIso8601String();
+    for (final n in unread) {
+      try {
+        await SupabaseService.updateRow(
+          'almadrars_notifications',
+          'id=eq.${n['id']}',
+          {'read_at': nowIso},
+        );
+      } catch (_) {}
+    }
+    widget.onRefresh();
+  }
+
+  String _formatDateTime(String? dateStr) {
+    if (dateStr == null) return '';
+    try {
+      final dt = DateTime.parse(dateStr).toLocal();
+      final y = dt.year.toString().padLeft(4, '0');
+      final m = dt.month.toString().padLeft(2, '0');
+      final d = dt.day.toString().padLeft(2, '0');
+      final hh = dt.hour.toString().padLeft(2, '0');
+      final mm = dt.minute.toString().padLeft(2, '0');
+      return '$y/$m/$d $hh:$mm';
+    } catch (_) {
+      return dateStr;
+    }
+  }
+
+  void _showBroadcastModal(BuildContext context) {
+    final titleCtrl = TextEditingController(text: 'تنبيه من المدرار للمقاولات');
+    final bodyCtrl = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: kM3SurfaceDark,
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 20,
+            right: 20,
+            top: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text('إرسال تنبيه جماعي فوري لجميع الزبائن',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: titleCtrl,
+              decoration: const InputDecoration(
+                  labelText: 'عنوان الإشعار', border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: bodyCtrl,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                  labelText: 'نص التنبيه العام للزبائن',
+                  border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () async {
+                final txt = bodyCtrl.text.trim();
+                if (txt.isEmpty) return;
+                try {
+                  await SupabaseService.insertRow('almadrars_notifications', {
+                    'to_role': 'customer',
+                    'title': titleCtrl.text.trim(),
+                    'body': txt,
+                    'data': {'broadcast': true}
+                  });
+                  widget.onRefresh();
+                  if (context.mounted) Navigator.pop(context);
+                } catch (_) {}
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kM3Primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: const Text('إرسال فوري لجميع الزبائن 📢'),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('صندوق الإشعارات الواردة')),
-      body: ListView(
+    final unreadCount =
+        widget.notifications.where((n) => n['read_at'] == null).length;
+    final displayedList = widget.notifications.where((n) {
+      if (_filter == 'unread') return n['read_at'] == null;
+      return true;
+    }).toList();
+
+    return RefreshIndicator(
+      onRefresh: () async => widget.onRefresh(),
+      child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('الإشعارات والتنبيهات الموجهة للإدارة ولجميع الأجهزة:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Text('صندوق الإشعارات',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 8),
+                  if (unreadCount > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: kM3Secondary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '$unreadCount جديد',
+                        style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                ],
+              ),
+              ElevatedButton.icon(
+                onPressed: () => _showBroadcastModal(context),
+                icon: const Icon(Icons.campaign, size: 16),
+                label: const Text('تنبيه جماعي',
+                    style: TextStyle(fontSize: 11)),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: kM3Secondary,
+                    foregroundColor: Colors.white),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
-          if (notifications.isEmpty)
-            const Center(child: Padding(padding: EdgeInsets.all(40), child: Text('لا توجد إشعارات حالياً', style: TextStyle(color: Colors.grey)))),
-          ...notifications.map((n) {
+          Row(
+            children: [
+              ChoiceChip(
+                label: Text('الكل (${widget.notifications.length})',
+                    style: const TextStyle(fontSize: 12)),
+                selected: _filter == 'all',
+                onSelected: (val) => setState(() => _filter = 'all'),
+              ),
+              const SizedBox(width: 8),
+              ChoiceChip(
+                label: Text('غير المقروءة ($unreadCount)',
+                    style: const TextStyle(fontSize: 12)),
+                selected: _filter == 'unread',
+                onSelected: (val) => setState(() => _filter = 'unread'),
+              ),
+              const Spacer(),
+              if (unreadCount > 0)
+                TextButton.icon(
+                  onPressed: _markAllAsRead,
+                  icon: const Icon(Icons.done_all, size: 16),
+                  label: const Text('تحديد الكل كمقروء',
+                      style: TextStyle(fontSize: 12)),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (displayedList.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(40),
+                child: Column(
+                  children: [
+                    Icon(Icons.mark_email_read_outlined,
+                        size: 54, color: Colors.grey.withValues(alpha: 0.5)),
+                    const SizedBox(height: 12),
+                    Text(
+                      _filter == 'unread'
+                          ? 'لا توجد إشعارات غير مقروءة حالياً'
+                          : 'لا توجد إشعارات مسجلة بالصندوق',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ...displayedList.map((n) {
             final isUnread = n['read_at'] == null;
             return Card(
-              color: isUnread ? const Color(0xFF1E293B) : const Color(0xFF0F172A),
+              color: isUnread
+                  ? const Color(0xFF1E293B)
+                  : const Color(0xFF0F172A),
               margin: const EdgeInsets.only(bottom: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: isUnread ? kM3Primary : kM3BorderGlass)),
-              child: ListTile(
-                title: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(child: Text(n['title'] ?? '', style: TextStyle(fontWeight: FontWeight.bold, color: isUnread ? Colors.white : Colors.white70))),
-                    if (isUnread)
-                      Container(width: 8, height: 8, decoration: const BoxDecoration(color: kM3Secondary, shape: BoxShape.circle)),
-                  ],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: isUnread ? kM3Primary : kM3BorderGlass,
+                  width: isUnread ? 1.5 : 1.0,
                 ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 4),
-                    Text(n['body'] ?? '', style: const TextStyle(fontSize: 12, color: Colors.white70)),
-                    const SizedBox(height: 6),
-                    Text(n['created_at'] ?? '', style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                  ],
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  if (isUnread) _markAsRead(n['id']);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: isUnread
+                                      ? kM3Primary.withValues(alpha: 0.2)
+                                      : Colors.white10,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  isUnread
+                                      ? Icons.notifications_active
+                                      : Icons.notifications_none,
+                                  size: 16,
+                                  color: isUnread ? kM3Primary : Colors.grey,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                n['title'] ?? 'إشعار',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: isUnread
+                                      ? Colors.white
+                                      : Colors.white70,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (isUnread)
+                            Container(
+                              width: 9,
+                              height: 9,
+                              decoration: const BoxDecoration(
+                                color: kM3Secondary,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        n['body'] ?? '',
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.white70, height: 1.4),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _formatDateTime(n['created_at']),
+                            style: const TextStyle(
+                                fontSize: 10, color: Colors.grey),
+                          ),
+                          if (isUnread)
+                            TextButton.icon(
+                              onPressed: () => _markAsRead(n['id']),
+                              icon: const Icon(Icons.check, size: 14),
+                              label: const Text('تحديد كمقروء',
+                                  style: TextStyle(fontSize: 11)),
+                              style: TextButton.styleFrom(
+                                  foregroundColor: kM3Primary),
+                            )
+                          else
+                            const Row(
+                              children: [
+                                Icon(Icons.done_all,
+                                    size: 14, color: kM3Success),
+                                SizedBox(width: 4),
+                                Text('مقروء',
+                                    style: TextStyle(
+                                        fontSize: 10, color: kM3Success)),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                trailing: isUnread
-                    ? TextButton(
-                        onPressed: () => _markAsRead(n['id']),
-                        child: const Text('تحديد مقروء', style: TextStyle(fontSize: 11)),
-                      )
-                    : const Icon(Icons.done_all, size: 16, color: kM3Success),
               ),
             );
           }),
@@ -1316,13 +1928,14 @@ class NotificationsInboxScreen extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// REQUESTS MANAGEMENT & PRICING (إدارة طلبات الزبائن والتسعير)
+// REQUESTS & STATUS UPDATING WITH REALTIME EVENT NOTIFICATIONS
 // ---------------------------------------------------------------------------
 class RequestsTab extends StatefulWidget {
   final List<dynamic> requests;
   final VoidCallback onRefresh;
 
-  const RequestsTab({super.key, required this.requests, required this.onRefresh});
+  const RequestsTab(
+      {super.key, required this.requests, required this.onRefresh});
 
   @override
   State<RequestsTab> createState() => _RequestsTabState();
@@ -1343,61 +1956,95 @@ class _RequestsTabState extends State<RequestsTab> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const TextField(
-            decoration: InputDecoration(labelText: '🔍 بحث باسم الزبون، المدينة، أو رقم الطلب...', border: OutlineInputBorder(), isDense: true),
-          ),
-          const SizedBox(height: 12),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
                 _buildFilterChip('الكل', 'all'),
                 _buildFilterChip('بانتظار التسعير', 'review'),
-                _buildFilterChip('تم إضافة السعر', 'priced'),
+                _buildFilterChip('تم التسعير', 'priced'),
                 _buildFilterChip('قيد التنفيذ', 'progress'),
-                _buildFilterChip('مكتملة', 'completed'),
+                _buildFilterChip('مكتمل', 'completed'),
               ],
             ),
           ),
           const SizedBox(height: 14),
           ...filtered.map((req) => Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            color: kM3SurfaceGlass,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                margin: const EdgeInsets.only(bottom: 12),
+                color: kM3SurfaceCard,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('طلب #${req['request_number'] ?? '9042'}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                      Chip(
-                        label: Text(req['status'] ?? 'review', style: const TextStyle(fontSize: 10)),
-                        backgroundColor: kM3Primary.withValues(alpha: 0.2),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('طلب #${req['request_number'] ?? '9042'}',
+                              style: const TextStyle(
+                                  fontSize: 12, color: Colors.grey)),
+                          Chip(
+                            label: Text(req['status'] ?? 'review',
+                                style: const TextStyle(fontSize: 10)),
+                            backgroundColor: kM3Primary.withValues(alpha: 0.2),
+                          ),
+                        ],
+                      ),
+                      Text(req['service_type'] ?? 'طلب مقاولات',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.white)),
+                      const SizedBox(height: 4),
+                      Text('📍 الموقع: ${req['location'] ?? 'طرابلس'}',
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.grey)),
+                      if (req['area_sqm'] != null)
+                        Text('المساحة: ${req['area_sqm']} م²',
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.white70)),
+                      if (req['estimated_cost'] != null)
+                        Text('💰 التكلفة: ${req['estimated_cost']} د.ل',
+                            style: const TextStyle(
+                                fontSize: 13,
+                                color: kM3Success,
+                                fontWeight: FontWeight.bold)),
+                      if (req['completion_percentage'] != null)
+                        Text('نسبة الإنجاز: %${req['completion_percentage']}',
+                            style: const TextStyle(
+                                fontSize: 12, color: kM3Accent)),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => _showPricingModal(context, req),
+                              style: ElevatedButton.styleFrom(
+                                  backgroundColor: kM3Primary,
+                                  foregroundColor: Colors.white),
+                              child: const Text('💵 عرض السعر',
+                                  style: TextStyle(fontSize: 11)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => _showProgressModal(context, req),
+                              style: OutlinedButton.styleFrom(
+                                  side:
+                                      const BorderSide(color: kM3BorderGlass)),
+                              child: const Text('⚙️ الإنجاز والحالة',
+                                  style: TextStyle(fontSize: 11)),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  Text(req['service_type'] ?? 'طلب مقاولات', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
-                  const SizedBox(height: 4),
-                  Text('📍 الموقع: ${req['location'] ?? 'طرابلس'}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => _showPricingModal(context, req),
-                          style: ElevatedButton.styleFrom(backgroundColor: kM3Primary, foregroundColor: Colors.white),
-                          child: const Text('💵 إضافة عرض السعر والمواصفات', style: TextStyle(fontSize: 12)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          )),
+                ),
+              )),
         ],
       ),
     );
@@ -1416,39 +2063,60 @@ class _RequestsTabState extends State<RequestsTab> {
   }
 
   void _showPricingModal(BuildContext context, Map<String, dynamic> req) {
-    final priceController = TextEditingController(text: '55000');
-    final specsController = TextEditingController(text: 'مواصفات خرسانة مسلحة عالية التحمل');
+    final priceController = TextEditingController(
+        text: req['estimated_cost']?.toString() ?? '55000');
+    final specsController = TextEditingController(
+        text: req['technical_specs'] ??
+            'خرسانة مسلحة عيار 350 كجم/م3 مع عازل مائي معتمد');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: kM3SurfaceDark,
       builder: (_) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 20, right: 20, top: 20),
+        padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 20,
+            right: 20,
+            top: 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('إضافة عرض سعر ومواصفات فنّية', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text('إضافة عرض سعر ومواصفات فنية للمشروع',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 12),
-            TextField(controller: priceController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'التكلفة الإجمالية (د.ل)', border: OutlineInputBorder())),
+            TextField(
+                controller: priceController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                    labelText: 'التكلفة الإجمالية (د.ل)',
+                    border: OutlineInputBorder())),
             const SizedBox(height: 12),
-            TextField(controller: specsController, maxLines: 2, decoration: const InputDecoration(labelText: 'المواصفات الفنية المعتمدة', border: OutlineInputBorder())),
+            TextField(
+                controller: specsController,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                    labelText: 'المواصفات الفنية المعتمدة',
+                    border: OutlineInputBorder())),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () async {
-                final costVal = double.tryParse(priceController.text) ?? 55000;
-                await SupabaseService.updateRow('almadrars_requests', 'id=eq.${req['id']}', {
+                final costVal =
+                    double.tryParse(priceController.text) ?? 55000;
+                await SupabaseService.updateRow(
+                    'almadrars_requests', 'id=eq.${req['id']}', {
                   'estimated_cost': costVal,
                   'technical_specs': specsController.text,
                   'status': 'priced'
                 });
-                
-                // Send notification to customer contract event: إضافة عرض سعر جديد
+
+                // Mandatory Contract Event: إضافة عرض سعر ومواصفات فنية للمشروع
                 try {
                   await SupabaseService.insertRow('almadrars_notifications', {
                     'to_user': req['customer_id'],
                     'title': 'إضافة عرض سعر جديد',
-                    'body': 'تم إضافة عرض سعر بقيمة $costVal د.ل لطلبك رقم #${req['request_number']}',
+                    'body':
+                        'تم إضافة عرض سعر بقيمة $costVal د.ل لطلبك رقم #${req['request_number']}',
                     'data': {'request_id': req['id']}
                   });
                 } catch (_) {}
@@ -1456,8 +2124,12 @@ class _RequestsTabState extends State<RequestsTab> {
                 widget.onRefresh();
                 if (mounted) Navigator.pop(context);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: kM3Primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)),
-              child: const Text('حفظ وإرسال عرض السعر الفوري للزبون 📨'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kM3Primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: const Text('حفظ وإرسال عرض السعر للزبون 📨'),
             ),
             const SizedBox(height: 20),
           ],
@@ -1465,16 +2137,105 @@ class _RequestsTabState extends State<RequestsTab> {
       ),
     );
   }
+
+  void _showProgressModal(BuildContext context, Map<String, dynamic> req) {
+    double progress = (req['completion_percentage'] ?? 0).toDouble();
+    String selectedStatus = req['status'] ?? 'progress';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: kM3SurfaceDark,
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              left: 20,
+              right: 20,
+              top: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('تحديث حالة التنفيذ ونسبة الإنجاز الميداني',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: selectedStatus,
+                decoration: const InputDecoration(
+                    labelText: 'حالة المشروع', border: OutlineInputBorder()),
+                items: const [
+                  DropdownMenuItem(value: 'review', child: Text('قيد المراجعة')),
+                  DropdownMenuItem(value: 'priced', child: Text('تم التسعير')),
+                  DropdownMenuItem(
+                      value: 'progress', child: Text('جاري التنفيذ الميداني')),
+                  DropdownMenuItem(value: 'completed', child: Text('مكتمل')),
+                ],
+                onChanged: (val) =>
+                    setModalState(() => selectedStatus = val ?? selectedStatus),
+              ),
+              const SizedBox(height: 16),
+              Text('نسبة الإنجاز: %${progress.round()}',
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              Slider(
+                value: progress,
+                min: 0,
+                max: 100,
+                divisions: 20,
+                onChanged: (val) => setModalState(() => progress = val),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () async {
+                  await SupabaseService.updateRow(
+                      'almadrars_requests', 'id=eq.${req['id']}', {
+                    'completion_percentage': progress.round(),
+                    'status': selectedStatus,
+                  });
+
+                  // Mandatory Contract Event: تحديث حالة التنفيذ أو نسبة الإنجاز الميداني
+                  try {
+                    await SupabaseService.insertRow(
+                        'almadrars_notifications', {
+                      'to_user': req['customer_id'],
+                      'title': 'تحديث حالة المشروع',
+                      'body':
+                          'تم تحديث نسبة الإنجاز لطلبك رقم #${req['request_number']} إلى %${progress.round()}',
+                      'data': {
+                        'request_id': req['id'],
+                        'status': selectedStatus
+                      }
+                    });
+                  } catch (_) {}
+
+                  widget.onRefresh();
+                  if (mounted) Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kM3Primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: const Text('حفظ وإرسال التحديث للزبون 🔔'),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
-// SERVICES MANAGEMENT (إدارة الخدمات والتشطيبات)
+// SERVICES MANAGEMENT
 // ---------------------------------------------------------------------------
 class ServicesTab extends StatelessWidget {
   final List<dynamic> services;
   final VoidCallback onRefresh;
 
-  const ServicesTab({super.key, required this.services, required this.onRefresh});
+  const ServicesTab(
+      {super.key, required this.services, required this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
@@ -1487,50 +2248,72 @@ class ServicesTab extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('التحكم بالقائمة المتاحة للزبائن وتحديث الأسعار والمواصفات.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          const Text('التحكم بالقائمة المتاحة للزبائن وتحديث تفاصيل الخدمات:',
+              style: TextStyle(fontSize: 12, color: Colors.grey)),
           const SizedBox(height: 12),
           ...services.map((srv) => Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            color: kM3SurfaceGlass,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                margin: const EdgeInsets.only(bottom: 12),
+                color: kM3SurfaceCard,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: Text(srv['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white))),
-                      Chip(label: Text(srv['is_available'] == true ? 'متاحة للطلب' : 'متوقفة مؤقتاً', style: const TextStyle(fontSize: 10)), backgroundColor: kM3Success.withValues(alpha: 0.2)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                              child: Text(srv['title'] ?? '',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.white))),
+                          Chip(
+                              label: Text(
+                                  srv['is_available'] == true
+                                      ? 'متاحة للطلب'
+                                      : 'متوقفة مؤقتاً',
+                                  style: const TextStyle(fontSize: 10)),
+                              backgroundColor: kM3Success.withValues(alpha: 0.2)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(srv['description'] ?? '',
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.white70)),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => _showServiceModal(context, srv),
+                              style: OutlinedButton.styleFrom(
+                                  side:
+                                      const BorderSide(color: kM3BorderGlass)),
+                              child: const Text('✏️ تعديل تفاصيل الخدمة',
+                                  style: TextStyle(fontSize: 12)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: () async {
+                              await SupabaseService.updateRow(
+                                  'almadrars_services', 'id=eq.${srv['id']}', {
+                                'is_available': !(srv['is_available'] ?? true)
+                              });
+                              onRefresh();
+                            },
+                            child: const Text('تبديل الحالة',
+                                style: TextStyle(color: kM3Warning)),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(srv['description'] ?? '', style: const TextStyle(fontSize: 12, color: Colors.white70)),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => _showServiceModal(context, srv),
-                          style: OutlinedButton.styleFrom(side: const BorderSide(color: kM3BorderGlass)),
-                          child: const Text('✏️ تعديل تفاصيل الخدمة', style: TextStyle(fontSize: 12)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      TextButton(
-                        onPressed: () async {
-                          await SupabaseService.updateRow('almadrars_services', 'id=eq.${srv['id']}', {'is_available': !(srv['is_available'] ?? true)});
-                          onRefresh();
-                        },
-                        child: const Text('تبديل الحالة', style: TextStyle(color: kM3Warning)),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          )),
+                ),
+              )),
         ],
       ),
     );
@@ -1538,34 +2321,60 @@ class ServicesTab extends StatelessWidget {
 
   void _showServiceModal(BuildContext context, Map<String, dynamic>? srv) {
     final titleController = TextEditingController(text: srv?['title'] ?? '');
-    final descController = TextEditingController(text: srv?['description'] ?? '');
+    final descController =
+        TextEditingController(text: srv?['description'] ?? '');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: kM3SurfaceDark,
       builder: (_) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 20, right: 20, top: 20),
+        padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 20,
+            right: 20,
+            top: 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(srv == null ? 'إضافة خدمة جديدة' : 'تعديل تفاصيل الخدمة', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(srv == null ? 'إضافة خدمة جديدة' : 'تعديل تفاصيل الخدمة',
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 12),
-            TextField(controller: titleController, decoration: const InputDecoration(labelText: 'اسم الخدمة', border: OutlineInputBorder())),
+            TextField(
+                controller: titleController,
+                decoration: const InputDecoration(
+                    labelText: 'اسم الخدمة', border: OutlineInputBorder())),
             const SizedBox(height: 12),
-            TextField(controller: descController, maxLines: 3, decoration: const InputDecoration(labelText: 'وصف الخدمة', border: OutlineInputBorder())),
+            TextField(
+                controller: descController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                    labelText: 'وصف الخدمة', border: OutlineInputBorder())),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () async {
                 if (srv == null) {
-                  await SupabaseService.insertRow('almadrars_services', {'title': titleController.text, 'description': descController.text, 'is_available': true});
+                  await SupabaseService.insertRow('almadrars_services', {
+                    'title': titleController.text,
+                    'description': descController.text,
+                    'is_available': true
+                  });
                 } else {
-                  await SupabaseService.updateRow('almadrars_services', 'id=eq.${srv['id']}', {'title': titleController.text, 'description': descController.text});
+                  await SupabaseService.updateRow(
+                      'almadrars_services', 'id=eq.${srv['id']}', {
+                    'title': titleController.text,
+                    'description': descController.text
+                  });
                 }
                 onRefresh();
                 if (context.mounted) Navigator.pop(context);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: kM3Primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kM3Primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
               child: const Text('حفظ التغييرات 💾'),
             ),
             const SizedBox(height: 20),
@@ -1577,7 +2386,7 @@ class ServicesTab extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// CUSTOMERS LIST (قائمة الزبائن والعملاء)
+// CUSTOMERS LIST
 // ---------------------------------------------------------------------------
 class CustomersTab extends StatelessWidget {
   final List<dynamic> customers;
@@ -1589,29 +2398,88 @@ class CustomersTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const TextField(decoration: InputDecoration(labelText: '🔍 بحث باسم الزبون أو رقم الهاتف...', border: OutlineInputBorder(), isDense: true)),
+        const Text('قائمة الزبائن المسجلين بالتطبيق:',
+            style: TextStyle(fontSize: 12, color: Colors.grey)),
         const SizedBox(height: 14),
         ...customers.map((c) => Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          color: kM3SurfaceGlass,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: ListTile(
-            leading: CircleAvatar(backgroundColor: kM3Primary, child: Text(c['full_name']?[0] ?? 'س', style: const TextStyle(color: Colors.white))),
-            title: Text(c['full_name'] ?? 'زبون', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-            subtitle: Text('${c['phone'] ?? '0910000000'} • ${c['email'] ?? ''}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-          ),
-        )),
+              margin: const EdgeInsets.only(bottom: 12),
+              color: kM3SurfaceCard,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              child: ListTile(
+                leading: CircleAvatar(
+                    backgroundColor: kM3Primary,
+                    child: Text(c['full_name']?[0] ?? 'س',
+                        style: const TextStyle(color: Colors.white))),
+                title: Text(c['full_name'] ?? 'زبون',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.white)),
+                subtitle: Text(
+                    '${c['phone'] ?? '0910000000'} • ${c['email'] ?? ''}',
+                    style:
+                        const TextStyle(fontSize: 11, color: Colors.grey)),
+              ),
+            )),
       ],
     );
   }
 }
 
 // ---------------------------------------------------------------------------
-// SETTINGS & PROFILE (إعدادات النظام الإداري)
+// SETTINGS & ON-DEMAND PERMISSIONS DEMONSTRATION
 // ---------------------------------------------------------------------------
 class SettingsTab extends StatelessWidget {
   final VoidCallback onSignOut;
   const SettingsTab({super.key, required this.onSignOut});
+
+  Future<void> _handleLocationDemo(BuildContext context) async {
+    LocationPermission perm = await Geolocator.checkPermission();
+    if (perm == LocationPermission.denied) {
+      perm = await Geolocator.requestPermission();
+    }
+    if (perm == LocationPermission.deniedForever && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text(
+            'تم رفض صلاحية الموقع نهائياً. التطبيق يستمر بالعمل، يمكنك تفعيلها من الإعدادات لإدراج موقع المشروع بدقة.'),
+        action: SnackBarAction(
+            label: 'فتح الإعدادات',
+            onPressed: () => Geolocator.openAppSettings()),
+      ));
+      return;
+    }
+    if (perm == LocationPermission.denied && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text(
+            'تم رفض الصلاحية. التطبيق يستمر بالعمل، نحتاج الموقع لتحديد إحداثيات موقع البناء.'),
+      ));
+      return;
+    }
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('تم التحقق من صلاحية الموقع بنجاح.'),
+        backgroundColor: kM3Success,
+      ));
+    }
+  }
+
+  Future<void> _handlePhotoDemo(BuildContext context) async {
+    try {
+      final picker = ImagePicker();
+      final res = await picker.pickImage(source: ImageSource.gallery);
+      if (res != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('تم اختيار صورة لتوثيق المشروع بنجاح.'),
+          backgroundColor: kM3Success,
+        ));
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('تعذر الوصول للصور. يرجى منح الإذن عند الحاجة.'),
+        ));
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1619,38 +2487,50 @@ class SettingsTab extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         Card(
-          color: kM3SurfaceGlass,
+          color: kM3SurfaceCard,
           child: ListTile(
-            leading: const CircleAvatar(backgroundColor: kM3Primary, child: Text('م', style: TextStyle(color: Colors.white))),
-            title: Text(SupabaseService.userEmail ?? 'admin@almadrars.ly', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-            subtitle: const Text('مدير قسم المقاولات والخرسانات', style: TextStyle(color: Colors.grey)),
+            leading: const CircleAvatar(
+                backgroundColor: kM3Primary,
+                child: Text('م', style: TextStyle(color: Colors.white))),
+            title: Text(SupabaseService.userEmail ?? 'admin@almadrars.ly',
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, color: Colors.white)),
+            subtitle: const Text('مدير قسم المقاولات الهندسية',
+                style: TextStyle(color: Colors.grey)),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
+        const Text('أذونات النظام اللحظية (تُطلب عند الحاجة فقط):',
+            style: TextStyle(fontSize: 12, color: Colors.grey)),
+        const SizedBox(height: 10),
+        ListTile(
+          tileColor: kM3SurfaceCard,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          leading: const Icon(Icons.location_on, color: kM3Primary),
+          title: const Text('اختبار إذن الموقع الميداني للمشاريع'),
+          onTap: () => _handleLocationDemo(context),
+        ),
+        const SizedBox(height: 8),
+        ListTile(
+          tileColor: kM3SurfaceCard,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          leading: const Icon(Icons.photo_library, color: kM3Accent),
+          title: const Text('اختبار إذن استعراض وتوثيق الصور'),
+          onTap: () => _handlePhotoDemo(context),
+        ),
+        const SizedBox(height: 24),
         OutlinedButton.icon(
           onPressed: () async {
-            // Location permission check demo on demand
-            LocationPermission perm = await Geolocator.checkPermission();
-            if (perm == LocationPermission.denied) {
-              perm = await Geolocator.requestPermission();
-            }
-            if (perm == LocationPermission.deniedForever && context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: const Text('تم رفض صلاحية الموقع نهائياً. يرجى فتح الإعدادات لتفعيلها.'),
-                action: SnackBarAction(label: 'الإعدادات', onPressed: () => Geolocator.openAppSettings()),
-              ));
-              return;
-            }
-
-            // Photo picker permission demo on demand
-            await ImagePicker().pickImage(source: ImageSource.gallery);
-
             await SupabaseService.signOut();
             onSignOut();
           },
           icon: const Icon(Icons.logout, color: kM3Error),
-          label: const Text('تسجيل الخروج من لوحة الإدارة', style: TextStyle(color: kM3Error)),
-          style: OutlinedButton.styleFrom(side: const BorderSide(color: kM3Error)),
+          label: const Text('تسجيل الخروج من لوحة الإدارة',
+              style: TextStyle(color: kM3Error)),
+          style:
+              OutlinedButton.styleFrom(side: const BorderSide(color: kM3Error)),
         ),
       ],
     );
@@ -1658,7 +2538,7 @@ class SettingsTab extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// SKELETON LOADING STATE (حالة التحميل)
+// SKELETON LOADING STATE
 // ---------------------------------------------------------------------------
 class SkeletonTab extends StatelessWidget {
   const SkeletonTab({super.key});
@@ -1672,13 +2552,28 @@ class SkeletonTab extends StatelessWidget {
         children: [
           Container(width: 160, height: 20, color: Colors.white24),
           const SizedBox(height: 16),
-          Container(width: double.infinity, height: 100, decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(16))),
+          Container(
+              width: double.infinity,
+              height: 100,
+              decoration: BoxDecoration(
+                  color: Colors.white12,
+                  borderRadius: BorderRadius.circular(16))),
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: Container(height: 80, decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(16)))),
+              Expanded(
+                  child: Container(
+                      height: 80,
+                      decoration: BoxDecoration(
+                          color: Colors.white12,
+                          borderRadius: BorderRadius.circular(16)))),
               const SizedBox(width: 12),
-              Expanded(child: Container(height: 80, decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(16)))),
+              Expanded(
+                  child: Container(
+                      height: 80,
+                      decoration: BoxDecoration(
+                          color: Colors.white12,
+                          borderRadius: BorderRadius.circular(16)))),
             ],
           ),
         ],
@@ -1688,7 +2583,7 @@ class SkeletonTab extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// EMPTY STATE (حالة الفارغ)
+// EMPTY STATE
 // ---------------------------------------------------------------------------
 class EmptyTab extends StatelessWidget {
   const EmptyTab({super.key});
@@ -1704,13 +2599,23 @@ class EmptyTab extends StatelessWidget {
             Container(
               width: 80,
               height: 80,
-              decoration: BoxDecoration(color: kM3Primary.withValues(alpha: 0.15), shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                  color: kM3Primary.withValues(alpha: 0.15),
+                  shape: BoxShape.circle),
               child: const Icon(Icons.inbox, size: 40, color: kM3Primary),
             ),
             const SizedBox(height: 16),
-            const Text('لا توجد طلبات جديدة حالياً', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+            const Text('لا توجد طلبات جديدة حالياً',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white)),
             const SizedBox(height: 6),
-            const Text('جميع طلبات المقاولات والتشطيبات تم التعامل معها وإرسال عروض الأسعار للعملاء.', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: Colors.grey)),
+            const Text(
+              'جميع طلبات المقاولات والتشطيبات تم التعامل معها وإرسال عروض الأسعار للعملاء.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
           ],
         ),
       ),

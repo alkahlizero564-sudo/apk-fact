@@ -1,0 +1,2014 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>ديالا - إدارة المستلزمات والمعدات الطبية</title>
+  <style>
+    /* DESIGN SYSTEM TOKENS */
+    :root {
+      --primary: #0D9488;
+      --primary-dark: #0F766E;
+      --primary-light: #CCFBF1;
+      --primary-surface: #F0FDFA;
+      --secondary: #0F172A;
+      --secondary-light: #334155;
+      --accent-amber: #D97706;
+      --accent-amber-light: #FEF3C7;
+      --accent-red: #DC2626;
+      --accent-red-light: #FEE2E2;
+      --accent-green: #16A34A;
+      --accent-green-light: #DCFCE7;
+      
+      --bg: #F1F5F9;
+      --surface: #FFFFFF;
+      --surface-elevated: #FFFFFF;
+      --border: #E2E8F0;
+      --border-strong: #CBD5E1;
+      
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --text-light: #94A3B8;
+      --text-on-primary: #FFFFFF;
+      
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+      --radius-full: 9999px;
+      
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+      --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+      --shadow-lg: 0 10px 25px rgba(15, 23, 42, 0.12);
+      
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --primary: #14B8A6;
+        --primary-dark: #0D9488;
+        --primary-light: rgba(20, 184, 166, 0.2);
+        --primary-surface: rgba(20, 184, 166, 0.1);
+        --secondary: #F8FAFC;
+        --secondary-light: #CBD5E1;
+        --bg: #0B1120;
+        --surface: #1E293B;
+        --surface-elevated: #283548;
+        --border: #334155;
+        --border-strong: #475569;
+        --text-main: #F8FAFC;
+        --text-muted: #94A3B8;
+        --text-light: #64748B;
+        --accent-amber-light: rgba(217, 119, 6, 0.2);
+        --accent-red-light: rgba(220, 38, 38, 0.2);
+        --accent-green-light: rgba(22, 163, 74, 0.2);
+      }
+    }
+
+    /* BASE STYLES */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, "Noto Sans Arabic", sans-serif;
+    }
+
+    body {
+      background-color: #090D16;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      color: var(--text-main);
+      overflow-x: hidden;
+    }
+
+    /* PHONE CONTAINER */
+    .phone-container {
+      width: 100%;
+      max-width: 440px;
+      min-height: 100vh;
+      background-color: var(--bg);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      overflow-x: hidden;
+    }
+
+    /* SCREEN MANAGEMENT */
+    .app-screen {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      overflow-y: auto;
+      padding-bottom: 90px;
+      animation: fadeIn 0.22s ease-out;
+    }
+
+    .app-screen.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* HEADER APP BAR */
+    .app-header {
+      background-color: var(--surface);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .app-header .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #0D9488, #0F766E);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 900;
+      font-size: 20px;
+      box-shadow: 0 4px 10px rgba(13, 148, 136, 0.35);
+    }
+
+    .brand-title {
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.3px;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-full);
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-main);
+      cursor: pointer;
+      position: relative;
+      transition: var(--transition);
+      outline: none;
+    }
+
+    .icon-btn:active {
+      transform: scale(0.92);
+      background-color: var(--border);
+    }
+
+    .btn-back-header {
+      background: transparent;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 6px 4px;
+    }
+
+    /* SCREEN FLOW CHIPS (QUICK ACCESS) */
+    .screen-pills-bar {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 8px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      scrollbar-width: none;
+    }
+    .screen-pills-bar::-webkit-scrollbar {
+      display: none;
+    }
+    .screen-pill-btn {
+      padding: 5px 10px;
+      border-radius: var(--radius-full);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .screen-pill-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* BOTTOM NAV BAR */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      max-width: 440px;
+      height: 68px;
+      background-color: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0 4px;
+      z-index: 200;
+      box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      height: 100%;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 10.5px;
+      font-weight: 700;
+      cursor: pointer;
+      gap: 4px;
+      transition: var(--transition);
+      background: none;
+      border: none;
+    }
+
+    .nav-item svg {
+      width: 22px;
+      height: 22px;
+      stroke-width: 2;
+      transition: var(--transition);
+    }
+
+    .nav-item.active {
+      color: var(--primary);
+    }
+
+    .nav-item.active svg {
+      transform: translateY(-2px);
+      stroke: var(--primary);
+    }
+
+    .nav-center-btn {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 6px 18px rgba(13, 148, 136, 0.45);
+      margin-top: -24px;
+      border: 3px solid var(--surface);
+      cursor: pointer;
+      transition: var(--transition);
+      outline: none;
+    }
+
+    .nav-center-btn:active {
+      transform: scale(0.92);
+    }
+
+    /* SECTION STYLES */
+    .section-padding {
+      padding: 16px;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-link {
+      font-size: 12px;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 700;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+
+    /* STATS CARDS */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .stat-card:active {
+      transform: translateY(1px);
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 4px;
+      height: 100%;
+      background-color: var(--card-accent, var(--primary));
+    }
+
+    .stat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .stat-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      background: var(--primary-surface);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stat-title {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.5px;
+    }
+
+    .stat-sub {
+      font-size: 10px;
+      color: var(--accent-green);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-weight: 700;
+    }
+
+    /* QUICK ACTIONS HERO BANNER */
+    .hero-banner {
+      background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+      border-radius: var(--radius-xl);
+      padding: 18px;
+      color: white;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-md);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-banner::after {
+      content: '';
+      position: absolute;
+      left: -20px;
+      bottom: -20px;
+      width: 130px;
+      height: 130px;
+      background: radial-gradient(circle, rgba(13, 148, 136, 0.35) 0%, rgba(0,0,0,0) 70%);
+      pointer-events: none;
+    }
+
+    .hero-title {
+      font-size: 17px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      color: #FFFFFF;
+    }
+
+    .hero-desc {
+      font-size: 12px;
+      color: #94A3B8;
+      margin-bottom: 16px;
+      max-width: 88%;
+      line-height: 1.4;
+    }
+
+    .quick-actions-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .action-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius-md);
+      padding: 10px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      color: white;
+      font-size: 10.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: center;
+    }
+
+    .action-btn:active {
+      background: rgba(13, 148, 136, 0.35);
+      border-color: var(--primary);
+    }
+
+    .action-btn.accent {
+      background: var(--primary);
+      border-color: var(--primary-light);
+    }
+
+    /* CARD LISTS WITH NO TEXT OVERLAP */
+    .list-card {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: var(--transition);
+      cursor: pointer;
+      position: relative;
+      width: 100%;
+    }
+
+    .list-card:active {
+      border-color: var(--primary);
+      background-color: var(--primary-surface);
+    }
+
+    .list-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1 1 65%;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .list-text-wrap {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .list-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-md);
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary-dark);
+      font-weight: 700;
+      flex-shrink: 0;
+      font-size: 18px;
+    }
+
+    .list-main-text {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+    }
+
+    .list-sub-text {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .list-val {
+      flex: 0 0 auto;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      white-space: nowrap;
+      margin-inline-start: 8px;
+    }
+
+    .list-price {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-main);
+      display: block;
+      white-space: nowrap;
+    }
+
+    .status-pill {
+      font-size: 10.5px;
+      padding: 2.5px 8px;
+      border-radius: var(--radius-full);
+      font-weight: 700;
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    .status-pill.success {
+      background-color: var(--accent-green-light);
+      color: var(--accent-green);
+    }
+
+    .status-pill.warning {
+      background-color: var(--accent-amber-light);
+      color: var(--accent-amber);
+    }
+
+    .status-pill.info {
+      background-color: var(--primary-light);
+      color: var(--primary-dark);
+    }
+
+    .status-pill.danger {
+      background-color: var(--accent-red-light);
+      color: var(--accent-red);
+    }
+
+    /* OCR INVOICE SCANNING BANNER */
+    .ocr-scan-banner {
+      background: linear-gradient(135deg, #0F766E, #0D9488);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      color: white;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 8px 20px rgba(13, 148, 136, 0.25);
+    }
+
+    .ocr-scan-btn {
+      background: white;
+      color: #0F766E;
+      border: none;
+      padding: 10px 14px;
+      border-radius: var(--radius-full);
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: var(--shadow-sm);
+      white-space: nowrap;
+      transition: var(--transition);
+    }
+
+    .ocr-scan-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* OCR REVIEW LIST */
+    .review-item {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+      position: relative;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .form-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .form-input {
+      width: 100%;
+      height: 42px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+      background-color: var(--bg);
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+      background-color: var(--surface);
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+    }
+
+    .inline-grid-3 {
+      display: grid;
+      grid-template-columns: 1.8fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .inline-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    /* BUTTONS */
+    .btn {
+      height: 46px;
+      border-radius: var(--radius-md);
+      border: none;
+      font-size: 14px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      width: 100%;
+      transition: var(--transition);
+      outline: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text-main);
+      border: 1px solid var(--border-strong);
+    }
+
+    .btn-secondary:active {
+      background-color: var(--bg);
+    }
+
+    /* INVOICE PAPER (PRINT & SHARE) */
+    .invoice-paper {
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      border: 1px dashed var(--border-strong);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .invoice-header-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+      gap: 12px;
+    }
+
+    .invoice-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 12px;
+    }
+
+    .invoice-table th {
+      text-align: right;
+      color: var(--text-muted);
+      padding: 8px 4px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+    }
+
+    .invoice-table td {
+      padding: 10px 4px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .invoice-total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 12px;
+      border-top: 2px solid var(--text-main);
+      margin-top: 10px;
+    }
+
+    /* FILTER TABS */
+    .filter-pills {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+      scrollbar-width: none;
+    }
+
+    .filter-pills::-webkit-scrollbar {
+      display: none;
+    }
+
+    .filter-chip {
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      white-space: nowrap;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .filter-chip.active {
+      background: var(--secondary);
+      color: white;
+      border-color: var(--secondary);
+    }
+
+    /* SEARCH BAR */
+    .search-box {
+      position: relative;
+      margin-bottom: 14px;
+    }
+
+    .search-box input {
+      width: 100%;
+      height: 44px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 0 40px 0 14px;
+      font-size: 13px;
+      color: var(--text-main);
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .search-box input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    /* TOAST NOTIFICATION */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      width: calc(100% - 32px);
+      max-width: 400px;
+      background: var(--secondary);
+      color: white;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--shadow-lg);
+      z-index: 2000;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* PRINT STYLES */
+    @media print {
+      body {
+        background: white !important;
+        color: black !important;
+      }
+      .phone-container {
+        max-width: 100% !important;
+        box-shadow: none !important;
+      }
+      .app-header, .bottom-nav, .icon-btn, .btn, .screen-pills-bar, .search-box {
+        display: none !important;
+      }
+      .app-screen {
+        display: none !important;
+        padding: 0 !important;
+      }
+      #screen-print-share {
+        display: block !important;
+      }
+      .invoice-paper {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MAIN MOBILE PHONE VIEWPORT -->
+  <div class="phone-container">
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="toast">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      <span id="toast-text">تمت العملية بنجاح!</span>
+    </div>
+
+    <!-- APP HEADER BAR (Top Navigation Bar: Left button is Refresh icon) -->
+    <header class="app-header">
+      <div class="header-brand" onclick="navigateTo('screen-home')">
+        <div class="brand-logo">د</div>
+        <div>
+          <div class="brand-title">ديالا</div>
+          <div class="brand-subtitle">للمعدات والمستهلكات الطبية</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" onclick="navigateTo('screen-ocr-verification')" title="تصوير الفاتورة">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+        </button>
+        <!-- Top-left button with Refresh icon across all screens -->
+        <button class="icon-btn" onclick="refreshApp()" title="تحديث البيانات">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- QUICK SCREEN SWITCHER BAR FOR APPROVED 6 SCREENS -->
+    <div class="screen-pills-bar">
+      <button class="screen-pill-btn active" id="pill-home" onclick="navigateTo('screen-home')">1. الرئيسية</button>
+      <button class="screen-pill-btn" id="pill-purchases" onclick="navigateTo('screen-purchases')">2. المشتريات</button>
+      <button class="screen-pill-btn" id="pill-ocr" onclick="navigateTo('screen-ocr-verification')">3. تدقيق OCR</button>
+      <button class="screen-pill-btn" id="pill-pos" onclick="navigateTo('screen-sale-pos')">4. نقطة البيع</button>
+      <button class="screen-pill-btn" id="pill-print" onclick="navigateTo('screen-print-share')">5. طباعة الفاتورة</button>
+      <button class="screen-pill-btn" id="pill-consumption" onclick="navigateTo('screen-consumption')">6. الاستهلاك</button>
+    </div>
+
+    <!-- 1. HOME SCREEN (Design Screen 1: الشاشة الرئيسية) -->
+    <main id="screen-home" class="app-screen active section-padding" data-screen-index="1">
+      
+      <!-- HERO BANNER -->
+      <div class="hero-banner">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div class="hero-title">مرحباً، محل ديالا الطبي</div>
+            <div class="hero-desc">إدارة شاملة للمبيعات والمشتريات والمستلزمات بنقرة واحدة</div>
+          </div>
+          <span class="status-pill success" style="background: rgba(22, 163, 74, 0.25); color: #86EFAC;">متصل بالنظام</span>
+        </div>
+        
+        <div class="quick-actions-row">
+          <button class="action-btn accent" onclick="navigateTo('screen-ocr-verification')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            تدقيق OCR
+          </button>
+          <button class="action-btn" onclick="navigateTo('screen-sale-pos')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+            نقطة البيع
+          </button>
+          <button class="action-btn" onclick="navigateTo('screen-print-share')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            طباعة فاتورة
+          </button>
+          <button class="action-btn" onclick="navigateTo('screen-consumption')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+            الاستهلاك
+          </button>
+        </div>
+      </div>
+
+      <!-- DAILY STATS GRID -->
+      <div class="section-title">
+        <span>ملخص اليوم</span>
+        <button class="section-link" onclick="navigateTo('screen-purchases')">عرض الفواتير &larr;</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card" style="--card-accent: var(--primary);" onclick="navigateTo('screen-sale-pos')">
+          <div class="stat-header">
+            <span class="stat-title">المبيعات اليومية</span>
+            <div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></div>
+          </div>
+          <div class="stat-value" id="home-sales-val">385 <span style="font-size:12px; font-weight:600;">ر.س</span></div>
+          <div class="stat-sub">مبيعات المحل المعتمدة</div>
+        </div>
+
+        <div class="stat-card" style="--card-accent: var(--accent-amber);" onclick="navigateTo('screen-purchases')">
+          <div class="stat-header">
+            <span class="stat-title">المشتريات اليومية</span>
+            <div class="stat-icon" style="background:var(--accent-amber-light); color:var(--accent-amber);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path></svg></div>
+          </div>
+          <div class="stat-value" id="home-purch-val">1,850 <span style="font-size:12px; font-weight:600;">ر.س</span></div>
+          <div class="stat-sub" style="color:var(--accent-amber);" id="home-purch-count">2 فواتير مدققة</div>
+        </div>
+
+        <div class="stat-card" style="--card-accent: var(--accent-red);" onclick="navigateTo('screen-consumption')">
+          <div class="stat-header">
+            <span class="stat-title">الاستهلاكات اليومية</span>
+            <div class="stat-icon" style="background:var(--accent-red-light); color:var(--accent-red);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg></div>
+          </div>
+          <div class="stat-value" id="home-cons-val">85 <span style="font-size:12px; font-weight:600;">ر.س</span></div>
+          <div class="stat-sub" style="color:var(--accent-red);">استهلاك مستلزمات داخلية</div>
+        </div>
+
+        <div class="stat-card" style="--card-accent: var(--secondary);" onclick="navigateTo('screen-ocr-verification')">
+          <div class="stat-header">
+            <span class="stat-title">تدقيق الفواتير</span>
+            <div class="stat-icon" style="background:var(--bg); color:var(--text-main);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></div>
+          </div>
+          <div class="stat-value">جاهز <span style="font-size:12px; font-weight:600;">OCR</span></div>
+          <div class="stat-sub" style="color:var(--primary);">التعرف الآلي للبنود</div>
+        </div>
+      </div>
+
+      <!-- RECENT PURCHASES PREVIEWS -->
+      <div class="section-title">
+        <span>آخر فواتير المشتريات المصورة</span>
+        <button class="section-link" onclick="navigateTo('screen-purchases')">عرض الكل</button>
+      </div>
+
+      <div id="home-recent-purchases-container">
+        <!-- Rendered with safe flex and non-overlapping company and price text -->
+      </div>
+    </main>
+
+    <!-- 2. PURCHASES SCREEN (Design Screen 2: سجل فواتير المشتريات) -->
+    <main id="screen-purchases" class="app-screen section-padding" data-screen-index="2">
+      <div class="ocr-scan-banner">
+        <div>
+          <div style="font-weight:800; font-size:15px;">تصوير فاتورة مشتريات جديدة</div>
+          <div style="font-size:11px; opacity:0.9; margin-top:2px;">استخراج وتنزيل محتويات الفاتورة عبر المسح الذكي</div>
+        </div>
+        <button class="ocr-scan-btn" onclick="navigateTo('screen-ocr-verification')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          تدقيق الفاتورة
+        </button>
+      </div>
+
+      <!-- SECTION TITLE RESTORED: 'سجل فواتير المشتريات' with Filter Icon Button on Left -->
+      <div class="section-title">
+        <span>سجل فواتير المشتريات</span>
+        <button class="icon-btn" style="width:34px; height:34px;" onclick="togglePurchasesFilter()" title="تصفية فواتير المشتريات">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+          </svg>
+        </button>
+      </div>
+
+      <!-- FILTER CHIPS (Toggled by Filter Icon Button) -->
+      <div id="purchases-filter-bar" class="filter-pills" style="display:none;">
+        <div class="filter-chip active" onclick="applyPurchasesFilter('all', this)">الكل</div>
+        <div class="filter-chip" onclick="applyPurchasesFilter('equipment', this)">المعدات</div>
+        <div class="filter-chip" onclick="applyPurchasesFilter('consumables', this)">المستهلكات</div>
+        <div class="filter-chip" onclick="applyPurchasesFilter('high', this)">أكبر من 2,000 ر.س</div>
+      </div>
+
+      <!-- PURCHASES INVOICES LIST (Non-overlapping layout) -->
+      <div id="purchases-list-container">
+        <!-- Rendered dynamically from purchases state -->
+      </div>
+    </main>
+
+    <!-- 3. OCR DATA VERIFICATION SCREEN (Design Screen 3: شاشة مراجعة وتدقيق بيانات الفاتورة) -->
+    <main id="screen-ocr-verification" class="app-screen section-padding" data-screen-index="3">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+        <button class="btn-back-header" onclick="navigateTo('screen-purchases')">
+          &larr; العودة للمشتريات
+        </button>
+        <span class="status-pill warning" id="review-status-tag">تم الاستخراج بالذكاء الاصطناعي</span>
+      </div>
+
+      <div style="background:var(--accent-amber-light); border:1px solid var(--accent-amber); border-radius:var(--radius-md); padding:12px; margin-bottom:14px; font-size:12px; color:var(--accent-amber); line-height:1.5;">
+        <strong>شاشة تدقيق بيانات الفاتورة (OCR):</strong> تم التعرف على البنود والكميات والأسعار من صورة الفاتورة. يمكنك مراجعة وتعديل أي حقل قبل الحفظ النهائي.
+      </div>
+
+      <!-- CAPTURED INVOICE PREVIEW CARD -->
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:12px; margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:12px; font-weight:700;">صورة الفاتورة الأصلية (الممسوحة):</span>
+          <button class="btn-secondary" style="height:28px; padding:0 8px; font-size:11px; border-radius:var(--radius-sm);" onclick="simulateNewInvoiceScan()">
+            📷 مسح فاتورة أخرى
+          </button>
+        </div>
+        <div style="height:120px; background:linear-gradient(135deg, #1E293B, #0F172A); border-radius:var(--radius-sm); display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94A3B8; font-size:11px; text-align:center; padding:8px;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          <span style="margin-top:6px; color:#F8FAFC; font-weight:700;">فاتورة ضريبية رسمية - شركة الأمل للمعدات الطبية</span>
+          <span style="font-size:10px;">تمت قراءة الرمز والبيانات بدقة 99.4%</span>
+        </div>
+      </div>
+
+      <!-- INVOICE METADATA INPUTS -->
+      <div class="inline-grid-2">
+        <div class="form-group">
+          <label class="form-label">رقم الفاتورة المستخرج</label>
+          <input type="text" class="form-input" id="review-inv-number" value="PUR-2024-91">
+        </div>
+        <div class="form-group">
+          <label class="form-label">الرقم الضريبي للمورد</label>
+          <input type="text" class="form-input" id="review-tax-id" value="30048192800003">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">اسم المورد / الشركة الطبية</label>
+        <input type="text" class="form-input" id="review-supplier-name" value="مؤسسة الحياة للمعدات الطبية">
+      </div>
+
+      <!-- ITEMS VERIFICATION LIST -->
+      <div class="section-title" style="margin-top:14px;">
+        <span>المستلزمات والمعدات المستخرجة</span>
+        <button class="section-link" onclick="addReviewItemRow()">+ إضافة بند يدوي</button>
+      </div>
+
+      <div id="review-items-container">
+        <!-- Rendered item rows -->
+      </div>
+
+      <div class="invoice-paper" style="margin-top:10px; background:var(--primary-surface); border-color:var(--primary);">
+        <div class="invoice-total-row" style="border:none; padding-top:0;">
+          <span style="font-weight:700; color:var(--primary-dark);">إجمالي الفاتورة المدققة:</span>
+          <span id="review-total-val" style="font-size:18px; font-weight:800; color:var(--primary-dark);">1,850 ر.س</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="confirmAndSaveInvoice()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        تأكيد الفاتورة وحفظها بالمخزون
+      </button>
+    </main>
+
+    <!-- 4. NEW SALE / POS ENTRY SCREEN (Design Screen 4: نقطة البيع وتسجيل فاتورة مبيعات جديدة) -->
+    <main id="screen-sale-pos" class="app-screen section-padding" data-screen-index="4">
+      <div class="section-title">
+        <span>نقطة البيع - تسجيل فاتورة مبيعات جديدة</span>
+        <span class="status-pill info" id="sales-current-invoice-id">#SL-402</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">اسم العميل / العيادة</label>
+        <input type="text" id="sale-client-name" class="form-input" value="عيادة الدكتور أحمد (باطنية)" placeholder="مثال: عيادة د. محمد النور / عميل نقدي">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">طريقة الدفع</label>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;">
+          <button type="button" class="btn-secondary" style="height:36px; font-size:12px; border-color:var(--primary); background:var(--primary-surface); color:var(--primary-dark);" id="pay-cash" onclick="setPaymentMethod('cash', this)">نقدي (Cash)</button>
+          <button type="button" class="btn-secondary" style="height:36px; font-size:12px;" id="pay-card" onclick="setPaymentMethod('card', this)">شبكة (مدى)</button>
+          <button type="button" class="btn-secondary" style="height:36px; font-size:12px;" id="pay-credit" onclick="setPaymentMethod('credit', this)">آجل (ذمم)</button>
+        </div>
+      </div>
+
+      <div class="search-box">
+        <input type="text" id="sales-search-input" placeholder="بحث عن معدة أو مستهلك طبي..." oninput="handleSaleSearch(this.value)">
+        <span class="search-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
+      </div>
+
+      <div class="section-title">
+        <span>اختيار من المخزون المتوفر</span>
+      </div>
+
+      <div id="sale-product-select-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 14px;">
+        <!-- Filled with products with safe flex -->
+      </div>
+
+      <!-- SELECTED ITEMS IN CART -->
+      <div class="section-title">
+        <span>بنود سلة المبيعات</span>
+        <button class="section-link" onclick="clearSaleCart()" style="color:var(--accent-red);">تفريغ السلة</button>
+      </div>
+
+      <div id="cart-items-wrapper">
+        <!-- Dynamic Cart Items -->
+      </div>
+
+      <div class="invoice-paper" style="margin-top:12px;">
+        <div class="invoice-total-row" style="border:none; padding:0;">
+          <span style="font-weight:700;">المبلغ الإجمالي المستحق:</span>
+          <span id="sale-grand-total" style="font-size:20px; font-weight:800; color:var(--primary);">385 ر.س</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="completeSaleAndIssueInvoice()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        إصدار الفاتورة والانتقال للطباعة والمشاركة
+      </button>
+    </main>
+
+    <!-- 5. PRINT / SHARE INVOICE SCREEN (Design Screen 5: طباعة ومشاركة الفاتورة) -->
+    <main id="screen-print-share" class="app-screen section-padding" data-screen-index="5">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <button class="btn-back-header" onclick="navigateTo('screen-sale-pos')">
+          &larr; العودة لنقطة البيع
+        </button>
+        <span class="status-pill success" id="detail-type-badge">فاتورة ضريبية مبسطة معتمدة</span>
+      </div>
+
+      <!-- PRINTABLE INVOICE PAPER -->
+      <div class="invoice-paper" id="printable-invoice">
+        <div class="invoice-header-row">
+          <div>
+            <div style="font-weight:900; font-size:18px; color:var(--primary-dark);">محل ديالا للمعدات الطبية</div>
+            <div style="font-size:11px; color:var(--text-muted);">معدات ومستلزمات طبية معتمدة ومسجلة</div>
+            <div style="font-size:10px; color:var(--text-light); margin-top:2px;">الرقم الضريبي: 300492819200003</div>
+          </div>
+          <div style="text-align:left;">
+            <div style="font-size:14px; font-weight:800; color:var(--text-main);" id="detail-inv-id">#SL-401</div>
+            <div style="font-size:10px; color:var(--text-muted); margin-top:2px;" id="detail-inv-date">اليوم، 10:30 ص</div>
+            <div style="font-size:10px; color:var(--primary-dark); font-weight:700;" id="detail-inv-method">نقدي (مدفوع)</div>
+          </div>
+        </div>
+
+        <div style="font-size:12px; margin-bottom:12px; background:var(--bg); padding:8px 10px; border-radius:var(--radius-sm);">
+          <span style="color:var(--text-muted);">الطرف الآخر:</span> <strong id="detail-inv-client">عيادة الدكتور أحمد (باطنية)</strong>
+        </div>
+
+        <table class="invoice-table">
+          <thead>
+            <tr>
+              <th>البند</th>
+              <th>الكمية</th>
+              <th>السعر</th>
+              <th>الإجمالي</th>
+            </tr>
+          </thead>
+          <tbody id="detail-invoice-tbody">
+            <!-- Dynamic lines -->
+          </tbody>
+        </table>
+
+        <div class="invoice-total-row">
+          <span>المبلغ الإجمالي الشامل:</span>
+          <span id="detail-inv-total" style="font-size:18px; font-weight:800; color:var(--primary);">385 ر.س</span>
+        </div>
+
+        <!-- ZATCA QR CODE SIMULATION -->
+        <div style="margin-top:14px; padding-top:10px; border-top:1px dashed var(--border); display:flex; align-items:center; justify-content:space-between;">
+          <div style="font-size:10px; color:var(--text-muted); line-height:1.4;">
+            <div>فاتورة إلكترونية مطابقة لاشتراطات هيئة الزكاة والضريبة والجمارك</div>
+            <div style="color:var(--accent-green); font-weight:700;">رمز التحقق الرقمي معتمد ZATCA</div>
+          </div>
+          <div style="width:48px; height:48px; background:#000; border-radius:4px; display:flex; align-items:center; justify-content:center; color:white; font-size:9px; font-weight:800; text-align:center;">
+            QR CODE
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTION BUTTONS FOR PRINT & SHARE -->
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+        <button class="btn btn-primary" onclick="printInvoiceAction()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          طباعة الفاتورة
+        </button>
+
+        <button class="btn btn-secondary" onclick="shareInvoiceAction()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+          مشاركة الفاتورة
+        </button>
+      </div>
+    </main>
+
+    <!-- 6. INTERNAL CONSUMPTION / EXPENSE LOGGING SCREEN (Design Screen 6: الاستهلاك الداخلي والمصروفات) -->
+    <main id="screen-consumption" class="app-screen section-padding" data-screen-index="6">
+      <div class="section-title">
+        <span>تسجيل استهلاك داخلي ومصروفات</span>
+        <span class="status-pill warning">مستهلكات المحل</span>
+      </div>
+
+      <!-- ADD CONSUMPTION FORM -->
+      <div class="review-item" style="background:var(--surface);">
+        <div class="form-group">
+          <label class="form-label">اسم البند أو المستهلك الطبي</label>
+          <input type="text" id="cons-name" class="form-input" placeholder="مثال: شاش طبي معقم 10×10 للاختبار">
+        </div>
+        
+        <div class="inline-grid-3">
+          <div>
+            <label class="form-label">الكمية المستهلكة</label>
+            <input type="number" id="cons-qty" class="form-input" value="1" min="1">
+          </div>
+          <div>
+            <label class="form-label">التكلفة (ر.س)</label>
+            <input type="number" id="cons-cost" class="form-input" value="35" min="0">
+          </div>
+          <div>
+            <label class="form-label">الصنف بالمخزون</label>
+            <select id="cons-inventory-link" class="form-input" style="padding:0 6px;">
+              <option value="">بدون خصم مخزون</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:8px;">
+          <label class="form-label">فئة الاستهلاك / ملاحظات</label>
+          <input type="text" id="cons-reason" class="form-input" value="استخدام داخلي لاختبار المعدات الطبية بالمعرض" placeholder="سبب الاستهلاك">
+        </div>
+
+        <button class="btn btn-primary" style="height:42px; margin-top:8px;" onclick="addConsumptionRecord()">
+          تسجيل الاستهلاك وخصمه
+        </button>
+      </div>
+
+      <div class="section-title" style="margin-top:16px;">
+        <span>سجل الاستهلاكات والمصروفات المسجلة</span>
+      </div>
+
+      <div id="consumption-list-container">
+        <!-- Rendered with safe flex and non-overlapping text -->
+      </div>
+    </main>
+
+    <!-- BOTTOM NAVIGATION BAR -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" id="nav-home" onclick="navigateTo('screen-home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+        <span>الرئيسية</span>
+      </button>
+
+      <button class="nav-item" id="nav-purchases" onclick="navigateTo('screen-purchases')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path></svg>
+        <span>المشتريات</span>
+      </button>
+
+      <button class="nav-center-btn" id="nav-center" onclick="navigateTo('screen-ocr-verification')" title="تدقيق الفاتورة OCR">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+      </button>
+
+      <button class="nav-item" id="nav-sales" onclick="navigateTo('screen-sale-pos')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        <span>نقطة البيع</span>
+      </button>
+
+      <button class="nav-item" id="nav-consumption" onclick="navigateTo('screen-consumption')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+        <span>الاستهلاك</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // INITIAL DATABASE
+    const DEFAULT_DATA = {
+      inventory: [
+        { id: 'PRD-1', name: 'جهاز قياس الضغط الإلكتروني (أومرون)', category: 'equipment', stock: 18, buyPrice: 120, sellPrice: 180, icon: '🩺' },
+        { id: 'PRD-2', name: 'كمامات طبية 3 طبقات معقمة (علبة 50)', category: 'consumables', stock: 110, buyPrice: 14, sellPrice: 25, icon: '😷' },
+        { id: 'PRD-3', name: 'جهاز قياس السكر بالدم + 50 شريط', category: 'equipment', stock: 9, buyPrice: 95, sellPrice: 140, icon: '🩸' },
+        { id: 'PRD-4', name: 'سرنجات معقمة 5 مل (علبة 100 حبة)', category: 'consumables', stock: 45, buyPrice: 18, sellPrice: 30, icon: '💉' },
+        { id: 'PRD-5', name: 'سماعة طبية ريستر كلاسيك (Riester)', category: 'equipment', stock: 12, buyPrice: 160, sellPrice: 240, icon: '🩺' },
+        { id: 'PRD-6', name: 'قفازات لاتكس طبية معقمة (علبة 100)', category: 'consumables', stock: 4, buyPrice: 20, sellPrice: 32, icon: '🧤' }
+      ],
+      purchases: [
+        {
+          id: 'PUR-2024-88',
+          supplier: 'مؤسسة الحياة للمعدات الطبية',
+          date: 'اليوم، 10:15 ص',
+          timestamp: Date.now() - (2 * 3600 * 1000),
+          total: 1850,
+          status: 'مؤكد ومضاف للمخزون',
+          items: [
+            { name: 'جهاز قياس الضغط الإلكتروني', category: 'equipment', qty: 10, price: 120 },
+            { name: 'سرنجات معقمة 5 مل', category: 'consumables', qty: 25, price: 26 }
+          ]
+        },
+        {
+          id: 'PUR-2024-87',
+          supplier: 'شركة الفجر الطبية',
+          date: 'أمس، 04:30 م',
+          timestamp: Date.now() - (28 * 3600 * 1000),
+          total: 3200,
+          status: 'مؤكد ومضاف للمخزون',
+          items: [
+            { name: 'سماعة طبية ريستر كلاسيك', category: 'equipment', qty: 15, price: 160 },
+            { name: 'كمامات طبية 3 طبقات معقمة', category: 'consumables', qty: 40, price: 20 }
+          ]
+        }
+      ],
+      sales: [
+        {
+          id: 'SL-401',
+          client: 'عيادة الدكتور أحمد (باطنية)',
+          date: 'اليوم، 09:20 ص',
+          paymentMethod: 'نقدي (مدفوع)',
+          timestamp: Date.now() - (3 * 3600 * 1000),
+          total: 385,
+          items: [
+            { name: 'جهاز قياس الضغط الإلكتروني (أومرون)', qty: 1, price: 180 },
+            { name: 'كمامات طبية 3 طبقات معقمة (علبة 50)', qty: 3, price: 25 },
+            { name: 'جهاز قياس السكر بالدم + 50 شريط', qty: 1, price: 140 }
+          ]
+        }
+      ],
+      consumptions: [
+        {
+          id: 'CNS-1',
+          name: 'شاش طبي معقم + معقم كحول 70%',
+          qty: 2,
+          cost: 85,
+          reason: 'استخدام داخلي لاختبار المعدات',
+          date: 'اليوم، 11:00 ص',
+          timestamp: Date.now() - (1 * 3600 * 1000)
+        }
+      ]
+    };
+
+    function loadDB() {
+      const stored = localStorage.getItem('diyala_medical_db');
+      if (!stored) {
+        localStorage.setItem('diyala_medical_db', JSON.stringify(DEFAULT_DATA));
+        return DEFAULT_DATA;
+      }
+      try {
+        return JSON.parse(stored);
+      } catch (e) {
+        return DEFAULT_DATA;
+      }
+    }
+
+    function saveDB(data) {
+      localStorage.setItem('diyala_medical_db', JSON.stringify(data));
+      refreshAllViews();
+    }
+
+    let DB = loadDB();
+    let currentSaleCart = [
+      { id: 'PRD-1', name: 'جهاز قياس الضغط الإلكتروني (أومرون)', price: 180, qty: 1 },
+      { id: 'PRD-2', name: 'كمامات طبية 3 طبقات معقمة (علبة 50)', price: 25, qty: 3 },
+      { id: 'PRD-3', name: 'جهاز قياس السكر بالدم + 50 شريط', price: 140, qty: 1 }
+    ];
+    let currentViewingInvoice = DB.sales[0];
+    let selectedPayment = 'cash';
+
+    // NAVIGATION SYSTEM
+    function navigateTo(screenId) {
+      // Map screen aliases so any call opens the correct approved screen
+      if (screenId === 'screen-invoice-review') screenId = 'screen-ocr-verification';
+      if (screenId === 'screen-sales') screenId = 'screen-sale-pos';
+      if (screenId === 'screen-invoice-details') screenId = 'screen-print-share';
+
+      const screens = document.querySelectorAll('.app-screen');
+      screens.forEach(s => s.classList.remove('active'));
+
+      const target = document.getElementById(screenId);
+      if (target) {
+        target.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      updateNavTabs(screenId);
+      updateScreenPills(screenId);
+
+      if (screenId === 'screen-ocr-verification') {
+        populateDefaultReviewScreen();
+      } else if (screenId === 'screen-sale-pos') {
+        renderSaleProductsList();
+        renderSaleCart();
+      } else if (screenId === 'screen-print-share') {
+        populatePrintInvoice(currentViewingInvoice || DB.sales[0]);
+      }
+    }
+
+    function updateNavTabs(screenId) {
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(item => item.classList.remove('active'));
+
+      if (screenId === 'screen-home') document.getElementById('nav-home')?.classList.add('active');
+      if (screenId === 'screen-purchases') document.getElementById('nav-purchases')?.classList.add('active');
+      if (screenId === 'screen-sale-pos') document.getElementById('nav-sales')?.classList.add('active');
+      if (screenId === 'screen-consumption') document.getElementById('nav-consumption')?.classList.add('active');
+    }
+
+    function updateScreenPills(screenId) {
+      const pills = document.querySelectorAll('.screen-pill-btn');
+      pills.forEach(p => p.classList.remove('active'));
+      if (screenId === 'screen-home') document.getElementById('pill-home')?.classList.add('active');
+      if (screenId === 'screen-purchases') document.getElementById('pill-purchases')?.classList.add('active');
+      if (screenId === 'screen-ocr-verification') document.getElementById('pill-ocr')?.classList.add('active');
+      if (screenId === 'screen-sale-pos') document.getElementById('pill-pos')?.classList.add('active');
+      if (screenId === 'screen-print-share') document.getElementById('pill-print')?.classList.add('active');
+      if (screenId === 'screen-consumption') document.getElementById('pill-consumption')?.classList.add('active');
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const toastText = document.getElementById('toast-text');
+      toastText.innerText = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // TOP-LEFT REFRESH BUTTON ACTION
+    function refreshApp() {
+      DB = loadDB();
+      refreshAllViews();
+      showToast('تم تحديث بيانات التطبيق بنجاح');
+    }
+
+    // PURCHASES FILTER BUTTON ACTION
+    function togglePurchasesFilter() {
+      const filterBar = document.getElementById('purchases-filter-bar');
+      filterBar.style.display = filterBar.style.display === 'none' ? 'flex' : 'none';
+    }
+
+    function applyPurchasesFilter(type, el) {
+      const chips = document.querySelectorAll('#purchases-filter-bar .filter-chip');
+      chips.forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      renderPurchasesList(type);
+    }
+
+    // 3. OCR VERIFICATION LOGIC
+    function populateDefaultReviewScreen() {
+      const container = document.getElementById('review-items-container');
+      container.innerHTML = '';
+      
+      const defaultItems = [
+        { name: 'جهاز قياس الضغط الإلكتروني (أومرون)', category: 'equipment', qty: 10, price: 120 },
+        { name: 'سرنجات معقمة 5 مل (علبة 100)', category: 'consumables', qty: 25, price: 26 }
+      ];
+
+      defaultItems.forEach((item, index) => {
+        container.appendChild(createReviewRowElement(item, index));
+      });
+      recalculateReviewTotal();
+    }
+
+    function createReviewRowElement(item, index) {
+      const div = document.createElement('div');
+      div.className = 'review-item';
+      div.id = `rev-row-${index}`;
+      div.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <label class="form-label">الصنف الطبي المستخرج #${index + 1}</label>
+          <span style="color:var(--accent-red); cursor:pointer; font-size:12px; font-weight:700;" onclick="removeReviewRow(${index})">حذف البند</span>
+        </div>
+        <div class="form-group">
+          <input type="text" class="form-input rev-item-name" value="${item.name || ''}" placeholder="اسم الصنف">
+        </div>
+        <div class="inline-grid-3">
+          <div>
+            <label class="form-label">الفئة</label>
+            <select class="form-input rev-item-cat">
+              <option value="equipment" ${item.category === 'equipment' ? 'selected' : ''}>معدات</option>
+              <option value="consumables" ${item.category === 'consumables' ? 'selected' : ''}>مستهلكات</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">الكمية</label>
+            <input type="number" class="form-input rev-item-qty" value="${item.qty || 1}" min="1" oninput="recalculateReviewTotal()">
+          </div>
+          <div>
+            <label class="form-label">السعر (ر.س)</label>
+            <input type="number" class="form-input rev-item-price" value="${item.price || 0}" min="0" oninput="recalculateReviewTotal()">
+          </div>
+        </div>
+      `;
+      return div;
+    }
+
+    function addReviewItemRow() {
+      const container = document.getElementById('review-items-container');
+      const count = container.children.length;
+      container.appendChild(createReviewRowElement({ name: 'ميزان حرارة ديجيتال', category: 'equipment', qty: 5, price: 50 }, count));
+      recalculateReviewTotal();
+    }
+
+    function removeReviewRow(index) {
+      const el = document.getElementById(`rev-row-${index}`);
+      if (el) el.remove();
+      recalculateReviewTotal();
+    }
+
+    function recalculateReviewTotal() {
+      const rows = document.querySelectorAll('#review-items-container .review-item');
+      let total = 0;
+      rows.forEach(r => {
+        const qty = parseFloat(r.querySelector('.rev-item-qty')?.value) || 0;
+        const price = parseFloat(r.querySelector('.rev-item-price')?.value) || 0;
+        total += (qty * price);
+      });
+      document.getElementById('review-total-val').innerText = total.toLocaleString() + ' ر.س';
+      return total;
+    }
+
+    function simulateNewInvoiceScan() {
+      showToast('جاري إعادة مسح الفاتورة ضوئياً...');
+      setTimeout(() => {
+        document.getElementById('review-inv-number').value = 'PUR-' + Math.floor(1000 + Math.random() * 9000);
+        document.getElementById('review-supplier-name').value = 'شركة الفجر الطبية المعتمدة';
+        populateDefaultReviewScreen();
+        showToast('تم استخراج وقراءة بيانات الفاتورة بنجاح!');
+      }, 500);
+    }
+
+    function confirmAndSaveInvoice() {
+      const invId = document.getElementById('review-inv-number').value.trim() || ('PUR-' + Date.now().toString().slice(-4));
+      const supplier = document.getElementById('review-supplier-name').value.trim() || 'مؤسسة طبية';
+      const rows = document.querySelectorAll('#review-items-container .review-item');
+
+      if (rows.length === 0) {
+        showToast('يرجى إضافة بند واحد على الأقل');
+        return;
+      }
+
+      const items = [];
+      let total = 0;
+
+      rows.forEach(r => {
+        const name = r.querySelector('.rev-item-name')?.value.trim() || 'مستلزم طبي';
+        const category = r.querySelector('.rev-item-cat')?.value || 'consumables';
+        const qty = parseInt(r.querySelector('.rev-item-qty')?.value) || 1;
+        const price = parseFloat(r.querySelector('.rev-item-price')?.value) || 0;
+        total += (qty * price);
+
+        items.push({ name, category, qty, price });
+
+        const existingProd = DB.inventory.find(p => p.name.toLowerCase() === name.toLowerCase());
+        if (existingProd) {
+          existingProd.stock += qty;
+        } else {
+          DB.inventory.push({
+            id: 'PRD-' + (DB.inventory.length + 1),
+            name: name,
+            category: category,
+            stock: qty,
+            buyPrice: price,
+            sellPrice: Math.round(price * 1.35),
+            icon: category === 'equipment' ? '🩺' : '📦'
+          });
+        }
+      });
+
+      const newPurchase = {
+        id: invId,
+        supplier: supplier,
+        date: 'اليوم، ' + new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+        timestamp: Date.now(),
+        total: total,
+        status: 'مؤكد ومضاف للمخزون',
+        items: items
+      };
+
+      DB.purchases.unshift(newPurchase);
+      saveDB(DB);
+
+      showToast('تم تدقيق الفاتورة وتحديث المخزون بنجاح!');
+      navigateTo('screen-purchases');
+    }
+
+    // 4. NEW SALE / POS LOGIC
+    function setPaymentMethod(method, btn) {
+      selectedPayment = method;
+      document.querySelectorAll('#screen-sale-pos button[id^="pay-"]').forEach(b => {
+        b.style.background = 'var(--surface)';
+        b.style.borderColor = 'var(--border-strong)';
+        b.style.color = 'var(--text-main)';
+      });
+      btn.style.background = 'var(--primary-surface)';
+      btn.style.borderColor = 'var(--primary)';
+      btn.style.color = 'var(--primary-dark)';
+    }
+
+    function renderSaleProductsList(filterTerm = '') {
+      const container = document.getElementById('sale-product-select-list');
+      container.innerHTML = '';
+
+      const term = filterTerm.trim().toLowerCase();
+      const filtered = DB.inventory.filter(p => !term || p.name.toLowerCase().includes(term));
+
+      filtered.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'list-card';
+        div.style.padding = '8px 12px';
+        div.onclick = () => addProductToSaleCart(p.id);
+        div.innerHTML = `
+          <div class="list-info">
+            <div class="list-icon" style="font-size:16px; width:34px; height:34px;">${p.icon || '🩺'}</div>
+            <div class="list-text-wrap">
+              <div class="list-main-text" style="font-size:12.5px;">${p.name}</div>
+              <div class="list-sub-text">المتوفر: <strong>${p.stock}</strong> قطعة</div>
+            </div>
+          </div>
+          <div class="list-val">
+            <div class="list-price">${p.sellPrice} ر.س</div>
+            <span class="status-pill success" style="cursor:pointer;">+ إضافة</span>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function handleSaleSearch(val) {
+      renderSaleProductsList(val);
+    }
+
+    function addProductToSaleCart(productId) {
+      const prod = DB.inventory.find(p => p.id === productId);
+      if (!prod) return;
+
+      const existing = currentSaleCart.find(i => i.id === productId);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        currentSaleCart.push({
+          id: prod.id,
+          name: prod.name,
+          price: prod.sellPrice,
+          qty: 1
+        });
+      }
+      renderSaleCart();
+      showToast(`تمت إضافة: ${prod.name}`);
+    }
+
+    function renderSaleCart() {
+      const container = document.getElementById('cart-items-wrapper');
+      container.innerHTML = '';
+      let total = 0;
+
+      if (currentSaleCart.length === 0) {
+        container.innerHTML = '<div style="font-size:12px; color:var(--text-muted); text-align:center; padding:12px;">السلة فارغة. اختر من أصناف المخزون أعلاه.</div>';
+        document.getElementById('sale-grand-total').innerText = '0 ر.س';
+        return;
+      }
+
+      currentSaleCart.forEach((item, index) => {
+        const lineTotal = item.price * item.qty;
+        total += lineTotal;
+
+        const div = document.createElement('div');
+        div.className = 'list-card';
+        div.innerHTML = `
+          <div class="list-info">
+            <div class="list-text-wrap">
+              <div class="list-main-text">${item.name}</div>
+              <div class="list-sub-text">${item.price} ر.س &times; ${item.qty}</div>
+            </div>
+          </div>
+          <div class="list-val">
+            <div class="list-price">${lineTotal} ر.س</div>
+            <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+              <button onclick="decrementCartItem(${index})" style="width:22px; height:22px; border-radius:50%; border:1px solid var(--border); background:var(--bg); cursor:pointer;">-</button>
+              <span style="font-weight:700; font-size:11px;">${item.qty}</span>
+              <button onclick="incrementCartItem(${index})" style="width:22px; height:22px; border-radius:50%; border:1px solid var(--border); background:var(--bg); cursor:pointer;">+</button>
+              <span onclick="removeCartItem(${index})" style="color:var(--accent-red); cursor:pointer; font-weight:800; font-size:14px; margin-right:4px;">&times;</span>
+            </div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+
+      document.getElementById('sale-grand-total').innerText = total.toLocaleString() + ' ر.س';
+    }
+
+    function incrementCartItem(index) {
+      currentSaleCart[index].qty += 1;
+      renderSaleCart();
+    }
+
+    function decrementCartItem(index) {
+      if (currentSaleCart[index].qty > 1) {
+        currentSaleCart[index].qty -= 1;
+      } else {
+        currentSaleCart.splice(index, 1);
+      }
+      renderSaleCart();
+    }
+
+    function removeCartItem(index) {
+      currentSaleCart.splice(index, 1);
+      renderSaleCart();
+    }
+
+    function clearSaleCart() {
+      currentSaleCart = [];
+      renderSaleCart();
+    }
+
+    function completeSaleAndIssueInvoice() {
+      if (currentSaleCart.length === 0) {
+        showToast('يرجى إضافة مستلزمات طبية في السلة أولاً');
+        return;
+      }
+
+      const clientName = document.getElementById('sale-client-name').value.trim() || 'عميل نقدي';
+      const saleId = 'SL-' + (DB.sales.length + 402);
+      let total = 0;
+
+      currentSaleCart.forEach(cartItem => {
+        total += (cartItem.price * cartItem.qty);
+        const prod = DB.inventory.find(p => p.id === cartItem.id);
+        if (prod) {
+          prod.stock = Math.max(0, prod.stock - cartItem.qty);
+        }
+      });
+
+      const newSaleRecord = {
+        id: saleId,
+        client: clientName,
+        date: 'اليوم، ' + new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+        paymentMethod: selectedPayment === 'cash' ? 'نقدي (مدفوع)' : (selectedPayment === 'card' ? 'شبكة مدى' : 'آجل'),
+        timestamp: Date.now(),
+        total: total,
+        items: [...currentSaleCart]
+      };
+
+      DB.sales.unshift(newSaleRecord);
+      saveDB(DB);
+
+      currentViewingInvoice = newSaleRecord;
+      showToast('تم إصدار فاتورة المبيعات بنجاح!');
+      navigateTo('screen-print-share');
+    }
+
+    // 5. PRINT & SHARE INVOICE LOGIC
+    function populatePrintInvoice(inv) {
+      if (!inv) return;
+      document.getElementById('detail-inv-id').innerText = '#' + inv.id;
+      document.getElementById('detail-inv-date').innerText = inv.date;
+      document.getElementById('detail-inv-client').innerText = inv.client || inv.supplier || 'عميل عام';
+      document.getElementById('detail-inv-method').innerText = inv.paymentMethod || 'نقدي (مدفوع)';
+
+      const tbody = document.getElementById('detail-invoice-tbody');
+      tbody.innerHTML = '';
+
+      (inv.items || []).forEach(item => {
+        const tr = document.createElement('tr');
+        const price = item.price || 0;
+        const qty = item.qty || 1;
+        tr.innerHTML = `
+          <td>${item.name}</td>
+          <td>${qty}</td>
+          <td>${price} ر.س</td>
+          <td>${(price * qty).toLocaleString()} ر.س</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('detail-inv-total').innerText = (inv.total || 0).toLocaleString() + ' ر.س';
+    }
+
+    function printInvoiceAction() {
+      window.print();
+    }
+
+    function shareInvoiceAction() {
+      const inv = currentViewingInvoice || DB.sales[0];
+      const text = `فاتورة ديالا الطبية\nرقم: #${inv.id}\nالعميل: ${inv.client || inv.supplier}\nالمبلغ: ${inv.total} ر.س\nالتاريخ: ${inv.date}`;
+      if (navigator.share) {
+        navigator.share({ title: `فاتورة ديالا #${inv.id}`, text: text });
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(text);
+        showToast('تم نسخ بيانات الفاتورة لمشاركتها');
+      } else {
+        showToast('تمت مشاركة الفاتورة');
+      }
+    }
+
+    // 6. INTERNAL CONSUMPTION LOGIC
+    function addConsumptionRecord() {
+      const name = document.getElementById('cons-name').value.trim();
+      const qty = parseInt(document.getElementById('cons-qty').value) || 1;
+      const cost = parseFloat(document.getElementById('cons-cost').value) || 0;
+      const reason = document.getElementById('cons-reason').value.trim() || 'استهلاك داخلي';
+      const linkedProdId = document.getElementById('cons-inventory-link').value;
+
+      if (!name) {
+        showToast('يرجى إدخال اسم المستهلك الطبي');
+        return;
+      }
+
+      if (linkedProdId) {
+        const prod = DB.inventory.find(p => p.id === linkedProdId);
+        if (prod) {
+          prod.stock = Math.max(0, prod.stock - qty);
+        }
+      }
+
+      const newRecord = {
+        id: 'CNS-' + Date.now().toString().slice(-4),
+        name: name,
+        qty: qty,
+        cost: cost,
+        reason: reason,
+        date: 'اليوم، ' + new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+        timestamp: Date.now()
+      };
+
+      DB.consumptions.unshift(newRecord);
+      saveDB(DB);
+
+      document.getElementById('cons-name').value = '';
+      showToast('تم تسجيل الاستهلاك الداخلي بنجاح');
+    }
+
+    // RENDER PURCHASES LIST WITH SAFE FLEX TO PREVENT TEXT OVERLAP
+    function renderPurchasesList(filter = 'all') {
+      const container = document.getElementById('purchases-list-container');
+      const homeContainer = document.getElementById('home-recent-purchases-container');
+      container.innerHTML = '';
+      if (homeContainer) homeContainer.innerHTML = '';
+
+      let list = DB.purchases;
+      if (filter === 'equipment') {
+        list = list.filter(p => p.items.some(i => i.category === 'equipment'));
+      } else if (filter === 'consumables') {
+        list = list.filter(p => p.items.some(i => i.category === 'consumables'));
+      } else if (filter === 'high') {
+        list = list.filter(p => p.total > 2000);
+      }
+
+      list.forEach((p, idx) => {
+        const card = document.createElement('div');
+        card.className = 'list-card';
+        card.onclick = () => {
+          currentViewingInvoice = p;
+          populatePrintInvoice(p);
+          navigateTo('screen-print-share');
+        };
+        // Explicit flex with separated text wrappers to prevent overlap
+        card.innerHTML = `
+          <div class="list-info">
+            <div class="list-icon" style="background:var(--accent-amber-light); color:var(--accent-amber);">📷</div>
+            <div class="list-text-wrap">
+              <div class="list-main-text">${p.supplier || 'مؤسسة طبية'}</div>
+              <div class="list-sub-text">
+                <span>#${p.id}</span>
+                <span>&bull;</span>
+                <span>${p.date}</span>
+              </div>
+            </div>
+          </div>
+          <div class="list-val">
+            <div class="list-price">${(p.total || 0).toLocaleString()} ر.س</div>
+            <span class="status-pill success">${p.status || 'مؤكد ومحفوظ'}</span>
+          </div>
+        `;
+        container.appendChild(card);
+        if (idx < 2 && homeContainer) homeContainer.appendChild(card.cloneNode(true));
+      });
+    }
+
+    // REFRESH ALL HOMESCREEN & LISTS VIEWS
+    function refreshAllViews() {
+      // Refresh totals
+      const todaySales = DB.sales.reduce((a, c) => a + (c.total || 0), 0);
+      const todayPurchases = DB.purchases.reduce((a, c) => a + (c.total || 0), 0);
+      const todayCons = DB.consumptions.reduce((a, c) => a + (c.cost || 0), 0);
+
+      document.getElementById('home-sales-val').innerHTML = `${todaySales.toLocaleString()} <span style="font-size:12px; font-weight:600;">ر.س</span>`;
+      document.getElementById('home-purch-val').innerHTML = `${todayPurchases.toLocaleString()} <span style="font-size:12px; font-weight:600;">ر.س</span>`;
+      document.getElementById('home-cons-val').innerHTML = `${todayCons.toLocaleString()} <span style="font-size:12px; font-weight:600;">ر.س</span>`;
+      document.getElementById('home-purch-count').innerText = `${DB.purchases.length} فواتير مدققة`;
+
+      // Purchases list
+      renderPurchasesList('all');
+
+      // Consumptions list with safe flex
+      const consContainer = document.getElementById('consumption-list-container');
+      consContainer.innerHTML = '';
+      DB.consumptions.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'list-card';
+        card.innerHTML = `
+          <div class="list-info">
+            <div class="list-icon" style="background:var(--accent-red-light); color:var(--accent-red);">✂️</div>
+            <div class="list-text-wrap">
+              <div class="list-main-text">${c.name}</div>
+              <div class="list-sub-text">${c.reason || 'استهلاك داخلي'} &bull; ${c.date}</div>
+            </div>
+          </div>
+          <div class="list-val">
+            <div class="list-price" style="color:var(--accent-red);">${c.cost} ر.س</div>
+            <span class="status-pill warning">مستهلك</span>
+          </div>
+        `;
+        consContainer.appendChild(card);
+      });
+
+      // Consumption inventory dropdown
+      const select = document.getElementById('cons-inventory-link');
+      select.innerHTML = '<option value="">بدون خصم مخزون</option>';
+      DB.inventory.forEach(p => {
+        select.innerHTML += `<option value="${p.id}">${p.name} (المتوفر: ${p.stock})</option>`;
+      });
+
+      renderSaleProductsList();
+    }
+
+    // INITIALIZATION
+    window.addEventListener('DOMContentLoaded', () => {
+      refreshAllViews();
+      renderSaleCart();
+      populateDefaultReviewScreen();
+      populatePrintInvoice(DB.sales[0]);
+    });
+  </script>
+</body>
+</html>

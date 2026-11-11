@@ -1,5 +1,6 @@
 // The design stage UI: shows the AI design of one app (or both apps of a pair), lets the owner change it
 // with AI, undo, start over or view it full screen. The parent reads the current designs through onChange.
+import { refImages } from "../services/attachment";
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Modal, ActivityIndicator, Pressable } from "react-native";
 import { WebView } from "react-native-webview";
@@ -76,7 +77,7 @@ export default function DesignStudio({ targets, onChange, onBusy }: Props) {
         setActive(t.key);
         // The second app of a pair shares the brand of the first one.
         const brand = targets.map((x) => x.key).filter((k) => k !== t.key).map((k) => next[k]?.[next[k].length - 1]).find(Boolean);
-        const html = await designApp(t, (s) => setStatus(`${targets.length > 1 ? t.label + ": " : ""}${s}`), brand);
+        const html = await designApp(t, (s) => setStatus(`${targets.length > 1 ? t.label + ": " : ""}${s}`), brand, refImages());
         next = { ...next, [t.key]: [...(fresh ? next[t.key] ?? [] : []), html] };
         commit(next);
       }

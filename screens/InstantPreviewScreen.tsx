@@ -1,3 +1,4 @@
+import { refImages } from "../services/attachment";
 import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { WebView } from "react-native-webview";
@@ -29,7 +30,7 @@ export default function InstantPreviewScreen({ navigation, route }: RootScreenPr
       setError(null);
       setHtml(null);
       try {
-        setHtml(await instantPreview(lang, description, setStatus, fresh));
+        setHtml(await instantPreview(lang, description, setStatus, fresh, refImages()));
       } catch (e: any) {
         setError(e.message);
       }

@@ -10,6 +10,7 @@ export type RootStackParamList = {
   Pair: { owner?: Owner } | undefined;
   Update: { name: string; lang: Lang };
   InstantPreview: { templateId?: string; lang?: Lang; description?: string; title?: string; fromWizard?: boolean };
+  Chat: undefined;
 };
 
 export type RootScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>;

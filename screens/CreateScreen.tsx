@@ -310,7 +310,12 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
       <View style={[styles.top, { paddingTop: insets.top + space.md }]}>
         <View style={styles.topRow}>
           <Text style={styles.topTitle}>{phase === "form" ? "تطبيق جديد" : clean}</Text>
-          <IconButton icon="close" label="إغلاق" onPress={() => navigation.goBack()} />
+          <View style={{ flexDirection: "row-reverse", gap: space.xs }}>
+            {phase === "form" ? (
+              <IconButton icon="chatbubble-ellipses-outline" label="بناء بالدردشة" onPress={() => navigation.navigate("Chat")} />
+            ) : null}
+            <IconButton icon="close" label="إغلاق" onPress={() => navigation.goBack()} />
+          </View>
         </View>
         {phase === "form" ? <Stepper steps={STEPS} current={step} /> : null}
       </View>

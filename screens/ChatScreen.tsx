@@ -115,6 +115,14 @@ export default function ChatScreen({ navigation }: RootScreenProps<"Chat">) {
                 جاهز: «{spec.title}» · {LANGS[spec.lang].label}
                 {spec.pair ? " · تطبيقان متصلان" : ""}
               </Text>
+              <Button
+                title="شاهد المعاينة أولاً"
+                icon="eye-outline"
+                variant="secondary"
+                onPress={() =>
+                  navigation.navigate("InstantPreview", { lang: spec.lang, description: spec.description, title: spec.title })
+                }
+              />
               <Button title="أنشئ التطبيق الآن" icon="rocket-outline" onPress={build} />
             </View>
           ) : null}

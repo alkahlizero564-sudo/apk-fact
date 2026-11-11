@@ -1,6 +1,9 @@
 // Two connected apps (customer + admin) on Supabase, with the sign-in the owner wrote in the description, and push notifications.
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, View, Text, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { Alert, View, Text, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform, Image } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import { setRefImage } from "../services/attachment";
+import { AiImage } from "../services/instantPreview";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -34,6 +37,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
   const [base, setBase] = useState("");
   const [lang, setLang] = useState<Lang>("flutter");
   const [description, setDescription] = useState("");
+  const [refPic, setRefPic] = useState<{ uri: string; image: AiImage } | null>(null);
   const [admins, setAdmins] = useState("");
   const [pin, setPin] = useState("");
   const [loginSheet, setLoginSheet] = useState(false);
@@ -59,6 +63,26 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
   const [spec, setSpec] = useState<Spec | null>(null); // the requirements the owner approved for both apps
   const [understandBusy, setUnderstandBusy] = useState(false);
   const understandRef = useRef<UnderstandHandle>(null);
+
+  // An optional reference picture for both apps; synced to the shared holder so understanding and design use it.
+  useEffect(() => {
+    setRefImage(refPic?.image ?? null);
+    return () => setRefImage(null);
+  }, [refPic]);
+  async function pickReferenceImage() {
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert("إذن الصور", "نحتاج إذن الوصول للصور لإرفاق صورة مرجعية.");
+        return;
+      }
+      const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.5, base64: true });
+      const a = res.canceled ? null : res.assets?.[0];
+      if (a?.base64) setRefPic({ uri: a.uri, image: { data: a.base64, mime: a.mimeType || "image/jpeg" } });
+    } catch (e: any) {
+      Alert.alert("تعذّر إرفاق الصورة", e?.message ?? "جرّب مرة أخرى");
+    }
+  }
   const [designs, setDesigns] = useState<Record<string, string>>({});
   const [designBusy, setDesignBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -388,6 +412,20 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
               maxLength={2500}
               counter
             />
+            {refPic ? (
+              <View style={styles.refRow}>
+                <Image source={{ uri: refPic.uri }} style={styles.refThumb} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.refTitle}>صورة مرجعية مرفقة</Text>
+                  <Text style={styles.refHint}>الذكاء بيستلهم شكلها في تصميم التطبيقين.</Text>
+                </View>
+                <Pressable onPress={() => setRefPic(null)} hitSlop={10} style={{ padding: space.xs }}>
+                  <Ionicons name="close" size={18} color={colors.text} />
+                </Pressable>
+              </View>
+            ) : (
+              <Button title="أرفق صورة مرجعية (اختياري)" icon="image-outline" variant="secondary" onPress={pickReferenceImage} />
+            )}
             <View style={styles.chips}>
               {EXAMPLES.map((e) => (
                 <Chip key={e.label} label={e.label} selected={description === e.text} onPress={() => setDescription(e.text)} />
@@ -605,6 +643,10 @@ const styles = StyleSheet.create({
   },
   langText: { color: colors.textMuted, fontWeight: "800" },
   chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: space.sm, marginTop: -space.sm },
+  refRow: { flexDirection: "row-reverse", alignItems: "center", gap: space.md, backgroundColor: colors.surface, borderRadius: radius.card, padding: space.md, marginTop: space.sm },
+  refThumb: { width: 54, height: 54, borderRadius: radius.field, backgroundColor: colors.bg },
+  refTitle: { ...type.body, color: colors.text, textAlign: "right", fontWeight: "600" },
+  refHint: { ...type.hint, color: colors.textMuted, textAlign: "right" },
   toggle: {
     flexDirection: "row-reverse",
     alignItems: "center",

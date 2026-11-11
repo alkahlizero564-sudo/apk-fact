@@ -1,0 +1,92 @@
+name: QA native app (emulator)
+run-name: QA ${{ inputs.app }}
+
+# Deep, on-demand quality check: builds a debug APK and runs the REAL app on an Android emulator, pressing its
+# controls and watching for crashes / blank screens. Trigger it from the Actions tab for one app when you want
+# certainty. It does not change the app or block anything — it reports, and uploads screenshots of the real app.
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "App folder name inside apps/ (Flutter app)"
+        required: true
+      lang:
+        description: "flutter"
+        required: false
+        default: "flutter"
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      APP: ${{ inputs.app }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+      GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+      GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Pillow (for the blank-screen check)
+        run: pip install pillow
+
+      - name: Build a debug APK to test
+        run: |
+          if ! [[ "$APP" =~ ^[a-z0-9-]+$ ]]; then echo "bad app name"; exit 1; fi
+          test -f "apps/$APP/lib/main.dart"
+          SRC="$GITHUB_WORKSPACE/apps/$APP"
+          PROJ="$RUNNER_TEMP/flutter_app"
+          NAME="app_$(echo "$APP" | tr '-' '_')"
+          flutter create --platforms=android --org com.generated --project-name "$NAME" "$PROJ"
+          rm -rf "$PROJ/test"
+          python scripts/app_id.py gradle "$(ls "$PROJ"/android/app/build.gradle* | head -1)" "$APP" flutter
+          python scripts/perms.py manifest "$APP" "$PROJ/android/app/src/main/AndroidManifest.xml" || true
+          # Copy the generated code and packages into the project, fix obvious analyze errors, then build debug.
+          python scripts/check_flutter.py "$SRC" "$PROJ" --rounds 1 || echo "analyze not clean, building anyway"
+          (cd "$PROJ" && flutter build apk --debug)
+          APK=$(ls "$PROJ"/build/app/outputs/flutter-apk/app-debug.apk)
+          echo "APK=$APK" >> "$GITHUB_ENV"
+          echo "PKG=$(python scripts/app_id.py get "$APP" flutter)" >> "$GITHUB_ENV"
+          echo "Built $APK for package $(python scripts/app_id.py get "$APP" flutter)"
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run the app on an emulator and check it
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          disable-animations: true
+          script: |
+            adb install -r -g "$APK" || true
+            python scripts/qa_native.py --apk "$APK" --package "$PKG" --shots "$GITHUB_WORKSPACE/qa-shots" --taps 8 | tee "$GITHUB_WORKSPACE/qa-report.txt"
+
+      - name: Upload screenshots and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-${{ inputs.app }}
+          path: |
+            qa-shots/
+            qa-report.txt
+          if-no-files-found: ignore

@@ -26,6 +26,13 @@ jobs:
         with:
           channel: stable
           cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Browser for the preview quality gate
+        run: |
+          npm i --no-save --no-package-lock --prefix "$RUNNER_TEMP/pw" playwright-core@1.48.2 > /dev/null || echo "playwright-core not installed: preview QA will be skipped"
+          echo "NODE_PATH=$RUNNER_TEMP/pw/node_modules" >> "$GITHUB_ENV"
       - name: Generate Flutter app and AI preview
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

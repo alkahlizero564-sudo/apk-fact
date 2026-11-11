@@ -156,6 +156,46 @@ def design_gaps(model, keys, cfg, design_html, code):
         return []
 
 
+def qa_preview_html(base, model, keys):
+    """Quality gate on the preview the owner reviews: run it in a headless browser, press its controls and check
+    its screens for dead buttons / broken layout / errors, and ask the AI to fix what it finds. Best-effort: it
+    skips silently when no browser (or node) is available, and never stops generation."""
+    import subprocess
+    pv = base / "preview.html"
+    if not pv.exists():
+        return
+    def check():
+        try:
+            r = subprocess.run(["node", str(HERE / "qa_gate.js"), str(pv)], capture_output=True, text=True, timeout=180)
+            return r.returncode, (r.stdout + r.stderr)
+        except Exception as e:
+            print(f"Preview QA skipped ({e})", flush=True)
+            return None, ""
+    rc, out = check()
+    if rc is None:
+        return
+    print(out.strip()[-1500:], flush=True)
+    if rc != 1:  # 0 = clean, 2 = usage, None = skipped; only 1 means problems were found
+        return
+    problems = "\n".join(l for l in out.splitlines() if l.strip().startswith("- "))
+    if not problems or not keys:
+        return
+    prompt = ("This is the HTML PREVIEW of a mobile app (the owner reviews it before building). A UI check ran the "
+              "preview and pressed its controls and found these problems — fix every one and keep everything else "
+              "(screens, design, texts, data) exactly the same:\n" + problems + "\n\n"
+              "Reply with ONLY the complete fixed preview inside one ```html code block.\n\n"
+              f"CURRENT PREVIEW:\n```html\n{pv.read_text(encoding='utf-8')}\n```\n")
+    try:
+        fixed = parse_reply(call_gemini(model, prompt, keys, temperature=0.2, json_mode=False))[0].get("html", "")
+    except (Exception, SystemExit) as e:
+        print(f"Preview QA: could not get a fix ({e})", flush=True)
+        return
+    if fixed and len(fixed) > len(pv.read_text(encoding="utf-8")) * 0.5:
+        pv.write_text(fixed.rstrip() + "\n", encoding="utf-8")
+        rc2, _ = check()
+        print("Preview QA: " + ("fixed and clean now" if rc2 == 0 else "fixed (some issues may remain)"), flush=True)
+
+
 def check_kotlin_app(app_dir, name):
     """Compile (and fix) the Kotlin app with Gradle when it is installed; never fails generation."""
     if not shutil.which("gradle"):
@@ -201,6 +241,7 @@ def main():
         if not preview:
             raise SystemExit("Model returned no preview_html")
         (base / "preview.html").write_text(preview + "\n", encoding="utf-8")
+        qa_preview_html(base, model, keys)
         print(f"Wrote apps/{name}/preview.html")
         return
 
@@ -293,6 +334,7 @@ App name: {name}
     code_path.write_text(code + "\n", encoding="utf-8")
     record_history(base, name, lang, "edit" if existing else "create", raw_task)
     (base / "preview.html").write_text(preview + "\n", encoding="utf-8")
+    qa_preview_html(base, model, keys)
     deps = clean_deps(lang, deps) or (read_deps(lang, base) if existing else [])
     write_deps(lang, base, deps)
     try:  # Android permissions the description asks for (apps/<name>/perms.txt)

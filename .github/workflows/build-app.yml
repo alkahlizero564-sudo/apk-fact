@@ -120,6 +120,16 @@ jobs:
               python "$GITHUB_WORKSPACE/scripts/fix_html.py" "$SRC/index.html" /tmp/visual.log || echo "visual fix failed, continuing"
             fi
           fi || true
+          # Functional gate: fill the app's forms and submit them, and check data is kept between launches; ask the
+          # AI to wire up any form that saves nothing. Best-effort — never fails the build.
+          for k in 1 2; do
+            if node "$GITHUB_WORKSPACE/scripts/qa_flows.js" "$SRC/index.html" > /tmp/flow.log 2>&1; then
+              cat /tmp/flow.log; break
+            fi
+            cat /tmp/flow.log
+            echo "=== Broken flow found. Asking AI to fix index.html ==="
+            python "$GITHUB_WORKSPACE/scripts/fix_html.py" "$SRC/index.html" /tmp/flow.log || echo "AI fix failed, continuing"
+          done || true
 
           mkdir /tmp/wrap
           cd /tmp/wrap

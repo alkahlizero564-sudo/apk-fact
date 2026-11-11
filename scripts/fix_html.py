@@ -13,7 +13,7 @@ def error_excerpt(log_text):
     lines = log_text.splitlines()
     picked = [l for l in lines if re.search(
         r"runtime:|error|Error|Exception|Failed|failed|FAILURE|What went wrong"
-        r"|dead control|layout:|blank:|does nothing|scrolls sideways|UI problem", l)]
+        r"|dead control|layout:|blank:|does nothing|scrolls sideways|UI problem|visual:", l)]
     excerpt = "\n".join(picked[-60:]) if picked else "\n".join(lines[-60:])
     return excerpt[-6000:]
 
@@ -41,7 +41,9 @@ The check also looks at how the app behaves and looks: a line "dead control: pre
 that button/link/tab has no effect — wire it to what it should do (open its screen, run its handler, submit its
 form); "layout: ... scrolls sideways" means something is wider than the screen — fix the width/overflow so the
 page never scrolls horizontally on a phone; "blank: ... renders nothing" means a screen shows empty — make sure
-it renders its content. Fix every reported problem.
+it renders its content. A line "visual: ..." is a difference the app has FROM THE APPROVED DESIGN the owner signed
+off on (a screen missing or different, or wrong layout/colors/typography/spacing/icons/components/navigation) —
+change index.html so it matches the design as described. Fix every reported problem.
 First decide whether the failure is caused by the app's index.html. Gradle, Android SDK, network, plugin or icon problems are NOT caused by it.
 If it IS caused by index.html, fix it with the smallest possible changes, keep the design and behavior the same, and return the complete file.
 Reply in exactly this format, nothing else:

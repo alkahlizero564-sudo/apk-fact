@@ -107,6 +107,19 @@ jobs:
             echo "=== UI problems found. Asking AI to fix index.html ==="
             python "$GITHUB_WORKSPACE/scripts/fix_html.py" "$SRC/index.html" /tmp/qa.log || echo "AI fix failed, continuing"
           done || true
+          # Visual gate: screenshot the app AND the approved design, compare them with AI vision, and ask the AI
+          # to fix the differences so the built app matches the design. Only when a design was approved. Best-effort.
+          if [ -f "$SRC/design.html" ]; then
+            pip install -q pillow 2>/dev/null || true
+            node "$GITHUB_WORKSPACE/scripts/qa_visual.js" "$SRC" /tmp/vshots || true
+            if python "$GITHUB_WORKSPACE/scripts/qa_visual.py" /tmp/vshots > /tmp/visual.log 2>&1; then
+              cat /tmp/visual.log
+            else
+              cat /tmp/visual.log
+              echo "=== Visual differences from the approved design. Asking AI to fix index.html ==="
+              python "$GITHUB_WORKSPACE/scripts/fix_html.py" "$SRC/index.html" /tmp/visual.log || echo "visual fix failed, continuing"
+            fi
+          fi || true
 
           mkdir /tmp/wrap
           cd /tmp/wrap

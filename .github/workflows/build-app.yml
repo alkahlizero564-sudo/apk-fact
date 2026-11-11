@@ -46,6 +46,19 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      # Speed-up: reuse Gradle (Android deps) and the npm cache (Capacitor) between builds instead of
+      # re-downloading them every time. Each run restores the latest cache and saves an updated one.
+      - name: Cache Gradle and npm
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.npm
+          key: capacitor-build-${{ github.run_id }}
+          restore-keys: |
+            capacitor-build-
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -97,6 +110,8 @@ jobs:
           echo "Package name: $APP_ID"
           npx cap init "$APP" "$APP_ID" --web-dir www
           npx cap add android
+          # Reuse Gradle's build cache (kept warm by the actions/cache step) and build modules in parallel.
+          printf '\norg.gradle.caching=true\norg.gradle.parallel=true\n' >> android/gradle.properties
           # The name under the icon (can be Arabic), from apps/<app>/display-name.txt.
           python "$GITHUB_WORKSPACE/scripts/app_label.py" android android/app/src/main/res "$APP"
           # Android permissions: the ones chosen in APK Fact (perms.txt) and the ones the code uses.

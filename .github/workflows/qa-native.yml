@@ -43,6 +43,16 @@ jobs:
           python-version: "3.12"
       - name: Pillow (for the blank-screen check)
         run: pip install pillow
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Browser for the visual check
+        run: |
+          npm i --no-save --no-package-lock --prefix "$RUNNER_TEMP/pw" playwright-core@1.48.2 > /dev/null || echo "playwright-core not installed: the visual check is skipped"
+          echo "NODE_PATH=$RUNNER_TEMP/pw/node_modules" >> "$GITHUB_ENV"
+
+      - name: Capture the approved design (for the visual compare)
+        run: node scripts/qa_visual.js "apps/$APP" "$GITHUB_WORKSPACE/qa-shots" || echo "design capture skipped"
 
       - name: Build a debug APK to test
         run: |
@@ -80,6 +90,13 @@ jobs:
           script: |
             adb install -r -g "$APK" || true
             python scripts/qa_native.py --apk "$APK" --package "$PKG" --shots "$GITHUB_WORKSPACE/qa-shots" --taps 8 | tee "$GITHUB_WORKSPACE/qa-report.txt"
+
+      - name: Visual compare — does the real app match the approved design?
+        continue-on-error: true
+        run: |
+          echo "" >> qa-report.txt
+          echo "=== Visual check (real app vs approved design) ===" >> qa-report.txt
+          python scripts/qa_visual.py "$GITHUB_WORKSPACE/qa-shots" | tee -a qa-report.txt || true
 
       - name: Upload screenshots and report
         if: always()

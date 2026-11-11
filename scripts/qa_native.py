@@ -118,8 +118,10 @@ def main():
         problems.append("the app did not start (its process is not running and no crash was logged)")
 
     shot = adb("exec-out", "screencap", "-p", binary=True, timeout=30)
+    shot_n = 0
     if shots and shot:
-        (shots / "start.png").write_bytes(shot)
+        shot_n += 1
+        (shots / f"app_{shot_n:02d}.png").write_bytes(shot)  # app_NN.png: read by qa_visual.py for the visual check
     if shot and blank(shot):
         problems.append("the first screen is blank (nothing rendered)")
 
@@ -137,7 +139,8 @@ def main():
             if shots:
                 s = adb("exec-out", "screencap", "-p", binary=True, timeout=30)
                 if s:
-                    (shots / f"tap_{i + 1:02d}.png").write_bytes(s)
+                    shot_n += 1
+                    (shots / f"app_{shot_n:02d}.png").write_bytes(s)
 
     print(f"QA (emulator): launched={launched}, pressed {pressed} control(s), {len(crashes)} crash(es)", flush=True)
     if problems:

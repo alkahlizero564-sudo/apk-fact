@@ -64,7 +64,10 @@ async function setSwitcherHidden(page, hidden) {
 async function shootDesign(page, outDir) {
   const files = [];
   // The switcher pills are the screens. Click each, then screenshot the app with the bar hidden.
-  const pills = await page.$$("#apkfact-screens a, #apkfact-screens button, #apkfact-screens [role=button], #apkfact-screens li");
+  const pills = await page.$$(
+    "#apkfact-screens [onclick], #apkfact-screens a, #apkfact-screens button, #apkfact-screens [role=button], " +
+      "#apkfact-screens li, #apkfact-screens .screen-pill, #apkfact-screens .pill, #apkfact-screens > div, #apkfact-screens > span"
+  );
   const n = Math.min(pills.length || 1, 6);
   for (let i = 0; i < n; i++) {
     try {

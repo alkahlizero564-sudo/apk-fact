@@ -71,9 +71,21 @@ def blank(shot_png):
         return False
 
 
-def clickable_nodes():
+def dump_xml():
     adb("shell", "uiautomator", "dump", "/sdcard/ui.xml", timeout=40)
-    xml = adb("shell", "cat", "/sdcard/ui.xml", timeout=20)
+    return adb("shell", "cat", "/sdcard/ui.xml", timeout=20)
+
+
+def _center(node):
+    b = re.findall(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", node.get("bounds", ""))
+    if not b:
+        return None
+    x1, y1, x2, y2 = map(int, b[0])
+    return ((x1 + x2) // 2, (y1 + y2) // 2) if x2 > x1 and y2 > y1 else None
+
+
+def clickable_nodes(xml=None):
+    xml = xml if xml is not None else dump_xml()
     nodes = []
     try:
         root = ET.fromstring(xml)
@@ -81,12 +93,56 @@ def clickable_nodes():
         return nodes
     for n in root.iter("node"):
         if n.get("clickable") == "true" and n.get("enabled") == "true":
-            b = re.findall(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", n.get("bounds", ""))
-            if b:
-                x1, y1, x2, y2 = map(int, b[0])
-                if x2 > x1 and y2 > y1:
-                    nodes.append(((x1 + x2) // 2, (y1 + y2) // 2, (n.get("text") or n.get("content-desc") or "control")[:40]))
+            c = _center(n)
+            if c:
+                nodes.append((c[0], c[1], (n.get("text") or n.get("content-desc") or "control")[:40]))
     return nodes
+
+
+def edit_fields(xml):
+    """Centres of the editable text fields on screen (android.widget.EditText)."""
+    out = []
+    try:
+        root = ET.fromstring(xml)
+    except Exception:
+        return out
+    for n in root.iter("node"):
+        if "EditText" in n.get("class", "") and n.get("enabled") == "true":
+            c = _center(n)
+            if c:
+                out.append(c)
+    return out
+
+
+def ui_text(xml):
+    """All the on-screen text, to tell whether a submit changed the screen."""
+    try:
+        root = ET.fromstring(xml)
+    except Exception:
+        return ""
+    return " ".join((n.get("text") or "") for n in root.iter("node") if n.get("text"))
+
+
+_SUBMIT = re.compile(
+    r"حفظ|احفظ|إضاف|اضف|أضف|إرسال|ارسال|تأكيد|تاكيد|تسجيل|دخول|إنشاء|انشاء|تالي|متابعة|save|add|submit|send|login|sign|create|confirm|next|continue|ok",
+    re.I,
+)
+
+
+def find_submit(xml):
+    """A clickable button that looks like it submits a form (save / add / send / login...)."""
+    try:
+        root = ET.fromstring(xml)
+    except Exception:
+        return None
+    for n in root.iter("node"):
+        if n.get("clickable") == "true" and n.get("enabled") == "true":
+            t = (n.get("text") or "") + " " + (n.get("content-desc") or "")
+            if _SUBMIT.search(t):
+                c = _center(n)
+                if c:
+                    return (c[0], c[1], t.strip()[:40])
+    return None
 
 
 def main():
@@ -142,7 +198,41 @@ def main():
                     shot_n += 1
                     (shots / f"app_{shot_n:02d}.png").write_bytes(s)
 
-    print(f"QA (emulator): launched={launched}, pressed {pressed} control(s), {len(crashes)} crash(es)", flush=True)
+    # Functional flow: fill a form's fields and submit it, and check the screen actually changed (the flow did
+    # something). A form that is submitted and nothing happens is a broken core flow (e.g. "add" that adds nothing).
+    flow_tested = False
+    if launched and not crashes:
+        try:
+            fields = edit_fields(dump_xml())
+            if fields:
+                for (x, y) in fields[:4]:
+                    adb("shell", "input", "tap", str(x), str(y), timeout=15)
+                    time.sleep(0.4)
+                    adb("shell", "input", "text", "test123", timeout=15)
+                adb("shell", "input", "keyevent", "111", timeout=10)  # ESC: hide the keyboard so the button shows
+                time.sleep(0.5)
+                before = ui_text(dump_xml())
+                submit = find_submit(dump_xml())
+                if submit:
+                    flow_tested = True
+                    adb("shell", "input", "tap", str(submit[0]), str(submit[1]), timeout=15)
+                    time.sleep(2.5)
+                    c = crash_lines(pkg)
+                    if c:
+                        problems.append(f"CRASH after submitting a form («{submit[2]}»): {c[0]}")
+                    else:
+                        after = ui_text(dump_xml())
+                        if before and after and after == before:
+                            problems.append(f"flow: filled a form and tapped «{submit[2]}» but the screen did not change — the form may save nothing")
+                        if shots:
+                            s = adb("exec-out", "screencap", "-p", binary=True, timeout=30)
+                            if s:
+                                shot_n += 1
+                                (shots / f"app_{shot_n:02d}.png").write_bytes(s)
+        except Exception as e:
+            print(f"Form-flow check skipped ({e})", flush=True)
+
+    print(f"QA (emulator): launched={launched}, pressed {pressed} control(s), flow_tested={flow_tested}, {len(crashes)} crash(es)", flush=True)
     if problems:
         print("\nNative app problems found:")
         for p in problems:

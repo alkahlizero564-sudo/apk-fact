@@ -132,25 +132,7 @@ class SupabaseService {
     return false;
   }
 
-  // 1. Check Admin Email RPC BEFORE any auth post
-  static Future<bool> isAdminEmail(String email) async {
-    try {
-      final url = Uri.parse('$kSupabaseUrl/rest/v1/rpc/almadrars_is_admin_email');
-      final response = await http.post(
-        url,
-        headers: {'apikey': kSupabaseAnonKey, 'Content-Type': 'application/json'},
-        body: jsonEncode({"mail": email}),
-      );
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final res = jsonDecode(response.body);
-        if (res is bool) return res;
-        if (res.toString() == 'true') return true;
-      }
-    } catch (_) {}
-    return false;
-  }
-
-  // 2. Claim Admin RPC
+  // Claim Admin RPC
   static Future<bool> claimAdmin({String? pin}) async {
     try {
       final url = Uri.parse('$kSupabaseUrl/rest/v1/rpc/almadrars_claim_admin');
@@ -517,15 +499,6 @@ class _AuthScreenState extends State<AuthScreen> {
     }
 
     setState(() { _isLoading = true; _error = null; });
-    // Admin email validation BEFORE sign in
-    final isAdminValid = await SupabaseService.isAdminEmail(email);
-    if (!isAdminValid) {
-      setState(() {
-        _isLoading = false;
-        _error = 'البريد ده مش مخوّل لدخول الإدارة، تواصل مع مالك التطبيق';
-      });
-      return;
-    }
 
     try {
       await SupabaseService.signIn(email: email, password: pass);
@@ -593,15 +566,6 @@ class _AuthScreenState extends State<AuthScreen> {
     }
 
     setState(() { _isLoading = true; _error = null; });
-    // Admin email validation BEFORE sending anything
-    final isAdminValid = await SupabaseService.isAdminEmail(email);
-    if (!isAdminValid) {
-      setState(() {
-        _isLoading = false;
-        _error = 'البريد ده مش مخوّل لدخول الإدارة، تواصل مع مالك التطبيق';
-      });
-      return;
-    }
 
     try {
       final url = Uri.parse('$kSupabaseUrl/auth/v1/signup');
@@ -701,14 +665,6 @@ class _AuthScreenState extends State<AuthScreen> {
     }
 
     setState(() { _isLoading = true; _error = null; });
-    final isAdminValid = await SupabaseService.isAdminEmail(email);
-    if (!isAdminValid) {
-      setState(() {
-        _isLoading = false;
-        _error = 'البريد ده مش مخوّل لدخول الإدارة، تواصل مع مالك التطبيق';
-      });
-      return;
-    }
 
     try {
       final url = Uri.parse('$kSupabaseUrl/auth/v1/recover');

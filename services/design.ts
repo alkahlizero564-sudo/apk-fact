@@ -2,7 +2,7 @@
 // prototype (one HTML file). The user reviews it, changes it with AI until it is right, and approves it.
 // The approved design is saved as apps/<app>/design.html and the generators build the real app from it.
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { askGeminiHtml } from "./instantPreview";
+import { askGeminiHtml, AiImage } from "./instantPreview";
 import { DESIGN_BRIEF } from "./designBrief";
 import { pushFile } from "./github";
 import { REPO } from "./config";
@@ -104,8 +104,9 @@ export async function clearDraft(t: DesignTarget) {
   } catch {}
 }
 
-/** First design of an app. `brandFrom` is another approved design to share colors, fonts and style with. */
-export async function designApp(t: DesignTarget, onStatus: (s: string) => void, brandFrom?: string) {
+/** First design of an app. `brandFrom` is another approved design to share colors, fonts and style with.
+ *  `images` are reference pictures the owner attached to their description (sent to the AI as a visual guide). */
+export async function designApp(t: DesignTarget, onStatus: (s: string) => void, brandFrom?: string, images: AiImage[] = []) {
   let prompt =
     `App name: ${t.title}\n${platformLine(t)}\n${roleLine(t)}\n\nWhat the app is and does:\n${forApp(t.description, t.role)}\n` +
     (t.role
@@ -127,7 +128,12 @@ export async function designApp(t: DesignTarget, onStatus: (s: string) => void, 
       "element). Do NOT produce a generic template — another app must look clearly different. Unless the business " +
       `clearly calls for another style, lean towards a ${seedSchool(t)} direction and adapt it to fit this business.\n`;
   }
-  return askGeminiHtml(DESIGNER, prompt, onStatus, "يصمّم الواجهات", brandFrom ? 0.7 : 0.85);
+  if (images.length) {
+    prompt +=
+      "\nThe owner attached the image(s) above as a VISUAL REFERENCE for how they want the app to look — follow its " +
+      "style, layout, colors, components and overall feel as closely as it fits this app and its screens.\n";
+  }
+  return askGeminiHtml(DESIGNER, prompt, onStatus, "يصمّم الواجهات", brandFrom ? 0.7 : 0.85, images);
 }
 
 /** Applies a requested change to an existing design and returns the full new design. */

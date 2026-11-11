@@ -5,6 +5,9 @@ import * as SecureStore from "expo-secure-store";
 import { Lang } from "./langs";
 import { DESIGN_BRIEF } from "./designBrief";
 
+// A reference image the owner attached to their description (base64 + mime), sent to the AI as vision input.
+export type AiImage = { data: string; mime: string };
+
 const FALLBACK_MODELS = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"];
 const CACHE_PREFIX = "instant-preview:";
 
@@ -51,16 +54,19 @@ async function geminiKeys() {
   return keys;
 }
 
-async function callGemini(key: string, model: string, system: string, prompt: string, temperature = 0.5) {
+async function callGemini(key: string, model: string, system: string, prompt: string, temperature = 0.5, images: AiImage[] = []) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 180000);
   try {
+    // Reference images the owner attached go first (as vision input), then the text prompt.
+    const userParts: any[] = images.map((im) => ({ inline_data: { mime_type: im.mime || "image/jpeg", data: im.data } }));
+    userParts.push({ text: prompt });
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST",
       headers: { "content-type": "application/json", "x-goog-api-key": key },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        contents: [{ role: "user", parts: userParts }],
         generationConfig: { temperature },
       }),
       signal: ctrl.signal,
@@ -90,15 +96,20 @@ export async function instantPreview(
   lang: Lang,
   description: string,
   onStatus: (s: string) => void,
-  fresh = false
+  fresh = false,
+  images: AiImage[] = []
 ): Promise<string> {
   const key = CACHE_PREFIX + hash(lang + "|" + description);
-  if (!fresh) {
+  // An attached reference image is not part of the cache key, so always draw fresh when one is given.
+  if (!fresh && !images.length) {
     const hit = await cachedPreview(lang, description);
     if (hit) return hit;
   }
-  const html = await askGeminiHtml(systemFor(lang), `App description:\n${description}`, onStatus, "يرسم المعاينة");
-  await AsyncStorage.setItem(key, html).catch(() => {});
+  const prompt =
+    `App description:\n${description}` +
+    (images.length ? "\n\nThe owner attached the image(s) above as a visual reference — follow its look, layout, colors and style where it fits this app." : "");
+  const html = await askGeminiHtml(systemFor(lang), prompt, onStatus, "يرسم المعاينة", 0.5, images);
+  if (!images.length) await AsyncStorage.setItem(key, html).catch(() => {});
   return html;
 }
 
@@ -108,9 +119,10 @@ export async function askGeminiHtml(
   prompt: string,
   onStatus: (s: string) => void,
   doing = "يشتغل",
-  temperature = 0.5
+  temperature = 0.5,
+  images: AiImage[] = []
 ): Promise<string> {
-  return askGemini(system, prompt, onStatus, doing, temperature, extractHtml);
+  return askGemini(system, prompt, onStatus, doing, temperature, extractHtml, images);
 }
 
 /**
@@ -123,7 +135,8 @@ export async function askGemini<T = string>(
   onStatus: (s: string) => void,
   doing = "يشتغل",
   temperature = 0.5,
-  parse: (text: string) => T = (t) => t as unknown as T
+  parse: (text: string) => T = (t) => t as unknown as T,
+  images: AiImage[] = []
 ): Promise<T> {
   const keys = await geminiKeys();
   const chosen = (await SecureStore.getItemAsync("GEMINI_MODEL")) || FALLBACK_MODELS[0];
@@ -134,7 +147,7 @@ export async function askGemini<T = string>(
       for (let k = 0; k < keys.length; k++) {
         onStatus(`الذكاء الاصطناعي ${doing}… (${model}${keys.length > 1 ? `، مفتاح ${k + 1}` : ""})`);
         try {
-          return parse(await callGemini(keys[k], model, system, prompt, temperature));
+          return parse(await callGemini(keys[k], model, system, prompt, temperature, images));
         } catch (e: any) {
           last = e?.message ?? String(e);
           if (e?.status === 404) break; // model not available: next model

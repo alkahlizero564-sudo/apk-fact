@@ -2,7 +2,7 @@
 // clear list of requirements and asks short questions about what is unclear. The owner edits the list and
 // answers; the approved list is added to the description, so the design, the code and the request check
 // after generation all follow it item by item.
-import { askGemini } from "./instantPreview";
+import { askGemini, AiImage } from "./instantPreview";
 import { Lang } from "./langs";
 import PERM_RULES from "./permissions.json";
 
@@ -95,12 +95,14 @@ function intro(t: IdeaTarget) {
 
 export async function understandIdea(
   t: IdeaTarget,
-  onStatus: (s: string) => void
+  onStatus: (s: string) => void,
+  images: AiImage[] = []
 ): Promise<Spec> {
   const prompt =
     intro(t) +
-    `THE OWNER'S IDEA (their exact words, the highest priority):\n${t.description}\n`;
-  return askGemini(SYSTEM, prompt, onStatus, "يفهم فكرتك", 0.3, parseSpec);
+    `THE OWNER'S IDEA (their exact words, the highest priority):\n${t.description}\n` +
+    (images.length ? "\nThe owner attached the image(s) above as a reference for what they want — take it into account.\n" : "");
+  return askGemini(SYSTEM, prompt, onStatus, "يفهم فكرتك", 0.3, parseSpec, images);
 }
 
 /** Applies the owner's answers and corrections to the list. */

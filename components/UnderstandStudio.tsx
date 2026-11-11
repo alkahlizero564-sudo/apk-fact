@@ -1,6 +1,7 @@
 // The "did I understand you?" stage: shows the requirements the AI understood from the owner's idea and its
 // questions. The owner removes what is wrong, answers, writes corrections, and approves. The parent calls
 // approve() (through the ref) from its footer button; it applies pending answers first.
+import { refImages } from "../services/attachment";
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -62,7 +63,7 @@ const UnderstandStudio = forwardRef<UnderstandHandle, { target: Target; onBusy?:
       }
     }
 
-    const understand = () => run(() => understandIdea(target, setStatus));
+    const understand = () => run(() => understandIdea(target, setStatus, refImages()));
 
     useEffect(() => {
       const k = cacheKey(target);

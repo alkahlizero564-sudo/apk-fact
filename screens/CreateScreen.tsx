@@ -1,6 +1,9 @@
 // New app wizard: start -> language -> details -> review, then a live progress timeline.
 import React, { useEffect, useRef, useState } from "react";
-import { Alert, View, Text, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { Alert, View, Text, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform, Image } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import { setRefImage } from "../services/attachment";
+import { AiImage } from "../services/instantPreview";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -77,6 +80,34 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
   const [text, setText] = useState(preset?.description ?? "");
   const [code, setCode] = useState("");
   const [related, setRelated] = useState("");
+  // An optional reference picture the owner attaches to the description (a design to mimic, a sketch, an example).
+  const [refPic, setRefPic] = useState<{ uri: string; image: AiImage } | null>(null);
+
+  // Keep the shared holder in sync with the attached picture, and clear it when leaving this screen.
+  useEffect(() => {
+    setRefImage(refPic?.image ?? null);
+    return () => setRefImage(null);
+  }, [refPic]);
+
+  async function pickReferenceImage() {
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert("إذن الصور", "نحتاج إذن الوصول للصور لإرفاق صورة مرجعية.");
+        return;
+      }
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.5,
+        base64: true,
+        allowsEditing: false,
+      });
+      const a = res.canceled ? null : res.assets?.[0];
+      if (a?.base64) setRefPic({ uri: a.uri, image: { data: a.base64, mime: a.mimeType || "image/jpeg" } });
+    } catch (e: any) {
+      Alert.alert("تعذّر إرفاق الصورة", e?.message ?? "جرّب مرة أخرى");
+    }
+  }
   const [apps, setApps] = useState<AppInfo[]>([]);
   const [nameTaken, setNameTaken] = useState<Lang | null>(null);
   const [phase, setPhase] = useState<"form" | "running" | "done" | "failed">("form");
@@ -463,6 +494,25 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
                   maxLength={2000}
                   counter
                 />
+                {refPic ? (
+                  <View style={styles.refRow}>
+                    <Image source={{ uri: refPic.uri }} style={styles.refThumb} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.refTitle}>صورة مرجعية مرفقة</Text>
+                      <Text style={styles.subhint}>الذكاء الاصطناعي بيستلهم شكلها في الفهم والتصميم.</Text>
+                    </View>
+                    <Pressable onPress={() => setRefPic(null)} hitSlop={10} style={styles.refRemove}>
+                      <Ionicons name="close" size={18} color={colors.text} />
+                    </Pressable>
+                  </View>
+                ) : (
+                  <Button
+                    title="أرفق صورة مرجعية (اختياري)"
+                    icon="image-outline"
+                    variant="secondary"
+                    onPress={pickReferenceImage}
+                  />
+                )}
                 <Button
                   title="معاينة فورية قبل الإنشاء"
                   icon={lang === "html" ? "flash-outline" : "sparkles-outline"}
@@ -604,6 +654,10 @@ const styles = StyleSheet.create({
   q: { ...type.sectionTitle, fontSize: 20, color: colors.text, textAlign: "right", marginBottom: space.sm },
   subq: { ...type.label, color: colors.text, textAlign: "right", marginTop: space.sm },
   subhint: { ...type.hint, color: colors.textMuted, textAlign: "right" },
+  refRow: { flexDirection: "row-reverse", alignItems: "center", gap: space.md, backgroundColor: colors.surface, borderRadius: radius.card, padding: space.md, marginTop: space.sm },
+  refThumb: { width: 54, height: 54, borderRadius: radius.field, backgroundColor: colors.bg },
+  refTitle: { ...type.body, color: colors.text, textAlign: "right", fontWeight: "600" },
+  refRemove: { padding: space.xs },
   chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: space.sm, marginTop: space.sm, marginBottom: space.md },
   grid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: space.md },
   tpl: {

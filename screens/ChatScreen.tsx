@@ -1,12 +1,15 @@
 // "Build by chatting": the owner describes an app in a conversation; the AI asks a little, fills the rest, and
 // when ready builds the real app (one app or a connected pair) — all without leaving the chat.
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { colors, space, radius, type } from "../theme";
 import { Button } from "../components/ui";
 import { chatReply, extractSpec, stripSpec, ChatMsg, ChatSpec } from "../services/chat";
+import { setRefImage, refImages } from "../services/attachment";
+import { AiImage } from "../services/instantPreview";
 import { generateApp, Report } from "../services/appActions";
 import { createPair } from "../services/pair";
 import { LANGS } from "../services/langs";
@@ -25,6 +28,7 @@ export default function ChatScreen({ navigation }: RootScreenProps<"Chat">) {
   const [spec, setSpec] = useState<ChatSpec | null>(null);
   const [building, setBuilding] = useState(false);
   const [status, setStatus] = useState("");
+  const [refPic, setRefPic] = useState<{ uri: string; image: AiImage } | null>(null);
   const scroll = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -32,19 +36,40 @@ export default function ChatScreen({ navigation }: RootScreenProps<"Chat">) {
     return () => clearTimeout(t);
   }, [msgs, status]);
 
+  // Keep the shared holder in sync (the preview and the build read it), and clear it on leaving.
+  useEffect(() => {
+    setRefImage(refPic?.image ?? null);
+    return () => setRefImage(null);
+  }, [refPic]);
+
+  async function attachImage() {
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert("إذن الصور", "نحتاج إذن الوصول للصور لإرفاق صورة.");
+        return;
+      }
+      const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.5, base64: true });
+      const a = res.canceled ? null : res.assets?.[0];
+      if (a?.base64) setRefPic({ uri: a.uri, image: { data: a.base64, mime: a.mimeType || "image/jpeg" } });
+    } catch (e: any) {
+      Alert.alert("تعذّر إرفاق الصورة", e?.message ?? "جرّب مرة أخرى");
+    }
+  }
+
   // History the AI sees: only the real conversation (user + model), not status lines.
   const history = (extra: Bubble[]): ChatMsg[] =>
     [...msgs, ...extra].filter((m) => !m.kind).map((m) => ({ role: m.role, text: m.text }));
 
   async function send() {
     const text = input.trim();
-    if (!text || busy || building) return;
-    const mine: Bubble = { role: "user", text };
+    if ((!text && !refPic) || busy || building) return;
+    const mine: Bubble = { role: "user", text: text || "خذ الصورة المرفقة كمرجع لشكل التطبيق." };
     setMsgs((m) => [...m, mine]);
     setInput("");
     setBusy(true);
     try {
-      const reply = await chatReply(history([mine]));
+      const reply = await chatReply(history([mine]), refImages());
       const found = extractSpec(reply);
       const shown = stripSpec(reply) || (found ? "جاهز أبني التطبيق ✅" : reply);
       setMsgs((m) => [...m, { role: "model", text: shown }]);
@@ -128,7 +153,19 @@ export default function ChatScreen({ navigation }: RootScreenProps<"Chat">) {
           ) : null}
         </ScrollView>
 
+        {refPic ? (
+          <View style={styles.attachRow}>
+            <Image source={{ uri: refPic.uri }} style={styles.attachThumb} />
+            <Text style={styles.attachText}>صورة مرفقة — الذكاء بيشوفها</Text>
+            <Pressable onPress={() => setRefPic(null)} hitSlop={10} style={{ padding: space.xs }}>
+              <Ionicons name="close" size={18} color={colors.text} />
+            </Pressable>
+          </View>
+        ) : null}
         <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, space.sm) }]}>
+          <Pressable onPress={attachImage} disabled={building} hitSlop={8} style={styles.attachBtn}>
+            <Ionicons name="image-outline" size={22} color={colors.textMuted} />
+          </Pressable>
           <TextInput
             style={styles.input}
             value={input}
@@ -139,7 +176,11 @@ export default function ChatScreen({ navigation }: RootScreenProps<"Chat">) {
             editable={!building}
             textAlign="right"
           />
-          <Pressable onPress={send} disabled={busy || building || !input.trim()} style={[styles.sendBtn, (busy || building || !input.trim()) && { opacity: 0.4 }]}>
+          <Pressable
+            onPress={send}
+            disabled={busy || building || (!input.trim() && !refPic)}
+            style={[styles.sendBtn, (busy || building || (!input.trim() && !refPic)) && { opacity: 0.4 }]}
+          >
             <Ionicons name="arrow-up" size={22} color={colors.primaryText} />
           </Pressable>
         </View>
@@ -177,6 +218,10 @@ const styles = StyleSheet.create({
   aiText: { color: colors.text, textAlign: "right" },
   specCard: { alignSelf: "stretch", backgroundColor: colors.surface, borderRadius: radius.card, padding: space.md, gap: space.sm, marginTop: space.sm },
   specTitle: { ...type.body, color: colors.text, textAlign: "right", fontWeight: "600" },
+  attachRow: { flexDirection: "row-reverse", alignItems: "center", gap: space.sm, paddingHorizontal: space.md, paddingVertical: space.xs },
+  attachThumb: { width: 36, height: 36, borderRadius: radius.field, backgroundColor: colors.surface },
+  attachText: { flex: 1, ...type.hint, color: colors.textMuted, textAlign: "right" },
+  attachBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   inputBar: { flexDirection: "row-reverse", alignItems: "flex-end", gap: space.sm, paddingHorizontal: space.md, paddingTop: space.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, backgroundColor: colors.bg },
   input: { flex: 1, maxHeight: 120, color: colors.text, backgroundColor: colors.surface, borderRadius: radius.card, paddingHorizontal: space.md, paddingVertical: space.sm, ...type.body },
   sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },

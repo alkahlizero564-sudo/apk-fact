@@ -97,6 +97,16 @@ jobs:
             echo "=== JavaScript errors found. Asking AI to fix index.html ==="
             python "$GITHUB_WORKSPACE/scripts/fix_html.py" "$SRC/index.html" /tmp/check.log || echo "AI fix failed, continuing"
           done
+          # Quality gate: run the app, press its controls and check its screens for dead buttons, broken layout
+          # and empty screens; ask the AI to fix any found. Best-effort — never fails the build (|| true).
+          for k in 1 2; do
+            if node "$GITHUB_WORKSPACE/scripts/qa_gate.js" "$SRC/index.html" > /tmp/qa.log 2>&1; then
+              cat /tmp/qa.log; break
+            fi
+            cat /tmp/qa.log
+            echo "=== UI problems found. Asking AI to fix index.html ==="
+            python "$GITHUB_WORKSPACE/scripts/fix_html.py" "$SRC/index.html" /tmp/qa.log || echo "AI fix failed, continuing"
+          done || true
 
           mkdir /tmp/wrap
           cd /tmp/wrap

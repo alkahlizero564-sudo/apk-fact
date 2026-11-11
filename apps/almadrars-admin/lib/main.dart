@@ -48,7 +48,7 @@ final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
 // ---------------------------------------------------------------------------
 const String kSupabaseUrl = "https://jvjtgzewumfecjdpekna.supabase.co";
 const String kSupabaseAnonKey =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE";
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFVNej_mptBE";
 
 class SupabaseService {
   static String? accessToken;
@@ -154,6 +154,7 @@ class SupabaseService {
     } catch (_) {}
     return false;
   }
+
 
   // Claim Admin RPC
   static Future<bool> claimAdmin({String? pin}) async {
@@ -565,7 +566,10 @@ class _AuthScreenState extends State<AuthScreen> {
     });
 
     final allowed = await _verifyAdminEmailOrRefuse(email);
-    if (!allowed) return;
+    if (!allowed) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
 
     try {
       await SupabaseService.signIn(email: email, password: pass);
@@ -651,7 +655,10 @@ class _AuthScreenState extends State<AuthScreen> {
     });
 
     final allowed = await _verifyAdminEmailOrRefuse(email);
-    if (!allowed) return;
+    if (!allowed) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
 
     try {
       final url = Uri.parse('$kSupabaseUrl/auth/v1/signup');
@@ -780,7 +787,10 @@ class _AuthScreenState extends State<AuthScreen> {
     });
 
     final allowed = await _verifyAdminEmailOrRefuse(email);
-    if (!allowed) return;
+    if (!allowed) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
 
     try {
       final url = Uri.parse('$kSupabaseUrl/auth/v1/recover');
@@ -1207,8 +1217,6 @@ class _MainContainerScreenState extends State<MainContainerScreen>
       final custs = await SupabaseService.getTable('almadrars_profiles',
           query: 'role=eq.customer&order=created_at.desc');
 
-      // CONTRACT QUERY:
-      // GET almadrars_notifications?or=(to_user.eq.<uid>,to_role.eq.admin)&order=created_at.desc
       final notifsUrlQuery =
           'or=(to_user.eq.$uid,to_role.eq.admin)&order=created_at.desc';
       final notifs = await SupabaseService.getTable('almadrars_notifications',
@@ -1315,7 +1323,7 @@ class _MainContainerScreenState extends State<MainContainerScreen>
           ? const Center(child: CircularProgressIndicator(color: kM3Primary))
           : screens[_currentIndex < screens.length ? _currentIndex : 0],
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex > 4 ? 0 : (_currentIndex == 3 ? 3 : (_currentIndex == 4 ? 0 : _currentIndex)),
+        selectedIndex: _currentIndex > 3 ? 0 : _currentIndex,
         onDestinationSelected: (idx) {
           setState(() => _currentIndex = idx);
         },
@@ -1572,7 +1580,7 @@ class NotificationsInboxScreen extends StatefulWidget {
 }
 
 class _NotificationsInboxScreenState extends State<NotificationsInboxScreen> {
-  String _filter = 'all'; // 'all' or 'unread'
+  String _filter = 'all';
 
   Future<void> _markAsRead(String id) async {
     try {

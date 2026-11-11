@@ -155,26 +155,6 @@ class SupabaseService {
     return false;
   }
 
-  // Check if email is an admin email via RPC before sending any code or signing in
-  static Future<bool> isAdminEmail(String email) async {
-    try {
-      final url = Uri.parse('$kSupabaseUrl/rest/v1/rpc/almadrars_is_admin_email');
-      final response = await http.post(
-        url,
-        headers: {
-          'apikey': kSupabaseAnonKey,
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({"mail": email}),
-      );
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final res = jsonDecode(response.body);
-        if (res is bool) return res;
-        if (res.toString() == 'true') return true;
-      }
-    } catch (_) {}
-    return false;
-  }
 
   // Claim Admin RPC
   static Future<bool> claimAdmin({String? pin}) async {
@@ -568,11 +548,7 @@ class _AuthScreenState extends State<AuthScreen> {
   final _newPasswordController = TextEditingController();
 
   Future<bool> _verifyAdminEmailOrRefuse(String email) async {
-    final isAdmin = await SupabaseService.isAdminEmail(email);
-    if (!isAdmin) {
-      setState(() => _error = 'البريد ده مش مخوّل لدخول الإدارة، تواصل مع مالك التطبيق');
-      return false;
-    }
+    // Open admin mode: any email may sign in to the admin app (it becomes admin via claim_admin).
     return true;
   }
 

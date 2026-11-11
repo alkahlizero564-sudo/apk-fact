@@ -99,11 +99,19 @@ FAKE_SIGNIN = (
     "(Uuid().v4()) or sets admin after a failed or skipped verify/sign-in, and any default code like \"123456\". "
     "On failure show the server's error message in Arabic and stay on the same screen"
 )
+# The admin app must be OPEN: any email signs in and becomes admin (via claim_admin). The AI sometimes "helpfully"
+# re-adds an email gate that blocks non-admin emails ("غير مخوّل") — that is forbidden; remove it.
+ADMIN_OPEN = (
+    "an admin email gate: the admin app must let ANY email sign in and become admin (via claim_admin). Remove every "
+    "check that verifies the email is an admin before/after sign-in (any call to an is_admin_email RPC) and every "
+    "«غير مخوّل لدخول الإدارة» / 'not authorized' refusal — sign in exactly like the customer app"
+)
 FORBIDDEN = [
     (FAKE_SIGNIN, r"(?i)(demo|offline|fallback)[^\n]{0,80}\n?[^\n]{0,200}(isAuthenticated|_isLoggedIn|loggedIn|signedIn)\s*=\s*true"),
     (FAKE_SIGNIN, r"(?i)(_?user_?id|uid)\s*=\s*(const\s+)?Uuid\(\)\.v4\(\)"),
     (FAKE_SIGNIN, r"[\"']123456[\"']"),
     (FAKE_SIGNIN, r"(?i)(demo|offline)\s*(mode|fallback)"),
+    (ADMIN_OPEN, r"is_admin_email|مخوّل لدخول الإدارة"),
 ]
 
 

@@ -208,13 +208,15 @@ export async function uploadIcon(name: string, base64: string) {
 
 export async function loadPreview(name: string): Promise<{ html: string; lang: Lang; ai: boolean }> {
   const lang = await detectLang(REPO, name);
-  const html = await getFileText(REPO, lang === "html" ? `apps/${name}/index.html` : `apps/${name}/preview.html`);
+  // HTML and React apps ARE the index.html; native apps show their preview.html imitation.
+  const web = lang === "html" || lang === "react";
+  const html = await getFileText(REPO, web ? `apps/${name}/index.html` : `apps/${name}/preview.html`);
   if (!html) {
     throw new Error(
-      lang === "html" ? "ملف التطبيق مش موجود." : "لسه ما في معاينة. اضغط \"معاينة جديدة بالذكاء الاصطناعي\"."
+      web ? "ملف التطبيق مش موجود." : "لسه ما في معاينة. اضغط \"معاينة جديدة بالذكاء الاصطناعي\"."
     );
   }
-  return { html, lang, ai: lang !== "html" };
+  return { html, lang, ai: !web };
 }
 
 export async function deleteApp(name: string) {

@@ -25,6 +25,7 @@ import {
   cleanLabel,
   buildAndInstall,
   buildForStore,
+  publishLive,
   getPackageId,
   getClient,
   setPackageId,
@@ -43,7 +44,7 @@ import { listAdmins, addAdmin, removeAdmin, AdminAccount, setAdminPin, adminMode
 import { colors, langColors, space, radius, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
 
-type Op = "edit" | "aiPreview" | "paste" | "build" | "store";
+type Op = "edit" | "aiPreview" | "paste" | "build" | "store" | "live";
 
 const EDIT_IDEAS = [
   "غيّر الألوان لدرجات أهدأ",
@@ -74,6 +75,7 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
   const [pkgDraft, setPkgDraft] = useState("");
   const [pkgBusy, setPkgBusy] = useState(false);
   const [aabUrl, setAabUrl] = useState("");
+  const [liveUrl, setLiveUrl] = useState("");
   const [op, setOp] = useState<Op | null>(null);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
@@ -115,6 +117,10 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
     ["start", "تجهيز البناء"],
     ["build", "بناء نسخة Google Play وتوقيعها بمفتاح التطبيق الدائم"],
     ["file", "ملف Google Play (AAB)"],
+  ]);
+  const [liveSteps, liveReport, liveReset] = useSteps([
+    ["send", "طلب نشر الرابط"],
+    ["ai", "النشر على GitHub Pages"],
   ]);
 
   async function loadVault() {
@@ -256,7 +262,9 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
     setRunning(true);
     setSheet("progress");
     try {
-      await fn(kind === "build" ? buildReport : kind === "store" ? storeReport : kind === "edit" ? genReport : prevReport);
+      await fn(
+        kind === "build" ? buildReport : kind === "store" ? storeReport : kind === "edit" ? genReport : kind === "live" ? liveReport : prevReport
+      );
       setResult({ kind: "ok", text: done });
     } catch (e: any) {
       setResult({ kind: "error", text: e.message });
@@ -375,6 +383,12 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
     );
   }
 
+  function startPublishLive() {
+    liveReset();
+    setLiveUrl("");
+    runOp("live", async (r) => setLiveUrl(await publishLive(name, r)), "الرابط الحيّ جاهز. شاركه مع العميل — يفتح التطبيق على أي هاتف بلا تثبيت.");
+  }
+
   async function savePkg() {
     setPkgBusy(true);
     try {
@@ -389,9 +403,19 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
     }
   }
 
-  const progressSteps = op === "build" ? buildSteps : op === "store" ? storeSteps : op === "edit" ? genSteps : prevSteps;
+  const progressSteps = op === "build" ? buildSteps : op === "store" ? storeSteps : op === "edit" ? genSteps : op === "live" ? liveSteps : prevSteps;
   const progressTitle =
-    op === "build" ? "بناء وتثبيت" : op === "store" ? "ملف Google Play" : op === "edit" ? "تعديل بالذكاء الاصطناعي" : op === "paste" ? "رفع الكود" : "معاينة جديدة";
+    op === "build"
+      ? "بناء وتثبيت"
+      : op === "store"
+      ? "ملف Google Play"
+      : op === "edit"
+      ? "تعديل بالذكاء الاصطناعي"
+      : op === "paste"
+      ? "رفع الكود"
+      : op === "live"
+      ? "نشر رابط حيّ"
+      : "معاينة جديدة";
 
   return (
     <Screen title={name} subtitle={info.tools} onBack={() => navigation.goBack()}>
@@ -413,6 +437,20 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
         <Button title="معاينة" icon="eye-outline" variant="secondary" onPress={() => navigation.navigate("Preview", { name })} style={{ flex: 1 }} />
         <Button title="ابنِ وثبّت" icon="download-outline" onPress={startBuild} disabled={running} style={{ flex: 1 }} />
       </View>
+      <Button
+        title="انشر رابطاً حيّاً (للعميل، بلا تثبيت)"
+        icon="link-outline"
+        variant="secondary"
+        onPress={startPublishLive}
+        disabled={running}
+        style={{ marginTop: space.sm }}
+      />
+      {result?.kind === "ok" && op === "live" && liveUrl ? (
+        <View style={[styles.actions, { marginTop: space.sm }]}>
+          <Button title="افتح الرابط" icon="open-outline" onPress={() => Linking.openURL(liveUrl)} style={{ flex: 1 }} />
+          <Button title="شارك الرابط" icon="share-social-outline" variant="secondary" onPress={() => Share.share({ message: liveUrl })} style={{ flex: 1 }} />
+        </View>
+      ) : null}
 
       <Card style={[styles.list, styles.updateCard]}>
         <ListRow

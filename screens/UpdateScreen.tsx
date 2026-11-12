@@ -202,7 +202,7 @@ export default function UpdateScreen({ navigation, route }: RootScreenProps<"Upd
 
       {pair && !locked && stage === "write" ? (
         <Section title="التحديث لـ">
-          <Segmented
+          <Segmented<"one" | "both">
             options={[
               { value: "one", label: `${roleLabel(name)} بس` },
               { value: "both", label: "التطبيقين" },

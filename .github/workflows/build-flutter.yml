@@ -79,8 +79,9 @@ jobs:
           NAME="app_$(echo "$APP" | tr '-' '_')"
           flutter create --platforms=android --org com.generated --project-name "$NAME" "$PROJ"
           rm -rf "$PROJ/test"
-          # Reuse Gradle's build cache (kept warm by the actions/cache step) and build modules in parallel.
-          printf '\norg.gradle.caching=true\norg.gradle.parallel=true\n' >> "$PROJ/android/gradle.properties"
+          # Speed: warm build cache + parallel modules + more heap (less GC pauses) + configure only the modules
+          # a task needs + no file-watching on a one-shot runner.
+          printf '\norg.gradle.caching=true\norg.gradle.parallel=true\norg.gradle.configureondemand=true\norg.gradle.vfs.watch=false\norg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1g -XX:+UseParallelGC\n' >> "$PROJ/android/gradle.properties"
           # The name under the icon (can be Arabic), from apps/<app>/display-name.txt.
           python scripts/app_label.py android "$PROJ/android/app/src/main/res" "$APP"
           python scripts/app_label.py manifest "$PROJ/android/app/src/main/AndroidManifest.xml"

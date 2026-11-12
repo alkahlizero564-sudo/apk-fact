@@ -143,8 +143,11 @@ jobs:
           echo "Package name: $APP_ID"
           npx cap init "$APP" "$APP_ID" --web-dir www
           npx cap add android
-          # Reuse Gradle's build cache (kept warm by the actions/cache step) and build modules in parallel.
-          printf '\norg.gradle.caching=true\norg.gradle.parallel=true\n' >> android/gradle.properties
+          # Speed: warm build cache + parallel modules + more heap (less GC pauses) + configure only the modules
+          # a task needs + no file-watching on a one-shot runner.
+          printf '\norg.gradle.caching=true\norg.gradle.parallel=true\norg.gradle.configureondemand=true\norg.gradle.vfs.watch=false\norg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1g -XX:+UseParallelGC\n' >> android/gradle.properties
+          # Skip the slow release lint pass (lintVitalRelease): a generated app does not need it, and it adds minutes.
+          sed -i '0,/^android {/s//android {\n    lint { checkReleaseBuilds false; abortOnError false }/' android/app/build.gradle
           # The name under the icon (can be Arabic), from apps/<app>/display-name.txt.
           python "$GITHUB_WORKSPACE/scripts/app_label.py" android android/app/src/main/res "$APP"
           # Android permissions: the ones chosen in APK Fact (perms.txt) and the ones the code uses.

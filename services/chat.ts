@@ -4,6 +4,7 @@
 import * as SecureStore from "expo-secure-store";
 import { Lang, LANGS } from "./langs";
 import { AiImage } from "./instantPreview";
+import { thinkingConfigFor, markThinkingUnsupported } from "./geminiThink";
 
 export type ChatMsg = { role: "user" | "model"; text: string };
 export type ChatSpec = {
@@ -46,12 +47,20 @@ async function callOnce(key: string, model: string, contents: any[]): Promise<st
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 120000);
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({ systemInstruction: { parts: [{ text: SYSTEM }] }, contents, generationConfig: { temperature: 0.6 } }),
-      signal: ctrl.signal,
-    });
+    // Speed: skip the model's slow "thinking" phase (self-heals to the normal path if a model rejects it).
+    const think = await thinkingConfigFor(model);
+    const send = async (useThink: boolean) =>
+      fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify({ systemInstruction: { parts: [{ text: SYSTEM }] }, contents, generationConfig: { temperature: 0.6, ...(useThink && think ? think : {}) } }),
+        signal: ctrl.signal,
+      });
+    let res = await send(true);
+    if (res.status === 400 && think) {
+      await markThinkingUnsupported(model);
+      res = await send(false);
+    }
     if (!res.ok) throw Object.assign(new Error(`Gemini ${res.status}`), { status: res.status });
     const data = await res.json();
     const parts = data?.candidates?.[0]?.content?.parts ?? [];

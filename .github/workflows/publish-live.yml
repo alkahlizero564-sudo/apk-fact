@@ -1,0 +1,72 @@
+name: Publish live link
+run-name: Live ${{ inputs.app }}
+
+# Publishes an app's HTML to a free GitHub Pages site on the PUBLIC updates repo, so the owner can share a live
+# link a client opens on any phone — instantly, without building/installing an APK.
+#   HTML / React -> apps/<app>/index.html (the real app)
+#   Flutter / Python / Kotlin -> apps/<app>/preview.html (a faithful interactive imitation)
+# Link: https://<owner>.github.io/apk-fact-updates/<app>/
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "App folder name inside apps/"
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  UPDATES_REPO: ${{ vars.UPDATES_REPO }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish the app's HTML to Pages
+        env:
+          UPDATES_TOKEN: ${{ secrets.UPDATES_TOKEN }}
+        run: |
+          set -e
+          APP="${{ inputs.app }}"
+          if ! [[ "$APP" =~ ^[a-z0-9-]+$ ]]; then echo "bad app name"; exit 1; fi
+          if [ -z "$UPDATES_REPO" ] || [ -z "$UPDATES_TOKEN" ]; then
+            echo "::error::Live links need the public updates repo. Open APK Fact > الإعدادات > الخصوصية and set it up first."
+            exit 1
+          fi
+          # The real app for web, the preview imitation for native.
+          SRC="apps/$APP/index.html"
+          [ -f "$SRC" ] || SRC="apps/$APP/preview.html"
+          if [ ! -f "$SRC" ]; then echo "::error::No page to publish for $APP (build or preview it first)."; exit 1; fi
+          OWNER="${UPDATES_REPO%%/*}"
+          NAME="${UPDATES_REPO##*/}"
+          AUTH="https://x-access-token:${UPDATES_TOKEN}@github.com/${UPDATES_REPO}.git"
+
+          # Get (or create) the gh-pages branch of the public updates repo.
+          git clone --depth 1 --branch gh-pages "$AUTH" site 2>/dev/null || {
+            git clone --depth 1 "$AUTH" site
+            cd site
+            git checkout --orphan gh-pages
+            git rm -rf . >/dev/null 2>&1 || true
+            cd ..
+          }
+          mkdir -p "site/$APP"
+          cp "$SRC" "site/$APP/index.html"
+          cd site
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add "$APP/index.html"
+          git commit -m "live: $APP" || echo "no change"
+          git push "$AUTH" HEAD:gh-pages
+
+          # Turn on GitHub Pages for the gh-pages branch (first time only; harmless afterwards).
+          curl -s -o /dev/null -X POST -H "Authorization: token $UPDATES_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${UPDATES_REPO}/pages" \
+            -d '{"source":{"branch":"gh-pages","path":"/"}}' || true
+
+          URL="https://${OWNER}.github.io/${NAME}/${APP}/"
+          echo "LIVE URL: $URL"
+          echo "### 🔗 الرابط الحيّ" >> "$GITHUB_STEP_SUMMARY"
+          echo "$URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "(قد يستغرق أول رابط دقيقة حتى يعمل)" >> "$GITHUB_STEP_SUMMARY"

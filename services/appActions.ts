@@ -17,6 +17,7 @@ import {
   getAssetDownloadInfo,
 } from "./github";
 import { REPO } from "./config";
+import { UPDATES_NAME } from "./privacy";
 import { LANGS, LANG_ORDER, Lang, detectLang } from "./langs";
 import PERM_RULES from "./permissions.json";
 import { filesRepo } from "./privacy";
@@ -208,15 +209,13 @@ export async function uploadIcon(name: string, base64: string) {
 
 export async function loadPreview(name: string): Promise<{ html: string; lang: Lang; ai: boolean }> {
   const lang = await detectLang(REPO, name);
-  // HTML and React apps ARE the index.html; native apps show their preview.html imitation.
-  const web = lang === "html" || lang === "react";
-  const html = await getFileText(REPO, web ? `apps/${name}/index.html` : `apps/${name}/preview.html`);
+  const html = await getFileText(REPO, lang === "html" ? `apps/${name}/index.html` : `apps/${name}/preview.html`);
   if (!html) {
     throw new Error(
-      web ? "ملف التطبيق مش موجود." : "لسه ما في معاينة. اضغط \"معاينة جديدة بالذكاء الاصطناعي\"."
+      lang === "html" ? "ملف التطبيق مش موجود." : "لسه ما في معاينة. اضغط \"معاينة جديدة بالذكاء الاصطناعي\"."
     );
   }
-  return { html, lang, ai: !web };
+  return { html, lang, ai: lang !== "html" };
 }
 
 export async function deleteApp(name: string) {
@@ -372,4 +371,28 @@ export async function listToolBuilds(): Promise<ToolRun[]> {
 
 export async function buildTool() {
   await triggerWorkflow(REPO, "main.yml", { platform: "android" });
+}
+
+/** Publishes the app's page to a free GitHub Pages site on the public updates repo and returns a shareable live
+ *  link the owner can send a client (they open it on any phone, no APK). HTML/React use the real app; native apps
+ *  use their preview imitation. */
+export async function publishLive(name: string, report: Report): Promise<string> {
+  report("send", "active");
+  const prevId = await latestRunId(REPO, "publish-live.yml");
+  await triggerWorkflow(REPO, "publish-live.yml", { app: name });
+  report("send", "done");
+
+  report("ai", "active");
+  const run = await waitForRun(prevId, "publish-live.yml", 5);
+  if (!run) {
+    report("ai", "error");
+    throw new Error("أخذ وقتاً أطول من المتوقع. جرّب بعد شوية.");
+  }
+  if (run.conclusion !== "success") {
+    report("ai", "error");
+    await failWithLog(run.id, "فشل نشر الرابط الحيّ. تأكد من إعداد «الخصوصية» (مستودع التحديثات).");
+  }
+  report("ai", "done");
+  const owner = REPO.split("/")[0];
+  return `https://${owner}.github.io/${UPDATES_NAME}/${name}/`;
 }

@@ -64,7 +64,7 @@ export default function AppsScreen() {
       </View>
 
       <Field label="بحث" icon="search-outline" value={query} onChangeText={setQuery} placeholder="اسم التطبيق" ltr autoCapitalize="none" />
-      <Segmented
+      <Segmented<Lang | "all">
         value={filter}
         onChange={setFilter}
         options={[

@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { Lang } from "./langs";
 import { DESIGN_BRIEF } from "./designBrief";
+import { thinkingConfigFor, markThinkingUnsupported } from "./geminiThink";
 
 // A reference image the owner attached to their description (base64 + mime), sent to the AI as vision input.
 export type AiImage = { data: string; mime: string };
@@ -61,16 +62,25 @@ async function callGemini(key: string, model: string, system: string, prompt: st
     // Reference images the owner attached go first (as vision input), then the text prompt.
     const userParts: any[] = images.map((im) => ({ inline_data: { mime_type: im.mime || "image/jpeg", data: im.data } }));
     userParts.push({ text: prompt });
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents: [{ role: "user", parts: userParts }],
-        generationConfig: { temperature },
-      }),
-      signal: ctrl.signal,
-    });
+    // Speed: skip the model's slow "thinking" phase for this generation task (self-heals if unsupported).
+    const think = await thinkingConfigFor(model);
+    const send = async (useThink: boolean) =>
+      fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system }] },
+          contents: [{ role: "user", parts: userParts }],
+          generationConfig: { temperature, ...(useThink && think ? think : {}) },
+        }),
+        signal: ctrl.signal,
+      });
+    let res = await send(true);
+    // If turning thinking off is the reason for a 400, remember that and retry the normal way (never break).
+    if (res.status === 400 && think) {
+      await markThinkingUnsupported(model);
+      res = await send(false);
+    }
     if (!res.ok) throw Object.assign(new Error(`Gemini ${res.status}`), { status: res.status });
     const data = await res.json();
     const parts = data?.candidates?.[0]?.content?.parts ?? [];

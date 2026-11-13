@@ -73,6 +73,21 @@ export default function HomeScreen() {
         <Ionicons name="chevron-back" size={18} color={colors.textMuted} />
       </Pressable>
 
+      <Pressable
+        onPress={() => nav.navigate("Gallery")}
+        style={({ pressed }) => [styles.pairCard, pressed && { transform: [{ scale: 0.98 }] }]}
+        accessibilityRole="button"
+      >
+        <View style={styles.pairIcon}>
+          <Ionicons name="color-palette-outline" size={24} color={colors.accent} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.pairTitle}>معرض التصاميم</Text>
+          <Text style={styles.pairText}>آلاف التصاميم الجاهزة — اختر واحداً فيصير بداية تطبيقك بنفس نمطه وألوانه</Text>
+        </View>
+        <Ionicons name="chevron-back" size={18} color={colors.textMuted} />
+      </Pressable>
+
       <View style={styles.stats}>
         {LANG_ORDER.map((l) => (
           <View key={l} style={styles.stat}>

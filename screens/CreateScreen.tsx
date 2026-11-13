@@ -21,6 +21,7 @@ import {
 } from "../components/ui";
 import { AppAvatar, LANG_ICONS, LangBadge } from "../components/appVisuals";
 import { TEMPLATES, Template } from "../services/templates";
+import { getGalleryPick, GALLERY_PICK } from "../services/galleryPick";
 import { LANGS, LANG_ORDER, Lang } from "../services/langs";
 import DesignStudio from "../components/DesignStudio";
 import UnderstandStudio, { UnderstandHandle } from "../components/UnderstandStudio";
@@ -62,7 +63,10 @@ function toggleIdea(text: string, idea: string) {
 
 export default function CreateScreen({ navigation, route }: RootScreenProps<"Create">) {
   const insets = useSafeAreaInsets();
-  const preset = TEMPLATES.find((t) => t.id === route.params?.templateId);
+  const preset =
+    route.params?.templateId === GALLERY_PICK
+      ? getGalleryPick() ?? undefined
+      : TEMPLATES.find((t) => t.id === route.params?.templateId);
 
   const [step, setStep] = useState(preset ? 2 : 0);
   const [start, setStart] = useState<Start>(preset ? "template" : "blank");

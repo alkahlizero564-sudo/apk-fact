@@ -16,6 +16,7 @@ import AppDetailScreen from "./screens/AppDetailScreen";
 import PreviewScreen from "./screens/PreviewScreen";
 import InstantPreviewScreen from "./screens/InstantPreviewScreen";
 import ChatScreen from "./screens/ChatScreen";
+import GalleryScreen from "./screens/GalleryScreen";
 import PairScreen from "./screens/PairScreen";
 import UpdateScreen from "./screens/UpdateScreen";
 import { colors, gradient } from "./theme";
@@ -120,6 +121,7 @@ export default function App() {
                 options={{ presentation: "fullScreenModal", animation: "fade_from_bottom" }}
               />
               <Stack.Screen name="Chat" component={ChatScreen} options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
+              <Stack.Screen name="Gallery" component={GalleryScreen} options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
             </Stack.Navigator>
           </NavigationContainer>
         </ErrorBoundary>

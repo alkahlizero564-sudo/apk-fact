@@ -37,7 +37,9 @@ export default function DesignStudio({ targets, onChange, onBusy }: Props) {
   const [change, setChange] = useState("");
   const [both, setBoth] = useState(false);
   const [full, setFull] = useState(false);
+  const [live, setLive] = useState<string | null>(null); // the current design as it's being written (streaming)
   const started = useRef("");
+  const lastLive = useRef(0);
 
   const sig = targets.map((t) => `${t.key}|${t.lang}|${t.description}`).join("\n");
   const current = (k: string) => history[k]?.[history[k].length - 1];
@@ -75,9 +77,19 @@ export default function DesignStudio({ targets, onChange, onBusy }: Props) {
           }
         }
         setActive(t.key);
+        setLive(null);
+        lastLive.current = 0;
         // The second app of a pair shares the brand of the first one.
         const brand = targets.map((x) => x.key).filter((k) => k !== t.key).map((k) => next[k]?.[next[k].length - 1]).find(Boolean);
-        const html = await designApp(t, (s) => setStatus(`${targets.length > 1 ? t.label + ": " : ""}${s}`), brand, refImages());
+        const onPartial = (partial: string) => {
+          const now = Date.now();
+          if (partial.length > 300 && now - lastLive.current > 500) {
+            lastLive.current = now;
+            setLive(partial);
+          }
+        };
+        const html = await designApp(t, (s) => setStatus(`${targets.length > 1 ? t.label + ": " : ""}${s}`), brand, refImages(), onPartial);
+        setLive(null);
         next = { ...next, [t.key]: [...(fresh ? next[t.key] ?? [] : []), html] };
         commit(next);
       }
@@ -85,6 +97,7 @@ export default function DesignStudio({ targets, onChange, onBusy }: Props) {
       setError(e.message);
     } finally {
       setStatus("");
+      setLive(null);
       setBusyBoth(false);
     }
   }
@@ -147,6 +160,14 @@ export default function DesignStudio({ targets, onChange, onBusy }: Props) {
       <View style={styles.frame}>
         {html ? (
           <WebView key={`${active}-${versions}`} originWhitelist={["*"]} source={{ html }} style={styles.web} nestedScrollEnabled />
+        ) : live ? (
+          <View style={styles.web}>
+            <WebView originWhitelist={["*"]} source={{ html: live }} style={styles.web} scrollEnabled={false} />
+            <View style={styles.liveRibbon}>
+              <ActivityIndicator color={colors.primaryText} size="small" />
+              <Text style={styles.liveText}>يرسم التصميم مباشرة…</Text>
+            </View>
+          </View>
         ) : (
           <View style={styles.wait}>
             <ActivityIndicator color={colors.accent} size="large" />
@@ -246,6 +267,8 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(10,12,20,0.85)",
   },
   overlayText: { flex: 1, color: colors.primaryText, fontSize: 13, textAlign: "right" },
+  liveRibbon: { position: "absolute", top: space.md, alignSelf: "center", flexDirection: "row-reverse", alignItems: "center", gap: space.sm, backgroundColor: colors.primary, paddingHorizontal: space.md, paddingVertical: 6, borderRadius: 999 },
+  liveText: { color: colors.primaryText, fontSize: 12, fontWeight: "800" },
   tools: { flexDirection: "row-reverse", alignItems: "center", gap: space.sm, marginTop: space.md, marginBottom: space.md },
   redo: {
     flexDirection: "row-reverse",

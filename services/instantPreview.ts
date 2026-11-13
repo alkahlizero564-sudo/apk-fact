@@ -96,6 +96,85 @@ async function callGemini(key: string, model: string, system: string, prompt: st
   }
 }
 
+// Streaming: React Native's fetch can't read a response as it arrives, so we use XMLHttpRequest against Gemini's
+// streamGenerateContent (SSE). onText gets the whole text so far on every chunk, so the UI can show the design
+// being written live. Rejects with {status} like callGemini so the caller can fall back or switch model/key.
+function callGeminiStream(
+  key: string,
+  model: string,
+  system: string,
+  prompt: string,
+  temperature: number,
+  images: AiImage[],
+  onText: (full: string) => void,
+  think: Record<string, unknown> | null
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const userParts: any[] = images.map((im) => ({ inline_data: { mime_type: im.mime || "image/jpeg", data: im.data } }));
+    userParts.push({ text: prompt });
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`);
+    xhr.setRequestHeader("content-type", "application/json");
+    xhr.setRequestHeader("x-goog-api-key", key);
+    xhr.timeout = 180000;
+    let seen = 0;
+    let buffer = "";
+    let full = "";
+    const pump = () => {
+      const all = xhr.responseText || "";
+      if (all.length <= seen) return;
+      buffer += all.slice(seen);
+      seen = all.length;
+      let idx: number;
+      while ((idx = buffer.indexOf("\n")) >= 0) {
+        const line = buffer.slice(0, idx).trim();
+        buffer = buffer.slice(idx + 1);
+        if (!line.startsWith("data:")) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === "[DONE]") continue;
+        try {
+          const obj = JSON.parse(payload);
+          const t = (obj?.candidates?.[0]?.content?.parts ?? []).map((p: any) => p.text || "").join("");
+          if (t) {
+            full += t;
+            onText(full);
+          }
+        } catch {
+          // a line that isn't complete JSON yet — ignore; the rest arrives next chunk
+        }
+      }
+    };
+    xhr.onprogress = pump;
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState >= 3) pump();
+    };
+    xhr.onload = () => {
+      pump();
+      if (xhr.status >= 200 && xhr.status < 300) resolve(full);
+      else reject(Object.assign(new Error(`Gemini ${xhr.status}`), { status: xhr.status }));
+    };
+    xhr.onerror = () => reject(Object.assign(new Error("تعذّر الاتصال"), { status: 0 }));
+    xhr.ontimeout = () => reject(Object.assign(new Error("انتهت المهلة"), { status: 0 }));
+    xhr.send(
+      JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{ role: "user", parts: userParts }],
+        generationConfig: { temperature, ...(think ? think : {}) },
+      })
+    );
+  });
+}
+
+// Strip a leading ```lang fence from partial text so the live HTML renders cleanly before the reply is complete.
+function livePartial(t: string): string {
+  const f = t.indexOf("```");
+  if (f >= 0) {
+    const nl = t.indexOf("\n", f);
+    return nl >= 0 ? t.slice(nl + 1) : "";
+  }
+  return t;
+}
+
 export async function cachedPreview(lang: Lang, description: string) {
   try {
     return await AsyncStorage.getItem(CACHE_PREFIX + hash(lang + "|" + description));
@@ -110,7 +189,8 @@ export async function instantPreview(
   description: string,
   onStatus: (s: string) => void,
   fresh = false,
-  images: AiImage[] = []
+  images: AiImage[] = [],
+  onPartial?: (html: string) => void
 ): Promise<string> {
   const key = CACHE_PREFIX + hash(lang + "|" + description);
   // An attached reference image is not part of the cache key, so always draw fresh when one is given.
@@ -121,7 +201,7 @@ export async function instantPreview(
   const prompt =
     `App description:\n${description}` +
     (images.length ? "\n\nThe owner attached the image(s) above as a visual reference — follow its look, layout, colors and style where it fits this app." : "");
-  const html = await askGeminiHtml(systemFor(lang), prompt, onStatus, "يرسم المعاينة", 0.5, images);
+  const html = await askGeminiHtml(systemFor(lang), prompt, onStatus, "يرسم المعاينة", 0.5, images, onPartial);
   if (!images.length) await AsyncStorage.setItem(key, html).catch(() => {});
   return html;
 }
@@ -133,9 +213,10 @@ export async function askGeminiHtml(
   onStatus: (s: string) => void,
   doing = "يشتغل",
   temperature = 0.5,
-  images: AiImage[] = []
+  images: AiImage[] = [],
+  onPartial?: (html: string) => void
 ): Promise<string> {
-  return askGemini(system, prompt, onStatus, doing, temperature, extractHtml, images);
+  return askGemini(system, prompt, onStatus, doing, temperature, extractHtml, images, onPartial);
 }
 
 /**
@@ -149,7 +230,8 @@ export async function askGemini<T = string>(
   doing = "يشتغل",
   temperature = 0.5,
   parse: (text: string) => T = (t) => t as unknown as T,
-  images: AiImage[] = []
+  images: AiImage[] = [],
+  onPartial?: (text: string) => void
 ): Promise<T> {
   const keys = await geminiKeys();
   const chosen = (await SecureStore.getItemAsync("GEMINI_MODEL")) || FALLBACK_MODELS[0];
@@ -160,7 +242,22 @@ export async function askGemini<T = string>(
       for (let k = 0; k < keys.length; k++) {
         onStatus(`الذكاء الاصطناعي ${doing}… (${model}${keys.length > 1 ? `، مفتاح ${k + 1}` : ""})`);
         try {
-          return parse(await callGemini(keys[k], model, system, prompt, temperature, images));
+          let text: string;
+          if (onPartial) {
+            // Stream the reply so the UI can show it being written; fall back to a normal call on a stream hiccup.
+            const think = await thinkingConfigFor(model);
+            try {
+              text = await callGeminiStream(keys[k], model, system, prompt, temperature, images, (p) => onPartial(livePartial(p)), think);
+              if (!text.trim()) text = await callGemini(keys[k], model, system, prompt, temperature, images); // empty stream: normal call
+            } catch (se: any) {
+              if (se?.status === 400 && think) await markThinkingUnsupported(model);
+              if (se?.status === 404 || se?.status === 401 || se?.status === 403) throw se; // let the loop switch model/key
+              text = await callGemini(keys[k], model, system, prompt, temperature, images);
+            }
+          } else {
+            text = await callGemini(keys[k], model, system, prompt, temperature, images);
+          }
+          return parse(text);
         } catch (e: any) {
           last = e?.message ?? String(e);
           if (e?.status === 404) break; // model not available: next model

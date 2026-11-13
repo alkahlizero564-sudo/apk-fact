@@ -106,7 +106,13 @@ export async function clearDraft(t: DesignTarget) {
 
 /** First design of an app. `brandFrom` is another approved design to share colors, fonts and style with.
  *  `images` are reference pictures the owner attached to their description (sent to the AI as a visual guide). */
-export async function designApp(t: DesignTarget, onStatus: (s: string) => void, brandFrom?: string, images: AiImage[] = []) {
+export async function designApp(
+  t: DesignTarget,
+  onStatus: (s: string) => void,
+  brandFrom?: string,
+  images: AiImage[] = [],
+  onPartial?: (html: string) => void
+) {
   let prompt =
     `App name: ${t.title}\n${platformLine(t)}\n${roleLine(t)}\n\nWhat the app is and does:\n${forApp(t.description, t.role)}\n` +
     (t.role
@@ -133,7 +139,7 @@ export async function designApp(t: DesignTarget, onStatus: (s: string) => void, 
       "\nThe owner attached the image(s) above as a VISUAL REFERENCE for how they want the app to look — follow its " +
       "style, layout, colors, components and overall feel as closely as it fits this app and its screens.\n";
   }
-  return askGeminiHtml(DESIGNER, prompt, onStatus, "يصمّم الواجهات", brandFrom ? 0.7 : 0.85, images);
+  return askGeminiHtml(DESIGNER, prompt, onStatus, "يصمّم الواجهات", brandFrom ? 0.7 : 0.85, images, onPartial);
 }
 
 /** Applies a requested change to an existing design and returns the full new design. */

@@ -1,5 +1,5 @@
 import { refImages } from "../services/attachment";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { WebView } from "react-native-webview";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,16 +22,31 @@ export default function InstantPreviewScreen({ navigation, route }: RootScreenPr
   const demo = template && lang === "html" && description === template.description ? TEMPLATE_DEMOS[template.id] : undefined;
 
   const [html, setHtml] = useState<string | null>(demo ?? null);
+  const [live, setLive] = useState<string | null>(null); // the design as it's being written (streaming)
   const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const lastLive = useRef(0);
 
   const load = useCallback(
     async (fresh: boolean) => {
       setError(null);
       setHtml(null);
+      setLive(null);
+      lastLive.current = 0;
+      // Show the design being written: update the live preview at most ~2×/second so the WebView doesn't thrash.
+      const onPartial = (partial: string) => {
+        const now = Date.now();
+        if (partial.length > 300 && now - lastLive.current > 500) {
+          lastLive.current = now;
+          setLive(partial);
+        }
+      };
       try {
-        setHtml(await instantPreview(lang, description, setStatus, fresh, refImages()));
+        const result = await instantPreview(lang, description, setStatus, fresh, refImages(), onPartial);
+        setLive(null);
+        setHtml(result);
       } catch (e: any) {
+        setLive(null);
         setError(e.message);
       }
     },
@@ -62,7 +77,7 @@ export default function InstantPreviewScreen({ navigation, route }: RootScreenPr
         {!demo && html ? <IconButton icon="refresh" label="معاينة جديدة" onPress={() => load(true)} /> : null}
       </View>
 
-      {!html && !error ? (
+      {!html && !live && !error ? (
         <View style={styles.wait}>
           <ActivityIndicator color={colors.accent} size="large" />
           <Text style={styles.waitTitle}>بنجهّز معاينة فورية…</Text>
@@ -77,6 +92,16 @@ export default function InstantPreviewScreen({ navigation, route }: RootScreenPr
           text={error}
           action={<Button title="حاول تاني" icon="refresh" variant="secondary" onPress={() => load(true)} />}
         />
+      ) : null}
+      {/* While streaming: show the design being written live, with a small "drawing now" ribbon. */}
+      {!html && live ? (
+        <View style={{ flex: 1 }}>
+          <WebView originWhitelist={["*"]} source={{ html: live }} style={{ flex: 1, backgroundColor: colors.bg }} scrollEnabled={false} />
+          <View style={styles.liveRibbon}>
+            <ActivityIndicator color={colors.primaryText} size="small" />
+            <Text style={styles.liveText}>يرسم التصميم مباشرة…</Text>
+          </View>
+        </View>
       ) : null}
       {html ? <WebView originWhitelist={["*"]} source={{ html }} style={{ flex: 1, backgroundColor: colors.bg }} /> : null}
 
@@ -116,4 +141,6 @@ const styles = StyleSheet.create({
   waitText: { ...type.body, color: colors.textMuted, textAlign: "center" },
   waitHint: { ...type.hint, color: colors.textMuted, textAlign: "center", marginTop: space.md },
   footer: { flexDirection: "row-reverse", gap: space.md, paddingHorizontal: space.lg, paddingTop: space.md, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
+  liveRibbon: { position: "absolute", top: space.md, alignSelf: "center", flexDirection: "row-reverse", alignItems: "center", gap: space.sm, backgroundColor: colors.primary, paddingHorizontal: space.md, paddingVertical: 6, borderRadius: 999 },
+  liveText: { ...type.hint, color: colors.primaryText, fontWeight: "800" },
 });

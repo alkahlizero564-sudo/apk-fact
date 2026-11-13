@@ -2,7 +2,7 @@
 // prototype (one HTML file). The user reviews it, changes it with AI until it is right, and approves it.
 // The approved design is saved as apps/<app>/design.html and the generators build the real app from it.
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { askGeminiHtml, AiImage } from "./instantPreview";
+import { askGemini, askGeminiHtml, AiImage } from "./instantPreview";
 import { DESIGN_BRIEF } from "./designBrief";
 import { pushFile } from "./github";
 import { REPO } from "./config";
@@ -142,10 +142,61 @@ export async function designApp(
   return askGeminiHtml(DESIGNER, prompt, onStatus, "يصمّم الواجهات", brandFrom ? 0.7 : 0.85, images, onPartial);
 }
 
+// The edit accelerator: instead of rewriting the whole design (tens of thousands of characters, most of a minute),
+// the AI returns only the exact text replacements the change needs, and we apply them here. A small change then
+// takes a few seconds. Anything that does not apply cleanly falls back to the full rewrite, so nothing is lost.
+const PATCHER = `You edit an existing single-file HTML app design by returning a SMALL list of exact text replacements — never the whole file.
+Return ONLY a JSON array, nothing else: [{"find": "<text copied exactly from the current design>", "replace": "<the new text>"}]
+Rules:
+- "find" must be copied character for character from the current design (same spaces, quotes and line breaks) and must appear EXACTLY ONCE in it. Make it just long enough to be unique.
+- Keep every item small: one CSS rule, one tag, one line, or a few lines.
+- To ADD something, "find" the text right before where it goes and put that same text in "replace" followed by the addition.
+- To REMOVE something, "find" it and use "replace": "".
+- Colors, fonts, sizes and radii usually live in CSS variables or one rule: change them there, once.
+- Change only what the request needs; keep the screens switcher.
+- If the request needs most of the design rewritten (a new layout for every screen, many new screens), return exactly: FULL`;
+
+/** Applies the AI's replacements; null when the reply is not a clean patch (then the caller rewrites in full). */
+export function applyPatch(html: string, reply: string): string | null {
+  const m = reply.match(/```(?:json)?[ \t]*\n([\s\S]*?)\n```/i);
+  const raw = (m ? m[1] : reply).trim();
+  if (!raw.startsWith("[")) return null;
+  let edits: unknown;
+  try {
+    edits = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(edits) || !edits.length) return null;
+  let out = html;
+  for (const e of edits as { find?: unknown; replace?: unknown }[]) {
+    if (typeof e?.find !== "string" || typeof e?.replace !== "string" || !e.find) return null;
+    const at = out.indexOf(e.find);
+    if (at < 0 || out.indexOf(e.find, at + 1) >= 0) return null; // missing or ambiguous: don't guess
+    out = out.slice(0, at) + e.replace + out.slice(at + e.find.length);
+  }
+  return out !== html && /<html|<!doctype/i.test(out) ? out : null;
+}
+
 /** Applies a requested change to an existing design and returns the full new design. */
 export async function reviseDesign(t: DesignTarget, html: string, change: string, onStatus: (s: string) => void) {
+  const head = `App name: ${t.title}\n${platformLine(t)}\n${roleLine(t)}\n\nCurrent design:\n\`\`\`html\n${html}\n\`\`\`\n\n`;
+  // Fast path: only the replacements. A reply that is not a clean patch gives null here (no retries wasted).
+  try {
+    const patched = await askGemini<string | null>(
+      PATCHER,
+      head + `Change requested by the owner:\n${change}\n`,
+      onStatus,
+      "يعدّل التصميم (سريع)",
+      0.2,
+      (reply) => applyPatch(html, reply)
+    );
+    if (patched) return patched;
+  } catch {
+    // fall through to the full rewrite
+  }
   const prompt =
-    `App name: ${t.title}\n${platformLine(t)}\n${roleLine(t)}\n\nCurrent design:\n\`\`\`html\n${html}\n\`\`\`\n\n` +
+    head +
     `Change requested by the owner (apply it fully and precisely; keep everything else as it is unless the change ` +
     `needs it; keep the screens switcher):\n${change}\n`;
   return askGeminiHtml(DESIGNER, prompt, onStatus, "يعدّل التصميم", 0.5);

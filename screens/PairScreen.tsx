@@ -11,6 +11,7 @@ import { Button, Card, Chip, Field, IconButton, ListRow, Timeline, Banner, Sheet
 import { AppAvatar, LANG_ICONS, LangBadge } from "../components/appVisuals";
 import { LANGS, PAIR_LANGS, Lang } from "../services/langs";
 import { appExists } from "../services/appActions";
+import { takeGalleryPairPick } from "../services/galleryPick";
 import { createPair, pairApps, pairReadiness, PairReadiness, setAdminPin } from "../services/pair";
 import DesignStudio from "../components/DesignStudio";
 import DbProjectsPanel from "../components/DbProjectsPanel";
@@ -34,9 +35,11 @@ const EXAMPLES = [
 
 export default function PairScreen({ navigation, route }: RootScreenProps<"Pair">) {
   const insets = useSafeAreaInsets();
-  const [base, setBase] = useState("");
-  const [lang, setLang] = useState<Lang>("flutter");
-  const [description, setDescription] = useState("");
+  // A design picked in the gallery starts this pair (taken once).
+  const [picked] = useState(() => takeGalleryPairPick());
+  const [base, setBase] = useState(picked?.base ?? "");
+  const [lang, setLang] = useState<Lang>(picked?.lang ?? "flutter");
+  const [description, setDescription] = useState(picked?.description ?? "");
   const [refPic, setRefPic] = useState<{ uri: string; image: AiImage } | null>(null);
   const [admins, setAdmins] = useState("");
   const [pin, setPin] = useState("");
@@ -94,6 +97,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
     stage: "form" | "understand" | "design";
   };
   useEffect(() => {
+    if (picked) return; // started from a gallery design: don't offer an older draft over it
     loadWork<Work>("pair").then((w) => {
       if (!w || !(w.base || w.description)) return;
       Alert.alert("تكمّل اللي كنت شغال فيه؟", `عندك نظام ما كمّلته${w.base ? `: «${w.base}»` : ""}. تكمّل من مكانك؟`, [

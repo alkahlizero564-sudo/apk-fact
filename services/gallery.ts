@@ -127,7 +127,55 @@ export const PALETTES: Palette[] = [
   { key: "mint", name: "نعناعي فاتح", primary: "#059669", accent: "#7C3AED", bg: "#0b1512", surface: "#11211c", text: "#e9fff7", muted: "#89b2a4" },
 ];
 
-export type GalleryItem = { id: string; title: string; icon: IconName; lang: Lang; cat: Category; style: DesignStyle; palette: Palette };
+
+// Connected pairs (customer app + admin app on one backend). Same styles and palettes; picking one opens the pair
+// screen with the business described for BOTH apps and the visual identity to follow.
+export const PAIR_CATEGORIES: Category[] = [
+  { key: "p-restaurant", title: "مطعم وطلبات", icon: "restaurant-outline", name: "restaurant", lang: "flutter",
+    desc: "مطعم: الزبون يتصفح المنيو بالأقسام والصور والأسعار ويطلب (استلام أو توصيل) ويتابع حالة طلبه، والإدارة تستقبل الطلبات وتغيّر حالتها (جديد، قيد التحضير، في الطريق، تم التسليم) وتدير المنيو والأسعار والعروض." },
+  { key: "p-store", title: "متجر وتوصيل", icon: "bag-handle-outline", name: "store", lang: "flutter",
+    desc: "متجر: الزبون يتصفح المنتجات حسب التصنيف ويبحث ويضيف للسلة ويطلب مع عنوان التوصيل ويتابع الطلب، والإدارة تدير المنتجات والتصنيفات والمخزون وتستقبل الطلبات وتحدّث حالة التوصيل." },
+  { key: "p-grocery", title: "بقالة وسوبرماركت", icon: "basket-outline", name: "grocery", lang: "flutter",
+    desc: "بقالة: الزبون يتصفح الأقسام (خضار، فواكه، ألبان، معلّبات) ويطلب بالتوصيل ويتابع طلبه، والإدارة تدير الأصناف والأسعار والمخزون وتجهّز الطلبات وتحدّث حالتها." },
+  { key: "p-cafe", title: "كافيه وطلبات", icon: "cafe-outline", name: "cafe", lang: "flutter",
+    desc: "كافيه: الزبون يتصفح المشروبات والحلويات ويخصّص طلبه (الحجم، السكر، الإضافات) ويطلب ويجمع نقاط ولاء، والإدارة تستقبل الطلبات وتحدّث حالتها وتدير المنيو والنقاط." },
+  { key: "p-salon", title: "صالون وحجوزات", icon: "cut-outline", name: "salon", lang: "flutter",
+    desc: "صالون: الزبون يختار الخدمة واليوم والوقت المتاح ويحجز ويلغي حجزه، والإدارة تدير الخدمات والأسعار والمواعيد المتاحة وتؤكد أو ترفض الحجوزات." },
+  { key: "p-clinic", title: "عيادة ومواعيد", icon: "medkit-outline", name: "clinic", lang: "flutter",
+    desc: "عيادة: المريض يحجز موعداً مع الطبيب حسب التخصّص ويشوف مواعيده ونتائج الزيارات، والإدارة تدير الأطباء والمواعيد وتؤكد الحجوزات وتسجّل ملاحظات الزيارة." },
+  { key: "p-pharmacy", title: "صيدلية وطلبات", icon: "bandage-outline", name: "pharmacy", lang: "flutter",
+    desc: "صيدلية: الزبون يبحث عن الدواء ويطلبه (مع صورة الوصفة إن لزم) ويتابع التوصيل، والإدارة تدير الأصناف والمخزون وتراجع الطلبات والوصفات وتحدّث حالتها." },
+  { key: "p-gym", title: "نادٍ واشتراكات", icon: "barbell-outline", name: "gym", lang: "flutter",
+    desc: "نادٍ رياضي: العضو يشوف اشتراكه وجدول الحصص ويحجز حصة ويتابع تمارينه، والإدارة تدير الأعضاء والاشتراكات والحصص والمدرّبين وتؤكد الحجوزات." },
+  { key: "p-laundry", title: "مغسلة واستلام", icon: "shirt-outline", name: "laundry", lang: "flutter",
+    desc: "مغسلة: الزبون يختار الخدمات (غسيل، كي، تنظيف جاف) ويحدّد موعد الاستلام والتسليم بالعنوان ويتابع الطلب، والإدارة تستقبل الطلبات وتحدّث حالتها وتدير الأسعار." },
+  { key: "p-delivery", title: "توصيل ومندوبين", icon: "bicycle-outline", name: "delivery", lang: "flutter",
+    desc: "شركة توصيل: الزبون ينشئ طلب توصيل (من، إلى، وصف الشحنة) ويتابع حالته بخط زمني، والإدارة تستقبل الطلبات وتعيّنها وتحدّث حالاتها (تم الاستلام، في الطريق، تم التسليم)." },
+  { key: "p-school", title: "مدرسة وأولياء أمور", icon: "school-outline", name: "school", lang: "flutter",
+    desc: "مدرسة: وليّ الأمر يشوف حضور ودرجات ابنه والواجبات والإعلانات، والإدارة تسجّل الحضور والدرجات وتنشر الواجبات والإعلانات وتدير الطلاب والفصول." },
+  { key: "p-courses", title: "دورات وطلاب", icon: "book-outline", name: "courses", lang: "flutter",
+    desc: "مركز دورات: الطالب يتصفح الدورات ويسجّل فيها ويتابع دروسه وتقدّمه، والإدارة تدير الدورات والدروس والتسجيلات وتتابع الطلاب." },
+  { key: "p-realestate", title: "عقارات وطلبات معاينة", icon: "home-outline", name: "realestate", lang: "flutter",
+    desc: "مكتب عقارات: الزبون يتصفح العقارات بالصور والسعر والموقع ويطلب معاينة أو يستفسر، والإدارة تدير العقارات وتستقبل طلبات المعاينة والاستفسارات وتردّ عليها." },
+  { key: "p-cars", title: "تأجير سيارات", icon: "car-sport-outline", name: "carrental", lang: "flutter",
+    desc: "تأجير سيارات: الزبون يتصفح السيارات ويحجز بتواريخ الاستلام والإرجاع ويتابع حجزه، والإدارة تدير السيارات والأسعار والتوفّر وتؤكد أو ترفض الحجوزات." },
+  { key: "p-hotel", title: "فندق وحجوزات", icon: "bed-outline", name: "hotel", lang: "flutter",
+    desc: "فندق: الضيف يتصفح الغرف ويحجز بتواريخ الوصول والمغادرة ويطلب خدمات الغرف، والإدارة تدير الغرف والأسعار والحجوزات وتستقبل طلبات الخدمة." },
+  { key: "p-events", title: "فعاليات وتذاكر", icon: "ticket-outline", name: "events", lang: "flutter",
+    desc: "فعاليات: الزبون يتصفح الفعاليات ويحجز تذاكر ويشوف تذاكره، والإدارة تنشئ الفعاليات وتدير المقاعد والأسعار وتتابع الحجوزات." },
+  { key: "p-maintenance", title: "صيانة وطلبات خدمة", icon: "construct-outline", name: "maintenance", lang: "flutter",
+    desc: "شركة صيانة: الزبون يطلب خدمة (سباكة، كهرباء، تكييف) بوصف المشكلة والعنوان والموعد ويتابع الطلب، والإدارة تستقبل الطلبات وتعيّن الفنّي وتحدّث الحالة والتكلفة." },
+  { key: "p-bakery", title: "مخبز وطلبات", icon: "pizza-outline", name: "bakery", lang: "flutter",
+    desc: "مخبز وحلويات: الزبون يتصفح الأصناف ويطلب (أو يحجز طلباً خاصاً بموعد) ويتابع طلبه، والإدارة تدير الأصناف والأسعار وتستقبل الطلبات وتحدّث حالتها." },
+  { key: "p-charity", title: "جمعية وتبرّعات", icon: "heart-outline", name: "charity", lang: "flutter",
+    desc: "جمعية خيرية: المتبرّع يتصفح الحملات ويسجّل تبرّعه ويشوف تبرّعاته، والإدارة تنشئ الحملات وتتابع التبرّعات وتنشر التحديثات." },
+  { key: "p-support", title: "شكاوى وخدمة عملاء", icon: "chatbubbles-outline", name: "support", lang: "flutter",
+    desc: "خدمة عملاء: الزبون يفتح تذكرة (شكوى أو استفسار) ويتابع الردود، والإدارة تستقبل التذاكر وتردّ عليها وتغيّر حالتها (جديدة، قيد المعالجة، مغلقة)." },
+];
+
+export const PAIR_GALLERY_COUNT = PAIR_CATEGORIES.length * STYLES.length * PALETTES.length;
+
+export type GalleryItem = { id: string; title: string; icon: IconName; lang: Lang; cat: Category; style: DesignStyle; palette: Palette; pair?: boolean };
 
 export const GALLERY_COUNT = CATEGORIES.length * STYLES.length * PALETTES.length;
 
@@ -136,10 +184,10 @@ function makeItem(cat: Category, style: DesignStyle, palette: Palette): GalleryI
 }
 
 /** All gallery items (optionally filtered by a category key and/or a search query). Items are lightweight. */
-export function buildGallery(opts?: { category?: string; query?: string }): GalleryItem[] {
+export function buildGallery(opts?: { category?: string; query?: string; pair?: boolean }): GalleryItem[] {
   const q = (opts?.query ?? "").trim().toLowerCase();
   const out: GalleryItem[] = [];
-  for (const cat of CATEGORIES) {
+  for (const cat of opts?.pair ? PAIR_CATEGORIES : CATEGORIES) {
     if (opts?.category && opts.category !== "all" && cat.key !== opts.category) continue;
     for (const style of STYLES) {
       for (const palette of PALETTES) {
@@ -147,7 +195,7 @@ export function buildGallery(opts?: { category?: string; query?: string }): Gall
           const hay = `${cat.title} ${style.title} ${palette.name}`.toLowerCase();
           if (!hay.includes(q)) continue;
         }
-        out.push(makeItem(cat, style, palette));
+        out.push(opts?.pair ? { ...makeItem(cat, style, palette), pair: true } : makeItem(cat, style, palette));
       }
     }
   }
@@ -164,4 +212,15 @@ export function galleryTemplate(item: GalleryItem): Template {
     `الخلفية ${palette.bg}، الأسطح ${palette.surface}، النص ${palette.text}. ` +
     `التزم بهذا الطابع ولوحة الألوان في كل الشاشات، واجعل التصميم متقناً واحترافياً.`;
   return { id: item.id, title: item.title, icon: item.icon, color: palette.primary, lang: cat.lang, name: cat.name, description };
+}
+
+/** A picked PAIR design: the business for both apps plus the visual identity, to start the pair screen from. */
+export function galleryPairStart(item: GalleryItem): { base: string; lang: Lang; description: string } {
+  const { cat, style, palette } = item;
+  const description =
+    `${cat.desc}\n\n` +
+    `الهوية البصرية للتطبيقين (نفس الهوية في تطبيق الزبون وتطبيق الإدارة): ${style.directive}\n` +
+    `لوحة الألوان «${palette.name}»: الأساسي ${palette.primary}، المساعد ${palette.accent}، الخلفية ${palette.bg}، ` +
+    `الأسطح ${palette.surface}، النص ${palette.text}. التزم بهذا الطابع في كل شاشات التطبيقين.`;
+  return { base: cat.name, lang: cat.lang, description };
 }

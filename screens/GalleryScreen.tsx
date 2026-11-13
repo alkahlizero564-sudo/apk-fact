@@ -6,28 +6,51 @@ import { View, Text, StyleSheet, FlatList, Pressable, TextInput, ScrollView } fr
 import { Ionicons } from "@expo/vector-icons";
 import { colors, space, radius, type } from "../theme";
 import { Screen } from "../components/ui";
-import { buildGallery, galleryTemplate, CATEGORIES, GALLERY_COUNT, GalleryItem } from "../services/gallery";
-import { setGalleryPick, GALLERY_PICK } from "../services/galleryPick";
+import { buildGallery, galleryTemplate, galleryPairStart, CATEGORIES, PAIR_CATEGORIES, GALLERY_COUNT, PAIR_GALLERY_COUNT, GalleryItem } from "../services/gallery";
+import { setGalleryPick, setGalleryPairPick, GALLERY_PICK } from "../services/galleryPick";
 import type { RootScreenProps } from "../navigation";
 
 export default function GalleryScreen({ navigation }: RootScreenProps<"Gallery">) {
+  const [pair, setPair] = useState(false); // false: one app · true: connected pair (customer + admin)
   const [category, setCategory] = useState("all");
   const [query, setQuery] = useState("");
-  const data = useMemo(() => buildGallery({ category, query }), [category, query]);
+  const data = useMemo(() => buildGallery({ category, query, pair }), [category, query, pair]);
 
   function start(item: GalleryItem) {
+    if (item.pair) {
+      setGalleryPairPick(galleryPairStart(item));
+      navigation.navigate("Pair");
+      return;
+    }
     setGalleryPick(galleryTemplate(item));
     navigation.navigate("Create", { templateId: GALLERY_PICK });
   }
   function preview(item: GalleryItem) {
-    const t = galleryTemplate(item);
-    navigation.navigate("InstantPreview", { lang: item.lang, description: t.description, title: item.cat.title });
+    // For a pair the preview shows the customer app in that style.
+    const description = item.pair ? galleryPairStart(item).description : galleryTemplate(item).description;
+    navigation.navigate("InstantPreview", { lang: item.pair ? "html" : item.lang, description, title: item.cat.title });
+  }
+  function switchMode(p: boolean) {
+    setPair(p);
+    setCategory("all");
   }
 
-  const chips = [{ key: "all", title: "الكل" }, ...CATEGORIES.map((c) => ({ key: c.key, title: c.title }))];
+  const chips = [{ key: "all", title: "الكل" }, ...(pair ? PAIR_CATEGORIES : CATEGORIES).map((c) => ({ key: c.key, title: c.title }))];
+  const count = pair ? PAIR_GALLERY_COUNT : GALLERY_COUNT;
 
   return (
-    <Screen title="معرض التصاميم" subtitle={`${GALLERY_COUNT.toLocaleString("ar-EG")} تصميم جاهز — اختر وابدأ`} scroll={false} onBack={() => navigation.goBack()}>
+    <Screen title="معرض التصاميم" subtitle={`${count.toLocaleString("ar-EG")} ${pair ? "تصميم لتطبيقين متصلين (زبون + إدارة)" : "تصميم جاهز"} — اختر وابدأ`} scroll={false} onBack={() => navigation.goBack()}>
+      <View style={styles.modes}>
+        <Pressable onPress={() => switchMode(false)} style={[styles.mode, !pair && styles.modeOn]}>
+          <Ionicons name="phone-portrait-outline" size={16} color={!pair ? colors.primaryText : colors.textMuted} />
+          <Text style={[styles.modeText, !pair && styles.modeTextOn]}>تطبيق واحد</Text>
+        </Pressable>
+        <Pressable onPress={() => switchMode(true)} style={[styles.mode, pair && styles.modeOn]}>
+          <Ionicons name="git-merge-outline" size={16} color={pair ? colors.primaryText : colors.textMuted} />
+          <Text style={[styles.modeText, pair && styles.modeTextOn]}>زبون + إدارة</Text>
+        </Pressable>
+      </View>
+
       <View style={styles.searchRow}>
         <Ionicons name="search" size={18} color={colors.textMuted} />
         <TextInput
@@ -100,7 +123,7 @@ function Tile({ item, onStart, onPreview }: { item: GalleryItem; onStart: () => 
       <View style={styles.tileFooter}>
         <View style={{ flex: 1 }}>
           <Text style={styles.tileTitle} numberOfLines={1}>{item.cat.title}</Text>
-          <Text style={styles.tileSub} numberOfLines={1}>{item.style.title} · {item.palette.name}</Text>
+          <Text style={styles.tileSub} numberOfLines={1}>{item.pair ? "زبون + إدارة · " : ""}{item.style.title} · {item.palette.name}</Text>
         </View>
         <Pressable onPress={onPreview} hitSlop={8} style={styles.eye}>
           <Ionicons name="eye-outline" size={18} color={colors.textMuted} />
@@ -111,6 +134,11 @@ function Tile({ item, onStart, onPreview }: { item: GalleryItem; onStart: () => 
 }
 
 const styles = StyleSheet.create({
+  modes: { flexDirection: "row-reverse", gap: space.sm, marginHorizontal: space.lg, marginTop: space.sm },
+  mode: { flex: 1, flexDirection: "row-reverse", alignItems: "center", justifyContent: "center", gap: 6, height: 40, borderRadius: radius.field, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  modeOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+  modeText: { ...type.hint, color: colors.textMuted, fontWeight: "800" },
+  modeTextOn: { color: colors.primaryText },
   searchRow: { flexDirection: "row-reverse", alignItems: "center", gap: space.sm, marginHorizontal: space.lg, marginTop: space.sm, paddingHorizontal: space.md, height: 44, backgroundColor: colors.surface, borderRadius: radius.field, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   search: { flex: 1, color: colors.text, ...type.body },
   chips: { flexDirection: "row-reverse", gap: space.sm, paddingHorizontal: space.lg, paddingVertical: space.sm },

@@ -9,7 +9,10 @@ import { thinkingConfigFor, markThinkingUnsupported } from "./geminiThink";
 // A reference image the owner attached to their description (base64 + mime), sent to the AI as vision input.
 export type AiImage = { data: string; mime: string };
 
-const FALLBACK_MODELS = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"];
+// Speed: the fastest model is tried first for the interactive steps (preview/design/understand), falling back to
+// the stronger ones only if it fails. The owner's explicit model choice (GEMINI_MODEL) still wins when set.
+const FAST_MODEL = "gemini-3.5-flash-lite";
+const FALLBACK_MODELS = [FAST_MODEL, "gemini-3.8-flash", "gemini-3.5-flash"];
 const CACHE_PREFIX = "instant-preview:";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

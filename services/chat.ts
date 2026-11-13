@@ -16,7 +16,8 @@ export type ChatSpec = {
   description: string; // the full, detailed brief in the owner's language
 };
 
-const MODELS = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"];
+// Speed: fastest model first (the owner's explicit GEMINI_MODEL still wins when set), stronger ones as fallback.
+const MODELS = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash"];
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function keys(): Promise<string[]> {

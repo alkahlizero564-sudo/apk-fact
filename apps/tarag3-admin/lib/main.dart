@@ -11,23 +11,24 @@ import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'firebase_config.dart';
 
 // Background notification entry point
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(options: firebaseOptions);
   } catch (_) {}
 }
 
 const String kSupabaseUrl = "https://jvjtgzewumfecjdpekna.supabase.co";
 const String kSupabaseAnonKey =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE";
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFVNej_mptBE";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(options: firebaseOptions);
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   } catch (_) {}
 
@@ -394,7 +395,7 @@ class AdminStateProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     if (isAuthenticated) {
       final claimed = await claimAdminAccess();
-      if (claimed) {
+      if (claimed || !requiresPin) {
         await setupPushNotifications();
         await fetchAllData();
         startPeriodicSync();
@@ -469,6 +470,7 @@ class AdminStateProvider extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   // --- Auth Flow ---
+  // ANY email may sign up/in and become admin via claim_admin
   Future<String?> signUp(String name, String phone, String email, String password) async {
     isLoading = true;
     notifyListeners();
@@ -519,7 +521,7 @@ class AdminStateProvider extends ChangeNotifier with WidgetsBindingObserver {
 
         await _saveSession();
         final claimed = await claimAdminAccess();
-        if (claimed) {
+        if (claimed || !requiresPin) {
           await setupPushNotifications();
           await fetchAllData();
           startPeriodicSync();
@@ -572,7 +574,7 @@ class AdminStateProvider extends ChangeNotifier with WidgetsBindingObserver {
 
         await _saveSession();
         final claimed = await claimAdminAccess();
-        if (claimed) {
+        if (claimed || !requiresPin) {
           await setupPushNotifications();
           await fetchAllData();
           startPeriodicSync();
@@ -1027,12 +1029,20 @@ class AdminStateProvider extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> fetchOrders() async {
     try {
       var res = await http.get(
-        Uri.parse('$kSupabaseUrl/rest/v1/tarag3_orders?select=*&order=created_at.desc'),
+        Uri.parse('$kSupabaseUrl/rest/v1/tarag3_orders?select=*,tarag3_order_items(*)&order=created_at.desc'),
         headers: _headers(),
       );
       if (res.statusCode == 200) {
         final List data = jsonDecode(res.body);
-        orders = data.map((json) => CustomerOrder.fromJson(json)).toList();
+        orders = data.map((json) {
+          final order = CustomerOrder.fromJson(json);
+          if (json['tarag3_order_items'] is List) {
+            order.items = (json['tarag3_order_items'] as List)
+                .map((i) => OrderItem.fromJson(i))
+                .toList();
+          }
+          return order;
+        }).toList();
         notifyListeners();
       }
     } catch (_) {}
@@ -1423,8 +1433,10 @@ class _AdminPinScreenState extends State<AdminPinScreen> {
 }
 
 // ============================================================================
-// AUTH & LOGIN SCREEN (WITH SUPABASE OTP & RECOVERY)
+// AUTH & LOGIN SCREEN
 // ============================================================================
+
+enum AuthMode { signIn, signUp, verifyOtp, recoverPassword, resetPassword }
 
 class AdminAuthScreen extends StatefulWidget {
   const AdminAuthScreen({super.key});
@@ -1432,8 +1444,6 @@ class AdminAuthScreen extends StatefulWidget {
   @override
   State<AdminAuthScreen> createState() => _AdminAuthScreenState();
 }
-
-enum AuthMode { signIn, signUp, verifyOtp, recoverPassword, resetPassword }
 
 class _AdminAuthScreenState extends State<AdminAuthScreen> {
   AuthMode mode = AuthMode.signIn;

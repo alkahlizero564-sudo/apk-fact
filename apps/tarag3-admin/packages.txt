@@ -1,7 +1,0 @@
-shared_preferences
-http
-intl
-cached_network_image
-firebase_core
-firebase_messaging
-image_picker

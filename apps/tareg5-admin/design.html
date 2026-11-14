@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>DMC Diala - تطبيق الإدارة</title>
+  <style>
+    /* Cairo Font and Global CSS Tokens (RTL & Material 3 dynamic tonal system) */
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
+
+    :root {
+      --font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+      /* Specified Brand Palette */
+      --primary-dark: #0A2F6B;        /* Admin Header & Main Hero Surface */
+      --primary: #0A47A8;             /* Action Buttons & Selection */
+      --primary-container: #DCE3F9;   /* M3 Nav Active Pill & Highlights */
+      --on-primary-container: #001945;
+      --cyan-teal: #00B8C4;           /* Notifications & Accents */
+      --cyan-light: #E0F7F9;
+      --bg-main: #F3F7FC;             /* App Main Background */
+      --surface-white: #FFFFFF;       /* White Cards */
+      --border-color: #E1E9F3;        /* Thin Card Borders */
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      
+      /* Status Badges */
+      --status-blue-bg: #E0F2FE;
+      --status-blue-fg: #0369A1;
+      --status-green-bg: #DCFCE7;
+      --status-green-fg: #15803D;
+      --status-red-bg: #FEE2E2;
+      --status-red-fg: #B91C1C;
+      --status-amber-bg: #FEF3C7;
+      --status-amber-fg: #B45309;
+      
+      /* Elevation & Material Shapes */
+      --radius-xs: 4px;
+      --radius-s: 8px;
+      --radius-m: 16px;
+      --radius-l: 24px;
+      --radius-xl: 28px;
+      --shadow-sm: 0 2px 8px rgba(10, 47, 107, 0.05);
+      --shadow-md: 0 4px 16px rgba(10, 47, 107, 0.08);
+      --shadow-lg: 0 8px 24px rgba(10, 47, 107, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-family);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #0b1329;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: var(--text-main);
+      overflow-x: hidden;
+    }
+
+    /* Screen Switcher Bar (id="apkfact-screens") */
+    #apkfact-screens {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 48px;
+      background: rgba(10, 15, 30, 0.92);
+      backdrop-filter: blur(10px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    #apkfact-screens::-webkit-scrollbar { display: none; }
+    
+    .screen-pill {
+      background: rgba(255, 255, 255, 0.12);
+      color: #CBD5E1;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+    .screen-pill.active {
+      background: var(--cyan-teal);
+      color: #002D32;
+      border-color: rgba(255,255,255,0.4);
+      font-weight: 700;
+    }
+
+    /* App Frame Container (Phone dimension) */
+    .app-frame {
+      width: 100%;
+      max-width: 412px;
+      height: 840px;
+      background: var(--bg-main);
+      margin-top: 50px;
+      border-radius: 36px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 8px solid #1E293B;
+    }
+
+    /* Status Bar Simulation */
+    .status-bar {
+      height: 28px;
+      background: var(--primary-dark);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #FFFFFF;
+      z-index: 100;
+    }
+
+    /* Screen Views Canvas */
+    .app-content {
+      flex: 1;
+      position: relative;
+      overflow-y: auto;
+      background: var(--bg-main);
+      scrollbar-width: none;
+    }
+    .app-content::-webkit-scrollbar { display: none; }
+
+    .view-screen {
+      display: none;
+      min-height: 100%;
+      padding-bottom: 90px;
+      animation: fadeIn 0.22s ease-out;
+    }
+    .view-screen.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Admin Header: Deep Blue #0A2F6B with White Text & Logo */
+    .admin-header {
+      background: var(--primary-dark);
+      color: white;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 12px rgba(10, 47, 107, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: 90;
+    }
+    .logo-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .dmc-logo-badge {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #0A47A8, #00B8C4);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 900;
+      font-size: 15px;
+      letter-spacing: 0.5px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+    }
+    .brand-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: white;
+      line-height: 1.2;
+    }
+    .brand-subtitle {
+      font-size: 11px;
+      color: #93C5FD;
+      font-weight: 500;
+    }
+
+    .icon-btn-header {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      cursor: pointer;
+      position: relative;
+    }
+    .icon-btn-header:active { background: rgba(255,255,255,0.25); }
+
+    /* Material 3 Bottom Navigation Bar */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 72px;
+      background: var(--surface-white);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 100;
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.05);
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      color: var(--text-muted);
+      cursor: pointer;
+      width: 20%;
+      position: relative;
+    }
+    .nav-item.active {
+      color: var(--primary-dark);
+    }
+    .nav-icon-pill {
+      padding: 4px 16px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .nav-item.active .nav-icon-pill {
+      background: var(--primary-container);
+      color: var(--primary-dark);
+    }
+    .nav-label {
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* M3 Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .badge-blue { background: var(--status-blue-bg); color: var(--status-blue-fg); }
+    .badge-green { background: var(--status-green-bg); color: var(--status-green-fg); }
+    .badge-red { background: var(--status-red-bg); color: var(--status-red-fg); }
+    .badge-amber { background: var(--status-amber-bg); color: var(--status-amber-fg); }
+
+    /* Generic Cards */
+    .card-white {
+      background: var(--surface-white);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-m);
+      padding: 16px;
+      margin: 12px 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .card-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Form Controls and Buttons */
+    .form-group {
+      margin-bottom: 12px;
+    }
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+    .form-input, .form-select {
+      width: 100%;
+      height: 46px;
+      background: var(--surface-white);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-s);
+      padding: 0 12px;
+      font-size: 14px;
+      color: var(--text-main);
+      outline: none;
+    }
+    .form-input:focus, .form-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(10, 71, 168, 0.12);
+    }
+
+    .btn-primary {
+      height: 46px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-s);
+      font-size: 14px;
+      font-weight: 700;
+      width: 100%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(10, 71, 168, 0.2);
+    }
+    .btn-primary:active { background: var(--primary-dark); }
+
+    .btn-cyan {
+      height: 44px;
+      background: var(--cyan-teal);
+      color: #002D32;
+      border: none;
+      border-radius: var(--radius-s);
+      font-size: 13px;
+      font-weight: 800;
+      width: 100%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-outlined {
+      height: 40px;
+      background: transparent;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      border-radius: var(--radius-s);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 0 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    /* Metric Key-Performance Indicators Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 0 16px;
+      margin-top: 12px;
+    }
+    .kpi-card {
+      background: var(--surface-white);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-m);
+      padding: 14px;
+      box-shadow: var(--shadow-sm);
+    }
+    .kpi-val {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--primary-dark);
+      margin: 4px 0 2px 0;
+    }
+    .kpi-lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* List Filters Pill Row */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+    
+    .filter-pill {
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: var(--surface-white);
+      border: 1px solid var(--border-color);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .filter-pill.active {
+      background: var(--primary-dark);
+      color: white;
+      border-color: var(--primary-dark);
+    }
+
+    /* Modal / Sheet Overlay */
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 20, 40, 0.6);
+      backdrop-filter: blur(2px);
+      z-index: 200;
+      display: none;
+      align-items: flex-end;
+    }
+    .modal-overlay.active { display: flex; }
+    .bottom-sheet {
+      background: var(--surface-white);
+      width: 100%;
+      border-radius: 28px 28px 0 0;
+      padding: 20px;
+      max-height: 85%;
+      overflow-y: auto;
+      animation: slideUp 0.25s ease-out;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    /* Skeletons and Empty States */
+    .skeleton-box {
+      background: linear-gradient(90deg, #E1E9F3 25%, #EDF3F9 50%, #E1E9F3 75%);
+      background-size: 200% 100%;
+      animation: skeletonPulse 1.5s infinite;
+      border-radius: 8px;
+    }
+    @keyframes skeletonPulse {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .empty-card {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .empty-icon {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: var(--cyan-light);
+      color: var(--cyan-teal);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Screen Switcher Bar (Fixed top bar for testing all views) -->
+  <div id="apkfact-screens">
+    <div class="screen-pill active" onclick="switchView('screen-dashboard', this)">لوحة التحكم</div>
+    <div class="screen-pill" onclick="switchView('screen-orders', this)">إدارة الطلبات</div>
+    <div class="screen-pill" onclick="switchView('screen-order-detail', this)">تفاصيل الطلب</div>
+    <div class="screen-pill" onclick="switchView('screen-products', this)">إدارة المنتجات</div>
+    <div class="screen-pill" onclick="switchView('screen-product-add', this)">إضافة / تعديل منتج</div>
+    <div class="screen-pill" onclick="switchView('screen-purchases', this)">سجل المشتريات</div>
+    <div class="screen-pill" onclick="switchView('screen-purchase-add', this)">إضافة فاتورة مورد</div>
+    <div class="screen-pill" onclick="switchView('screen-reports', this)">التقارير المالية</div>
+    <div class="screen-pill" onclick="switchView('screen-promos', this)">العروض والأسعار</div>
+    <div class="screen-pill" onclick="switchView('screen-customers', this)">قائمة الزبائن</div>
+    <div class="screen-pill" onclick="switchView('screen-notifications', this)">الإشعارات</div>
+    <div class="screen-pill" onclick="switchView('screen-settings', this)">الإعدادات</div>
+    <div class="screen-pill" onclick="switchView('screen-login', this)">تسجيل الدخول</div>
+    <div class="screen-pill" onclick="switchView('screen-otp', this)">رمز التأكيد</div>
+    <div class="screen-pill" onclick="switchView('screen-empty', this)">حالة فارغة</div>
+    <div class="screen-pill" onclick="switchView('screen-loading', this)">جاري التحميل</div>
+  </div>
+
+  <!-- Mobile Screen Shell -->
+  <div class="app-frame">
+
+    <!-- Status Bar (Simulated Phone Top) -->
+    <div class="status-bar">
+      <span>10:30</span>
+      <div style="display: flex; gap: 4px; align-items: center;">
+        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.2 19.54 10.55 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
+        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14h2v2h-2zm0-10h2v8h-2z"/></svg>
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+      </div>
+    </div>
+
+    <!-- Scrollable Screen Area -->
+    <div class="app-content">
+
+      <!-- 1) DASHBOARD SCREEN (DMC Admin Main) -->
+      <div id="screen-dashboard" class="view-screen active">
+        <!-- Blue Header #0A2F6B -->
+        <header class="admin-header">
+          <div class="logo-brand">
+            <div class="dmc-logo-badge">DMC</div>
+            <div>
+              <div class="brand-title">DMC Diala - الإدارة</div>
+              <div class="brand-subtitle">لوحة التحكم والمراقبة</div>
+            </div>
+          </div>
+          <button class="icon-btn-header" onclick="switchView('screen-notifications')">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+            <span style="position: absolute; top: 6px; left: 6px; width: 8px; height: 8px; background: var(--cyan-teal); border-radius: 50%;"></span>
+          </button>
+        </header>
+
+        <!-- New Orders Counter Pill -->
+        <div style="margin: 12px 16px 0 16px; background: #E0F2FE; border: 1px solid #7DD3FC; padding: 12px 16px; border-radius: var(--radius-m); display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="background: var(--primary-dark); color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;">5</div>
+            <div>
+              <div style="font-size: 13px; font-weight: 800; color: var(--primary-dark);">طلبات جديدة بانتظار التجهيز</div>
+              <div style="font-size: 11px; color: var(--text-muted);">تستوجب المراجعة والتأكيد</div>
+            </div>
+          </div>
+          <button class="btn-outlined" style="background: white;" onclick="switchView('screen-orders')">عرض الكل</button>
+        </div>
+
+        <!-- KPI Cards Grid -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="badge badge-green">المبيعات</span>
+            <div class="kpi-val">1,840,000</div>
+            <div class="kpi-lbl">مبيعات الشهر (ج.س)</div>
+          </div>
+          <div class="kpi-card">
+            <span class="badge badge-blue">المنتجات</span>
+            <div class="kpi-val">128 صنف</div>
+            <div class="kpi-lbl">المتوفر في المخزن</div>
+          </div>
+        </div>
+
+        <!-- USD Dynamic Rate Card (Core Setting) -->
+        <div class="card-white">
+          <div class="card-header-row">
+            <div class="card-title">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              سعر الدولار اليوم ($1 USD)
+            </div>
+            <span class="badge badge-amber">تأثير مباشر</span>
+          </div>
+          <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px;">
+            تغيير هذا السعر يؤدي لتحديث أسعار كافة المنتجات بالجنيه السوداني فوراً في تطبيق الزبون.
+          </p>
+          <div style="display: flex; gap: 8px;">
+            <div style="position: relative; flex: 1;">
+              <input type="number" id="usd-rate-input" class="form-input" value="600" style="font-weight: 800; font-size: 16px; text-align: center;">
+              <span style="position: absolute; left: 10px; top: 12px; font-size: 11px; font-weight: 700; color: var(--text-muted);">ج.س</span>
+            </div>
+            <button class="btn-primary" style="width: auto; padding: 0 18px;" onclick="updateUsdRate()">
+              تحديث الأسعار
+            </button>
+          </div>
+        </div>
+
+        <!-- Delivery Areas & Rates Card -->
+        <div class="card-white">
+          <div class="card-header-row">
+            <div class="card-title">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              مناطق التوصيل وأسعارها
+            </div>
+            <button class="btn-outlined" style="height: 32px; padding: 0 8px;" onclick="openAddAreaModal()">+ إضافة منطقة</button>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px;" id="delivery-areas-list">
+            <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-main); padding: 8px 12px; border-radius: var(--radius-s);">
+              <span style="font-size: 13px; font-weight: 700;">بربر</span>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <input type="text" class="form-input" value="4,000" style="width: 80px; height: 32px; text-align: center; font-size: 12px; font-weight: 700;">
+                <span style="font-size: 11px; color: var(--text-muted);">ج.س</span>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-main); padding: 8px 12px; border-radius: var(--radius-s);">
+              <span style="font-size: 13px; font-weight: 700;">الدامر</span>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <input type="text" class="form-input" value="2,500" style="width: 80px; height: 32px; text-align: center; font-size: 12px; font-weight: 700;">
+                <span style="font-size: 11px; color: var(--text-muted);">ج.س</span>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-main); padding: 8px 12px; border-radius: var(--radius-s);">
+              <span style="font-size: 13px; font-weight: 700;">عطبرة</span>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <input type="text" class="form-input" value="3,000" style="width: 80px; height: 32px; text-align: center; font-size: 12px; font-weight: 700;">
+                <span style="font-size: 11px; color: var(--text-muted);">ج.س</span>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-main); padding: 8px 12px; border-radius: var(--radius-s);">
+              <span style="font-size: 13px; font-weight: 700;">أبوحمد</span>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <input type="text" class="form-input" value="6,000" style="width: 80px; height: 32px; text-align: center; font-size: 12px; font-weight: 700;">
+                <span style="font-size: 11px; color: var(--text-muted);">ج.س</span>
+              </div>
+            </div>
+          </div>
+          <button class="btn-primary" style="margin-top: 10px; height: 40px;" onclick="alert('تم حفظ أجور التوصيل المعدلة');">حفظ أجور التوصيل</button>
+        </div>
+      </div>
+
+      <!-- 2) ORDERS MANAGEMENT SCREEN -->
+      <div id="screen-orders" class="view-screen">
+        <header class="admin-header">
+          <div class="brand-title">إدارة طلبات الزبائن</div>
+          <span class="badge badge-green">8 طلبات جارية</span>
+        </header>
+
+        <!-- Filters -->
+        <div class="filter-bar">
+          <div class="filter-pill active">الكل (12)</div>
+          <div class="filter-pill">جديد (5)</div>
+          <div class="filter-pill">قيد التجهيز (3)</div>
+          <div class="filter-pill">في الطريق (2)</div>
+          <div class="filter-pill">تم (2)</div>
+        </div>
+
+        <!-- Order List Items -->
+        <div style="padding: 0 16px;">
+          <!-- Order Card 1 -->
+          <div class="card-white" style="margin: 0 0 12px 0; cursor: pointer;" onclick="switchView('screen-order-detail')">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px; margin-bottom: 8px;">
+              <div>
+                <span style="font-size: 14px; font-weight: 800; color: var(--primary-dark);">طلب #DMC-8942</span>
+                <span style="font-size: 11px; color: var(--text-muted); display: block;">العميل: د. أحمد مصطفى</span>
+              </div>
+              <span class="badge badge-amber">جديد</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-main); margin-bottom: 6px;">
+              <strong>المنطقة:</strong> عطبرة - حي المطار
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+              <span style="font-size: 14px; font-weight: 800; color: var(--primary);">48,000 ج.س</span>
+              <button class="btn-outlined" style="height: 32px; font-size: 11px;">عرض والتجهيز &larr;</button>
+            </div>
+          </div>
+
+          <!-- Order Card 2 -->
+          <div class="card-white" style="margin: 0 0 12px 0; cursor: pointer;" onclick="switchView('screen-order-detail')">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px; margin-bottom: 8px;">
+              <div>
+                <span style="font-size: 14px; font-weight: 800; color: var(--primary-dark);">طلب #DMC-8939</span>
+                <span style="font-size: 11px; color: var(--text-muted); display: block;">العميل: م. سارة علي</span>
+              </div>
+              <span class="badge badge-blue">قيد التجهيز</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-main); margin-bottom: 6px;">
+              <strong>المنطقة:</strong> الدامر - السوق الكبير
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+              <span style="font-size: 14px; font-weight: 800; color: var(--primary);">12,500 ج.س</span>
+              <button class="btn-outlined" style="height: 32px; font-size: 11px;">عرض والتجهيز &larr;</button>
+            </div>
+          </div>
+
+          <!-- Order Card 3 -->
+          <div class="card-white" style="margin: 0 0 12px 0; cursor: pointer;" onclick="switchView('screen-order-detail')">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px; margin-bottom: 8px;">
+              <div>
+                <span style="font-size: 14px; font-weight: 800; color: var(--primary-dark);">طلب #DMC-8930</span>
+                <span style="font-size: 11px; color: var(--text-muted); display: block;">العميل: د. طارق الكباشي</span>
+              </div>
+              <span class="badge badge-green">تم التسليم</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-main); margin-bottom: 6px;">
+              <strong>المنطقة:</strong> بربر
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+              <span style="font-size: 14px; font-weight: 800; color: var(--primary);">76,000 ج.س</span>
+              <button class="btn-outlined" style="height: 32px; font-size: 11px;">الفاتورة &larr;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3) ORDER DETAILS & STATUS UPDATE -->
+      <div id="screen-order-detail" class="view-screen">
+        <header class="admin-header">
+          <button class="icon-btn-header" onclick="switchView('screen-orders')">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+          </button>
+          <div class="brand-title">تفاصيل الطلب #DMC-8942</div>
+          <div style="width: 40px;"></div>
+        </header>
+
+        <div class="card-white">
+          <div class="card-header-row">
+            <div>
+              <div style="font-size: 15px; font-weight: 800; color: var(--primary-dark);">د. أحمد مصطفى الهادي</div>
+              <div style="font-size: 12px; color: var(--text-muted);">هاتف: 0912345678</div>
+            </div>
+            <span class="badge badge-amber">حالة: جديد</span>
+          </div>
+
+          <div style="background: var(--bg-main); padding: 10px; border-radius: var(--radius-s); font-size: 12px; margin-bottom: 12px;">
+            <div><strong>المنطقة والعنوان:</strong> عطبرة - حي المطار (قرب التأمين)</div>
+            <div><strong>طريقة الدفع:</strong> كاش عند الاستلام</div>
+            <div><strong>تاريخ الطلب:</strong> اليوم - 10:15 AM</div>
+          </div>
+
+          <div style="font-size: 13px; font-weight: 800; margin-bottom: 8px; color: var(--primary-dark);">أصناف الطلب:</div>
+          
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px;">
+            <thead>
+              <tr style="background: var(--bg-main); text-align: right;">
+                <th style="padding: 6px;">الصنف</th>
+                <th style="padding: 6px;">العدد</th>
+                <th style="padding: 6px;">الإجمالي</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 6px;">جهاز ضغط رقمي Beurer</td>
+                <td style="padding: 6px;">1</td>
+                <td style="padding: 6px;">27,000 ج.س</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 6px;">شرائط فحص السكر Accu-Chek</td>
+                <td style="padding: 6px;">2</td>
+                <td style="padding: 6px;">18,000 ج.س</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="border-top: 1px solid var(--border-color); padding-top: 8px; font-size: 13px;">
+            <div style="display: flex; justify-content: space-between; color: var(--text-muted);">
+              <span>مجموع المنتجات:</span>
+              <span>45,000 ج.س</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; color: var(--text-muted);">
+              <span>أجور التوصيل (عطبرة):</span>
+              <span>3,000 ج.س</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 15px; color: var(--primary-dark); margin-top: 4px;">
+              <span>المطلوب كلياً:</span>
+              <span>48,000 ج.س</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Change Actions -->
+        <div class="card-white">
+          <div class="card-title" style="margin-bottom: 10px;">تغيير حالة الطلب في قاعدة البيانات</div>
+          <div class="form-group">
+            <select class="form-select" id="order-status-select" style="font-weight: 700;">
+              <option value="new">جديد (بانتظار الموافقة)</option>
+              <option value="preparing" selected>قيد التجهيز</option>
+              <option value="on_the_way">في الطريق مع المندوب</option>
+              <option value="completed">تم التسليم والقبض</option>
+            </select>
+          </div>
+          <button class="btn-primary" onclick="alert('تم تحديث حالة الطلب وإرسال إشعار للزبون'); switchView('screen-orders');">
+            تحديث الحالة وإرسال إشعار للزبون
+          </button>
+        </div>
+      </div>
+
+      <!-- 4) PRODUCTS MANAGEMENT SCREEN -->
+      <div id="screen-products" class="view-screen">
+        <header class="admin-header">
+          <div class="brand-title">إدارة المنتجات والمخزون</div>
+          <button class="btn-cyan" style="width: auto; padding: 0 12px; height: 34px;" onclick="switchView('screen-product-add')">+ صنف جديد</button>
+        </header>
+
+        <div class="filter-bar">
+          <div class="filter-pill active">الكل</div>
+          <div class="filter-pill">معدات</div>
+          <div class="filter-pill">مستهلكات</div>
+          <div class="filter-pill">مختبر</div>
+          <div class="filter-pill">مخفي</div>
+        </div>
+
+        <div style="padding: 0 16px;">
+          <!-- Product Row 1 -->
+          <div class="card-white" style="margin: 0 0 10px 0; padding: 12px;">
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <div style="width: 50px; height: 50px; background: var(--bg-main); border-radius: var(--radius-s); display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+              <div style="flex: 1;">
+                <div style="font-size: 13px; font-weight: 800; color: var(--primary-dark);">جهاز ضغط رقمي Beurer</div>
+                <div style="font-size: 11px; color: var(--text-muted);">$45.00 &bull; الكمية: 24 قطعة</div>
+                <div style="font-size: 12px; font-weight: 700; color: var(--primary);">27,000 ج.س ($1 = 600)</div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
+                <span class="badge badge-green">ظاهر</span>
+                <button class="btn-outlined" style="height: 28px; padding: 0 8px; font-size: 11px;" onclick="switchView('screen-product-add')">تعديل</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Product Row 2 -->
+          <div class="card-white" style="margin: 0 0 10px 0; padding: 12px;">
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <div style="width: 50px; height: 50px; background: var(--bg-main); border-radius: var(--radius-s); display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+              </div>
+              <div style="flex: 1;">
+                <div style="font-size: 13px; font-weight: 800; color: var(--primary-dark);">شرائط فحص السكر Accu-Chek</div>
+                <div style="font-size: 11px; color: var(--text-muted);">$15.00 &bull; الكمية: 110 علبة</div>
+                <div style="font-size: 12px; font-weight: 700; color: var(--primary);">9,000 ج.س ($1 = 600)</div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
+                <span class="badge badge-green">ظاهر</span>
+                <button class="btn-outlined" style="height: 28px; padding: 0 8px; font-size: 11px;" onclick="switchView('screen-product-add')">تعديل</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Product Row 3 (Hidden) -->
+          <div class="card-white" style="margin: 0 0 10px 0; padding: 12px; opacity: 0.85;">
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <div style="width: 50px; height: 50px; background: #F1F5F9; border-radius: var(--radius-s); display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+              </div>
+              <div style="flex: 1;">
+                <div style="font-size: 13px; font-weight: 800; color: var(--text-main);">سماعة طبية Littmann</div>
+                <div style="font-size: 11px; color: var(--text-muted);">$120.00 &bull; الكمية: 0 (نفذت)</div>
+                <div style="font-size: 12px; font-weight: 700; color: var(--primary);">72,000 ج.س</div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
+                <span class="badge badge-red">مخفي</span>
+                <button class="btn-outlined" style="height: 28px; padding: 0 8px; font-size: 11px;" onclick="switchView('screen-product-add')">تعديل</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5) ADD / EDIT PRODUCT SCREEN -->
+      <div id="screen-product-add" class="view-screen">
+        <header class="admin-header">
+          <button class="icon-btn-header" onclick="switchView('screen-products')">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+          </button>
+          <div class="brand-title">إضافة / تعديل منتج</div>
+          <div style="width: 40px;"></div>
+        </header>
+
+        <div class="card-white">
+          <div class="form-group">
+            <label class="form-label">اسم المنتج الأصلي</label>
+            <input type="text" class="form-input" value="جهاز قياس ضغط الدم الرقمي Beurer BM45">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">القسم الرئيسي</label>
+            <select class="form-select">
+              <option>معدات طبية</option>
+              <option>مستهلكات طبية</option>
+              <option>مختبرات وتشخيص</option>
+            </select>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="form-group">
+              <label class="form-label">السعر بالدولار ($)</label>
+              <input type="number" class="form-input" value="45.00">
+            </div>
+            <div class="form-group">
+              <label class="form-label">الكمية المتوفرة</label>
+              <input type="number" class="form-input" value="24">
+            </div>
+          </div>
+
+          <div style="background: var(--bg-main); padding: 10px; border-radius: var(--radius-s); font-size: 12px; margin-bottom: 12px; color: var(--primary-dark);">
+            السعر المحسوب للزبون تلقائياً = <strong>27,000 ج.س</strong> (بناءً على سعر $1 = 600)
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">حالة الظهور للزبائن</label>
+            <select class="form-select">
+              <option value="visible" selected>ظاهر في المتجر</option>
+              <option value="hidden">مخفي من المتجر</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">صورة المنتج</label>
+            <div style="border: 2px dashed var(--border-color); padding: 16px; border-radius: var(--radius-s); text-align: center; background: #FAF9F6; cursor: pointer;">
+              <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color: var(--primary);"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <div style="font-size: 12px; font-weight: 700; color: var(--primary-dark); margin-top: 4px;">اضغط لرفع صورة جديدة</div>
+            </div>
+          </div>
+
+          <button class="btn-primary" onclick="alert('تم حفظ بيانات المنتج بملف قاعدة البيانات'); switchView('screen-products');">
+            حفظ المنتج في Supabase
+          </button>
+        </div>
+      </div>
+
+      <!-- 6) PURCHASES MANAGEMENT SCREEN -->
+      <div id="screen-purchases" class="view-screen">
+        <header class="admin-header">
+          <div class="brand-title">سجل المشتريات وفواتير الموردين</div>
+          <button class="btn-cyan" style="width: auto; padding: 0 10px; height: 34px;" onclick="switchView('screen-purchase-add')">+ فاتورة مورد</button>
+        </header>
+
+        <div style="padding: 12px 16px 0 16px;">
+          <!-- Purchase Record 1 -->
+          <div class="card-white" style="margin: 0 0 12px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 14px; font-weight: 800; color: var(--primary-dark);">مورد: شركة الفارابي الطبية</span>
+              <span class="badge badge-green">مدفوع كاش</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">
+              التاريخ: 12 أكتوبر 2023 &bull; المبلغ: <strong>$2,450 USD</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; color: var(--cyan-teal); font-weight: 700;">مرفق صورة الفاتورة</span>
+              <button class="btn-outlined" style="height: 30px; font-size: 11px;">عرض التفاصيل</button>
+            </div>
+          </div>
+
+          <!-- Purchase Record 2 -->
+          <div class="card-white" style="margin: 0 0 12px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 14px; font-weight: 800; color: var(--primary-dark);">مورد: شركة النيل للتجهيزات</span>
+              <span class="badge badge-red">آجل (متبقي)</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">
+              التاريخ: 01 أكتوبر 2023 &bull; المبلغ: <strong>$1,800 USD</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11px; color: var(--status-red-fg); font-weight: 700;">تاريخ الاستحقاق: 30 أكتوبر</span>
+              <button class="btn-outlined" style="height: 30px; font-size: 11px;">عرض التفاصيل</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7) ADD SUPPLIER PURCHASE SCREEN -->
+      <div id="screen-purchase-add" class="view-screen">
+        <header class="admin-header">
+          <button class="icon-btn-header" onclick="switchView('screen-purchases')">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+          </button>
+          <div class="brand-title">إضافة فاتورة مشتريات مورد</div>
+          <div style="width: 40px;"></div>
+        </header>
+
+        <div class="card-white">
+          <div class="form-group">
+            <label class="form-label">اسم المورد / الشركة</label>
+            <input type="text" class="form-input" placeholder="مثال: شركة النيلين للمستلزمات الطبية">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="form-group">
+              <label class="form-label">المبلغ الكلي ($ USD)</label>
+              <input type="number" class="form-input" placeholder="1500">
+            </div>
+            <div class="form-group">
+              <label class="form-label">تاريخ الفاتورة</label>
+              <input type="date" class="form-input">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">حالة الدفع</label>
+            <select class="form-select">
+              <option value="paid">مدفوع بالكامل</option>
+              <option value="credit">آجل (غير مدفوع)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">صورة فاتورة المورد</label>
+            <div style="border: 2px dashed var(--border-color); padding: 20px; border-radius: var(--radius-s); text-align: center; background: #FAF9F6; cursor: pointer;">
+              <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color: var(--primary);"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <div style="font-size: 12px; font-weight: 700; color: var(--primary-dark); margin-top: 4px;">التقاط أو رفع صورة الفاتورة</div>
+            </div>
+          </div>
+
+          <button class="btn-primary" onclick="alert('تمت إضافة فاتورة المورد لسجل المشتريات'); switchView('screen-purchases');">
+            تأكيد وحفظ الفاتورة
+          </button>
+        </div>
+      </div>
+
+      <!-- 8) FINANCIAL REPORTS SCREEN -->
+      <div id="screen-reports" class="view-screen">
+        <header class="admin-header">
+          <div class="brand-title">التقارير المالية والحسابات</div>
+          <span class="badge badge-blue">DMC Analytics</span>
+        </header>
+
+        <div style="padding: 12px 16px 0 16px;">
+          <!-- SVG Financial Chart Representation -->
+          <div class="card-white" style="margin: 0 0 12px 0;">
+            <div class="card-header-row">
+              <div class="card-title">مبيعات الأسابيع الأخيرة (ج.س)</div>
+              <span style="font-size: 11px; font-weight: 700; color: var(--primary);">تحديث فوري</span>
+            </div>
+            
+            <div style="height: 140px; display: flex; align-items: flex-end; gap: 12px; padding: 10px 0; justify-content: space-between;">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;">
+                <div style="height: 60px; width: 100%; background: var(--primary-container); border-radius: 4px;"></div>
+                <span style="font-size: 10px; color: var(--text-muted);">الأسبوع 1</span>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;">
+                <div style="height: 90px; width: 100%; background: var(--primary-container); border-radius: 4px;"></div>
+                <span style="font-size: 10px; color: var(--text-muted);">الأسبوع 2</span>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;">
+                <div style="height: 75px; width: 100%; background: var(--primary-container); border-radius: 4px;"></div>
+                <span style="font-size: 10px; color: var(--text-muted);">الأسبوع 3</span>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;">
+                <div style="height: 120px; width: 100%; background: var(--primary); border-radius: 4px;"></div>
+                <span style="font-size: 10px; font-weight: 800; color: var(--primary-dark);">الحالي</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Summary Financial Metrics Table -->
+          <div class="card-white" style="margin: 0 0 12px 0;">
+            <div class="card-title" style="margin-bottom: 12px;">ملخص الأرباح والمصروفات</div>
+            
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 13px;">
+              <span style="color: var(--text-muted);">إجمالي المبيعات المحصلة</span>
+              <span style="font-weight: 800; color: var(--status-green-fg);">+ 1,840,000 ج.س</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 13px;">
+              <span style="color: var(--text-muted);">فاتورة مشتريات الموردين</span>
+              <span style="font-weight: 800; color: var(--status-red-fg);">- 1,220,000 ج.س</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 13px;">
+              <span style="color: var(--text-muted);">رسوم التوصيل المسددة للمناديب</span>
+              <span style="font-weight: 800; color: var(--status-amber-fg);">- 95,000 ج.س</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 10px 0 0 0; font-size: 15px; font-weight: 800; color: var(--primary-dark);">
+              <span>صافي الأرباح التقديري</span>
+              <span>525,000 ج.س</span>
+            </div>
+          </div>
+
+          <button class="btn-outlined" style="width: 100%;" onclick="alert('جاري تصدير التقرير المالي كملف PDF...');">
+            تحميل التقرير المالي المفصل (PDF)
+          </button>
+        </div>
+      </div>
+
+      <!-- 9) PROMOTIONS AND OFFERS SCREEN -->
+      <div id="screen-promos" class="view-screen">
+        <header class="admin-header">
+          <div class="brand-title">العروض والأسعار والإعلانات</div>
+          <span class="badge badge-green">بث مباشر للزبائن</span>
+        </header>
+
+        <div class="card-white">
+          <div class="card-title" style="margin-bottom: 12px;">إرسال عرض أو تخفيض جديد للزبائن</div>
+          
+          <div class="form-group">
+            <label class="form-label">عنوان الإعلان / العرض</label>
+            <input type="text" class="form-input" value="تخفيض خاص على أجهزة قياس الضغط">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">تفاصيل العرض والرسالة</label>
+            <textarea class="form-input" style="height: 80px; padding: 8px;" placeholder="اكتب تفاصيل الخصومات والمستهدفين...">احصل على خصم 10% عند طلب جهاز ضغط الدم Beurer مع علبة شرائط فحص سكر مجاناً. العرض ساري حتى نهاية الأسبوع!</textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">ربطه بمنتج معين (اختياري)</label>
+            <select class="form-select">
+              <option>جهاز قياس ضغط الدم Beurer</option>
+              <option>شرائط فحص السكر Accu-Chek</option>
+            </select>
+          </div>
+
+          <button class="btn-cyan" style="margin-top: 10px;" onclick="alert('تم إرسال إشعار العرض الجديد لجميع كافة تطبيقات الزبائن!');">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
+            إرسال العرض كـ Notification لجميع الزبائن
+          </button>
+        </div>
+      </div>
+
+      <!-- 10) CUSTOMERS LIST SCREEN -->
+      <div id="screen-customers" class="view-screen">
+        <header class="admin-header">
+          <div class="brand-title">قائمة الزبائن المسجلين</div>
+          <span class="badge badge-blue">48 عميل</span>
+        </header>
+
+        <div style="padding: 12px 16px 0 16px;">
+          <!-- Customer 1 -->
+          <div class="card-white" style="margin: 0 0 10px 0; padding: 12px;">
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-container); color: var(--primary-dark); font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 14px;">
+                أ
+              </div>
+              <div style="flex: 1;">
+                <div style="font-size: 13px; font-weight: 800; color: var(--primary-dark);">د. أحمد مصطفى الهادي</div>
+                <div style="font-size: 11px; color: var(--text-muted);">0912345678 &bull; ahmed@example.com</div>
+              </div>
+              <span class="badge badge-green">3 طلبات</span>
+            </div>
+          </div>
+
+          <!-- Customer 2 -->
+          <div class="card-white" style="margin: 0 0 10px 0; padding: 12px;">
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--cyan-light); color: #005B60; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 14px;">
+                س
+              </div>
+              <div style="flex: 1;">
+                <div style="font-size: 13px; font-weight: 800; color: var(--primary-dark);">م. سارة علي عثمان</div>
+                <div style="font-size: 11px; color: var(--text-muted);">0998765432 &bull; sara@example.com</div>
+              </div>
+              <span class="badge badge-green">1 طلب</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 11) NOTIFICATIONS INBOX SCREEN -->
+      <div id="screen-notifications" class="view-screen">
+        <header class="admin-header">
+          <div class="brand-title">صندوق إشعارات الإدارة</div>
+          <span class="badge badge-cyan" style="background: var(--cyan-light); color: #005B60;">تحديث مباشر</span>
+        </header>
+
+        <div style="padding: 12px 16px 0 16px;">
+          <div class="card-white" style="margin: 0 0 10px 0; border-right: 4px solid var(--primary);">
+            <div style="font-size: 13px; font-weight: 800; color: var(--primary-dark);">طلب جديد من د. أحمد مصطفى</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">قام بطلب جهاز ضغط وشرائط سكر بقيمة 48,000 ج.س</div>
+            <div style="font-size: 10px; color: var(--cyan-teal); font-weight: 700; margin-top: 4px;">منذ 10 دقائق</div>
+          </div>
+
+          <div class="card-white" style="margin: 0 0 10px 0; border-right: 4px solid var(--cyan-teal);">
+            <div style="font-size: 13px; font-weight: 800; color: var(--primary-dark);">تحديث سعر الدولار اليوم</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">تم اعتماد سعر 600 ج.س للدولار وتعديل الأسعار تلقائياً.</div>
+            <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">اليوم 08:00 AM</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 12) SETTINGS SCREEN -->
+      <div id="screen-settings" class="view-screen">
+        <header class="admin-header">
+          <div class="brand-title">إعدادات نظام DMC</div>
+        </header>
+
+        <div class="card-white">
+          <div class="card-title" style="margin-bottom: 12px;">بيانات المحل والنظام</div>
+          
+          <div style="display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
+            <div class="dmc-logo-badge" style="width: 50px; height: 50px; font-size: 18px;">DMC</div>
+            <div>
+              <div style="font-size: 14px; font-weight: 800; color: var(--primary-dark);">Diala Medical & Chemical</div>
+              <div style="font-size: 11px; color: var(--text-muted);">معدات ومستهلكات طبية - عطبرة</div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+              <span>ربط قاعدة البيانات Supabase</span>
+              <span class="badge badge-green">متصل (Active)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+              <span>النسخ الاحتياطي التلقائي</span>
+              <span class="badge badge-blue">مفعل يومياً</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+              <span>كلمة مرور لوحة الإدارة</span>
+              <button class="btn-outlined" style="height: 30px; font-size: 11px;">تغيير</button>
+            </div>
+          </div>
+
+          <button class="btn-outlined" style="margin-top: 20px; width: 100%; color: var(--status-red-fg); border-color: var(--status-red-fg);" onclick="switchView('screen-login')">
+            تسجيل الخروج من الإدارة
+          </button>
+        </div>
+      </div>
+
+      <!-- 13) ADMIN LOGIN SCREEN -->
+      <div id="screen-login" class="view-screen">
+        <div style="padding: 30px 20px; text-align: center;">
+          <div class="dmc-logo-badge" style="width: 70px; height: 70px; font-size: 24px; margin: 20px auto 12px auto;">DMC</div>
+          <h2 style="font-size: 20px; font-weight: 800; color: var(--primary-dark);">تسجيل دخول الإدارة</h2>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 24px;">نظام إدارة DMC Diala Medical Equipment</p>
+
+          <div class="card-white" style="text-align: right; margin: 0;">
+            <div class="form-group">
+              <label class="form-label">اسم المستخدم / البريد الإلكتروني</label>
+              <input type="email" class="form-input" value="admin@dmc-sd.com">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">كلمة المرور الخاصة بالمدير</label>
+              <input type="password" class="form-input" value="••••••••">
+            </div>
+
+            <button class="btn-primary" style="margin-top: 10px;" onclick="switchView('screen-otp')">
+              المتابعة ورسالة التنشيط
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 14) CONFIRMATION OTP SCREEN -->
+      <div id="screen-otp" class="view-screen">
+        <div style="padding: 30px 20px; text-align: center;">
+          <h3 style="font-size: 18px; font-weight: 800; color: var(--primary-dark); margin-bottom: 8px;">رمز تأكيد الدخول (OTP)</h3>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 20px;">أدخل الرمز المكون من 4 أرقام الذي تم إرساله لبريدك</p>
+
+          <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 24px; dir: ltr;">
+            <input type="text" maxlength="1" value="8" style="width: 48px; height: 50px; text-align: center; font-size: 20px; font-weight: 800; border: 1px solid var(--border-color); border-radius: var(--radius-s);">
+            <input type="text" maxlength="1" value="4" style="width: 48px; height: 50px; text-align: center; font-size: 20px; font-weight: 800; border: 1px solid var(--border-color); border-radius: var(--radius-s);">
+            <input type="text" maxlength="1" value="2" style="width: 48px; height: 50px; text-align: center; font-size: 20px; font-weight: 800; border: 1px solid var(--border-color); border-radius: var(--radius-s);">
+            <input type="text" maxlength="1" value="0" style="width: 48px; height: 50px; text-align: center; font-size: 20px; font-weight: 800; border: 1px solid var(--border-color); border-radius: var(--radius-s);">
+          </div>
+
+          <button class="btn-primary" onclick="switchView('screen-dashboard')">
+            تأكيد والدخول للوحة التحكم
+          </button>
+        </div>
+      </div>
+
+      <!-- 15) EMPTY STATE -->
+      <div id="screen-empty" class="view-screen">
+        <header class="admin-header">
+          <div class="brand-title">حالة فارغة</div>
+        </header>
+
+        <div class="empty-card">
+          <div class="empty-icon">
+            <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+          </div>
+          <h3 style="font-size: 16px; font-weight: 800; color: var(--primary-dark); margin-bottom: 6px;">لا توجد سجلات حالياً</h3>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">لم يتم العثور على أي معلومات في هذا القسم بعد.</p>
+          <button class="btn-primary" style="max-width: 200px; margin: 0 auto;" onclick="switchView('screen-dashboard')">العودة للرئيسية</button>
+        </div>
+      </div>
+
+      <!-- 16) LOADING SKELETON STATE -->
+      <div id="screen-loading" class="view-screen">
+        <header class="admin-header">
+          <div class="brand-title">جاري تحميل البيانات...</div>
+        </header>
+
+        <div style="padding: 16px;">
+          <div class="skeleton-box" style="height: 80px; margin-bottom: 12px;"></div>
+          <div class="skeleton-box" style="height: 120px; margin-bottom: 12px;"></div>
+          <div class="skeleton-box" style="height: 60px; margin-bottom: 12px;"></div>
+          <div class="skeleton-box" style="height: 160px;"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- M3 Bottom Navigation Bar (Fixed - Admin App) -->
+    <nav class="bottom-nav">
+      <div class="nav-item active" onclick="switchView('screen-dashboard', this, 'nav')">
+        <div class="nav-icon-pill">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+        </div>
+        <span class="nav-label">الرئيسية</span>
+      </div>
+
+      <div class="nav-item" onclick="switchView('screen-orders', this, 'nav')">
+        <div class="nav-icon-pill">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        </div>
+        <span class="nav-label">الطلبات</span>
+      </div>
+
+      <div class="nav-item" onclick="switchView('screen-products', this, 'nav')">
+        <div class="nav-icon-pill">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        </div>
+        <span class="nav-label">المنتجات</span>
+      </div>
+
+      <div class="nav-item" onclick="switchView('screen-purchases', this, 'nav')">
+        <div class="nav-icon-pill">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        </div>
+        <span class="nav-label">المشتريات</span>
+      </div>
+
+      <div class="nav-item" onclick="switchView('screen-reports', this, 'nav')">
+        <div class="nav-icon-pill">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        </div>
+        <span class="nav-label">التقارير</span>
+      </div>
+    </nav>
+
+  </div>
+
+  <!-- Modal for Adding Delivery Area -->
+  <div class="modal-overlay" id="area-modal">
+    <div class="bottom-sheet">
+      <h3 style="font-size: 16px; font-weight: 800; color: var(--primary-dark); margin-bottom: 12px;">إضافة منطقة توصيل جديدة</h3>
+      <div class="form-group">
+        <label class="form-label">اسم المنطقة</label>
+        <input type="text" id="new-area-name" class="form-input" placeholder="مثال: شندي">
+      </div>
+      <div class="form-group">
+        <label class="form-label">تكلفة التوصيل (ج.س)</label>
+        <input type="number" id="new-area-price" class="form-input" placeholder="5000">
+      </div>
+      <button class="btn-primary" onclick="saveNewArea()">حفظ المنطقة</button>
+    </div>
+  </div>
+
+  <!-- Prototype Interactive JavaScript -->
+  <script>
+    function switchView(viewId, el, source) {
+      // Hide all view screens
+      const screens = document.querySelectorAll('.view-screen');
+      screens.forEach(screen => screen.classList.remove('active'));
+
+      // Show target screen
+      const target = document.getElementById(viewId);
+      if (target) {
+        target.classList.add('active');
+      }
+
+      // Update Screen Switcher pills if triggered from top bar
+      if (source !== 'nav' && el) {
+        const pills = document.querySelectorAll('.screen-pill');
+        pills.forEach(p => p.classList.remove('active'));
+        el.classList.add('active');
+      }
+
+      // Update Bottom Navigation items active state
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(item => item.classList.remove('active'));
+
+      if (viewId === 'screen-dashboard') navItems[0]?.classList.add('active');
+      else if (viewId === 'screen-orders' || viewId === 'screen-order-detail') navItems[1]?.classList.add('active');
+      else if (viewId === 'screen-products' || viewId === 'screen-product-add') navItems[2]?.classList.add('active');
+      else if (viewId === 'screen-purchases' || viewId === 'screen-purchase-add') navItems[3]?.classList.add('active');
+      else if (viewId === 'screen-reports') navItems[4]?.classList.add('active');
+    }
+
+    function updateUsdRate() {
+      const val = document.getElementById('usd-rate-input').value;
+      alert(`تم التحديث! سعر الدولار الجديد: ${val} ج.س.\nتم تحديث أسعار جميع المنتجات تلقائياً في تطبيقات الزبائن.`);
+    }
+
+    function openAddAreaModal() {
+      document.getElementById('area-modal').classList.add('active');
+    }
+
+    function saveNewArea() {
+      const name = document.getElementById('new-area-name').value;
+      const price = document.getElementById('new-area-price').value;
+      if (!name || !price) {
+        alert('الرجاء كتابة الاسم والسعر');
+        return;
+      }
+      const container = document.getElementById('delivery-areas-list');
+      const div = document.createElement('div');
+      div.style.cssText = "display: flex; justify-content: space-between; align-items: center; background: var(--bg-main); padding: 8px 12px; border-radius: var(--radius-s);";
+      div.innerHTML = `
+        <span style="font-size: 13px; font-weight: 700;">${name}</span>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <input type="text" class="form-input" value="${Number(price).toLocaleString()}" style="width: 80px; height: 32px; text-align: center; font-size: 12px; font-weight: 700;">
+          <span style="font-size: 11px; color: var(--text-muted);">ج.س</span>
+        </div>
+      `;
+      container.appendChild(div);
+      document.getElementById('area-modal').classList.remove('active');
+    }
+
+    // Modal dismiss on backdrop click
+    document.getElementById('area-modal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        this.classList.remove('active');
+      }
+    });
+  </script>
+</body>
+</html>

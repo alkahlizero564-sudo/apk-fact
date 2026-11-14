@@ -3,20 +3,21 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart' as intl_pkg;
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'firebase_config.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(options: firebaseOptions);
   } catch (e) {
     debugPrint("Firebase background init warning: $e");
   }
@@ -31,7 +32,7 @@ void main() async {
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(options: firebaseOptions);
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   } catch (e) {
     debugPrint("Firebase init warning: $e");
@@ -416,21 +417,41 @@ class AppState with ChangeNotifier, WidgetsBindingObserver {
   }
 
   Future<void> checkAdminAccess() async {
+    if (userId == null) return;
     try {
+      // First read profile
+      final profRes1 = await authenticatedRequest('GET', "$kSupabaseUrl/rest/v1/tareg5_profiles?id=eq.$userId");
+      String role = '';
+      if (profRes1.statusCode == 200) {
+        final List pData = json.decode(profRes1.body);
+        if (pData.isNotEmpty) {
+          role = pData.first['role'] ?? '';
+        }
+      }
+
+      // Call claim_admin with empty body {}
       final res = await authenticatedRequest(
         'POST',
         "$kSupabaseUrl/rest/v1/rpc/tareg5_claim_admin",
         body: json.encode({}),
       );
-      if (res.statusCode == 200) {
-        final val = json.decode(res.body);
-        if (val == true) {
-          isAdmin = true;
-          requiresPin = false;
-        } else {
-          requiresPin = true;
+
+      // Re-read profile
+      final profRes2 = await authenticatedRequest('GET', "$kSupabaseUrl/rest/v1/tareg5_profiles?id=eq.$userId");
+      if (profRes2.statusCode == 200) {
+        final List pData = json.decode(profRes2.body);
+        if (pData.isNotEmpty) {
+          role = pData.first['role'] ?? role;
+          userFullName = pData.first['full_name'] ?? userFullName;
+          userPhone = pData.first['phone'] ?? userPhone;
         }
+      }
+
+      if (role == 'admin') {
+        isAdmin = true;
+        requiresPin = false;
       } else {
+        isAdmin = false;
         requiresPin = true;
       }
     } catch (e) {
@@ -499,7 +520,7 @@ class AppState with ChangeNotifier, WidgetsBindingObserver {
     if (requestType == 'verify') {
       return 'رمز التأكيد غير صحيح أو انتهت صلاحيته';
     } else if (requestType == 'signup' || requestType == 'resend' || requestType == 'recover') {
-      return 'تعذر إرسال رمز التأكيد، يرجى المحاولة لاحقاً';
+      return 'ما قدرنا نرسل البريد';
     }
     return 'حدث خطأ في الاتصال بالسيرفر (${response.statusCode})';
   }
@@ -760,6 +781,23 @@ class AppState with ChangeNotifier, WidgetsBindingObserver {
     } catch (_) {}
   }
 
+  Future<bool> markNotificationRead(int id) async {
+    try {
+      final nowStr = DateTime.now().toIso8601String();
+      final res = await authenticatedRequest(
+        'PATCH',
+        "$kSupabaseUrl/rest/v1/tareg5_notifications?id=eq.$id",
+        body: json.encode({"read_at": nowStr}),
+      );
+      if (res.statusCode == 200 || res.statusCode == 204) {
+        await fetchNotifications();
+        notifyListeners();
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
   Future<bool> broadcastPromo(String title, String body) async {
     try {
       final res = await authenticatedRequest(
@@ -887,9 +925,9 @@ class _AuthScreenState extends State<AuthScreen> {
   final _confirmPassCtrl = TextEditingController();
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
-  
-  final List<TextEditingController> _otpControllers = List.generate(4, (_) => TextEditingController());
-  final List<FocusNode> _otpFocusNodes = List.generate(4, (_) => FocusNode());
+
+  final List<TextEditingController> _otpControllers = List.generate(6, (_) => TextEditingController());
+  final List<FocusNode> _otpFocusNodes = List.generate(6, (_) => FocusNode());
 
   bool showPassword = false;
   bool showConfirmPassword = false;
@@ -937,6 +975,14 @@ class _AuthScreenState extends State<AuthScreen> {
     final state = context.read<AppState>();
     final email = _emailCtrl.text.trim();
     final pass = _passCtrl.text.trim();
+
+    if (email.isEmpty) {
+      setState(() {
+        errorMsg = "يرجى كتابة البريد الإلكتروني";
+        loading = false;
+      });
+      return;
+    }
 
     if (flowState == AuthFlowState.signUp) {
       if (_nameCtrl.text.trim().isEmpty) {
@@ -1006,7 +1052,7 @@ class _AuthScreenState extends State<AuthScreen> {
             await prefs.setString('refresh_token', data['refresh_token']);
           }
           await prefs.setString('user_id', data['user']['id']);
-          await prefs.setString('user_email', data['user']['email']);
+          await prefs.setString('user_email', data['user']['email'] ?? email);
 
           await state.initSession();
         } else {
@@ -1038,7 +1084,9 @@ class _AuthScreenState extends State<AuthScreen> {
       );
       if (res.statusCode == 200) {
         _startResendTimer();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إعادة إرسال رمز التأكيد لبريدك')));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إعادة إرسال رمز التأكيد لبريدك')));
+        }
       } else {
         setState(() => errorMsg = state.parseErrorMessage(res, 'resend'));
       }
@@ -1049,8 +1097,8 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> verifyOtp() async {
     final otpCode = _otpControllers.map((c) => c.text).join();
-    if (otpCode.length < 4) {
-      setState(() => errorMsg = "يرجى إكمال رمز التأكيد المكون من 4 أرقام");
+    if (otpCode.length < 6) {
+      setState(() => errorMsg = "يرجى إكمال رمز التأكيد المكون من 6 أرقام");
       return;
     }
 
@@ -1090,7 +1138,7 @@ class _AuthScreenState extends State<AuthScreen> {
           await prefs.setString('refresh_token', data['refresh_token']);
         }
         await prefs.setString('user_id', data['user']['id']);
-        await prefs.setString('user_email', data['user']['email']);
+        await prefs.setString('user_email', data['user']['email'] ?? _emailCtrl.text.trim());
 
         await state.initSession();
       } else {
@@ -1109,6 +1157,7 @@ class _AuthScreenState extends State<AuthScreen> {
       setState(() => errorMsg = "يرجى كتابة البريد الإلكتروني");
       return;
     }
+
     setState(() {
       loading = true;
       errorMsg = null;
@@ -1124,7 +1173,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
       if (res.statusCode == 200) {
         setState(() {
-          flowState = AuthFlowState.resetPassword;
+          flowState = AuthFlowState.otp;
           loading = false;
         });
         _startResendTimer();
@@ -1163,7 +1212,9 @@ class _AuthScreenState extends State<AuthScreen> {
       );
 
       if (res.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث كلمة المرور بنجاح!')));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تحديث كلمة المرور بنجاح!')));
+        }
         await state.initSession();
       } else {
         setState(() => errorMsg = state.parseErrorMessage(res, 'update'));
@@ -1209,12 +1260,16 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    isOtp ? 'رمز تأكيد الدخول (OTP)' : (flowState == AuthFlowState.signUp ? 'إنشاء حساب مسؤول جديد' : 'تسجيل دخول الإدارة'),
+                    isOtp
+                        ? 'بعتنا رمز على بريدك'
+                        : (flowState == AuthFlowState.signUp
+                            ? 'حساب جديد'
+                            : (flowState == AuthFlowState.forgotPassword ? 'نسيت كلمة المرور' : 'تسجيل الدخول')),
                     style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF0A2F6B)),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    isOtp ? 'أدخل الرمز المكون من 4 أرقام الذي تم إرساله لبريدك' : 'نظام إدارة DMC Diala Medical Equipment',
+                    isOtp ? 'أدخل الرمز المكون من 6 أرقام الذي تم إرساله لبريدك' : 'نظام إدارة DMC Diala Medical Equipment',
                     style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                     textAlign: TextAlign.center,
                   ),
@@ -1234,24 +1289,25 @@ class _AuthScreenState extends State<AuthScreen> {
                       textDirection: TextDirection.ltr,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(4, (index) {
+                        children: List.generate(6, (index) {
                           return Container(
-                            width: 48,
-                            height: 50,
-                            margin: const EdgeInsets.symmetric(horizontal: 5),
+                            width: 38,
+                            height: 46,
+                            margin: const EdgeInsets.symmetric(horizontal: 3),
                             child: TextField(
                               controller: _otpControllers[index],
                               focusNode: _otpFocusNodes[index],
                               maxLength: 1,
                               textAlign: TextAlign.center,
                               keyboardType: TextInputType.number,
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                               decoration: const InputDecoration(
                                 counterText: '',
                                 border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.zero,
                               ),
                               onChanged: (value) {
-                                if (value.isNotEmpty && index < 3) {
+                                if (value.isNotEmpty && index < 5) {
                                   _otpFocusNodes[index + 1].requestFocus();
                                 } else if (value.isEmpty && index > 0) {
                                   _otpFocusNodes[index - 1].requestFocus();
@@ -1370,14 +1426,14 @@ class _AuthScreenState extends State<AuthScreen> {
                     TextField(
                       controller: _emailCtrl,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(labelText: 'اسم المستخدم / البريد الإلكتروني', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(labelText: 'البريد الإلكتروني', border: OutlineInputBorder(), prefixIcon: Icon(Icons.email)),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: _passCtrl,
                       obscureText: !showPassword,
                       decoration: InputDecoration(
-                        labelText: 'كلمة المرور الخاصة بالمدير',
+                        labelText: 'كلمة المرور',
                         border: const OutlineInputBorder(),
                         suffixIcon: IconButton(
                           icon: Icon(showPassword ? Icons.visibility_off : Icons.visibility),
@@ -1422,7 +1478,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         ),
                         child: loading
                             ? const CircularProgressIndicator(color: Colors.white)
-                            : Text(flowState == AuthFlowState.signUp ? 'إنشاء حساب مسؤول جديد' : 'المتابعة ورسالة التنشيط', style: const TextStyle(fontWeight: FontWeight.w700)),
+                            : Text(flowState == AuthFlowState.signUp ? 'إنشاء حساب جديد' : 'تسجيل الدخول', style: const TextStyle(fontWeight: FontWeight.w700)),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -1431,7 +1487,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         flowState = flowState == AuthFlowState.signUp ? AuthFlowState.signIn : AuthFlowState.signUp;
                         errorMsg = null;
                       }),
-                      child: Text(flowState == AuthFlowState.signUp ? 'لديك حساب بالفعل؟ سجل دخول' : 'ليس لديك حساب؟ التسجيل كمسؤول'),
+                      child: Text(flowState == AuthFlowState.signUp ? 'لديك حساب بالفعل؟ تسجيل الدخول' : 'حساب جديد'),
                     )
                   ]
                 ],
@@ -1466,9 +1522,9 @@ class _PinUnlockScreenState extends State<PinUnlockScreen> {
             children: [
               const Icon(Icons.lock_person, size: 60, color: Color(0xFF0A2F6B)),
               const SizedBox(height: 16),
-              const Text('رمز الإدارة المطلوب', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0A2F6B))),
+              const Text('دخول الإدارة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0A2F6B))),
               const SizedBox(height: 8),
-              const Text('أدخل رمز الصلاحية الخاص بالإدارة للمتابعة', style: TextStyle(color: Colors.grey)),
+              const Text('أدخل رمز الإدارة للمتابعة', style: TextStyle(color: Colors.grey)),
               const SizedBox(height: 20),
               SizedBox(
                 width: 250,
@@ -1479,6 +1535,7 @@ class _PinUnlockScreenState extends State<PinUnlockScreen> {
                   textAlign: TextAlign.center,
                   style: const TextStyle(letterSpacing: 10, fontSize: 24, fontWeight: FontWeight.bold),
                   decoration: InputDecoration(
+                    labelText: 'رمز الإدارة',
                     border: const OutlineInputBorder(),
                     errorText: error ? 'رمز الإدارة غير صحيح' : null,
                   ),
@@ -2884,21 +2941,39 @@ class NotificationsInboxScreen extends StatelessWidget {
         itemCount: state.notifications.length,
         itemBuilder: (context, index) {
           final n = state.notifications[index];
-          return Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE1E9F3)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(n.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0A2F6B))),
-                const SizedBox(height: 2),
-                Text(n.body, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-              ],
+          return InkWell(
+            onTap: () {
+              if (!n.isRead) {
+                state.markNotificationRead(n.id);
+              }
+            },
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: n.isRead ? Colors.white : const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE1E9F3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(n.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0A2F6B))),
+                      if (!n.isRead)
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(color: Color(0xFF0A47A8), shape: BoxShape.circle),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(n.body, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                ],
+              ),
             ),
           );
         },

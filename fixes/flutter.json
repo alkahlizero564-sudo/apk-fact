@@ -173,5 +173,12 @@
   "error": "error • Undefined name 'CrossAlignment'. Try correcting the name to one that is defined, or defining the name • lib/main.dart:2974:45 • undefined_identifier",
   "source": "ai",
   "uses": 0
+ },
+ {
+  "old": "Colors.white90",
+  "new": "Color(0xE6FFFFFF)",
+  "error": "error • Arguments of a constant creation must be constant expressions. Try making the argument a valid constant, or use 'new' to call the constructor • lib/main.dart:1631:57 • const_with_non_constant_",
+  "source": "ai",
+  "uses": 0
  }
 ]

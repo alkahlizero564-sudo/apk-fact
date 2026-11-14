@@ -1,0 +1,172 @@
+{
+ "pair": "tarag4",
+ "prefix": "tarag4",
+ "lang": "flutter",
+ "push": true,
+ "admins": [
+  "awadaljied8@gmail.com"
+ ],
+ "description": "تطبيقان لمحل DMC (Diala Medical & Chemical Equipment) لبيع المعدات والمستهلكات الطبية،\n\nالتصميم:\n- عربي بالكامل، واتجاه من اليمين لليسار، وخط Cairo.\n- الألوان: أزرق غامق #0A2F6B للهيدر في الإدارة، أزرق #0A47A8 للأزرار، أخضر مائل للأزرق #00B8C4 للإشعارات، خلفية #F3F7FC، كروت بيضاء بحواف مدورة وحد خفيف #E1E9F3.\n- شعار DMC في الهيدر (ملف الشعار المرفق).\n- أزرار بارتفاع 44 على الأقل، وشريط تنقل سفلي ثابت.\n- شارات الحالة: أزرق للعادي، أخضر للمتوفر والمدفوع، أحمر للنفاد والآجل.\n\nقاعدة البيانات (Supabase):\n- products: الاسم، القسم، السعر بالدولار، الكمية، الصورة، ظاهر أو مخفي.\n- settings: سعر الدولار اليوم.\n- delivery_areas: اسم المنطقة، سعر التوصيل.\n- orders وorder_items: بيانات الزبون، المنطقة، المنتجات، الإجمالي، الحالة.\n- purchases: المورد، التاريخ، المبلغ، حالة الدفع، صورة الفاتورة.\n- customers.\n\nسعر المنتج بالجنيه = سعر الدولار × سعر الدولار اليوم، ويتحسب تلقائياً في تطبيق الزبون.\nتطبيق الزبون: يشوف المنتجات ويطلب ويتابع طلبه. شريط التنقل السفلي: الرئيسية، السلة، طلباتي، تواصل.\nالشاشات:\n1) الرئيسية: هيدر أبيض فيه الشعار واسم DMC وسطر \"معدات ومستهلكات طبية\" وزر إشعارات. تحته بحث، وأقسام (الكل، معدات، مستهلكات، مختبر)، وشريط أخضر فاتح \"التوصيل إلى: [المنطقة]\" مع رسومها، وكروت منتجات في عمودين (صورة، اسم، سعر بالجنيه، زر \"أضف للسلة\").\n2) تفاصيل المنتج: صورة كبيرة، الاسم، شارة \"متوفر\"، الوصف، السعر، عداد كمية (- 1 +)، وزر \"أضف للسلة\".\n3) السلة: المنتجات بالكمية، وملخص (المنتجات، التوصيل، الإجمالي) وزر \"إتمام الطلب\".\n4) إتمام الطلب: الاسم، رقم الهاتف، العنوان، اختيار منطقة التوصيل (بربر، الدامر، عطبرة، أبوحمد وأي منطقة تضيفها الإدارة)، اختيار توصيل أو استلام من المحل، الدفع كاش عند الاستلام، وزر \"تأكيد الطلب\".\n5) طلباتي: قائمة الطلبات بحالتها (جديد، قيد التجهيز، في الطريق، تم)، وزر \"عرض الفاتورة\" وزر \"إعادة الطلب\".\n6) الفاتورة: تتولد تلقائياً لكل طلب على شكل فاتورة المحل: الشعار، \"فاتورة مبيعات\"، اسم العميل، رقم الفاتورة، التاريخ، جدول الأصناف (الصنف، الكمية، السعر، الإجمالي)، رسوم التوصيل، المطلوب. وفيها زر مشاركة وتحميل PDF.\n7) تواصل معنا: زر واتساب، زر اتصال، موقع المحل، ومناطق التوصيل.\nإشعارات: عند تغيير حالة الطلب وعند وصول عرض جديد.تطبيق الإدارة: للمدير فقط، بتسجيل دخول بكلمة سر. الهيدر أزرق غامق فيه الشعار. شريط التنقل السفلي: الرئيسية، الطلبات، المنتجات، المشتريات، التقارير.\nالشاشات:\n1) لوحة التحكم:\n   - شارة \"عدد الطلبات الجديدة\".\n   - بطاقة \"سعر الدولار اليوم\": خانة لكتابة السعر وزر \"تحديث الأسعار\"، وعند الضغط تتغير أسعار كل المنتجات عند الزبائن تلقائياً.\n   - بطاقة \"مناطق التوصيل وأسعارها\": بربر، الدامر، عطبرة، أبوحمد، لكل منطقة خانة سعر قابلة للتعديل\n\n=== المواصفات اللي وافق عليها صاحب التطبيق (نفّذها كلها بند بند، ولا تضيف تطبيق مختلف) ===\nالفكرة: نظام يتكون من تطبيقين (الزبون والإدارة) متصلين بقاعدة بيانات واحدة (Supabase) لمحل DMC لبيع المعدات والمستهلكات الطبية، يتيح للزبائن تصفح المنتجات والشراء والدفع كاش عند الاستلام وتحميل الفواتير، وللإدارة إدارة المنتجات والطلبات والمشتريات وتحديث سعر الدولار ومناطق التوصيل والتقارير الأساسية.\nالشاشات:\n- الزبون: شاشة تسجيل الدخول وإنشاء الحساب (الاسم، رقم الهاتف، البريد الإلكتروني، إدخال رمز التأكيد، كلمة المرور).\n- الزبون: الشاشة الرئيسية (هيدر أبيض بشعار واسم DMC وشعار معدات ومستهلكات طبية وزر إشعارات، شريط بحث، فلترة الأقسام: الكل/معدات/مستهلكات/مختبر، شريط التوصيل إلى المنطقة ورسومها، كروت المنتجات في عمودين).\n- الزبون: شاشة تفاصيل المنتج (صورة كبيرة، الاسم، شارة متوفر/نفاد، الوصف، السعر بالجنيه، عداد الكمية، زر أضف للسلة).\n- الزبون: شاشة السلة (قائمة المنتجات والكميات، ملخص المبالغ للمنتجات والتوصيل والإجمالي، زر إتمام الطلب).\n- الزبون: شاشة إتمام الطلب (الاسم، رقم الهاتف، العنوان، اختيار منطقة التوصيل من القائمة، اختيار طريقة الاستلام: توصيل أو استلام من المحل، الدفع كاش عند الاستلام فقط، زر تأكيد الطلب).\n- الزبون: شاشة طلباتي (قائمة الطلبات السابقة مع حالاتها: جديد/قيد التجهيز/في الطريق/تم، زر عرض الفاتورة، زر إعادة الطلب).\n- الزبون: شاشة الفاتورة (فاتورة مبيعات باسم DMC، الشعار، بيانات الزبون، رقم وتاريخ الفاتورة، جدول المنتجات والأسعار، رسوم التوصيل، المجموع، أزرار مشاركة وتحميل PDF).\n- الزبون: شاشة تواصل معنا (زر واتساب، زر اتصال هاتف، موقع المحل على الخريطة/العنوان، قائمة مناطق التوصيل المتاحة).\n- الزبون: شاشة الإشعارات (قائمة الإشعارات الخاصة بالتخفيضات وتغيير حالات الطلبات).\n- الإدارة: شاشة تسجيل الدخول (الاسم، رقم الهاتف، البريد الإلكتروني، رمز تأكيد البريد، كلمة المرور).\n- الإدارة: شاشة لوحة التحكم الرئيسية (شارة عدد الطلبات الجديدة، بطاقة تعديل سعر الدولار اليوم وزر تحديث الأسعار، بطاقة مناطق التوصيل وأسعارها وإضافة مناطق جديدة).\n- الإدارة: شاشة إدارة الطلبات (عرض كافة الطلبات، فلترة حسب الحالة، تغيير حالة الطلب: جديد/قيد التجهيز/في الطريق/تم، عرض التفاصيل).\n- الإدارة: شاشة إدارة المنتجات (إضافة/تعديل/حذف منتج، رفع الصورة، تحديد القسم، السعر بالدولار، الكمية، تفعيل إظهار أو إخفاء المنتج).\n- الإدارة: شاشة المشتريات (سجل فاتورة مشتريات الموردين: المورد، التاريخ، المبلغ، حالة الدفع: مدفوع/آجل، رفع صورة الفاتورة).\n- الإدارة: شاشة التقارير (إحصائيات المبيعات، المشتريات، الأرباح، والمنتجات الأكثر مبيعاً).\nالميزات والوظائف:\n- الزبون: التسجيل وإنشاء حساب باستخدام البريد والرمز وتأكيد كلمة المرور.\n- الزبون: حساب سعر المنتج تلقائياً بالجنيه بناءً على (سعر الدولار للمنتج × سعر الدولار اليوم).\n- الزبون: البحث في المنتجات بالاسم والفلترة حسب القسم.\n- الزبون: إضافة المنتجات إلى السلة وتعديل الكميات.\n- الزبون: اختيار المنطقة وتحديد نوع الاستلام (توصيل أو من المحل).\n- الزبون: إرسال الطلب واعتماده بنظام الدفع كاش عند الاستلام حصراً.\n- الزبون: استعراض حالة الطلب وتحديثها في الوقت الفعلي.\n- الزبون: توليد فاتورة PDF قابلة للتحميل والمشاركة على الهاتف.\n- الزبون: إعادة طلب كافة عناصر فاتورة سابقة بنقرة واحدة.\n- الزبون: استقبال إشعارات لحظية عند تغيير حالة الطلب أو نزول عروض جديدة.\n- الإدارة: تسجيل الدخول الآمن بكلمة المرور والبريد.\n- الإدارة: تحديث سعر الدولار اليومي وتغيير أسعار كل المنتجات عند الزبائن فوراً.\n- الإدارة: تعديل أسعار التوصيل للمناطق (بربر، الدامر، عطبرة، أبوحمد) وإضافة مناطق جديدة.\n- الإدارة: التحكم الكامل في حالة الطلبات وإرسال إشعارات تلقائية للزبون عند تغيير الحالة.\n- الإدارة: إدارة كاملة للمنتجات (إضافة، تعديل السعر بالدولار، تغيير الكميات، إخفاء/إظهار المنتجات).\n- الإدارة: تسجيل المشتريات وتحديد حالة الدفع (مدفوع أو آجل) وأرفاق صورة الفاتورة.\n- الإدارة: عرض تقارير أساسية تشمل إجمالي المبيعات، المشتريات، والمنتجات الأكثر مبيعاً.\nالبيانات اللي التطبيق بيحفظها:\n- الاثنين: جدول المستخدمين والزبائن (customers) يحتوي: المعرف، الاسم، رقم الهاتف، البريد الإلكتروني، التاريخ.\n- الاثنين: جدول المنتجات (products) يحتوي: المعرف، الاسم، القسم، السعر بالدولار، الكمية المتوفرة، رابط الصورة، حالة الظهور (ظاهر/مخفي).\n- الاثنين: جدول الإعدادات (settings) يحتوي: سعر الدولار اليوم.\n- الاثنين: جدول مناطق التوصيل (delivery_areas) يحتوي: المعرف، اسم المنطقة، سعر التوصيل.\n- الاثنين: جدول الطلبات (orders) يحتوي: المعرف، معرف الزبون، الاسم، رقم الهاتف، العنوان، المنطقة، نوع التسليم، حالة الطلب، طريقة الدفع (كاش عند الاستلام)، الإجمالي، التاريخ.\n- الاثنين: جدول عناصر الطلب (order_items) يحتوي: المعرف، معرف الطلب، معرف المنتج، الكمية، السعر وقت الشراء.\n- الإدارة: جدول المشتريات (purchases) يحتوي: المعرف، اسم المورد، التاريخ، المبلغ، حالة الدفع (مدفوع/آجل)، رابط صورة الفاتورة.\nالأسماء والنصوص والأرقام والألوان:\n- Diala Medical & Chemical Equipment\n- DMC\n- معدات ومستهلكات طبية\n- التوصيل إلى:\n- أضف للسلة\n- متوفر\n- نفاد\n- إتمام الطلب\n- بربر\n- الدامر\n- عطبرة\n- أبوحمد\n- تأكيد الطلب\n- كاش عند الاستلام\n- فاتورة مبيعات\n- عرض الفاتورة\n- إعادة الطلب\n- تحديث الأسعار\n- #0A2F6B\n- #0A47A8\n- #00B8C4\n- #F3F7FC\n- #E1E9F3\nالصلاحيات: الكاميرا، الصور والملفات، الإشعارات\nANDROID_PERMISSIONS: CAMERA, STORAGE, NOTIFICATIONS\nLOGIN: customer=phone_email_code admin=phone_email_code",
+ "login": {
+  "customer": "phone_email_code",
+  "admin": "phone_email_code"
+ },
+ "supabase": {
+  "url": "https://jvjtgzewumfecjdpekna.supabase.co",
+  "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE",
+  "ref": "jvjtgzewumfecjdpekna"
+ },
+ "schemaSql": "-- Settings Table (USD exchange rate)\ncreate table if not exists public.tarag4_settings (\n  id uuid primary key default gen_random_uuid(),\n  usd_rate numeric(12,2) not null default 3000.00,\n  updated_at timestamptz default now(),\n  created_at timestamptz default now()\n);\n\n-- Delivery Areas Table\ncreate table if not exists public.tarag4_delivery_areas (\n  id uuid primary key default gen_random_uuid(),\n  name text not null unique,\n  area_type text default 'منطقة رئيسية',\n  delivery_fee numeric(12,2) not null default 0.00,\n  is_active boolean default true,\n  created_at timestamptz default now()\n);\n\n-- Products Catalog Table\ncreate table if not exists public.tarag4_products (\n  id uuid primary key default gen_random_uuid(),\n  name text not null,\n  category text not null, -- معدات طبية, مستهلكات, أجهزة مختبر\n  price_usd numeric(10,2) not null default 0.00,\n  stock_quantity integer not null default 0,\n  image_url text,\n  is_visible boolean not null default true,\n  description text,\n  created_at timestamptz default now()\n);\n\n-- Customers Profiles Table\ncreate table if not exists public.tarag4_customers (\n  id uuid primary key default gen_random_uuid(),\n  customer_id uuid not null default auth.uid() references auth.users(id) on delete cascade,\n  full_name text not null,\n  phone text not null,\n  email text,\n  address text,\n  created_at timestamptz default now()\n);\n\n-- Orders Table\ncreate table if not exists public.tarag4_orders (\n  id uuid primary key default gen_random_uuid(),\n  order_number text not null unique,\n  customer_id uuid not null default auth.uid() references auth.users(id) on delete cascade,\n  customer_name text not null,\n  phone text not null,\n  delivery_area_name text not null,\n  detailed_address text not null,\n  delivery_type text not null default 'delivery', -- delivery / pickup\n  payment_method text not null default 'cash_on_delivery', -- كاش عند الاستلام\n  status text not null default 'جديد', -- جديد, قيد التجهيز, في الطريق, تم التسليم\n  subtotal_sdg numeric(12,2) not null default 0.00,\n  delivery_fee_sdg numeric(12,2) not null default 0.00,\n  total_sdg numeric(12,2) not null default 0.00,\n  usd_rate_at_purchase numeric(12,2) not null default 3000.00,\n  created_at timestamptz default now()\n);\n\n-- Order Items Table\ncreate table if not exists public.tarag4_order_items (\n  id uuid primary key default gen_random_uuid(),\n  customer_id uuid not null default auth.uid() references auth.users(id) on delete cascade,\n  order_id uuid not null references public.tarag4_orders(id) on delete cascade,\n  product_id uuid references public.tarag4_products(id) on delete set null,\n  product_name text not null,\n  quantity integer not null default 1,\n  unit_price_usd numeric(10,2) not null default 0.00,\n  unit_price_sdg numeric(12,2) not null default 0.00,\n  total_price_sdg numeric(12,2) not null default 0.00,\n  created_at timestamptz default now()\n);\n\n-- Supplier Purchases Table (Admin only)\ncreate table if not exists public.tarag4_purchases (\n  id uuid primary key default gen_random_uuid(),\n  supplier_name text not null,\n  purchase_date date not null default current_date,\n  amount_sdg numeric(12,2) not null default 0.00,\n  amount_usd numeric(10,2) default 0.00,\n  payment_status text not null default 'مدفوع', -- مدفوع / آجل\n  invoice_image_url text,\n  notes text,\n  created_at timestamptz default now()\n);\n\n--------------------------------------------------------------------------------\n-- ROW LEVEL SECURITY (RLS) POLICIES\n--------------------------------------------------------------------------------\n\n-- Enable RLS on all tables\nalter table public.tarag4_settings enable row level security;\nalter table public.tarag4_delivery_areas enable row level security;\nalter table public.tarag4_products enable row level security;\nalter table public.tarag4_customers enable row level security;\nalter table public.tarag4_orders enable row level security;\nalter table public.tarag4_order_items enable row level security;\nalter table public.tarag4_purchases enable row level security;\n\n-- 1. tarag4_settings RLS\ndrop policy if exists tarag4_settings_select on public.tarag4_settings;\ncreate policy tarag4_settings_select on public.tarag4_settings\n  for select to authenticated using (true);\n\ndrop policy if exists tarag4_settings_admin_all on public.tarag4_settings;\ncreate policy tarag4_settings_admin_all on public.tarag4_settings\n  for all to authenticated\n  using (public.tarag4_is_admin())\n  with check (public.tarag4_is_admin());\n\n-- 2. tarag4_delivery_areas RLS\ndrop policy if exists tarag4_delivery_areas_select on public.tarag4_delivery_areas;\ncreate policy tarag4_delivery_areas_select on public.tarag4_delivery_areas\n  for select to authenticated using (true);\n\ndrop policy if exists tarag4_delivery_areas_admin_all on public.tarag4_delivery_areas;\ncreate policy tarag4_delivery_areas_admin_all on public.tarag4_delivery_areas\n  for all to authenticated\n  using (public.tarag4_is_admin())\n  with check (public.tarag4_is_admin());\n\n-- 3. tarag4_products RLS\ndrop policy if exists tarag4_products_select on public.tarag4_products;\ncreate policy tarag4_products_select on public.tarag4_products\n  for select to authenticated using (true);\n\ndrop policy if exists tarag4_products_admin_all on public.tarag4_products;\ncreate policy tarag4_products_admin_all on public.tarag4_products\n  for all to authenticated\n  using (public.tarag4_is_admin())\n  with check (public.tarag4_is_admin());\n\n-- 4. tarag4_customers RLS\ndrop policy if exists tarag4_customers_owner_select on public.tarag4_customers;\ncreate policy tarag4_customers_owner_select on public.tarag4_customers\n  for select to authenticated\n  using (customer_id = auth.uid() or public.tarag4_is_admin());\n\ndrop policy if exists tarag4_customers_owner_insert on public.tarag4_customers;\ncreate policy tarag4_customers_owner_insert on public.tarag4_customers\n  for insert to authenticated\n  with check (customer_id = auth.uid() or public.tarag4_is_admin());\n\ndrop policy if exists tarag4_customers_owner_update on public.tarag4_customers;\ncreate policy tarag4_customers_owner_update on public.tarag4_customers\n  for update to authenticated\n  using (customer_id = auth.uid() or public.tarag4_is_admin())\n  with check (customer_id = auth.uid() or public.tarag4_is_admin());\n\ndrop policy if exists tarag4_customers_admin_delete on public.tarag4_customers;\ncreate policy tarag4_customers_admin_delete on public.tarag4_customers\n  for delete to authenticated\n  using (public.tarag4_is_admin());\n\n-- 5. tarag4_orders RLS\ndrop policy if exists tarag4_orders_owner_select on public.tarag4_orders;\ncreate policy tarag4_orders_owner_select on public.tarag4_orders\n  for select to authenticated\n  using (customer_id = auth.uid() or public.tarag4_is_admin());\n\ndrop policy if exists tarag4_orders_owner_insert on public.tarag4_orders;\ncreate policy tarag4_orders_owner_insert on public.tarag4_orders\n  for insert to authenticated\n  with check (customer_id = auth.uid() or public.tarag4_is_admin());\n\ndrop policy if exists tarag4_orders_owner_update on public.tarag4_orders;\ncreate policy tarag4_orders_owner_update on public.tarag4_orders\n  for update to authenticated\n  using (customer_id = auth.uid() or public.tarag4_is_admin())\n  with check (customer_id = auth.uid() or public.tarag4_is_admin());\n\ndrop policy if exists tarag4_orders_admin_delete on public.tarag4_orders;\ncreate policy tarag4_orders_admin_delete on public.tarag4_orders\n  for delete to authenticated\n  using (public.tarag4_is_admin());\n\n-- 6. tarag4_order_items RLS\ndrop policy if exists tarag4_order_items_owner_select on public.tarag4_order_items;\ncreate policy tarag4_order_items_owner_select on public.tarag4_order_items\n  for select to authenticated\n  using (customer_id = auth.uid() or public.tarag4_is_admin());\n\ndrop policy if exists tarag4_order_items_owner_insert on public.tarag4_order_items;\ncreate policy tarag4_order_items_owner_insert on public.tarag4_order_items\n  for insert to authenticated\n  with check (customer_id = auth.uid() or public.tarag4_is_admin());\n\ndrop policy if exists tarag4_order_items_owner_update on public.tarag4_order_items;\ncreate policy tarag4_order_items_owner_update on public.tarag4_order_items\n  for update to authenticated\n  using (customer_id = auth.uid() or public.tarag4_is_admin())\n  with check (customer_id = auth.uid() or public.tarag4_is_admin());\n\ndrop policy if exists tarag4_order_items_admin_delete on public.tarag4_order_items;\ncreate policy tarag4_order_items_admin_delete on public.tarag4_order_items\n  for delete to authenticated\n  using (public.tarag4_is_admin());\n\n-- 7. tarag4_purchases RLS\ndrop policy if exists tarag4_purchases_admin_all on public.tarag4_purchases;\ncreate policy tarag4_purchases_admin_all on public.tarag4_purchases\n  for all to authenticated\n  using (public.tarag4_is_admin())\n  with check (public.tarag4_is_admin());\n\n--------------------------------------------------------------------------------\n-- SAMPLE SEED DATA\n--------------------------------------------------------------------------------\n\n-- Settings Initial USD Rate\ninsert into public.tarag4_settings (usd_rate)\nvalues (3000.00);\n\n-- Initial Delivery Areas\ninsert into public.tarag4_delivery_areas (name, area_type, delivery_fee)\nvalues \n  ('عطبرة', 'منطقة رئيسية', 1500.00),\n  ('الدامر', 'منطقة مجاورة', 1200.00),\n  ('بربر', 'منطقة شمالية', 2500.00),\n  ('أبوحمد', 'شحن بعيد', 4000.00)\non conflict (name) do update set delivery_fee = excluded.delivery_fee;\n\n-- Initial Products\ninsert into public.tarag4_products (name, category, price_usd, stock_quantity, is_visible, description, image_url)\nvalues\n  ('جهاز قياس ضغط الدم إلكتروني OMROL', 'معدات طبية', 45.00, 18, true, 'جهاز قياس ضغط الدم الرقمي عالي الدقة من شركة DMC مع شاشة LCD واسعة، يحتوي على ذاكرة تخزن حتى 90 قراءة.', 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d'),\n  ('كمامات طبية فاخرة (50 حبة)', 'مستهلكات', 5.50, 150, true, 'علبة كمامات ثلاثية الطبقات مع فلتر عالي الكفاءة ومطاط مريح للأذن.', 'https://images.unsplash.com/photo-1584634731339-252c581abfc5'),\n  ('محقن طبي معقم 5ml (صندوق 100)', 'مستهلكات', 8.50, 150, true, 'حقن معقمة للاستخدام المرة الواحدة مع إبرة دقيقة.', 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae'),\n  ('محلول سالين نقي 500ml', 'مستهلكات', 3.00, 0, false, 'محلول كلوريد الصوديوم المعقم 0.9%.', 'https://images.unsplash.com/photo-1583947215259-38e31be8751f'),\n  ('شرائط فحص السكر Accu-Chek', 'مستهلكات', 7.00, 60, true, 'علبة شرائط فحص نسبة السكر في الدم دقيقة جداً وموثوقة.', 'https://images.unsplash.com/photo-1631549916768-4119b2e5f926'),\n  ('جهاز سنترفيوج مختبر 8 أنابيب', 'أجهزة مختبر', 220.40, 5, true, 'جهاز الطرد المركزي للمختبرات الطبية والتحاليل بسعة 8 أنابيب وسرعة قابلة للضبط.', 'https://images.unsplash.com/photo-1579154204601-01588f351e67');\n\n-- Initial Purchases (Admin records sample)\ninsert into public.tarag4_purchases (supplier_name, purchase_date, amount_sdg, amount_usd, payment_status, notes)\nvalues\n  ('شركة الفارس للتجهيزات', '2024-05-20', 1450000.00, 483.30, 'مدفوع', 'فاتورة شراء أجهزة ضغط ومستهلكات طبية'),\n  ('النيل للمستلزمات الطبية', '2024-05-15', 820000.00, 273.33, 'آجل', 'دفعة شرائط سكر ومحاليل معقمة');",
+ "contract": {
+  "tables": [
+   {
+    "name": "tarag4_settings",
+    "purpose": "Stores global app configurations including the daily USD exchange rate used to calculate SDG prices in real-time.",
+    "columns": [
+     "id uuid",
+     "usd_rate numeric",
+     "updated_at timestamptz",
+     "created_at timestamptz"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "tarag4_delivery_areas",
+    "purpose": "Manages coverage delivery locations and their respective delivery fees in SDG.",
+    "columns": [
+     "id uuid",
+     "name text",
+     "area_type text",
+     "delivery_fee numeric",
+     "is_active boolean",
+     "created_at timestamptz"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "tarag4_products",
+    "purpose": "Stores medical equipment, consumables, and lab devices catalog with USD pricing, stock quantities, and visibility toggle.",
+    "columns": [
+     "id uuid",
+     "name text",
+     "category text",
+     "price_usd numeric",
+     "stock_quantity integer",
+     "image_url text",
+     "is_visible boolean",
+     "description text",
+     "created_at timestamptz"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "tarag4_customers",
+    "purpose": "Stores customer profile contact information and delivery address defaults.",
+    "columns": [
+     "id uuid",
+     "customer_id uuid",
+     "full_name text",
+     "phone text",
+     "email text",
+     "address text",
+     "created_at timestamptz"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "tarag4_orders",
+    "purpose": "Stores customer orders details, delivery selections, order status, subtotal, delivery fees, and grand total in SDG.",
+    "columns": [
+     "id uuid",
+     "order_number text",
+     "customer_id uuid",
+     "customer_name text",
+     "phone text",
+     "delivery_area_name text",
+     "detailed_address text",
+     "delivery_type text",
+     "payment_method text",
+     "status text",
+     "subtotal_sdg numeric",
+     "delivery_fee_sdg numeric",
+     "total_sdg numeric",
+     "usd_rate_at_purchase numeric",
+     "created_at timestamptz"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "tarag4_order_items",
+    "purpose": "Stores individual items breakdown per customer order with quantity and captured price at checkout.",
+    "columns": [
+     "id uuid",
+     "customer_id uuid",
+     "order_id uuid",
+     "product_id uuid",
+     "product_name text",
+     "quantity integer",
+     "unit_price_usd numeric",
+     "unit_price_sdg numeric",
+     "total_price_sdg numeric",
+     "created_at timestamptz"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "tarag4_purchases",
+    "purpose": "Tracks supplier procurement records for admin reporting, including supplier name, total amount, payment status (paid/deferred), and bill attachment.",
+    "columns": [
+     "id uuid",
+     "supplier_name text",
+     "purchase_date date",
+     "amount_sdg numeric",
+     "amount_usd numeric",
+     "payment_status text",
+     "invoice_image_url text",
+     "notes text",
+     "created_at timestamptz"
+    ],
+    "owner": "admin"
+   }
+  ],
+  "events": [
+   {
+    "when": "A customer submits a new order in the customer app",
+    "notify": "admin",
+    "title": "طلب جديد بانتظار التجهيز"
+   },
+   {
+    "when": "Admin updates order status (e.g. from new to in progress, out for delivery, or completed)",
+    "notify": "customer",
+    "title": "تحديث حالة الطلب"
+   },
+   {
+    "when": "Admin updates the daily USD exchange rate in dashboard settings",
+    "notify": "customer",
+    "title": "تحديث أسعار المنتجات"
+   },
+   {
+    "when": "A product stock reaches 0 in inventory",
+    "notify": "admin",
+    "title": "تنبيه نفاد مخزون منتج"
+   },
+   {
+    "when": "Admin creates a new promotional offer notification for customers",
+    "notify": "customer",
+    "title": "عرض خاص جديد على المستلزمات الطبية"
+   }
+  ]
+ },
+ "apps": {
+  "customer": {
+   "name": "tarag4-customer",
+   "packageId": "com.generated.app_tarag4_customer"
+  },
+  "admin": {
+   "name": "tarag4-admin",
+   "packageId": "com.generated.app_tarag4_admin"
+  }
+ },
+ "role": "admin",
+ "pushFunction": "tarag4-push"
+}

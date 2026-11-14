@@ -1,0 +1,8 @@
+provider
+shared_preferences
+http
+intl
+url_launcher
+firebase_core
+firebase_messaging
+geolocator

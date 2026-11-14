@@ -1,0 +1,7 @@
+shared_preferences
+http
+intl
+url_launcher
+cached_network_image
+firebase_core
+firebase_messaging

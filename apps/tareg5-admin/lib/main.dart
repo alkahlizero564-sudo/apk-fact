@@ -2375,7 +2375,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: TextField(controller: _priceUsdCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'السعر بالدولار ($)', border: OutlineInputBorder()))),
+                  Expanded(child: TextField(controller: _priceUsdCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'السعر بالدولار (\$)', border: OutlineInputBorder()))),
                   const SizedBox(width: 12),
                   Expanded(child: TextField(controller: _stockCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'الكمية المتوفرة', border: OutlineInputBorder()))),
                 ],
@@ -2558,7 +2558,7 @@ class _AddPurchaseScreenState extends State<AddPurchaseScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: TextField(controller: _amountCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'المبلغ ($ USD) *', border: OutlineInputBorder())),
+                    child: TextField(controller: _amountCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'المبلغ (\$ USD) *', border: OutlineInputBorder())),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

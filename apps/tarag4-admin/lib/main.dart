@@ -27,7 +27,6 @@ class DmcColors {
   static const Color background = Color(0xFFF3F7FC);
   static const Color surface = Colors.white;
   static const Color outline = Color(0xFFE1E9F3);
-  static const Color outlineVariant = Color(0xFFC3D0E0);
   static const Color textMain = Color(0xFF1A212D);
   static const Color textMuted = Color(0xFF566171);
 
@@ -1250,6 +1249,7 @@ enum AuthMode { login, signup, verifyOtp, recover, newPassword }
 
 class _AuthScreenState extends State<AuthScreen> {
   AuthMode _mode = AuthMode.login;
+  String _otpType = "signup";
 
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
@@ -1436,6 +1436,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                         password: _passCtrl.text,
                                       );
                                       if (!ok && auth.pendingEmail != null) {
+                                        _otpType = "signup";
                                         _startResendTimer();
                                         setState(() => _mode = AuthMode.verifyOtp);
                                       }
@@ -1500,6 +1501,20 @@ class _AuthScreenState extends State<AuthScreen> {
                               onPressed: auth.isLoading
                                   ? null
                                   : () async {
+                                      if (_nameCtrl.text.trim().isEmpty ||
+                                          _phoneCtrl.text.trim().isEmpty ||
+                                          _emailCtrl.text.trim().isEmpty) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('جميع الحقول مطلوبة')),
+                                        );
+                                        return;
+                                      }
+                                      if (_passCtrl.text.length < 6) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('كلمة المرور يجب أن تكون 6 أحرف على الأقل')),
+                                        );
+                                        return;
+                                      }
                                       if (_passCtrl.text != _confirmPassCtrl.text) {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           const SnackBar(content: Text('كلمات المرور غير متطابقة')),
@@ -1513,6 +1528,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                         password: _passCtrl.text,
                                       );
                                       if (ok) {
+                                        _otpType = "signup";
                                         _startResendTimer();
                                         setState(() => _mode = AuthMode.verifyOtp);
                                       }
@@ -1554,8 +1570,14 @@ class _AuthScreenState extends State<AuthScreen> {
                               onPressed: auth.isLoading
                                   ? null
                                   : () async {
-                                      final ok = await auth.verifyOtpCode(auth.pendingEmail ?? _emailCtrl.text, _otpCtrl.text);
-                                      if (!ok && auth.errorMessage != null) {
+                                      final ok = await auth.verifyOtpCode(
+                                        auth.pendingEmail ?? _emailCtrl.text,
+                                        _otpCtrl.text,
+                                        type: _otpType,
+                                      );
+                                      if (ok && _otpType == "recovery") {
+                                        setState(() => _mode = AuthMode.newPassword);
+                                      } else if (!ok && auth.errorMessage != null) {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(content: Text(auth.errorMessage!)),
                                         );
@@ -1568,7 +1590,10 @@ class _AuthScreenState extends State<AuthScreen> {
                               onPressed: _resendCountdown > 0
                                   ? null
                                   : () async {
-                                      final ok = await auth.resendCode(auth.pendingEmail ?? _emailCtrl.text);
+                                      final ok = await auth.resendCode(
+                                        auth.pendingEmail ?? _emailCtrl.text,
+                                        type: _otpType,
+                                      );
                                       if (ok) {
                                         _startResendTimer();
                                         ScaffoldMessenger.of(context).showSnackBar(
@@ -1594,6 +1619,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               onPressed: () async {
                                 final ok = await auth.recoverPassword(_emailCtrl.text);
                                 if (ok) {
+                                  _otpType = "recovery";
                                   _startResendTimer();
                                   setState(() => _mode = AuthMode.verifyOtp);
                                 }
@@ -1830,7 +1856,7 @@ class _MainAdminNavigationScreenState extends State<MainAdminNavigationScreen>
                   );
                 },
               ),
-              if (admin.newOrdersCount > 0)
+              if (admin.unreadNotificationsCount > 0)
                 Positioned(
                   right: 8,
                   top: 8,
@@ -1841,7 +1867,7 @@ class _MainAdminNavigationScreenState extends State<MainAdminNavigationScreen>
                       shape: BoxShape.circle,
                     ),
                     child: Text(
-                      '${admin.newOrdersCount}',
+                      '${admin.unreadNotificationsCount}',
                       style: const TextStyle(fontSize: 10, color: Color(0xFF002D31), fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -2583,7 +2609,7 @@ class ProductsTab extends StatelessWidget {
                                       const SizedBox(width: 6),
                                       Switch(
                                         value: p.isVisible,
-                                        activeThumbColor: DmcColors.primaryBlue,
+                                        activeTrackColor: DmcColors.primaryBlue,
                                         onChanged: (val) {
                                           admin.toggleProductVisibility(p.id, p.isVisible);
                                         },

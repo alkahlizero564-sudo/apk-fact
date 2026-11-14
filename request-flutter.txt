@@ -1,5 +1,5 @@
-reserve-customer
+tarag3-admin
 @model: gemini-3.5-flash
-أضف شاشة جديدة لـ… الاسم
+صلح التطبيق
 
-(request id: 1793523710299)
+(request id: 1794645830380)

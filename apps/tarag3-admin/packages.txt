@@ -1,0 +1,12 @@
+provider
+shared_preferences
+http
+intl
+fl_chart
+url_launcher
+flutter_animate
+uuid
+firebase_core
+firebase_messaging
+image_picker
+geolocator

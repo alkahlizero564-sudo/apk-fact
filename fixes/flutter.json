@@ -159,5 +159,19 @@
   "error": "error • '_NewSubscriptionBottomSheetState' doesn't conform to the bound 'StatefulWidget' of the type parameter 'T'. Try using a type that is or is a subclass of 'StatefulWidget' • lib/main.dart:2569:9",
   "source": "ai",
   "uses": 0
+ },
+ {
+  "old": "Colors.black70",
+  "new": "Colors.black87",
+  "error": "error • Arguments of a constant creation must be constant expressions. Try making the argument a valid constant, or use 'new' to call the constructor • lib/main.dart:2159:106 • const_with_non_constant",
+  "source": "ai",
+  "uses": 0
+ },
+ {
+  "old": "CrossAlignment",
+  "new": "CrossAxisAlignment",
+  "error": "error • Undefined name 'CrossAlignment'. Try correcting the name to one that is defined, or defining the name • lib/main.dart:2974:45 • undefined_identifier",
+  "source": "ai",
+  "uses": 0
  }
 ]

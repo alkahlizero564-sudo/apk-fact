@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Diala Medical & Chemical Equipment - تطبيق الزبون</title>
+  <style>
+    /* Cairo Font Import via standard web font definition fallback */
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
+
+    :root {
+      /* Palette based on DMC requirements */
+      --md-sys-color-primary: #0A47A8;
+      --md-sys-color-on-primary: #FFFFFF;
+      --md-sys-color-primary-container: #DCE2FF;
+      --md-sys-color-on-primary-container: #001944;
+
+      --md-sys-color-secondary: #00B8C4;
+      --md-sys-color-on-secondary: #00363A;
+      --md-sys-color-secondary-container: #CBF5F8;
+
+      --md-sys-color-header-admin: #0A2F6B;
+      --md-sys-color-background: #F3F7FC;
+      --md-sys-color-surface: #FFFFFF;
+      --md-sys-color-surface-variant: #F0F4FA;
+      --md-sys-color-outline: #E1E9F3;
+      --md-sys-color-outline-variant: #C2CEE0;
+
+      --md-sys-color-text-primary: #0F172A;
+      --md-sys-color-text-secondary: #475569;
+      --md-sys-color-text-tertiary: #94A3B8;
+
+      /* Status Badges */
+      --status-blue: #0A47A8;
+      --status-blue-bg: #E8F0FE;
+      --status-green: #059669;
+      --status-green-bg: #E6F4EA;
+      --status-red: #DC2626;
+      --status-red-bg: #FCE8E6;
+      --status-orange: #D97706;
+      --status-orange-bg: #FEF3C7;
+
+      /* Material 3 Radius scale */
+      --m3-shape-xs: 4px;
+      --m3-shape-s: 8px;
+      --m3-shape-m: 12px;
+      --m3-shape-l: 16px;
+      --m3-shape-xl: 24px;
+      --m3-shape-full: 9999px;
+
+      /* Elevation */
+      --m3-elevation-1: 0px 1px 3px rgba(0,0,0,0.06), 0px 1px 2px rgba(0,0,0,0.04);
+      --m3-elevation-2: 0px 4px 12px rgba(10, 71, 168, 0.08);
+      --m3-elevation-3: 0px 8px 24px rgba(10, 71, 168, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #111827;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      color: var(--md-sys-color-text-primary);
+      padding: 0;
+      margin: 0;
+      user-select: none;
+    }
+
+    /* Top Tester Bar - apkfact-screens */
+    #apkfact-screens {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 44px;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(8px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 8px;
+      overflow-x: auto;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      white-space: nowrap;
+    }
+    #apkfact-screens::-webkit-scrollbar { display: none; }
+    .screen-pill {
+      background: rgba(255,255,255,0.12);
+      color: #CBD5E1;
+      padding: 4px 12px;
+      border-radius: var(--m3-shape-full);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+    .screen-pill:hover, .screen-pill.active {
+      background: var(--md-sys-color-primary);
+      color: #FFFFFF;
+      border-color: rgba(255,255,255,0.3);
+      box-shadow: 0 0 10px rgba(10,71,168,0.5);
+    }
+
+    /* Device Wrapper Simulation */
+    .app-viewport {
+      width: 100%;
+      max-width: 412px;
+      height: 100vh;
+      max-height: 892px;
+      background-color: var(--md-sys-color-background);
+      margin-top: 44px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    @media (min-width: 440px) {
+      .app-viewport {
+        margin-top: 54px;
+        height: calc(100vh - 64px);
+        border-radius: 32px;
+        border: 4px solid #1E293B;
+      }
+    }
+
+    /* App Screen Container */
+    .view-screen {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-bottom: 80px; /* Space for Bottom Nav */
+      position: relative;
+      animation: fadeIn 0.2s ease-out;
+    }
+    .view-screen.active {
+      display: flex;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.99); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* Universal Header (Material 3 Top App Bar) */
+    .m3-top-app-bar {
+      background-color: #FFFFFF;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--md-sys-color-outline);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-badge {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--md-sys-color-header-admin), var(--md-sys-color-primary));
+      border-radius: var(--m3-shape-m);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFF;
+      font-weight: 800;
+      font-size: 16px;
+      box-shadow: var(--m3-elevation-1);
+    }
+    .brand-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--md-sys-color-header-admin);
+      line-height: 1.1;
+    }
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--md-sys-color-text-secondary);
+      font-weight: 600;
+    }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--m3-shape-full);
+      border: none;
+      background: var(--md-sys-color-surface-variant);
+      color: var(--md-sys-color-text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.2s;
+    }
+    .icon-btn:active {
+      background: var(--md-sys-color-outline);
+    }
+    .icon-btn .badge-dot {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 9px;
+      height: 9px;
+      background-color: var(--md-sys-color-secondary);
+      border-radius: 50%;
+      border: 2px solid #FFF;
+    }
+
+    /* Fixed Bottom Navigation (Flutter NavigationBar 1:1) */
+    .m3-bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 72px;
+      background-color: #FFFFFF;
+      border-top: 1px solid var(--md-sys-color-outline);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 1000;
+      padding: 0 4px;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      flex: 1;
+      color: var(--md-sys-color-text-secondary);
+      text-decoration: none;
+    }
+    .nav-indicator {
+      width: 56px;
+      height: 32px;
+      border-radius: var(--m3-shape-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.25s ease;
+    }
+    .nav-item.active .nav-indicator {
+      background-color: var(--md-sys-color-primary-container);
+    }
+    .nav-item.active .nav-icon {
+      color: var(--md-sys-color-on-primary-container);
+    }
+    .nav-item.active .nav-label {
+      color: var(--md-sys-color-primary);
+      font-weight: 700;
+    }
+    .nav-icon {
+      width: 24px;
+      height: 24px;
+      fill: currentColor;
+    }
+    .nav-label {
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* Components Styling */
+    .search-box {
+      margin: 12px 16px 8px 16px;
+      background: #FFFFFF;
+      border: 1px solid var(--md-sys-color-outline);
+      border-radius: var(--m3-shape-full);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--m3-elevation-1);
+    }
+    .search-box input {
+      border: none;
+      outline: none;
+      width: 100%;
+      font-size: 14px;
+      background: transparent;
+    }
+
+    /* Category Chips Scroll (Segmented) */
+    .categories-bar {
+      display: flex;
+      gap: 8px;
+      padding: 8px 16px;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .categories-bar::-webkit-scrollbar { display: none; }
+    .chip {
+      padding: 8px 18px;
+      border-radius: var(--m3-shape-m);
+      background: #FFFFFF;
+      border: 1px solid var(--md-sys-color-outline);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--md-sys-color-text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chip.active {
+      background: var(--md-sys-color-primary);
+      color: #FFFFFF;
+      border-color: var(--md-sys-color-primary);
+    }
+
+    /* Delivery Info Banner */
+    .delivery-banner {
+      margin: 8px 16px;
+      background-color: #E6F8F9;
+      border: 1px solid var(--md-sys-color-secondary-container);
+      border-radius: var(--m3-shape-l);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #005B60;
+      font-weight: 600;
+    }
+
+    /* Grid Layout for Products */
+    .products-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 8px 16px 16px 16px;
+    }
+    .product-card {
+      background: #FFFFFF;
+      border-radius: var(--m3-shape-xl);
+      border: 1px solid var(--md-sys-color-outline);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: var(--m3-elevation-1);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .product-card:active {
+      transform: scale(0.98);
+    }
+    .product-img-wrapper {
+      width: 100%;
+      height: 110px;
+      background: var(--md-sys-color-surface-variant);
+      border-radius: var(--m3-shape-l);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .product-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--md-sys-color-text-primary);
+      margin-bottom: 4px;
+      height: 38px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.35;
+    }
+    .product-price {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--md-sys-color-primary);
+      margin-bottom: 10px;
+    }
+    .product-price small {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--md-sys-color-text-secondary);
+    }
+
+    /* M3 Filled Button */
+    .btn-m3-primary {
+      height: 44px;
+      background-color: var(--md-sys-color-primary);
+      color: #FFFFFF;
+      border: none;
+      border-radius: var(--m3-shape-full);
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      width: 100%;
+      transition: background-color 0.2s, box-shadow 0.2s;
+      box-shadow: var(--m3-elevation-1);
+    }
+    .btn-m3-primary:active {
+      background-color: #083785;
+      box-shadow: none;
+    }
+    .btn-m3-secondary {
+      height: 44px;
+      background-color: var(--md-sys-color-surface-variant);
+      color: var(--md-sys-color-primary);
+      border: 1px solid var(--md-sys-color-outline);
+      border-radius: var(--m3-shape-full);
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    /* Status Badges */
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: var(--m3-shape-full);
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      width: fit-content;
+    }
+    .status-available, .status-paid, .status-done {
+      background-color: var(--status-green-bg);
+      color: var(--status-green);
+    }
+    .status-new, .status-normal {
+      background-color: var(--status-blue-bg);
+      color: var(--status-blue);
+    }
+    .status-preparing, .status-ontheway {
+      background-color: var(--status-orange-bg);
+      color: var(--status-orange);
+    }
+    .status-out, .status-deferred {
+      background-color: var(--status-red-bg);
+      color: var(--status-red);
+    }
+
+    /* Form Fields */
+    .m3-text-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .m3-text-field label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--md-sys-color-text-primary);
+    }
+    .m3-text-field input, .m3-text-field select, .m3-text-field textarea {
+      height: 48px;
+      background: #FFFFFF;
+      border: 1px solid var(--md-sys-color-outline);
+      border-radius: var(--m3-shape-m);
+      padding: 0 14px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .m3-text-field textarea {
+      height: 80px;
+      padding: 10px 14px;
+    }
+    .m3-text-field input:focus, .m3-text-field select:focus {
+      border-color: var(--md-sys-color-primary);
+      border-width: 2px;
+    }
+
+    /* Quantity Stepper Widget */
+    .stepper {
+      display: inline-flex;
+      align-items: center;
+      background: var(--md-sys-color-surface-variant);
+      border-radius: var(--m3-shape-full);
+      padding: 2px;
+      border: 1px solid var(--md-sys-color-outline);
+    }
+    .stepper-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: #FFFFFF;
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--md-sys-color-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--m3-elevation-1);
+    }
+    .stepper-value {
+      width: 36px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    /* Cart Item Layout */
+    .cart-item {
+      background: #FFFFFF;
+      border: 1px solid var(--md-sys-color-outline);
+      border-radius: var(--m3-shape-l);
+      padding: 12px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .cart-thumb {
+      width: 64px;
+      height: 64px;
+      background: var(--md-sys-color-surface-variant);
+      border-radius: var(--m3-shape-m);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Invoice Receipt Box */
+    .invoice-paper {
+      background: #FFFFFF;
+      border: 1px dashed var(--md-sys-color-outline-variant);
+      border-radius: var(--m3-shape-xl);
+      padding: 20px;
+      box-shadow: var(--m3-elevation-2);
+      margin: 16px;
+      position: relative;
+    }
+    .invoice-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 12px;
+    }
+    .invoice-table th, .invoice-table td {
+      padding: 8px 4px;
+      text-align: right;
+      border-bottom: 1px solid var(--md-sys-color-outline);
+    }
+
+    /* Map Mock Component */
+    .map-picker {
+      height: 140px;
+      background: #E2E8F0;
+      border-radius: var(--m3-shape-l);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--md-sys-color-outline);
+      margin-bottom: 16px;
+    }
+    .map-grid-bg {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-image: radial-gradient(#94A3B8 1px, transparent 1px);
+      background-size: 16px 16px;
+      opacity: 0.5;
+    }
+
+    /* Notification Item */
+    .notification-card {
+      background: #FFFFFF;
+      border-radius: var(--m3-shape-l);
+      border: 1px solid var(--md-sys-color-outline);
+      padding: 12px 16px;
+      margin: 8px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .notif-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--m3-shape-full);
+      background: var(--md-sys-color-secondary-container);
+      color: #005B60;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Section Headers */
+    .section-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--md-sys-color-text-primary);
+      margin: 16px 16px 8px 16px;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: absolute;
+      bottom: 84px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1E293B;
+      color: #FFF;
+      padding: 10px 20px;
+      border-radius: var(--m3-shape-full);
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 2000;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Tester Screen Switcher Bar (Required) -->
+  <div id="apkfact-screens">
+    <div class="screen-pill active" onclick="switchView('auth-screen', this)">تسجيل الدخول</div>
+    <div class="screen-pill" onclick="switchView('home-screen', this)">الرئيسية</div>
+    <div class="screen-pill" onclick="switchView('details-screen', this)">تفاصيل المنتج</div>
+    <div class="screen-pill" onclick="switchView('cart-screen', this)">السلة (3)</div>
+    <div class="screen-pill" onclick="switchView('checkout-screen', this)">إتمام الطلب</div>
+    <div class="screen-pill" onclick="switchView('orders-screen', this)">طلباتي</div>
+    <div class="screen-pill" onclick="switchView('invoice-screen', this)">الفاتورة الإلكترونية</div>
+    <div class="screen-pill" onclick="switchView('contact-screen', this)">تواصل معنا</div>
+    <div class="screen-pill" onclick="switchView('notifications-screen', this)">الإشعارات</div>
+    <div class="screen-pill" onclick="switchView('empty-cart-screen', this)">سلة فارغة (State)</div>
+    <div class="screen-pill" onclick="switchView('loading-screen', this)">جاري التحميل (Skeleton)</div>
+  </div>
+
+  <!-- Mobile Viewport Canvas -->
+  <div class="app-viewport">
+
+    <!-- 1) AUTHENTICATION & REGISTRATION SCREEN -->
+    <div id="auth-screen" class="view-screen active">
+      <div style="padding: 32px 24px; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center;">
+        <div class="logo-badge" style="width: 72px; height: 72px; margin: 0 auto 16px auto; font-size: 28px; border-radius: var(--m3-shape-xl);">
+          DMC
+        </div>
+        <h2 style="font-size: 22px; font-weight: 800; color: var(--md-sys-color-header-admin);">DMC Medical</h2>
+        <p style="font-size: 13px; color: var(--md-sys-color-text-secondary); margin-bottom: 24px;">معدات ومستهلكات طبية - حساب الزبون</p>
+
+        <!-- Auth Tabs -->
+        <div style="display: flex; background: var(--md-sys-color-surface-variant); padding: 4px; border-radius: var(--m3-shape-full); margin-bottom: 20px;">
+          <button style="flex: 1; padding: 8px; border: none; border-radius: var(--m3-shape-full); font-weight: 700; font-size: 13px; background: #FFF; color: var(--md-sys-color-primary); box-shadow: var(--m3-elevation-1);">تسجيل الدخول</button>
+          <button style="flex: 1; padding: 8px; border: none; border-radius: var(--m3-shape-full); font-weight: 700; font-size: 13px; background: transparent; color: var(--md-sys-color-text-secondary);">حساب جديد</button>
+        </div>
+
+        <div class="m3-text-field" style="text-align: right;">
+          <label>الاسم الكامل</label>
+          <input type="text" value="د. أحمد الفاتح" placeholder="أدخل اسمك">
+        </div>
+        <div class="m3-text-field" style="text-align: right;">
+          <label>رقم الهاتف</label>
+          <input type="tel" value="0912345678" placeholder="09xxxxxxxx">
+        </div>
+        <div class="m3-text-field" style="text-align: right;">
+          <label>البريد الإلكتروني</label>
+          <input type="email" value="ahmed@example.com" placeholder="name@domain.com">
+        </div>
+        <div class="m3-text-field" style="text-align: right;">
+          <label>رمز التأكيد (OTP)</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" value="4829" style="text-align: center; font-size: 18px; letter-spacing: 4px; font-weight: 700;">
+            <button style="width: 100px; border-radius: var(--m3-shape-m); border: 1px solid var(--md-sys-color-primary); background: transparent; color: var(--md-sys-color-primary); font-weight: 700; font-size: 12px;">إرسال الرمز</button>
+          </div>
+        </div>
+        <div class="m3-text-field" style="text-align: right;">
+          <label>كلمة المرور</label>
+          <input type="password" value="••••••••">
+        </div>
+
+        <button class="btn-m3-primary" style="margin-top: 12px;" onclick="switchView('home-screen')">
+          دخول إلى المتجر
+        </button>
+      </div>
+    </div>
+
+    <!-- 2) HOME SCREEN -->
+    <div id="home-screen" class="view-screen">
+      <!-- M3 Top Bar Header -->
+      <div class="m3-top-app-bar">
+        <div class="brand-container">
+          <div class="logo-badge">DMC</div>
+          <div>
+            <div class="brand-title">DMC</div>
+            <div class="brand-subtitle">معدات ومستهلكات طبية</div>
+          </div>
+        </div>
+        <button class="icon-btn" onclick="switchView('notifications-screen')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          <div class="badge-dot"></div>
+        </button>
+      </div>
+
+      <!-- Search Box -->
+      <div class="search-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" placeholder="بحث عن معدات، قفازات، أجهزة...">
+      </div>
+
+      <!-- Horizontal Category Chips -->
+      <div class="categories-bar">
+        <div class="chip active">الكل</div>
+        <div class="chip">معدات</div>
+        <div class="chip">مستهلكات</div>
+        <div class="chip">مختبر</div>
+      </div>
+
+      <!-- Delivery info bar -->
+      <div class="delivery-banner">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+          <span>التوصيل إلى: <strong>عطبرة</strong></span>
+        </div>
+        <span style="font-weight: 800;">1,500 ج.س</span>
+      </div>
+
+      <!-- Products Grid -->
+      <div class="products-grid">
+        <!-- Card 1 -->
+        <div class="product-card" onclick="switchView('details-screen')">
+          <div class="product-img-wrapper">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0A47A8" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+            <span class="status-badge status-available" style="position: absolute; top: 6px; right: 6px; font-size: 9px;">متوفر</span>
+          </div>
+          <div class="product-title">جهاز قياس ضغط الدم ديجيتال OMRON</div>
+          <div class="product-price">29,750 <small>ج.س</small></div>
+          <button class="btn-m3-primary" style="height: 36px; font-size: 12px;" onclick="event.stopPropagation(); triggerToast('تمت الإضافة للسلة')">
+            أضف للسلة
+          </button>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="product-card" onclick="switchView('details-screen')">
+          <div class="product-img-wrapper">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#00B8C4" stroke-width="1.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            <span class="status-badge status-available" style="position: absolute; top: 6px; right: 6px; font-size: 9px;">متوفر</span>
+          </div>
+          <div class="product-title">قفازات طبية لاتكس (علبة 100 قطعة)</div>
+          <div class="product-price">4,250 <small>ج.س</small></div>
+          <button class="btn-m3-primary" style="height: 36px; font-size: 12px;" onclick="event.stopPropagation(); triggerToast('تمت الإضافة للسلة')">
+            أضف للسلة
+          </button>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="product-card" onclick="switchView('details-screen')">
+          <div class="product-img-wrapper">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0A47A8" stroke-width="1.5"><path d="M9 3v18m6-18v18M3 9h18M3 15h18"></path></svg>
+            <span class="status-badge status-available" style="position: absolute; top: 6px; right: 6px; font-size: 9px;">متوفر</span>
+          </div>
+          <div class="product-title">شرائط تحليل السكر في الدم (50 شريط)</div>
+          <div class="product-price">8,500 <small>ج.س</small></div>
+          <button class="btn-m3-primary" style="height: 36px; font-size: 12px;" onclick="event.stopPropagation(); triggerToast('تمت الإضافة للسلة')">
+            أضف للسلة
+          </button>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="product-card" onclick="switchView('details-screen')">
+          <div class="product-img-wrapper">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0A2F6B" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v8M8 12h8"></path></svg>
+            <span class="status-badge status-out" style="position: absolute; top: 6px; right: 6px; font-size: 9px;">نفاد</span>
+          </div>
+          <div class="product-title">مجهر مخبري ضوئي مزدوج العدسة</div>
+          <div class="product-price">212,500 <small>ج.س</small></div>
+          <button class="btn-m3-secondary" style="height: 36px; font-size: 12px; opacity: 0.6;" disabled>
+            غير متوفر
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3) PRODUCT DETAILS SCREEN -->
+    <div id="details-screen" class="view-screen">
+      <div class="m3-top-app-bar">
+        <button class="icon-btn" onclick="switchView('home-screen')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <span style="font-weight: 700; font-size: 16px;">تفاصيل المنتج</span>
+        <button class="icon-btn" onclick="switchView('cart-screen')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        </button>
+      </div>
+
+      <div style="padding: 16px;">
+        <div style="width: 100%; height: 220px; background: #FFFFFF; border-radius: var(--m3-shape-xl); display: flex; align-items: center; justify-content: center; border: 1px solid var(--md-sys-color-outline); margin-bottom: 16px;">
+          <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#0A47A8" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+          <h1 style="font-size: 18px; font-weight: 800; color: var(--md-sys-color-text-primary); flex: 1;">جهاز قياس ضغط الدم ديجيتال OMRON</h1>
+          <span class="status-badge status-available">متوفر</span>
+        </div>
+
+        <div style="font-size: 22px; font-weight: 800; color: var(--md-sys-color-primary); margin-bottom: 4px;">
+          29,750 <span style="font-size: 13px; color: var(--md-sys-color-text-secondary); font-weight: 600;">جنيه سوداني</span>
+        </div>
+        <div style="font-size: 11px; color: var(--md-sys-color-text-tertiary); margin-bottom: 16px;">
+          ($35.00 USD × 850 ج.س سعر اليوم)
+        </div>
+
+        <div style="border-top: 1px solid var(--md-sys-color-outline); border-bottom: 1px solid var(--md-sys-color-outline); padding: 12px 0; margin-bottom: 20px;">
+          <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 6px;">الوصف والمواصفات:</h3>
+          <p style="font-size: 13px; color: var(--md-sys-color-text-secondary); line-height: 1.6;">
+            جهاز أومرون الياباني الأصلي لقياس ضغط الدم من الذراع. يتميز بالدقة العالية، ذاكرة تتسع لـ 60 قراءة، ومؤشر لعدم انتظام ضربات القلب. مناسب للمشافي والعيادات والاستخدام المنزلي.
+          </p>
+        </div>
+
+        <!-- Quantity & Add Button Row -->
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div class="stepper">
+            <button class="stepper-btn">-</button>
+            <span class="stepper-value">1</span>
+            <button class="stepper-btn">+</button>
+          </div>
+          <button class="btn-m3-primary" style="flex: 1;" onclick="triggerToast('تم إضافة المنتج للسلة بنجاح'); switchView('cart-screen');">
+            أضف للسلة
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4) CART SCREEN -->
+    <div id="cart-screen" class="view-screen">
+      <div class="m3-top-app-bar">
+        <span style="font-weight: 800; font-size: 18px; color: var(--md-sys-color-header-admin);">سلة الشراء (3)</span>
+        <button style="border: none; background: transparent; color: var(--status-red); font-weight: 700; font-size: 12px;" onclick="switchView('empty-cart-screen')">تفريغ السلة</button>
+      </div>
+
+      <div style="padding: 16px;">
+        <!-- Cart Item 1 -->
+        <div class="cart-item">
+          <div class="cart-thumb">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0A47A8" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+          </div>
+          <div style="flex: 1;">
+            <div style="font-size: 13px; font-weight: 700;">جهاز قياس ضغط الدم OMRON</div>
+            <div style="font-size: 13px; font-weight: 800; color: var(--md-sys-color-primary);">29,750 ج.س</div>
+          </div>
+          <div class="stepper">
+            <button class="stepper-btn">-</button>
+            <span class="stepper-value">1</span>
+            <button class="stepper-btn">+</button>
+          </div>
+        </div>
+
+        <!-- Cart Item 2 -->
+        <div class="cart-item">
+          <div class="cart-thumb">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00B8C4" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+          </div>
+          <div style="flex: 1;">
+            <div style="font-size: 13px; font-weight: 700;">قفازات طبية لاتكس</div>
+            <div style="font-size: 13px; font-weight: 800; color: var(--md-sys-color-primary);">8,500 ج.س</div>
+          </div>
+          <div class="stepper">
+            <button class="stepper-btn">-</button>
+            <span class="stepper-value">2</span>
+            <button class="stepper-btn">+</button>
+          </div>
+        </div>
+
+        <!-- Summary Card -->
+        <div style="background: #FFFFFF; border-radius: var(--m3-shape-xl); border: 1px solid var(--md-sys-color-outline); padding: 16px; margin-top: 20px;">
+          <h3 style="font-size: 14px; font-weight: 800; margin-bottom: 12px;">ملخص الطلب</h3>
+          <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+            <span style="color: var(--md-sys-color-text-secondary);">مجموع المنتجات</span>
+            <span style="font-weight: 700;">38,250 ج.س</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+            <span style="color: var(--md-sys-color-text-secondary);">رسوم التوصيل (عطبرة)</span>
+            <span style="font-weight: 700;">1,500 ج.س</span>
+          </div>
+          <div style="border-top: 1px dashed var(--md-sys-color-outline-variant); margin: 8px 0; padding-top: 8px; display: flex; justify-content: space-between; font-size: 16px; font-weight: 800;">
+            <span>الإجمالي النهائي</span>
+            <span style="color: var(--md-sys-color-primary);">39,750 ج.س</span>
+          </div>
+        </div>
+
+        <button class="btn-m3-primary" style="margin-top: 20px;" onclick="switchView('checkout-screen')">
+          إتمام الطلب
+        </button>
+      </div>
+    </div>
+
+    <!-- 5) CHECKOUT SCREEN -->
+    <div id="checkout-screen" class="view-screen">
+      <div class="m3-top-app-bar">
+        <button class="icon-btn" onclick="switchView('cart-screen')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <span style="font-weight: 700; font-size: 16px;">إتمام الطلب</span>
+        <div style="width: 40px;"></div>
+      </div>
+
+      <div style="padding: 16px;">
+        <div class="m3-text-field">
+          <label>الاسم بالكامل</label>
+          <input type="text" value="د. أحمد الفاتح">
+        </div>
+
+        <div class="m3-text-field">
+          <label>رقم الهاتف للتحضير والاتصال</label>
+          <input type="tel" value="0912345678">
+        </div>
+
+        <!-- Interactive Map Picker Mock -->
+        <div class="m3-text-field">
+          <label>تحديد الموقع الجغرافي الدقيق</label>
+          <div class="map-picker">
+            <div class="map-grid-bg"></div>
+            <div style="z-index: 2; text-align: center; background: rgba(255,255,255,0.9); padding: 8px 16px; border-radius: var(--m3-shape-full); box-shadow: var(--m3-elevation-1); display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--md-sys-color-primary);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+              تم تحديد الموقع (17.7011° N, 33.9852° E)
+            </div>
+          </div>
+        </div>
+
+        <div class="m3-text-field">
+          <label>العنوان التفصيلي</label>
+          <input type="text" value="عطبرة - حي المطار - بالقرب من المستشفى التأميني">
+        </div>
+
+        <div class="m3-text-field">
+          <label>منطقة التوصيل</label>
+          <select>
+            <option value="atbara" selected>عطبرة (1,500 ج.س)</option>
+            <option value="berber">بربر (2,500 ج.س)</option>
+            <option value="damar">الدامر (2,000 ج.س)</option>
+            <option value="abuhamed">أبوحمد (5,000 ج.س)</option>
+          </select>
+        </div>
+
+        <div class="m3-text-field">
+          <label>طريقة الاستلام</label>
+          <div style="display: flex; gap: 10px;">
+            <label style="flex: 1; background: #FFF; border: 2px solid var(--md-sys-color-primary); padding: 10px; border-radius: var(--m3-shape-m); font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; color: var(--md-sys-color-primary);">
+              <input type="radio" name="delivery" checked style="height: 16px;"> توصيل للموقع
+            </label>
+            <label style="flex: 1; background: #FFF; border: 1px solid var(--md-sys-color-outline); padding: 10px; border-radius: var(--m3-shape-m); font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+              <input type="radio" name="delivery" style="height: 16px;"> استلام من المحل
+            </label>
+          </div>
+        </div>
+
+        <div class="m3-text-field">
+          <label>طريقة الدفع</label>
+          <div style="background: var(--status-green-bg); border: 1px solid var(--status-green); padding: 12px; border-radius: var(--m3-shape-m); font-size: 13px; font-weight: 700; color: var(--status-green); display: flex; align-items: center; gap: 8px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M12 12A3 3 0 1 0 12 6a3 3 0 0 0 0 6z"/></svg>
+            الدفع كاش عند الاستلام
+          </div>
+        </div>
+
+        <button class="btn-m3-primary" style="margin-top: 12px;" onclick="triggerToast('تم تأكيد الطلب بنجاح'); switchView('orders-screen');">
+          تأكيد الطلب (39,750 ج.س)
+        </button>
+      </div>
+    </div>
+
+    <!-- 6) MY ORDERS SCREEN -->
+    <div id="orders-screen" class="view-screen">
+      <div class="m3-top-app-bar">
+        <span style="font-weight: 800; font-size: 18px; color: var(--md-sys-color-header-admin);">طلباتي</span>
+      </div>
+
+      <div style="padding: 16px;">
+        <!-- Order Card 1 -->
+        <div style="background: #FFFFFF; border: 1px solid var(--md-sys-color-outline); border-radius: var(--m3-shape-xl); padding: 16px; margin-bottom: 12px; box-shadow: var(--m3-elevation-1);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-weight: 800; font-size: 14px;">طلب #DMC-8492</span>
+            <span class="status-badge status-preparing">قيد التجهيز</span>
+          </div>
+          <div style="font-size: 12px; color: var(--md-sys-color-text-secondary); margin-bottom: 8px;">التاريخ: 24 مايو 2024 • 02:30 م</div>
+          <div style="font-size: 13px; font-weight: 600; margin-bottom: 12px;">الأصناف: جهاز قياس ضغط OMRON + 2 قفازات</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--md-sys-color-outline); padding-top: 10px;">
+            <span style="font-weight: 800; color: var(--md-sys-color-primary);">39,750 ج.س</span>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn-m3-secondary" style="height: 34px; padding: 0 12px; font-size: 11px;" onclick="switchView('invoice-screen')">عرض الفاتورة</button>
+              <button class="btn-m3-primary" style="height: 34px; padding: 0 12px; font-size: 11px;" onclick="triggerToast('تم نقل الأصناف للسلة بنجاح'); switchView('cart-screen');">إعادة الطلب</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Order Card 2 -->
+        <div style="background: #FFFFFF; border: 1px solid var(--md-sys-color-outline); border-radius: var(--m3-shape-xl); padding: 16px; margin-bottom: 12px; box-shadow: var(--m3-elevation-1);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-weight: 800; font-size: 14px;">طلب #DMC-8102</span>
+            <span class="status-badge status-done">تم التسليم</span>
+          </div>
+          <div style="font-size: 12px; color: var(--md-sys-color-text-secondary); margin-bottom: 8px;">التاريخ: 18 مايو 2024 • 11:15 ص</div>
+          <div style="font-size: 13px; font-weight: 600; margin-bottom: 12px;">الأصناف: شرائط تحليل السكر (3 علب)</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--md-sys-color-outline); padding-top: 10px;">
+            <span style="font-weight: 800; color: var(--md-sys-color-primary);">25,500 ج.س</span>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn-m3-secondary" style="height: 34px; padding: 0 12px; font-size: 11px;" onclick="switchView('invoice-screen')">عرض الفاتورة</button>
+              <button class="btn-m3-primary" style="height: 34px; padding: 0 12px; font-size: 11px;" onclick="triggerToast('تم نقل الأصناف للسلة بنجاح'); switchView('cart-screen');">إعادة الطلب</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7) OFFICIAL INVOICE SCREEN -->
+    <div id="invoice-screen" class="view-screen">
+      <div class="m3-top-app-bar">
+        <button class="icon-btn" onclick="switchView('orders-screen')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <span style="font-weight: 700; font-size: 16px;">فاتورة مبيعات</span>
+        <button class="icon-btn" onclick="triggerToast('جاري مشاركة الفاتورة...')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
+      </div>
+
+      <div class="invoice-paper">
+        <!-- Invoice Header -->
+        <div style="text-align: center; border-bottom: 2px stroke var(--md-sys-color-primary); padding-bottom: 12px;">
+          <div class="logo-badge" style="margin: 0 auto 8px auto;">DMC</div>
+          <h2 style="font-size: 16px; font-weight: 800; color: var(--md-sys-color-header-admin);">Diala Medical & Chemical Equipment</h2>
+          <div style="font-size: 13px; font-weight: 700; color: var(--md-sys-color-primary); margin-top: 4px;">فاتورة مبيعات رسمية</div>
+        </div>
+
+        <div style="margin-top: 12px; font-size: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div><strong>اسم العميل:</strong> د. أحمد الفاتح</div>
+          <div><strong>رقم الفاتورة:</strong> #DMC-8492</div>
+          <div><strong>التاريخ:</strong> 2024/05/24</div>
+          <div><strong>المنطقة:</strong> عطبرة</div>
+        </div>
+
+        <table class="invoice-table">
+          <thead>
+            <tr style="background: var(--md-sys-color-surface-variant);">
+              <th>الصنف</th>
+              <th>العدد</th>
+              <th>السعر</th>
+              <th>الإجمالي</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>جهاز قياس ضغط OMRON</td>
+              <td>1</td>
+              <td>29,750</td>
+              <td>29,750</td>
+            </tr>
+            <tr>
+              <td>قفازات طبية لاتكس</td>
+              <td>2</td>
+              <td>4,250</td>
+              <td>8,500</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="font-size: 12px; line-height: 1.8;">
+          <div style="display: flex; justify-content: space-between;">
+            <span>مجموع المبيعات:</span>
+            <span>38,250 ج.س</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>رسوم التوصيل:</span>
+            <span>1,500 ج.س</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: 800; color: var(--md-sys-color-primary); border-top: 1px stroke #000; padding-top: 4px;">
+            <span>المبلغ المطلوب النهائي:</span>
+            <span>39,750 ج.س</span>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px; font-size: 11px; color: var(--md-sys-color-text-tertiary);">
+          شكراً لتعاملكم مع DMC للمعدات والمستهلكات الطبية
+        </div>
+      </div>
+
+      <div style="padding: 0 16px 16px 16px; display: flex; gap: 10px;">
+        <button class="btn-m3-primary" style="flex: 1;" onclick="triggerToast('جاري تحميل فاتورة PDF...')">
+          تحميل PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- 8) CONTACT US SCREEN -->
+    <div id="contact-screen" class="view-screen">
+      <div class="m3-top-app-bar">
+        <span style="font-weight: 800; font-size: 18px; color: var(--md-sys-color-header-admin);">تواصل معنا</span>
+      </div>
+
+      <div style="padding: 16px;">
+        <div style="background: #FFFFFF; border-radius: var(--m3-shape-xl); border: 1px solid var(--md-sys-color-outline); padding: 20px; text-align: center; margin-bottom: 16px;">
+          <div class="logo-badge" style="width: 56px; height: 56px; font-size: 20px; margin: 0 auto 12px auto;">DMC</div>
+          <h3 style="font-size: 16px; font-weight: 800;">DMC Medical Equipment</h3>
+          <p style="font-size: 12px; color: var(--md-sys-color-text-secondary); margin-top: 4px;">معدات ومستهلكات طبية ومختبرات</p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+          <button class="btn-m3-primary" style="background-color: #25D366; color: #FFF;" onclick="triggerToast('فتح المحادثة عبر WhatsApp...')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654z"/></svg>
+            محادثة عبر واتساب
+          </button>
+          
+          <button class="btn-m3-primary" onclick="triggerToast('جاري الاتصال بـ DMC...')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            اتصال هاتفي مباشر
+          </button>
+        </div>
+
+        <div style="background: #FFFFFF; border-radius: var(--m3-shape-xl); border: 1px solid var(--md-sys-color-outline); padding: 16px; margin-bottom: 16px;">
+          <h4 style="font-size: 14px; font-weight: 800; margin-bottom: 8px;">موقع المحل الرئيسي</h4>
+          <p style="font-size: 13px; color: var(--md-sys-color-text-secondary); margin-bottom: 12px;">السودان - نهر النيل - عطبرة - شارع المستشفى</p>
+          <div class="map-picker" style="height: 100px;">
+            <div class="map-grid-bg"></div>
+            <span style="z-index: 2; font-weight: 700; font-size: 12px; color: var(--md-sys-color-primary);">موقع DMC على الخريطة</span>
+          </div>
+        </div>
+
+        <div style="background: #FFFFFF; border-radius: var(--m3-shape-xl); border: 1px solid var(--md-sys-color-outline); padding: 16px;">
+          <h4 style="font-size: 14px; font-weight: 800; margin-bottom: 10px;">مناطق التوصيل المتاحة</h4>
+          <ul style="list-style: none; font-size: 13px; color: var(--md-sys-color-text-secondary); display: flex; flex-direction: column; gap: 8px;">
+            <li style="display: flex; justify-content: space-between;"><span>• عطبرة</span><strong>1,500 ج.س</strong></li>
+            <li style="display: flex; justify-content: space-between;"><span>• الدامر</span><strong>2,000 ج.س</strong></li>
+            <li style="display: flex; justify-content: space-between;"><span>• بربر</span><strong>2,500 ج.س</strong></li>
+            <li style="display: flex; justify-content: space-between;"><span>• أبوحمد</span><strong>5,000 ج.س</strong></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9) NOTIFICATIONS SCREEN -->
+    <div id="notifications-screen" class="view-screen">
+      <div class="m3-top-app-bar">
+        <button class="icon-btn" onclick="switchView('home-screen')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <span style="font-weight: 700; font-size: 16px;">مركز الإشعارات</span>
+        <div style="width: 40px;"></div>
+      </div>
+
+      <div style="padding: 8px 0;">
+        <div class="notification-card">
+          <div class="notif-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div>
+            <div style="font-size: 13px; font-weight: 700;">تحديث حالة الطلب #DMC-8492</div>
+            <div style="font-size: 12px; color: var(--md-sys-color-text-secondary); margin-top: 2px;">تغيرت حالة طلبك إلى: "قيد التجهيز" بواسطة إدارة DMC.</div>
+            <div style="font-size: 10px; color: var(--md-sys-color-text-tertiary); margin-top: 6px;">منذ 15 دقيقة</div>
+          </div>
+        </div>
+
+        <div class="notification-card">
+          <div class="notif-icon" style="background: var(--md-sys-color-primary-container); color: var(--md-sys-color-primary);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div>
+            <div style="font-size: 13px; font-weight: 700;">عرض جديد من DMC!</div>
+            <div style="font-size: 12px; color: var(--md-sys-color-text-secondary); margin-top: 2px;">تخفيض خاص على مستهلكات المختبرات وأجهزة قياس السكر لفترة محدودة.</div>
+            <div style="font-size: 10px; color: var(--md-sys-color-text-tertiary); margin-top: 6px;">ساعة واحدة</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10) STATE: EMPTY CART SCREEN -->
+    <div id="empty-cart-screen" class="view-screen">
+      <div class="m3-top-app-bar">
+        <span style="font-weight: 800; font-size: 18px; color: var(--md-sys-color-header-admin);">سلة الشراء</span>
+      </div>
+
+      <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center;">
+        <div style="width: 96px; height: 96px; background: var(--md-sys-color-surface-variant); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        </div>
+        <h3 style="font-size: 18px; font-weight: 800; color: var(--md-sys-color-text-primary); margin-bottom: 8px;">سلتك فارغة حالياً</h3>
+        <p style="font-size: 13px; color: var(--md-sys-color-text-secondary); margin-bottom: 24px;">لم تقم بإضافة أي معدات أو مستهلكات طبية بعد.</p>
+        <button class="btn-m3-primary" style="width: 200px;" onclick="switchView('home-screen')">تصفح المنتجات</button>
+      </div>
+    </div>
+
+    <!-- 11) STATE: LOADING SKELETON SCREEN -->
+    <div id="loading-screen" class="view-screen">
+      <div class="m3-top-app-bar">
+        <div style="width: 120px; height: 20px; background: #E2E8F0; border-radius: 4px;"></div>
+      </div>
+      <div style="padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div style="height: 180px; background: #E2E8F0; border-radius: var(--m3-shape-xl); animation: pulse 1.5s infinite;"></div>
+        <div style="height: 180px; background: #E2E8F0; border-radius: var(--m3-shape-xl); animation: pulse 1.5s infinite;"></div>
+        <div style="height: 180px; background: #E2E8F0; border-radius: var(--m3-shape-xl); animation: pulse 1.5s infinite;"></div>
+        <div style="height: 180px; background: #E2E8F0; border-radius: var(--m3-shape-xl); animation: pulse 1.5s infinite;"></div>
+      </div>
+      <style>
+        @keyframes pulse {
+          0% { opacity: 0.6; }
+          50% { opacity: 1; }
+          100% { opacity: 0.6; }
+        }
+      </style>
+    </div>
+
+    <!-- Persistent Bottom Navigation Bar -->
+    <nav class="m3-bottom-nav">
+      <button class="nav-item active" onclick="switchView('home-screen', null, this)">
+        <div class="nav-indicator">
+          <svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        </div>
+        <span class="nav-label">الرئيسية</span>
+      </button>
+
+      <button class="nav-item" onclick="switchView('cart-screen', null, this)">
+        <div class="nav-indicator">
+          <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        </div>
+        <span class="nav-label">السلة</span>
+      </button>
+
+      <button class="nav-item" onclick="switchView('orders-screen', null, this)">
+        <div class="nav-indicator">
+          <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+        </div>
+        <span class="nav-label">طلباتي</span>
+      </button>
+
+      <button class="nav-item" onclick="switchView('contact-screen', null, this)">
+        <div class="nav-indicator">
+          <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        </div>
+        <span class="nav-label">تواصل</span>
+      </button>
+    </nav>
+
+    <!-- Global Toast Alert -->
+    <div id="toast" class="toast">تمت العملية بنجاح</div>
+  </div>
+
+  <!-- Interactive Screen Navigation Script -->
+  <script>
+    function switchView(screenId, pillEl, navEl) {
+      // Hide all screens
+      const screens = document.querySelectorAll('.view-screen');
+      screens.forEach(s => s.classList.remove('active'));
+
+      // Show targeted screen
+      const targetScreen = document.getElementById(screenId);
+      if (targetScreen) {
+        targetScreen.classList.add('active');
+      }
+
+      // Update Top Tester Pills
+      if (pillEl) {
+        const pills = document.querySelectorAll('.screen-pill');
+        pills.forEach(p => p.classList.remove('active'));
+        pillEl.classList.add('active');
+      } else {
+        // Sync top pills with navigation
+        const pills = document.querySelectorAll('.screen-pill');
+        pills.forEach(p => {
+          if (p.getAttribute('onclick') && p.getAttribute('onclick').includes(screenId)) {
+            pills.forEach(item => item.classList.remove('active'));
+            p.classList.add('active');
+          }
+        });
+      }
+
+      // Update Bottom Nav if clicked from bottom bar
+      if (navEl) {
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(n => n.classList.remove('active'));
+        navEl.classList.add('active');
+      }
+    }
+
+    function triggerToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+{
+ "pair": "tareg5",
+ "prefix": "tareg5",
+ "lang": "flutter",
+ "push": true,
+ "admins": [
+  "awadaljied8@gmail.com"
+ ],
+ "description": "تطبيقان لمحل DMC (Diala Medical & Chemical Equipment) لبيع المعدات والمستهلكات الطبية، \nالتصميم:\n- عربي بالكامل، واتجاه من اليمين لليسار، وخط Cairo.\n- الألوان: أزرق غامق #0A2F6B للهيدر في الإدارة، أزرق #0A47A8 للأزرار، أخضر مائل للأزرق #00B8C4 للإشعارات، خلفية #F3F7FC، كروت بيضاء بحواف مدورة وحد خفيف #E1E9F3.\n- شعار DMC في الهيدر (ملف الشعار المرفق).\n- أزرار بارتفاع 44 على الأقل، وشريط تنقل سفلي ثابت.\n- شارات الحالة: أزرق للعادي، أخضر للمتوفر والمدفوع، أحمر للنفاد والآجل.\nقاعدة البيانات (Supabase):\n- products: الاسم، القسم، السعر بالدولار، الكمية، الصورة، ظاهر أو مخفي.\n- settings: سعر الدولار اليوم.\n- delivery_areas: اسم المنطقة، سعر التوصيل.\n- orders وorder_items: بيانات الزبون، المنطقة، المنتجات، الإجمالي، الحالة.\n- purchases: المورد، التاريخ، المبلغ، حالة الدفع، صورة الفاتورة.\n- customers.\nسعر المنتج بالجنيه = سعر الدولار × سعر الدولار اليوم، ويتحسب تلقائياً في تطبيق الزبون.تطبيق الزبون: يشوف المنتجات ويطلب ويتابع طلبه. شريط التنقل السفلي: الرئيسية، السلة، طلباتي، تواصل.\nالشاشات:\n1) الرئيسية: هيدر أبيض فيه الشعار واسم DMC وسطر \"معدات ومستهلكات طبية\" وزر إشعارات. تحته بحث، وأقسام (الكل، معدات، مستهلكات، مختبر)، وشريط أخضر فاتح \"التوصيل إلى: [المنطقة]\" مع رسومها، وكروت منتجات في عمودين (صورة، اسم، سعر بالجنيه، زر \"أضف للسلة\").\n2) تفاصيل المنتج: صورة كبيرة، الاسم، شارة \"متوفر\"، الوصف، السعر، عداد كمية (- 1 +)، وزر \"أضف للسلة\".\n3) السلة: المنتجات بالكمية، وملخص (المنتجات، التوصيل، الإجمالي) وزر \"إتمام الطلب\".\n4) إتمام الطلب: الاسم، رقم الهاتف، العنوان، اختيار منطقة التوصيل (بربر، الدامر، عطبرة، أبوحمد وأي منطقة تضيفها الإدارة)، اختيار توصيل أو استلام من المحل، الدفع كاش عند الاستلام، وزر \"تأكيد الطلب\".\n5) طلباتي: قائمة الطلبات بحالتها (جديد، قيد التجهيز، في الطريق، تم)، وزر \"عرض الفاتورة\" وزر \"إعادة الطلب\".\n6) الفاتورة: تتولد تلقائياً لكل طلب على شكل فاتورة المحل: الشعار، \"فاتورة مبيعات\"، اسم العميل، رقم الفاتورة، التاريخ، جدول الأصناف (الصنف، الكمية، السعر، الإجمالي)، رسوم التوصيل، المطلوب. وفيها زر مشاركة وتحميل PDF.\n7) تواصل معنا: زر واتساب، زر اتصال، موقع المحل، ومناطق التوصيل.\nإشعارات: عند تغيير حالة الطلب وعند وصول عرض جديد.تطبيق الإدارة: للمدير فقط، بتسجيل دخول بكلمة سر. الهيدر أزرق غامق فيه الشعار. شريط التنقل السفلي: الرئيسية، الطلبات، المنتجات، المشتريات، التقارير.\nالشاشات:\n1) لوحة التحكم:\n   - شارة \"عدد الطلبات الجديدة\".\n   - بطاقة \"سعر الدولار اليوم\": خانة لكتابة السعر وزر \"تحديث الأسعار\"، وعند الضغط تتغير أسعار كل المنتجات عند الزبائن تلقائياً.\n   - بطاقة \"مناطق التوصيل وأسعارها\": بربر، الدامر، عطبرة، أبوحمد، لكل منطقة خانة سعر قابلة للتعديل\n\n=== المواصفات اللي وافق عليها صاحب التطبيق (نفّذها كلها بند بند، ولا تضيف تطبيق مختلف) ===\nالفكرة: تطبيقان لنظام متجر DMC للمعدات والمستهلكات الطبية: تطبيق للزبون لتصفح المنتجات وطلبها، وتطبيق للإدارة للتحكم الكامل بالمنتجات والأسعار والطلبات والمشتريات.\nالشاشات:\n- الاثنين: شاشة تسجيل الدخول (الاسم، رقم الهاتف، البريد الإلكتروني، رمز التأكيد، كلمة المرور)\n- الزبون: الرئيسية (الشعار، اسم DMC، زر إشعارات، بحث، أقسام، شريط التوصيل، كروت المنتجات، شريط تنقل سفلي: الرئيسية، السلة، طلباتي، تواصل)\n- الزبون: تفاصيل المنتج (صورة، اسم، شارة متوفر، الوصف، السعر، عداد كمية، زر أضف للسلة)\n- الزبون: السلة (المنتجات بالكمية، ملخص الحساب، زر إتمام الطلب)\n- الزبون: إتمام الطلب (الاسم، رقم الهاتف، العنوان، اختيار منطقة التوصيل، توصيل أو استلام، زر تأكيد الطلب)\n- الزبون: طلباتي (قائمة الطلبات بالحالة، زر عرض الفاتورة، زر إعادة الطلب)\n- الزبون: الفاتورة (شعار، فاتورة مبيعات، بيانات العميل، جدول الأصناف، رسوم التوصيل، المطلوب، زر مشاركة وتحميل PDF)\n- الزبون: تواصل معنا (زر واتساب، زر اتصال، موقع المحل، مناطق التوصيل)\n- الإدارة: لوحة التحكم (عدد الطلبات الجديدة، بطاقة سعر الدولار اليوم وتحديث الأسعار، بطاقة مناطق التوصيل وأسعارها، شريط تنقل سفلي: الرئيسية، الطلبات، المنتجات، المشتريات، التقارير)\n- الإدارة: الطلبات (قائمة الطلبات، الفلاتر، تفاصيل الطلب وتغيير حالته)\n- الإدارة: المنتجات (إدارة المنتجات، إضافة وتعديل، إخفاء وإظهار)\n- الإدارة: المشتريات (سجل المشتريات، إضافة فاتورة مورد)\n- الإدارة: التقارير (التقارير المالية والحسابات)\n- الإدارة: العروض والأسعار (إرسال إعلانات وعروض للزبائن)\nالميزات والوظائف:\n- الاثنين: دعم اللغة العربية بالكامل واتجاه من اليمين لليسار وخط Cairo والألوان المحددة والأزرار والشارات\n- الاثنين: نظام تسجيل دخول بكلمة مرور ورمز تأكيد البريد الإلكتروني للزبون والإدارة\n- الزبون: حساب سعر المنتج بالجنيه تلقائياً بناءً على سعر الدولار اليوم\n- الزبون: إضافة المنتجات للسلة وتعديل الكميات وإتمام الطلب كاش عند الاستلام\n- الزبون: متابعة حالة الطلب وعرض الفاتورة وتوليد ملف PDF ومشاركتها\n- الزبون: استقبال إشعارات عند تغيير حالة الطلب وعند وصول عرض جديد\n- الإدارة: تحديث سعر الدولار اليوم لتغيير أسعار كل المنتجات عند الزبائن تلقائياً\n- الإدارة: إضافة وتعديل مناطق التوصيل وأسعارها\n- الإدارة: متابعة الطلبات الجديدة وتغيير حالتها (جديد، قيد التجهيز، في الطريق، تم)\n- الإدارة: إدارة المخزون والمشتريات وإرسال العروض والأسعار\nالبيانات اللي التطبيق بيحفظها:\n- products: الاسم، القسم، السعر بالدولار، الكمية، الصورة، ظاهر أو مخفي\n- settings: سعر الدولار اليوم\n- delivery_areas: اسم المنطقة، سعر التوصيل\n- orders: بيانات الزبون، المنطقة، المنتجات، الإجمالي، الحالة\n- order_items: بيانات المنتجات داخل الطلب والكمية\n- purchases: المورد، التاريخ، المبلغ، حالة الدفع، صورة الفاتورة\n- customers: الاسم، رقم الهاتف، البريد الإلكتروني، كلمة المرور\nالأسماء والنصوص والأرقام والألوان:\n- DMC\n- Diala Medical & Chemical Equipment\n- معدات ومستهلكات طبية\n- #0A2F6B\n- #0A47A8\n- #00B8C4\n- #F3F7FC\n- #E1E9F3\n- بربر\n- الدامر\n- عطبرة\n- أبوحمد\nالصلاحيات: الكاميرا، الصور والملفات، الإشعارات، الاتصال المباشر\nANDROID_PERMISSIONS: CAMERA, STORAGE, NOTIFICATIONS, CALL_PHONE\nLOGIN: customer=phone_email_code admin=phone_email_code",
+ "login": {
+  "customer": "phone_email_code",
+  "admin": "phone_email_code"
+ },
+ "supabase": {
+  "url": "https://jvjtgzewumfecjdpekna.supabase.co",
+  "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE",
+  "ref": "jvjtgzewumfecjdpekna"
+ },
+ "schemaSql": "create table if not exists tareg5_settings (\n  id bigint generated by default as identity primary key,\n  usd_rate numeric not null default 600,\n  updated_at timestamptz default now()\n);\n\ncreate table if not exists tareg5_delivery_areas (\n  id bigint generated by default as identity primary key,\n  name text not null unique,\n  delivery_fee numeric not null default 0,\n  created_at timestamptz default now()\n);\n\ncreate table if not exists tareg5_products (\n  id bigint generated by default as identity primary key,\n  name text not null,\n  category text not null,\n  price_usd numeric not null,\n  stock_quantity integer not null default 0,\n  image_url text,\n  is_visible boolean not null default true,\n  created_at timestamptz default now()\n);\n\ncreate table if not exists tareg5_customers (\n  id uuid primary key default auth.uid(),\n  full_name text not null,\n  phone text not null,\n  email text not null,\n  created_at timestamptz default now()\n);\n\ncreate table if not exists tareg5_orders (\n  id bigint generated by default as identity primary key,\n  customer_id uuid not null default auth.uid() references auth.users(id) on delete cascade,\n  customer_name text not null,\n  customer_phone text not null,\n  area_name text not null,\n  delivery_fee numeric not null,\n  delivery_type text not null, -- 'delivery' or 'pickup'\n  detailed_address text,\n  total_amount numeric not null,\n  status text not null default 'جديد', -- 'جديد', 'قيد التجهيز', 'في الطريق', 'تم'\n  created_at timestamptz default now()\n);\n\ncreate table if not exists tareg5_order_items (\n  id bigint generated by default as identity primary key,\n  order_id bigint not null references tareg5_orders(id) on delete cascade,\n  product_id bigint references tareg5_products(id) on delete set null,\n  product_name text not null,\n  quantity integer not null,\n  unit_price_sdg numeric not null,\n  total_price_sdg numeric not null,\n  created_at timestamptz default now()\n);\n\ncreate table if not exists tareg5_purchases (\n  id bigint generated by default as identity primary key,\n  supplier_name text not null,\n  purchase_date date not null,\n  amount_usd numeric not null,\n  payment_status text not null, -- 'مدفوع بالكامل', 'آجل (غير مدفوع)'\n  invoice_image_url text,\n  created_at timestamptz default now()\n);\n\n-- Enable RLS\nalter table tareg5_settings enable row level security;\nalter table tareg5_delivery_areas enable row level security;\nalter table tareg5_products enable row level security;\nalter table tareg5_customers enable row level security;\nalter table tareg5_orders enable row level security;\nalter table tareg5_order_items enable row level security;\nalter table tareg5_purchases enable row level security;\n\n-- Policies\ndrop policy if exists \"settings_select\" on tareg5_settings;\ncreate policy \"settings_select\" on tareg5_settings for select to authenticated using (true);\n\ndrop policy if exists \"settings_modify\" on tareg5_settings;\ncreate policy \"settings_modify\" on tareg5_settings for all to authenticated using (public.tareg5_is_admin()) with check (public.tareg5_is_admin());\n\ndrop policy if exists \"delivery_areas_select\" on tareg5_delivery_areas;\ncreate policy \"delivery_areas_select\" on tareg5_delivery_areas for select to authenticated using (true);\n\ndrop policy if exists \"delivery_areas_modify\" on tareg5_delivery_areas;\ncreate policy \"delivery_areas_modify\" on tareg5_delivery_areas for all to authenticated using (public.tareg5_is_admin()) with check (public.tareg5_is_admin());\n\ndrop policy if exists \"products_select\" on tareg5_products;\ncreate policy \"products_select\" on tareg5_products for select to authenticated using (true);\n\ndrop policy if exists \"products_modify\" on tareg5_products;\ncreate policy \"products_modify\" on tareg5_products for all to authenticated using (public.tareg5_is_admin()) with check (public.tareg5_is_admin());\n\ndrop policy if exists \"customers_all\" on tareg5_customers;\ncreate policy \"customers_all\" on tareg5_customers for all to authenticated using (id = auth.uid() or public.tareg5_is_admin()) with check (id = auth.uid() or public.tareg5_is_admin());\n\ndrop policy if exists \"orders_select\" on tareg5_orders;\ncreate policy \"orders_select\" on tareg5_orders for select to authenticated using (customer_id = auth.uid() or public.tareg5_is_admin());\n\ndrop policy if exists \"orders_insert\" on tareg5_orders;\ncreate policy \"orders_insert\" on tareg5_orders for insert to authenticated with check (customer_id = auth.uid());\n\ndrop policy if exists \"orders_update\" on tareg5_orders;\ncreate policy \"orders_update\" on tareg5_orders for update to authenticated using (customer_id = auth.uid() or public.tareg5_is_admin()) with check (customer_id = auth.uid() or public.tareg5_is_admin());\n\ndrop policy if exists \"order_items_select\" on tareg5_order_items;\ncreate policy \"order_items_select\" on tareg5_order_items for select to authenticated using (\n  exists (select 1 from tareg5_orders o where o.id = order_id and (o.customer_id = auth.uid() or public.tareg5_is_admin()))\n);\n\ndrop policy if exists \"order_items_insert\" on tareg5_order_items;\ncreate policy \"order_items_insert\" on tareg5_order_items for insert to authenticated with check (\n  exists (select 1 from tareg5_orders o where o.id = order_id and o.customer_id = auth.uid())\n);\n\ndrop policy if exists \"purchases_all\" on tareg5_purchases;\ncreate policy \"purchases_all\" on tareg5_purchases for all to authenticated using (public.tareg5_is_admin()) with check (public.tareg5_is_admin());\n\n-- Initial Data\ninsert into tareg5_settings (id, usd_rate) values (1, 600) on conflict (id) do nothing;\n\ninsert into tareg5_delivery_areas (name, delivery_fee) values\n('عطبرة', 3000),\n('الدامر', 2500),\n('بربر', 4000),\n('أبوحمد', 6000)\non conflict (name) do nothing;\n\ninsert into tareg5_products (name, category, price_usd, stock_quantity, image_url, is_visible) values\n('جهاز قياس ضغط الدم الرقمي Beurer BM45', 'أجهزة قياس', 45.00, 24, '', true),\n('شرائط فحص السكر Accu-Chek (50 شريط)', 'مستهلكات', 15.00, 110, '', true),\n('سماعة طبية Littmann Classic III', 'معدات طبية', 120.00, 0, '', true),\n('قفازات طبية لاتكس (علبة 100 قطعة)', 'مستهلكات', 8.00, 200, '', true)\non conflict do nothing;",
+ "contract": {
+  "tables": [
+   {
+    "name": "tareg5_settings",
+    "purpose": "Stores current USD to SDG exchange rate",
+    "columns": [
+     "id bigint",
+     "usd_rate numeric",
+     "updated_at timestamptz"
+    ],
+    "owner": "admin"
+   },
+   {
+    "name": "tareg5_delivery_areas",
+    "purpose": "Stores delivery areas and associated shipping fees",
+    "columns": [
+     "id bigint",
+     "name text",
+     "delivery_fee numeric",
+     "created_at timestamptz"
+    ],
+    "owner": "admin"
+   },
+   {
+    "name": "tareg5_products",
+    "purpose": "Stores medical equipment and consumables catalog",
+    "columns": [
+     "id bigint",
+     "name text",
+     "category text",
+     "price_usd numeric",
+     "stock_quantity integer",
+     "image_url text",
+     "is_visible boolean",
+     "created_at timestamptz"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "tareg5_customers",
+    "purpose": "Stores customer profile details",
+    "columns": [
+     "id uuid",
+     "full_name text",
+     "phone text",
+     "email text",
+     "created_at timestamptz"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "tareg5_orders",
+    "purpose": "Stores customer orders information and fulfillment status",
+    "columns": [
+     "id bigint",
+     "customer_id uuid",
+     "customer_name text",
+     "customer_phone text",
+     "area_name text",
+     "delivery_fee numeric",
+     "delivery_type text",
+     "detailed_address text",
+     "total_amount numeric",
+     "status text",
+     "created_at timestamptz"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "tareg5_order_items",
+    "purpose": "Stores items included in each order",
+    "columns": [
+     "id bigint",
+     "order_id bigint",
+     "product_id bigint",
+     "product_name text",
+     "quantity integer",
+     "unit_price_sdg numeric",
+     "total_price_sdg numeric",
+     "created_at timestamptz"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "tareg5_purchases",
+    "purpose": "Stores supplier invoices and procurement records",
+    "columns": [
+     "id bigint",
+     "supplier_name text",
+     "purchase_date date",
+     "amount_usd numeric",
+     "payment_status text",
+     "invoice_image_url text",
+     "created_at timestamptz"
+    ],
+    "owner": "admin"
+   }
+  ],
+  "events": [
+   {
+    "when": "Order status is updated by admin",
+    "notify": "customer",
+    "title": "تحديث حالة الطلب"
+   },
+   {
+    "when": "New promo or discount broadcast is sent",
+    "notify": "customer",
+    "title": "عرض جديد من DMC!"
+   }
+  ]
+ },
+ "apps": {
+  "customer": {
+   "name": "tareg5-customer",
+   "packageId": "com.generated.app_tareg5_customer"
+  },
+  "admin": {
+   "name": "tareg5-admin",
+   "packageId": "com.generated.app_tareg5_admin"
+  }
+ },
+ "role": "customer",
+ "pushFunction": "tareg5-push"
+}

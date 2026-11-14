@@ -144,7 +144,7 @@
   "new": "FontWeight.w800",
   "error": "error • Invalid constant value • lib/main.dart:515:33 • invalid_constant",
   "source": "ai",
-  "uses": 2
+  "uses": 13
  },
  {
   "old": "Icons.store_disabled",
@@ -178,6 +178,20 @@
   "old": "Colors.white90",
   "new": "Color(0xE6FFFFFF)",
   "error": "error • Arguments of a constant creation must be constant expressions. Try making the argument a valid constant, or use 'new' to call the constructor • lib/main.dart:1631:57 • const_with_non_constant_",
+  "source": "ai",
+  "uses": 0
+ },
+ {
+  "old": "FontWeight.black",
+  "new": "FontWeight.w900",
+  "error": "error • Arguments of a constant creation must be constant expressions. Try making the argument a valid constant, or use 'new' to call the constructor • lib/main.dart:1019:69 • const_with_non_constant_",
+  "source": "ai",
+  "uses": 0
+ },
+ {
+  "old": "strokeWidth:",
+  "new": "thickness:",
+  "error": "error • The named parameter 'strokeWidth' isn't defined. Try correcting the name to an existing named parameter's name, or defining a named parameter with the name 'strokeWidth' • lib/main.dart:1684:4",
   "source": "ai",
   "uses": 0
  }

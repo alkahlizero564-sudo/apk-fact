@@ -1,0 +1,8 @@
+provider
+shared_preferences
+http
+intl
+fl_chart
+firebase_core
+firebase_messaging
+image_picker

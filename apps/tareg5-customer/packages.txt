@@ -1,0 +1,10 @@
+provider
+shared_preferences
+http
+intl
+url_launcher
+uuid
+firebase_core
+firebase_messaging
+image_picker
+geolocator

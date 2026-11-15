@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Alert, Image, Linking, Share } from "react-native";
+import { View, Text, StyleSheet, Alert, Image, Linking, Share, ScrollView } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import {
-  Screen,
   Card,
-  Section,
   ListRow,
   Button,
+  IconButton,
   Sheet,
   Field,
   Chip,
@@ -55,7 +55,17 @@ const EDIT_IDEAS = [
   "أضف أنيميشن خفيف",
 ];
 
+function Group({ title, children }: { title?: string; children: React.ReactNode }) {
+  return (
+    <View style={styles.groupWrap}>
+      {title ? <Text style={styles.groupLabel}>{title}</Text> : null}
+      <View style={styles.group}>{children}</View>
+    </View>
+  );
+}
+
 export default function AppDetailScreen({ navigation, route }: RootScreenProps<"AppDetail">) {
+  const insets = useSafeAreaInsets();
   const { name, lang } = route.params;
   const info = LANGS[lang];
 
@@ -418,54 +428,64 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
       : "معاينة جديدة";
 
   return (
-    <Screen title={name} subtitle={info.tools} onBack={() => navigation.goBack()}>
-      <Card style={styles.hero}>
-        {iconUri ? (
-          <Image source={{ uri: iconUri }} style={styles.icon} />
-        ) : (
-          <AppAvatar name={name} lang={lang} size={76} />
-        )}
-        <View style={{ flex: 1, gap: 6 }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <ScrollView
+        contentContainerStyle={{ paddingTop: insets.top + space.md, paddingHorizontal: space.lg, paddingBottom: 60 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.topBar}>
+          <IconButton icon="arrow-forward" label="رجوع" onPress={() => navigation.goBack()} />
+        </View>
+
+        <View style={styles.hero}>
+          {iconUri ? (
+            <Image source={{ uri: iconUri }} style={styles.icon} />
+          ) : (
+            <AppAvatar name={name} lang={lang} size={92} />
+          )}
           <Text style={styles.name}>{label || name}</Text>
-          <LangBadge lang={lang} />
+          <View style={styles.badgeRow}>
+            <LangBadge lang={lang} />
+          </View>
           {client ? <Text style={styles.client}>للزبون: {client}</Text> : null}
           <Text style={styles.path}>{label ? `${name} · ` : ""}apps/{name}</Text>
         </View>
-      </Card>
 
-      <View style={styles.actions}>
-        <Button title="معاينة" icon="eye-outline" variant="secondary" onPress={() => navigation.navigate("Preview", { name })} style={{ flex: 1 }} />
-        <Button title="ابنِ وثبّت" icon="download-outline" onPress={startBuild} disabled={running} style={{ flex: 1 }} />
-      </View>
-      <Button
-        title="انشر رابطاً حيّاً (للعميل، بلا تثبيت)"
-        icon="link-outline"
-        variant="secondary"
-        onPress={startPublishLive}
-        disabled={running}
-        style={{ marginTop: space.sm }}
-      />
-      {result?.kind === "ok" && op === "live" && liveUrl ? (
-        <View style={[styles.actions, { marginTop: space.sm }]}>
-          <Button title="افتح الرابط" icon="open-outline" onPress={() => Linking.openURL(liveUrl)} style={{ flex: 1 }} />
-          <Button title="شارك الرابط" icon="share-social-outline" variant="secondary" onPress={() => Share.share({ message: liveUrl })} style={{ flex: 1 }} />
+        <View style={styles.actions}>
+          <Button title="معاينة" icon="eye-outline" variant="secondary" onPress={() => navigation.navigate("Preview", { name })} style={{ flex: 1 }} />
+          <Button title="ابنِ وثبّت" icon="download-outline" onPress={startBuild} disabled={running} style={{ flex: 1 }} />
         </View>
-      ) : null}
-
-      <Card style={[styles.list, styles.updateCard]}>
-        <ListRow
-          icon="cloud-upload-outline"
-          tint={colors.accent}
-          title="تحديث التطبيق"
-          subtitle="غيّر، احذف، أضف بالذكاء الاصطناعي مع معاينة فورية، والتطبيق المثبّت يجيه إشعار بالتحديث"
-          value={published ? `v${published.versionName ?? published.version}` : undefined}
-          onPress={() => navigation.navigate("Update", { name, lang })}
-          last
+        <Button
+          title="انشر رابطاً حيّاً (بلا تثبيت)"
+          icon="link-outline"
+          variant="secondary"
+          onPress={startPublishLive}
+          disabled={running}
+          style={{ marginTop: space.sm }}
         />
-      </Card>
+        {result?.kind === "ok" && op === "live" && liveUrl ? (
+          <View style={[styles.actions, { marginTop: space.sm }]}>
+            <Button title="افتح الرابط" icon="open-outline" onPress={() => Linking.openURL(liveUrl)} style={{ flex: 1 }} />
+            <Button title="شارك الرابط" icon="share-social-outline" variant="secondary" onPress={() => Share.share({ message: liveUrl })} style={{ flex: 1 }} />
+          </View>
+        ) : null}
 
-      <Section title="تطوير">
-        <Card style={styles.list}>
+        <View style={{ height: space.xl }} />
+
+        <Group>
+          <ListRow
+            icon="cloud-upload-outline"
+            tint={colors.accent}
+            title="تحديث التطبيق"
+            subtitle="غيّر، احذف، أضف بالذكاء الاصطناعي مع معاينة فورية، والتطبيق المثبّت يجيه إشعار بالتحديث"
+            value={published ? `v${published.versionName ?? published.version}` : undefined}
+            onPress={() => navigation.navigate("Update", { name, lang })}
+            last
+          />
+        </Group>
+
+        <Group title="تطوير">
           <ListRow
             icon="sparkles-outline"
             tint={colors.accent}
@@ -499,11 +519,9 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
             onPress={iconBusy ? undefined : pickIcon}
             last
           />
-        </Card>
-      </Section>
+        </Group>
 
-      <Section title="Google Play">
-        <Card style={styles.list}>
+        <Group title="Google Play">
           <ListRow
             icon="cube-outline"
             title="اسم الحزمة"
@@ -532,12 +550,10 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
             onPress={running ? undefined : startStore}
             last
           />
-        </Card>
-      </Section>
+        </Group>
 
-      {lang === "html" ? (
-        <Section title="مشروع">
-          <Card style={styles.list}>
+        {lang === "html" ? (
+          <Group title="مشروع">
             <ListRow
               icon="git-merge-outline"
               tint="#34D399"
@@ -546,13 +562,11 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
               onPress={() => setSheet("link")}
               last
             />
-          </Card>
-        </Section>
-      ) : null}
+          </Group>
+        ) : null}
 
-      {pair ? (
-        <Section title="التطبيقين المتصلين">
-          <Card style={styles.list}>
+        {pair ? (
+          <Group title="التطبيقين المتصلين">
             <ListRow
               icon="shield-checkmark-outline"
               tint={colors.accent}
@@ -561,12 +575,10 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
               onPress={openAdmins}
               last
             />
-          </Card>
-        </Section>
-      ) : null}
+          </Group>
+        ) : null}
 
-      <Section title="الخزنة الخاصة">
-        <Card style={styles.list}>
+        <Group title="الخزنة الخاصة">
           <ListRow
             icon="shield-checkmark-outline"
             tint={vault?.saved ? colors.okText : colors.warnText}
@@ -583,14 +595,12 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
             onPress={() => setSheet("vault")}
             last
           />
-        </Card>
-      </Section>
+        </Group>
 
-      <Section title="منطقة الخطر">
-        <Card style={styles.list}>
+        <Group title="منطقة الخطر">
           <ListRow icon="trash-outline" title="حذف التطبيق" subtitle="يحذف كل ملفاته من GitHub" danger onPress={confirmDelete} last />
-        </Card>
-      </Section>
+        </Group>
+      </ScrollView>
 
       <Sheet visible={sheet === "edit"} title="تعديل بالذكاء الاصطناعي" onClose={() => setSheet(null)}>
         <Field
@@ -850,19 +860,24 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
           />
         ) : null}
       </Sheet>
-    </Screen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: { flexDirection: "row-reverse", alignItems: "center", gap: space.lg, marginBottom: space.md },
-  icon: { width: 76, height: 76, borderRadius: 22 },
-  name: { fontSize: 24, fontWeight: "900", color: colors.text, textAlign: "right" },
-  client: { fontSize: 13, color: colors.accent, textAlign: "right", fontWeight: "600" },
-  path: { fontSize: 12, color: colors.textMuted, textAlign: "right", fontFamily: "monospace" },
-  actions: { flexDirection: "row-reverse", gap: space.md, marginBottom: space.xl },
-  list: { padding: 0, overflow: "hidden" },
-  updateCard: { marginBottom: space.xl, borderColor: colors.accent + "66" },
+  topBar: { flexDirection: "row-reverse", marginBottom: space.md },
+  hero: { alignItems: "center", gap: 8, marginBottom: space.xl },
+  icon: { width: 92, height: 92, borderRadius: 30 },
+  name: { fontSize: 26, fontWeight: "700", color: colors.text, textAlign: "center", marginTop: space.sm },
+  badgeRow: { flexDirection: "row", justifyContent: "center" },
+  client: { fontSize: 13, color: colors.accent, textAlign: "center", fontWeight: "600" },
+  path: { fontSize: 12, color: "#6B6B75", textAlign: "center", fontFamily: "monospace" },
+  actions: { flexDirection: "row-reverse", gap: space.md },
+
+  groupWrap: { marginBottom: space.xl },
+  groupLabel: { color: "#8A8A94", fontSize: 13, fontWeight: "600", textAlign: "right", marginBottom: space.sm, marginRight: space.sm },
+  group: { backgroundColor: "#111114", borderRadius: 24, overflow: "hidden" },
+
   chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: space.sm, marginBottom: space.lg },
   sheetSubtitle: { ...type.label, color: colors.text, textAlign: "right", marginBottom: space.sm },
   sheetText: { ...type.body, color: colors.textMuted, textAlign: "right", marginBottom: space.lg },

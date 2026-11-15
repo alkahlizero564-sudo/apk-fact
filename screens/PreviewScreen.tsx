@@ -38,7 +38,7 @@ export default function PreviewScreen({ navigation, route }: RootScreenProps<"Pr
         <IconButton icon="refresh" label="تحديث" onPress={() => setReload((r) => r + 1)} />
       </View>
 
-      {!data && !error ? <ActivityIndicator color={colors.accent} style={{ marginTop: space.xxl }} /> : null}
+      {!data && !error ? <ActivityIndicator color="#FFFFFF" style={{ marginTop: space.xxl }} /> : null}
       {error ? (
         <EmptyState
           icon="eye-off-outline"
@@ -48,7 +48,7 @@ export default function PreviewScreen({ navigation, route }: RootScreenProps<"Pr
         />
       ) : null}
       {data ? (
-        <View style={styles.frame}>
+        <View style={[styles.frame, { marginBottom: Math.max(insets.bottom, space.md) }]}>
           <WebView originWhitelist={["*"]} source={{ html: data.html }} style={{ flex: 1, backgroundColor: colors.bg }} />
         </View>
       ) : null}
@@ -64,12 +64,16 @@ const styles = StyleSheet.create({
     gap: space.md,
     paddingHorizontal: space.lg,
     paddingBottom: space.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.bg,
   },
-  titleWrap: { flex: 1, alignItems: "flex-end", gap: 4 },
-  title: { fontSize: 18, fontWeight: "900", color: colors.text },
-  badges: { flexDirection: "row-reverse", gap: 6 },
-  frame: { flex: 1 },
+  titleWrap: { flex: 1, alignItems: "center", gap: 4 },
+  title: { fontSize: 17, fontWeight: "700", color: colors.text },
+  badges: { flexDirection: "row", gap: 6, justifyContent: "center" },
+  frame: {
+    flex: 1,
+    marginHorizontal: space.md,
+    borderRadius: 28,
+    overflow: "hidden",
+    backgroundColor: "#111114",
+  },
 });

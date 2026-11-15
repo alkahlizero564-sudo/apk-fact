@@ -57,6 +57,8 @@ export default function InstantPreviewScreen({ navigation, route }: RootScreenPr
     if (!demo) load(false);
   }, [demo, load]);
 
+  const hasFooter = !!(route.params.fromWizard || template);
+
   return (
     <View style={styles.root}>
       <View style={[styles.bar, { paddingTop: insets.top + space.sm }]}>
@@ -74,12 +76,12 @@ export default function InstantPreviewScreen({ navigation, route }: RootScreenPr
             )}
           </View>
         </View>
-        {!demo && html ? <IconButton icon="refresh" label="معاينة جديدة" onPress={() => load(true)} /> : null}
+        {!demo && html ? <IconButton icon="refresh" label="معاينة جديدة" onPress={() => load(true)} /> : <View style={{ width: 42 }} />}
       </View>
 
       {!html && !live && !error ? (
         <View style={styles.wait}>
-          <ActivityIndicator color={colors.accent} size="large" />
+          <ActivityIndicator color="#FFFFFF" size="large" />
           <Text style={styles.waitTitle}>بنجهّز معاينة فورية…</Text>
           <Text style={styles.waitText}>{status || "ثواني ونكون جاهزين"}</Text>
           <Text style={styles.waitHint}>المعاينة بتتحفظ، والمرة الجاية بتفتح فوراً.</Text>
@@ -95,17 +97,21 @@ export default function InstantPreviewScreen({ navigation, route }: RootScreenPr
       ) : null}
       {/* While streaming: show the design being written live, with a small "drawing now" ribbon. */}
       {!html && live ? (
-        <View style={{ flex: 1 }}>
+        <View style={styles.frame}>
           <WebView originWhitelist={["*"]} source={{ html: live }} style={{ flex: 1, backgroundColor: colors.bg }} scrollEnabled={false} />
           <View style={styles.liveRibbon}>
-            <ActivityIndicator color={colors.primaryText} size="small" />
+            <ActivityIndicator color="#000000" size="small" />
             <Text style={styles.liveText}>يرسم التصميم مباشرة…</Text>
           </View>
         </View>
       ) : null}
-      {html ? <WebView originWhitelist={["*"]} source={{ html }} style={{ flex: 1, backgroundColor: colors.bg }} /> : null}
+      {html ? (
+        <View style={styles.frame}>
+          <WebView originWhitelist={["*"]} source={{ html }} style={{ flex: 1, backgroundColor: colors.bg }} />
+        </View>
+      ) : null}
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }]}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + space.md }, !hasFooter && { paddingTop: 0 }]}>
         {route.params.fromWizard ? (
           <Button title="رجوع للتعديل" icon="create-outline" variant="secondary" onPress={() => navigation.goBack()} style={{ flex: 1 }} />
         ) : template ? (
@@ -129,18 +135,36 @@ const styles = StyleSheet.create({
     gap: space.md,
     paddingHorizontal: space.lg,
     paddingBottom: space.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.bg,
   },
-  titleWrap: { flex: 1, alignItems: "flex-end", gap: 4 },
-  title: { fontSize: 18, fontWeight: "900", color: colors.text },
-  badges: { flexDirection: "row-reverse", gap: 6 },
+  titleWrap: { flex: 1, alignItems: "center", gap: 4 },
+  title: { fontSize: 17, fontWeight: "700", color: colors.text },
+  badges: { flexDirection: "row", gap: 6, justifyContent: "center" },
+
   wait: { flex: 1, alignItems: "center", justifyContent: "center", padding: space.xl, gap: space.sm },
   waitTitle: { ...type.sectionTitle, color: colors.text, marginTop: space.md },
   waitText: { ...type.body, color: colors.textMuted, textAlign: "center" },
-  waitHint: { ...type.hint, color: colors.textMuted, textAlign: "center", marginTop: space.md },
-  footer: { flexDirection: "row-reverse", gap: space.md, paddingHorizontal: space.lg, paddingTop: space.md, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
-  liveRibbon: { position: "absolute", top: space.md, alignSelf: "center", flexDirection: "row-reverse", alignItems: "center", gap: space.sm, backgroundColor: colors.primary, paddingHorizontal: space.md, paddingVertical: 6, borderRadius: 999 },
-  liveText: { ...type.hint, color: colors.primaryText, fontWeight: "800" },
+  waitHint: { ...type.hint, color: "#6B6B75", textAlign: "center", marginTop: space.md },
+
+  frame: {
+    flex: 1,
+    marginHorizontal: space.md,
+    borderRadius: 28,
+    overflow: "hidden",
+    backgroundColor: "#111114",
+  },
+  footer: { flexDirection: "row-reverse", gap: space.md, paddingHorizontal: space.lg, paddingTop: space.md, backgroundColor: colors.bg },
+  liveRibbon: {
+    position: "absolute",
+    top: space.md,
+    alignSelf: "center",
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: space.sm,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: space.md,
+    paddingVertical: 7,
+    borderRadius: 999,
+  },
+  liveText: { ...type.hint, color: "#000000", fontWeight: "700" },
 });

@@ -1,0 +1,192 @@
+{
+ "pair": "taregba",
+ "prefix": "taregba",
+ "lang": "flutter",
+ "push": true,
+ "admins": [
+  "awadaljied8@gmail.com"
+ ],
+ "description": "أريد بناء تطبيقين مرتبطين بلغة Flutter لمحل DMC (Diala Medical & Chemical Equipment) لبيع المعدات والمستهلكات الطبية: تطبيق للزبون وتطبيق للإدارة. يتصلان بقاعدة بيانات Supabase واحدة، والإشعارات عبر Firebase (firebase_messaging). استخدم المكتبات: supabase_flutter و image_picker و firebase_core و firebase_messaging.\n\n========== التصميم (للتطبيقين) ==========\n- عربي بالكامل، واتجاه من اليمين لليسار، وخط Cairo.\n- الألوان: أزرق غامق #0A2F6B للهيدر في الإدارة، أزرق #0A47A8 للأزرار، أخضر مائل للأزرق #00B8C4 للإشعارات، خلفية #F3F7FC، كروت بيضاء بحواف مدورة وحد خفيف #E1E9F3.\n- شعار DMC في الهيدر (ملف الشعار المرفق).\n- أزرار بارتفاع 44 على الأقل، وشريط تنقل سفلي ثابت.\n- شارات الحالة: أزرق للعادي، أخضر للمتوفر والمدفوع والمؤكد، أحمر للنفاد والآجل وبانتظار الدفع.\n\n========== قاعدة البيانات (Supabase) ==========\n- products: الاسم، القسم، السعر بالدولار، الكمية، الصورة، ظاهر أو مخفي.\n- settings: سعر الدولار اليوم.\n- delivery_areas: اسم المنطقة، سعر التوصيل.\n- orders وorder_items: بيانات الزبون، المنطقة، المنتجات، رسوم التوصيل، الإجمالي، حالة الطلب (جديد، قيد التجهيز، في الطريق، تم)، طريقة الدفع payment_method (cash أو transfer)، حالة الدفع payment_status (pending أو confirmed أو rejected)، رابط صورة الإشعار receipt_url، سبب الرفض reject_reason.\n- bank_settings: اسم البنك، رقم الحساب، اسم صاحب الحساب، ملاحظة للزبون.\n- purchases: المورد، التاريخ، المبلغ، حالة الدفع (مدفوعة أو آجل)، صورة الفاتورة.\n- customers.\n- التخزين (Supabase Storage): صور المنتجات (عامة)، وصور فواتير المشتريات وصور إشعارات التحويل (خاصة، الإدارة فقط تشوفها).\n\nقواعد مهمة:\n- سعر المنتج بالجنيه = سعر الدولار × سعر الدولار اليوم، ويتحسب تلقائياً في تطبيق الزبون.\n- إجمالي الطلب = مجموع المنتجات + رسوم التوصيل حسب المنطقة.\n- لو طريقة الدفع تحويل بنكي، الطلب ما يدخل التجهيز إلا بعد ما الإدارة تؤكد الدفع.\n\n========== التطبيق الأول: تطبيق الزبون ==========\nيشوف المنتجات ويطلب ويدفع ويتابع طلبه. شريط التنقل السفلي: الرئيسية، السلة، طلباتي، تواصل.\n\nالشاشات:\n1) الرئيسية: هيدر أبيض فيه الشعار واسم DMC وسطر \"معدات ومستهلكات طبية\" وزر إشعارات. تحته بحث، وأقسام (الكل، معدات، مستهلكات، مختبر)، وشريط أخضر فاتح \"التوصيل إلى: [المنطقة]\" مع رسومها، وكروت منتجات في عمودين (صورة المنتج اللي رفعتها الإدارة، اسم، سعر بالجنيه، زر \"أضف للسلة\").\n2) تفاصيل المنتج: صورة كبيرة، الاسم، شارة \"متوفر\"، الوصف، السعر، عداد كمية (- 1 +)، وزر \"أضف للسلة\".\n3) السلة: المنتجات بالكمية، وملخص (المنتجات، التوصيل، الإجمالي) وزر \"إتمام الطلب\".\n4) إتمام الطلب: الاسم، رقم الهاتف، العنوان، اختيار منطقة التوصيل (بربر، الدامر، عطبرة، أبوحمد وأي منطقة تضيفها الإدارة)، اختيار توصيل أو استلام من المحل، وطريقة الدفع (تحويل بنكي أو كاش عند الاستلام)، وزر \"تأكيد الطلب\". لو اختار التحويل البنكي ينتقل لشاشة التحويل البنكي.\n5) التحويل البنكي: بطاقة فيها بيانات حساب المحل (البنك، رقم الحساب، اسم صاحب الحساب) من جدول bank_settings، والمبلغ المطلوب، وزر \"رفع صورة الإشعار\" (كاميرا أو معرض) مع معاينة للصورة، وزر \"إرسال الإشعار\". وتحتها نص \"يبدأ تجهيز الطلب بعد تأكيد الإدارة للدفع\". بعد الإرسال حالة الدفع pending.\n6) طلباتي: قائمة الطلبات بحالتها (جديد، قيد التجهيز، في الطريق، تم). الطلب اللي دفعه بالتحويل ولسه ما اتأكد يظهر بشارة \"بانتظار تأكيد الدفع\" مع زر \"رفع إشعار جديد\" (يظهر كمان لو الإدارة رفضت ويتعرض سبب الرفض). وفي كل طلب زر \"عرض الفاتورة\" وزر \"إعادة الطلب\".\n7) الفاتورة: تتولد تلقائياً لكل طلب على شكل فاتورة المحل: الشعار، \"فاتورة مبيعات\"، اسم العميل، رقم الفاتورة، التاريخ، جدول الأصناف (الصنف، الكمية، السعر، الإجمالي)، رسوم التوصيل، المطلوب. وفيها زر مشاركة وتحميل PDF.\n8) تواصل معنا: زر واتساب، زر اتصال، موقع المحل، ومناطق التوصيل.\n\nإشعارات: عند تغيير حالة الطلب، وعند تأكيد أو رفض الدفع، وعند وصول عرض جديد.\n\n========== التطبيق الثاني: تطبيق الإدارة ==========\nللمدير فقط، بتسجيل دخول بكلمة سر. الهيدر أزرق غامق فيه الشعار. شريط التنقل السفلي: الرئيسية، الطلبات، المنتجات، المشتريات، التقارير.\n\nالشاشات:\n1) لوحة التحكم:\n   - شارة \"عدد الطلبات الجديدة\".\n   - بطاقة \"سعر الدولار اليوم\": خانة لكتابة السعر وزر \"تحديث الأسعار\"، وعند الضغط تتغير أسعار كل المنتجات عند الزبائن تلقائياً.\n   - بطاقة \"مناطق التوصيل وأسعارها\": بربر، الدامر، عطبرة، أبوحمد، لكل منطقة خانة سعر قابلة للتعديل، وزر \"+ إضافة منطقة جديدة\".\n   - بطاقة آخر فاتورة مع زر \"عرض\".\n2) الطلبات: فلتر (الكل، جديد، بانتظار الدفع، تم)، وكرت لكل طلب (رقم الطلب، الزبون، المنطقة، الإجمالي، طريقة الدفع، الحالة). الطلب اللي دفعه بالتحويل بشارة حمراء \"بانتظار الدفع\" وزر \"مراجعة الدفع\"، والباقي بزر \"تغيير الحالة\". وصول طلب جديد يجي معاه إشعار صوتي.\n3) تأكيد الدفع: بيانات الطلب، وصورة إشعار التحويل بحجم كبير (تتكبر بالضغط)، والمبلغ المطلوب وطريقة الدفع، وخانة \"سبب الرفض\"، وزر \"تأكيد الدفع\" (يغيّر payment_status إلى confirmed ويدخل الطلب التجهيز ويرسل إشعار للزبون)، وزر \"رفض\" (rejected مع السبب ويرسل إشعار للزبون).\n4) المنتجات: زر \"+ إضافة منتج\"، وقائمة بصورة المنتج واسمه وسعره بالدولار وبالجنيه، وزر \"تعديل\"، وزر \"عرض المخزون\".\n5) إضافة منتج: اسم المنتج، القسم، السعر بالدولار، الكمية، وزر \"رفع صورة المنتج\" (الزبون يشوف الصورة في تطبيقه)، والسعر بالجنيه يتحسب تلقائياً من سعر الدولار، وزر \"حفظ المنتج\".\n6) المخزون: كل منتج بكميته وشارة (متوفر، قارب على النفاد، نفد)، وزر \"تعديل حد التنبيه\".\n7) المشتريات: زر \"تصوير فاتورة جديدة\" يفتح الكاميرا، وبعد التصوير تدخل اسم المورد والمبلغ والتاريخ وحالة الدفع (مدفوعة أو آجل). تحته بحث بالمورد أو التاريخ، وقائمة الفواتير مع زر \"الصورة\" لفتح صورة الفاتورة.\n8) الزبائن: بحث، وقائمة فيها اسم الزبون وعدد طلباته وحسابه.\n9) التقارير: تبويب أسبوعي وشهري، وبطاقات (المبيعات، المشتريات، عدد الطلبات، الربح التقريبي = المبيعات - المشتريات)، ومقارنة بالفترة السابقة، وقائمة الأكثر مبيعاً. المبيعات تشمل الطلبات المؤكد دفعها بس.\n10) بيانات الحساب البنكي: اسم البنك، رقم الحساب، اسم صاحب الحساب، ملاحظة للزبون، وزر \"حفظ\". تظهر البيانات للزبون عند اختياره التحويل البنكي.\n11) العروض والإشعارات: عنوان العرض ونص الإشعار وزر \"إرسال لكل الزبائن\".\nاستخدم الصوره كتصميم للتطبيقين\n\n=== المواصفات اللي وافق عليها صاحب التطبيق (نفّذها كلها بند بند، ولا تضيف تطبيق مختلف) ===\nالفكرة: تطبيقان مرتبطان لمحل DMC للمعدات والمستهلكات الطبية: تطبيق للزبون للشراء والدفع والمتابعة، وتطبيق للإدارة لإدارة المنتجات والطلبات والأسعار والمشتريات.\nالشاشات:\n- الزبون: الرئيسية لعرض الأقسام والمنتجات وسعر التوصيل والبحث\n- الزبون: تفاصيل المنتج لعرض الصورة والوصف والكمية وإضافة للسلة\n- الزبون: السلة لعرض المنتجات المختارة والملخص وإتمام الطلب\n- الزبون: إتمام الطلب لتعبئة البيانات واختيار طريقة التوصيل والدفع\n- الزبون: التحويل البنكي لرفع إشعار الدفع البنكي ومتابعة حالته\n- الزبون: طلباتي لمتابعة حالة الطلبات والفواتير وإعادة الطلب\n- الزبون: الفاتورة لعرض تفاصيل الفاتورة ومشاركتها وتحميلها PDF\n- الزبون: تواصل معنا لعرض وسائل الاتصال وموقع المحل ومناطق التوصيل\n- الإدارة: لوحة التحكم لإدارة سعر الدولار ومناطق التوصيل والاطلاع على الإحصائيات\n- الإدارة: الطلبات لعرض وفلترة ومتابعة طلبات الزبائن\n- الإدارة: تأكيد الدفع لمراجعة صور إشعارات التحويل وقبولها أو رفضها\n- الإدارة: المنتجات لعرض وإضافة وتعديل المنتجات\n- الإدارة: إضافة منتج لتعبئة تفاصيل المنتج ورفع صورته\n- الإدارة: المخزون لمتابعة الكميات وحالة المنتجات\n- الإدارة: المشتريات لتصوير وتسجيل فواتير المشتريات والموردين\n- الإدارة: الزبائن لعرض قائمة الزبائن وعدد طلباتهم\n- الإدارة: التقارير لعرض المبيعات والمشتريات والأرباح والأكثر مبيعاً\n- الإدارة: بيانات الحساب البنكي لتعديل معلومات التحويل البنكي للزبائن\n- الإدارة: العروض والإشعارات لإرسال الإشعارات لجميع الزبائن\nالميزات والوظائف:\n- الزبون: حساب جديد بتسجيل الاسم ورقم الهاتف والبريد ورمز التأكيد وكلمة المرور\n- الزبون: حساب سعر المنتج بالجنيه تلقائياً عبر ضرب سعر الدولار بسعر الدولار اليوم\n- الزبون: حساب إجمالي الطلب تلقائياً بإضافة رسوم التوصيل حسب المنطقة\n- الزبون: رفع صورة إشعار التحويل البنكي من الكاميرا أو المعرض\n- الزبون: استلام إشعارات فورية عند تغير حالة الطلب أو قبول/رفض الدفع\n- الإدارة: تسجيل دخول المدير بالبريد وكلمة المرور\n- الإدارة: تحديث سعر الدولار لتعديل أسعار كل المنتجات تلقائياً\n- الإدارة: إضافة وتعديل مناطق التوصيل وأسعارها\n- الإدارة: مراجعة وتأكيد أو رفض مدفوعات التحويل البنكي مع إرسال إشعار للزبون\n- الإدارة: تصوير فواتير المشتريات وحفظ بيانات الموردين\n- الإدارة: إرسال عروض وإشعارات لجميع الزبائن عبر Firebase\n- الاثنين: الاتصال بقاعدة بيانات Supabase الموحدة والمزامنة الفورية\nالبيانات اللي التطبيق بيحفظها:\n- products: الاسم، القسم، السعر بالدولار، الكمية، الصورة، ظاهر أو مخفي\n- settings: سعر الدولار اليوم\n- delivery_areas: اسم المنطقة، سعر التوصيل\n- orders و order_items: بيانات الزبون، المنطقة، المنتجات، رسوم التوصيل، الإجمالي، حالة الطلب، طريقة الدفع، حالة الدفع، رابط صورة الإشعار، سبب الرفض\n- bank_settings: اسم البنك، رقم الحساب، اسم صاحب الحساب، ملاحظة للزبون\n- purchases: المورد، التاريخ، المبلغ، حالة الدفع، صورة الفاتورة\n- customers: بيانات الزبون وعدد الطلبات والحساب\nالأسماء والنصوص والأرقام والألوان:\n- taregba\n- DMC\n- Diala Medical & Chemical Equipment\n- أزرق غامق #0A2F6B\n- أزرق #0A47A8\n- أخضر مائل للأزرق #00B8C4\n- خلفية #F3F7FC\n- كروت بيضاء #E1E9F3\n- بربر\n- الدامر\n- عطبرة\n- أبوحمد\n- Glucose\nالصلاحيات: الكاميرا، الإشعارات، الصور والملفات\nANDROID_PERMISSIONS: CAMERA, NOTIFICATIONS, STORAGE\nLOGIN: customer=phone_email_code admin=phone_email_code",
+ "login": {
+  "customer": "phone_email_code",
+  "admin": "phone_email_code"
+ },
+ "supabase": {
+  "url": "https://jvjtgzewumfecjdpekna.supabase.co",
+  "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE",
+  "ref": "jvjtgzewumfecjdpekna"
+ },
+ "schemaSql": "-- Dynamic USD Rate & System Settings\ncreate table if not exists public.taregba_settings (\n  id bigint primary key generated always as identity,\n  setting_key text unique not null,\n  setting_value text not null,\n  updated_at timestamptz default now()\n);\n\n-- Bank Account Info for Customer Bank Transfers\ncreate table if not exists public.taregba_bank_settings (\n  id bigint primary key generated always as identity,\n  bank_name text not null,\n  account_number text not null,\n  account_holder text not null,\n  customer_note text,\n  updated_at timestamptz default now()\n);\n\n-- Delivery Areas & Fees\ncreate table if not exists public.taregba_delivery_areas (\n  id bigint primary key generated always as identity,\n  name text unique not null,\n  delivery_fee_sdg numeric(12,2) not null default 0,\n  is_active boolean not null default true,\n  created_at timestamptz default now()\n);\n\n-- Products Catalog\ncreate table if not exists public.taregba_products (\n  id bigint primary key generated always as identity,\n  name text not null,\n  category text not null,\n  description text,\n  price_usd numeric(10,2) not null check (price_usd >= 0),\n  stock_quantity integer not null default 0 check (stock_quantity >= 0),\n  low_stock_threshold integer not null default 5 check (low_stock_threshold >= 0),\n  image_url text,\n  is_visible boolean not null default true,\n  created_at timestamptz default now(),\n  updated_at timestamptz default now()\n);\n\n-- Orders Main Table\ncreate table if not exists public.taregba_orders (\n  id bigint primary key generated always as identity,\n  order_number text unique not null,\n  customer_id uuid not null default auth.uid() references auth.users(id) on delete cascade,\n  full_name text not null,\n  phone text not null,\n  delivery_area_id bigint references public.taregba_delivery_areas(id) on delete set null,\n  delivery_area_name text not null,\n  delivery_address text,\n  delivery_type text not null default 'delivery' check (delivery_type in ('delivery', 'pickup')),\n  delivery_fee_sdg numeric(12,2) not null default 0,\n  subtotal_sdg numeric(12,2) not null default 0,\n  total_sdg numeric(12,2) not null default 0,\n  status text not null default 'new' check (status in ('new', 'preparing', 'on_the_way', 'completed', 'cancelled')),\n  payment_method text not null check (payment_method in ('cash', 'transfer')),\n  payment_status text not null default 'pending' check (payment_status in ('pending', 'confirmed', 'rejected')),\n  receipt_url text,\n  reject_reason text,\n  created_at timestamptz default now(),\n  updated_at timestamptz default now()\n);\n\n-- Order Items Detail Table\ncreate table if not exists public.taregba_order_items (\n  id bigint primary key generated always as identity,\n  order_id bigint not null references public.taregba_orders(id) on delete cascade,\n  customer_id uuid not null default auth.uid() references auth.users(id) on delete cascade,\n  product_id bigint references public.taregba_products(id) on delete set null,\n  product_name text not null,\n  unit_price_usd numeric(10,2) not null default 0,\n  unit_price_sdg numeric(12,2) not null default 0,\n  quantity integer not null check (quantity > 0),\n  total_price_sdg numeric(12,2) not null default 0,\n  created_at timestamptz default now()\n);\n\n-- Purchases / Invoices (Admin Expense Records)\ncreate table if not exists public.taregba_purchases (\n  id bigint primary key generated always as identity,\n  supplier_name text not null,\n  purchase_date date not null default current_date,\n  total_amount_sdg numeric(12,2) not null check (total_amount_sdg >= 0),\n  payment_status text not null check (payment_status in ('paid', 'credit')),\n  invoice_image_url text,\n  created_by uuid not null default auth.uid() references auth.users(id) on delete cascade,\n  created_at timestamptz default now()\n);\n\n-- Broadcast Offers & Promotional Push Notifications Log\ncreate table if not exists public.taregba_promotions (\n  id bigint primary key generated always as identity,\n  title text not null,\n  message text not null,\n  sent_at timestamptz default now(),\n  created_by uuid not null default auth.uid() references auth.users(id) on delete cascade\n);\n\n-- Enable Row Level Security on all created tables\nalter table public.taregba_settings enable row level security;\nalter table public.taregba_bank_settings enable row level security;\nalter table public.taregba_delivery_areas enable row level security;\nalter table public.taregba_products enable row level security;\nalter table public.taregba_orders enable row level security;\nalter table public.taregba_order_items enable row level security;\nalter table public.taregba_purchases enable row level security;\nalter table public.taregba_promotions enable row level security;\n\n-- Policies for taregba_settings\ndrop policy if exists \"Settings visible to authenticated users\" on public.taregba_settings;\ncreate policy \"Settings visible to authenticated users\"\n  on public.taregba_settings for select\n  to authenticated\n  using (true);\n\ndrop policy if exists \"Settings manageable by admin\" on public.taregba_settings;\ncreate policy \"Settings manageable by admin\"\n  on public.taregba_settings for all\n  to authenticated\n  using (public.taregba_is_admin())\n  with check (public.taregba_is_admin());\n\n-- Policies for taregba_bank_settings\ndrop policy if exists \"Bank settings visible to authenticated users\" on public.taregba_bank_settings;\ncreate policy \"Bank settings visible to authenticated users\"\n  on public.taregba_bank_settings for select\n  to authenticated\n  using (true);\n\ndrop policy if exists \"Bank settings manageable by admin\" on public.taregba_bank_settings;\ncreate policy \"Bank settings manageable by admin\"\n  on public.taregba_bank_settings for all\n  to authenticated\n  using (public.taregba_is_admin())\n  with check (public.taregba_is_admin());\n\n-- Policies for taregba_delivery_areas\ndrop policy if exists \"Delivery areas visible to authenticated users\" on public.taregba_delivery_areas;\ncreate policy \"Delivery areas visible to authenticated users\"\n  on public.taregba_delivery_areas for select\n  to authenticated\n  using (true);\n\ndrop policy if exists \"Delivery areas manageable by admin\" on public.taregba_delivery_areas;\ncreate policy \"Delivery areas manageable by admin\"\n  on public.taregba_delivery_areas for all\n  to authenticated\n  using (public.taregba_is_admin())\n  with check (public.taregba_is_admin());\n\n-- Policies for taregba_products\ndrop policy if exists \"Products visible to authenticated users\" on public.taregba_products;\ncreate policy \"Products visible to authenticated users\"\n  on public.taregba_products for select\n  to authenticated\n  using (true);\n\ndrop policy if exists \"Products manageable by admin\" on public.taregba_products;\ncreate policy \"Products manageable by admin\"\n  on public.taregba_products for all\n  to authenticated\n  using (public.taregba_is_admin())\n  with check (public.taregba_is_admin());\n\n-- Policies for taregba_orders\ndrop policy if exists \"Customers can view their own orders or admin views all\" on public.taregba_orders;\ncreate policy \"Customers can view their own orders or admin views all\"\n  on public.taregba_orders for select\n  to authenticated\n  using (customer_id = auth.uid() or public.taregba_is_admin());\n\ndrop policy if exists \"Customers can insert their own orders\" on public.taregba_orders;\ncreate policy \"Customers can insert their own orders\"\n  on public.taregba_orders for insert\n  to authenticated\n  with check (customer_id = auth.uid() or public.taregba_is_admin());\n\ndrop policy if exists \"Customers can update receipts on pending orders or admin full update\" on public.taregba_orders;\ncreate policy \"Customers can update receipts on pending orders or admin full update\"\n  on public.taregba_orders for update\n  to authenticated\n  using (customer_id = auth.uid() or public.taregba_is_admin())\n  with check (customer_id = auth.uid() or public.taregba_is_admin());\n\ndrop policy if exists \"Orders deletable by admin only\" on public.taregba_orders;\ncreate policy \"Orders deletable by admin only\"\n  on public.taregba_orders for delete\n  to authenticated\n  using (public.taregba_is_admin());\n\n-- Policies for taregba_order_items\ndrop policy if exists \"Order items visible to order owner or admin\" on public.taregba_order_items;\ncreate policy \"Order items visible to order owner or admin\"\n  on public.taregba_order_items for select\n  to authenticated\n  using (customer_id = auth.uid() or public.taregba_is_admin());\n\ndrop policy if exists \"Order items insertable by order owner or admin\" on public.taregba_order_items;\ncreate policy \"Order items insertable by order owner or admin\"\n  on public.taregba_order_items for insert\n  to authenticated\n  with check (customer_id = auth.uid() or public.taregba_is_admin());\n\ndrop policy if exists \"Order items manageable by admin\" on public.taregba_order_items;\ncreate policy \"Order items manageable by admin\"\n  on public.taregba_order_items for all\n  to authenticated\n  using (public.taregba_is_admin())\n  with check (public.taregba_is_admin());\n\n-- Policies for taregba_purchases\ndrop policy if exists \"Purchases manageable by admin only\" on public.taregba_purchases;\ncreate policy \"Purchases manageable by admin only\"\n  on public.taregba_purchases for all\n  to authenticated\n  using (public.taregba_is_admin())\n  with check (public.taregba_is_admin());\n\n-- Policies for taregba_promotions\ndrop policy if exists \"Promotions viewable by authenticated users\" on public.taregba_promotions;\ncreate policy \"Promotions viewable by authenticated users\"\n  on public.taregba_promotions for select\n  to authenticated\n  using (true);\n\ndrop policy if exists \"Promotions insertable by admin\" on public.taregba_promotions;\ncreate policy \"Promotions insertable by admin\"\n  on public.taregba_promotions for insert\n  to authenticated\n  with check (public.taregba_is_admin());\n\n-- Initial Sample / Default Data Configuration\ninsert into public.taregba_settings (setting_key, setting_value)\nvalues ('usd_rate_sdg', '2500')\non conflict (setting_key) do nothing;\n\ninsert into public.taregba_bank_settings (bank_name, account_number, account_holder, customer_note)\nvalues (\n  'بنك الخرطوم - فرع الدامر',\n  '123456789',\n  'شركة ديالا للمعدات الطبية (DMC)',\n  'يرجى إرفاق صورة إشعار التحويل الواضحة للبدء في تجهيز طلبكم مباشرة.'\n)\non conflict do nothing;\n\ninsert into public.taregba_delivery_areas (name, delivery_fee_sdg, is_active)\nvalues\n  ('الدامر', 3000, true),\n  ('عطبرة', 4000, true),\n  ('بربر', 5000, true),\n  ('أبوحمد', 7000, true)\non conflict (name) do nothing;\n\ninsert into public.taregba_products (name, category, description, price_usd, stock_quantity, low_stock_threshold, is_visible)\nvalues\n  ('Glucose Test Strips - جهاز قياس السكر', 'أجهزة قياس', 'شرائط فحص السكر في الدم بدقة عالية، العبوة تحتوي على 50 شريط مع كود تلقائي.', 26.00, 45, 10, true),\n  ('سماعة طبيب رقمية متطورة', 'معدات طبية', 'سماعة رقمية بنظام تكبير الصوت وتصفية الضوضاء للأطباء.', 58.00, 15, 5, true),\n  ('سرنجات طبية 5مل (علبة 100)', 'مستهلكات طبية', 'سرنجات معقمة مع إبرة 5 مل، عبوة سعة 100 قطعة.', 8.80, 3, 5, true),\n  ('جهاز قياس ضغط الدم الرقمي', 'أجهزة قياس', 'جهاز قياس ضغط الدم الذاتي الرقمي مع شاشة LCD واسعة.', 39.20, 20, 5, true)\non conflict do nothing;",
+ "contract": {
+  "tables": [
+   {
+    "name": "taregba_settings",
+    "purpose": "محيط وإعدادات النظام الحالية مثل سعر صرف الدولار اليومي بالجنيه السوداني",
+    "columns": [
+     "id bigint",
+     "setting_key text",
+     "setting_value text",
+     "updated_at timestamptz"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "taregba_bank_settings",
+    "purpose": "بيانات حساب التحويل البنكي للمحل التي تظهر للزبون عند إتمام الدفع",
+    "columns": [
+     "id bigint",
+     "bank_name text",
+     "account_number text",
+     "account_holder text",
+     "customer_note text",
+     "updated_at timestamptz"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "taregba_delivery_areas",
+    "purpose": "قائمة مناطق التوصيل المتاحة ورسوم التوصيل الخاصة بكل منطقة",
+    "columns": [
+     "id bigint",
+     "name text",
+     "delivery_fee_sdg numeric",
+     "is_active boolean",
+     "created_at timestamptz"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "taregba_products",
+    "purpose": "كتالوج المنتجات والمعدات الطبية مع السعر بالدولار والكمية والحدود الحرجية للمخزون",
+    "columns": [
+     "id bigint",
+     "name text",
+     "category text",
+     "description text",
+     "price_usd numeric",
+     "stock_quantity integer",
+     "low_stock_threshold integer",
+     "image_url text",
+     "is_visible boolean",
+     "created_at timestamptz",
+     "updated_at timestamptz"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "taregba_orders",
+    "purpose": "طلبات الزبائن مع الحالة وطريقة ودفع الإشعار البنكي وحساب الرسوم الإجمالية",
+    "columns": [
+     "id bigint",
+     "order_number text",
+     "customer_id uuid",
+     "full_name text",
+     "phone text",
+     "delivery_area_id bigint",
+     "delivery_area_name text",
+     "delivery_address text",
+     "delivery_type text",
+     "delivery_fee_sdg numeric",
+     "subtotal_sdg numeric",
+     "total_sdg numeric",
+     "status text",
+     "payment_method text",
+     "payment_status text",
+     "receipt_url text",
+     "reject_reason text",
+     "created_at timestamptz",
+     "updated_at timestamptz"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "taregba_order_items",
+    "purpose": "تفاصيل وأصناف كل طلب بالكمية والسعر وقت الشراء",
+    "columns": [
+     "id bigint",
+     "order_id bigint",
+     "customer_id uuid",
+     "product_id bigint",
+     "product_name text",
+     "unit_price_usd numeric",
+     "unit_price_sdg numeric",
+     "quantity integer",
+     "total_price_sdg numeric",
+     "created_at timestamptz"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "taregba_purchases",
+    "purpose": "سجل فواتير المشتريات والموردين الخاصة بالإدارة وحالة دفع الفاتورة وصورتها",
+    "columns": [
+     "id bigint",
+     "supplier_name text",
+     "purchase_date date",
+     "total_amount_sdg numeric",
+     "payment_status text",
+     "invoice_image_url text",
+     "created_by uuid",
+     "created_at timestamptz"
+    ],
+    "owner": "admin"
+   },
+   {
+    "name": "taregba_promotions",
+    "purpose": "سجل الإشعارات والعروض الترويجية المرسلة لجميع الزبائن عبر الفايربيس",
+    "columns": [
+     "id bigint",
+     "title text",
+     "message text",
+     "sent_at timestamptz",
+     "created_by uuid"
+    ],
+    "owner": "admin"
+   }
+  ],
+  "events": [
+   {
+    "when": "الزبون يقوم بتقديم طلب جديد وتأكيد الشراء",
+    "notify": "admin",
+    "title": "طلب جديد في الانتظار"
+   },
+   {
+    "when": "الزبون يرفع صورة إشعار تحويل بنكي جديد",
+    "notify": "admin",
+    "title": "إشعار تحويل بنكي جديد يتطلب المراجعة"
+   },
+   {
+    "when": "الإدارة تؤكد صحة إشعار التحويل البنكي وتغير حالة الدفع إلى مؤكد",
+    "notify": "customer",
+    "title": "تم تأكيد الدفع وجاري تجهيز طلبك"
+   },
+   {
+    "when": "الإدارة ترفض إشعار التحويل البنكي وتوضح سبب الرفض",
+    "notify": "customer",
+    "title": "تم رفض إشعار التحويل البنكي"
+   },
+   {
+    "when": "الإدارة تحدّث حالة الطلب (قيد التجهيز / في الطريق / تم التوصيل)",
+    "notify": "customer",
+    "title": "تحديث جديد على حالة طلبك"
+   },
+   {
+    "when": "الإدارة ترسل عرضاً جديداً أو إشعاراً عاماً لكل الزبائن",
+    "notify": "customer",
+    "title": "عرض جديد من DMC"
+   }
+  ]
+ },
+ "apps": {
+  "customer": {
+   "name": "taregba-customer",
+   "packageId": "com.generated.app_taregba_customer"
+  },
+  "admin": {
+   "name": "taregba-admin",
+   "packageId": "com.generated.app_taregba_admin"
+  }
+ },
+ "role": "customer",
+ "pushFunction": "taregba-push"
+}

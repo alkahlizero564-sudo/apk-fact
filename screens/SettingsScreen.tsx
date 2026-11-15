@@ -1,11 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { View, Text, StyleSheet, Pressable, Linking, Alert } from "react-native";
+import { View, Text, StyleSheet, Pressable, Linking, Alert, ScrollView } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as SecureStore from "expo-secure-store";
 import { Ionicons } from "@expo/vector-icons";
 import {
-  Screen,
-  Section,
   Card,
   ListRow,
   Sheet,
@@ -42,6 +41,7 @@ type Service = {
 };
 
 const GEMINI_MODEL_KEY = "GEMINI_MODEL";
+const OFF = "#2A2A32";
 
 const SERVICES: Service[] = [
   {
@@ -295,7 +295,7 @@ function ModelPicker({ onChange }: { onChange: (id: string) => void }) {
                   <Ionicons
                     name={m.id === selected ? "radio-button-on" : "radio-button-off"}
                     size={20}
-                    color={m.id === selected ? colors.primary : colors.textMuted}
+                    color={m.id === selected ? "#FFFFFF" : colors.textMuted}
                   />
                 }
                 onPress={() => choose(m.id)}
@@ -426,8 +426,7 @@ function VaultPanel({ status, onReady }: { status: VaultStatus | null; onReady: 
                   icon="shield-checkmark-outline"
                   tint={colors.okText}
                   title={a.name}
-                  subtitle={`${a.packageId ?? ""}
-${(a.sha256 ?? "").slice(0, 23)}…`}
+                  subtitle={`${a.packageId ?? ""}\n${(a.sha256 ?? "").slice(0, 23)}…`}
                   value={a.savedAt ? new Date(a.savedAt).toLocaleDateString("ar-EG") : undefined}
                   chevron={false}
                   last={i === arr.length - 1}
@@ -582,7 +581,17 @@ function PrivacyPanel({ status, onChange }: { status: PrivacyStatus | null; onCh
   );
 }
 
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <View style={styles.groupWrap}>
+      <Text style={styles.groupLabel}>{title}</Text>
+      <View style={styles.group}>{children}</View>
+    </View>
+  );
+}
+
 export default function SettingsScreen() {
+  const insets = useSafeAreaInsets();
   const [configured, setConfigured] = useState<Record<string, boolean>>({});
   const [model, setModel] = useState("");
   const [open, setOpen] = useState<string | null>(null);
@@ -607,11 +616,29 @@ export default function SettingsScreen() {
 
   const service = SERVICES.find((s) => s.id === open);
   const ready = SERVICES.filter((s) => configured[s.id]).length;
+  const pct = Math.round((ready / SERVICES.length) * 100);
 
   return (
-    <Screen title="الإعدادات" subtitle={`${ready} من ${SERVICES.length} خدمات مضبوطة`}>
-      <Section title="الخدمات">
-        <Card style={styles.list}>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <ScrollView
+        contentContainerStyle={{ paddingTop: insets.top + space.lg, paddingHorizontal: space.lg, paddingBottom: 140 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.title}>الإعدادات</Text>
+
+        <View style={styles.summary}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.summaryNum}>
+              {ready} من {SERVICES.length}
+            </Text>
+            <Text style={styles.summaryText}>خدمات مضبوطة</Text>
+          </View>
+          <View style={styles.track}>
+            <View style={[styles.fill, { width: `${pct}%` }]} />
+          </View>
+        </View>
+
+        <Group title="الخدمات">
           {SERVICES.map((s, i) => (
             <ListRow
               key={s.id}
@@ -619,79 +646,64 @@ export default function SettingsScreen() {
               tint={s.tint}
               title={s.title}
               subtitle={configured[s.id] ? "مضبوط" : "غير مضبوط"}
-              right={<View style={[styles.dot, { backgroundColor: configured[s.id] ? colors.okText : colors.border }]} />}
+              right={<View style={[styles.dot, { backgroundColor: configured[s.id] ? colors.okText : OFF }]} />}
               onPress={() => setOpen(s.id)}
               last={i === SERVICES.length - 1}
             />
           ))}
-        </Card>
-      </Section>
+        </Group>
 
-      <Section title="الخزنة الخاصة">
-        <Card style={styles.list}>
+        <Group title="الأمان والبيانات">
           <ListRow
             icon="shield-checkmark-outline"
             tint={vault?.ready ? colors.okText : colors.warnText}
             title="الخزنة الخاصة"
-            subtitle={vault?.ready ? `جاهزة · ${vault.repo}` : "مفاتيح التوقيع وتفاصيل كل تطبيق في مستودع خاص"}
-            right={<View style={[styles.dot, { backgroundColor: vault?.ready ? colors.okText : colors.border }]} />}
+            subtitle={vault?.ready ? `جاهزة · ${vault.repo}` : "مفاتيح التوقيع وتفاصيل كل تطبيق"}
+            right={<View style={[styles.dot, { backgroundColor: vault?.ready ? colors.okText : OFF }]} />}
             onPress={() => setOpen("vault")}
-            last
           />
-        </Card>
-      </Section>
-
-      <Section title="قواعد بيانات الزباين">
-        <Card style={styles.list}>
           <ListRow
             icon="server-outline"
             tint={colors.accent}
             title="مشاريع Supabase للزباين"
-            subtitle="مشروع منفصل لكل زبون: من حسابه، أو جديد في حسابك"
+            subtitle="مشروع منفصل لكل زبون"
             onPress={() => setOpen("projects")}
-            last
           />
-        </Card>
-      </Section>
-
-      <Section title="الخصوصية">
-        <Card style={styles.list}>
           <ListRow
             icon="lock-closed-outline"
             tint={privacy?.repoPrivate ? colors.okText : colors.warnText}
             title="خصوصية أكواد الزباين"
-            subtitle={
-              privacy?.repoPrivate
-                ? "apk-fact خاص · التحديثات من مستودع عام بدون كود"
-                : "apk-fact عام حالياً: كود التطبيقات ووصفها ظاهر لأي حد"
-            }
-            right={<View style={[styles.dot, { backgroundColor: privacy?.repoPrivate ? colors.okText : colors.border }]} />}
+            subtitle={privacy?.repoPrivate ? "apk-fact خاص" : "apk-fact عام حالياً"}
+            right={<View style={[styles.dot, { backgroundColor: privacy?.repoPrivate ? colors.okText : OFF }]} />}
             onPress={() => setOpen("privacy")}
           />
           <ListRow
             icon="timer-outline"
             tint={colors.accent}
             title="دقايق البناء"
-            subtitle={privacy?.repoPrivate ? `${FREE_MINUTES} دقيقة مجانية في الشهر · زوّدها بالدفع` : "مجانية بلا حد طالما المستودع عام"}
+            subtitle={privacy?.repoPrivate ? `${FREE_MINUTES} دقيقة مجانية في الشهر` : "مجانية بلا حد"}
             onPress={() => setOpen("minutes")}
             last
           />
-        </Card>
-      </Section>
+        </Group>
 
-      <Section title="الذكاء الاصطناعي">
-        <Card style={styles.list}>
-          <ListRow icon="hardware-chip-outline" tint={colors.accent} title="نموذج Gemini" value={model || "تلقائي"} onPress={() => setOpen("model")} last />
-        </Card>
-      </Section>
+        <Group title="الذكاء الاصطناعي">
+          <ListRow
+            icon="hardware-chip-outline"
+            tint={colors.accent}
+            title="نموذج Gemini"
+            value={model || "تلقائي"}
+            onPress={() => setOpen("model")}
+            last
+          />
+        </Group>
 
-      <Section title="الأداة">
-        <Card style={styles.list}>
+        <Group title="الأداة">
           <ListRow icon="rocket-outline" title="تحديث APK Fact" subtitle="بناء نسخة جديدة من الأداة" onPress={() => setOpen("tool")} />
           <ListRow icon="logo-github" tint="#E5E7EB" title="المستودع" value={REPO.split("/")[1]} chevron={false} />
           <ListRow icon="information-circle-outline" title="الإصدار" value="2.0" chevron={false} last />
-        </Card>
-      </Section>
+        </Group>
+      </ScrollView>
 
       <Sheet visible={!!service} title={service?.title ?? ""} onClose={() => setOpen(null)}>
         {service ? <ServiceForm service={service} onSaved={loadStatus} /> : null}
@@ -715,20 +727,39 @@ export default function SettingsScreen() {
       <Sheet visible={open === "tool"} title="تحديث APK Fact" onClose={() => setOpen(null)}>
         <ToolUpdate />
       </Sheet>
-    </Screen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  title: { color: colors.text, fontSize: 32, fontWeight: "700", textAlign: "right", marginBottom: space.lg },
+
+  summary: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: space.lg,
+    backgroundColor: "#111114",
+    borderRadius: 24,
+    padding: space.lg,
+    marginBottom: space.xl,
+  },
+  summaryNum: { color: colors.text, fontSize: 22, fontWeight: "700", textAlign: "right" },
+  summaryText: { color: "#8A8A94", fontSize: 13, textAlign: "right", marginTop: 2 },
+  track: { width: 110, height: 8, borderRadius: 4, backgroundColor: "#23232A", overflow: "hidden" },
+  fill: { height: 8, borderRadius: 4, backgroundColor: "#FFFFFF" },
+
+  groupWrap: { marginBottom: space.xl },
+  groupLabel: { color: "#8A8A94", fontSize: 13, fontWeight: "600", textAlign: "right", marginBottom: space.sm, marginRight: space.sm },
+  group: { backgroundColor: "#111114", borderRadius: 24, overflow: "hidden" },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+
   minutesBig: { fontSize: 28, fontWeight: "800", color: colors.text, textAlign: "right" },
   bar: { height: 8, borderRadius: 4, backgroundColor: colors.border, marginTop: space.sm, overflow: "hidden" },
   barFill: { height: 8, borderRadius: 4 },
-  list: { padding: 0, overflow: "hidden" },
-  dot: { width: 8, height: 8, borderRadius: 4 },
   sheetText: { ...type.body, color: colors.textMuted, textAlign: "right", marginBottom: space.lg },
   runsHead: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", marginTop: space.xl, marginBottom: space.md },
   runsTitle: { ...type.label, color: colors.text },
   sheetSmall: { ...type.hint, color: colors.textMuted },
   sheetTitle: { ...type.label, color: colors.text, textAlign: "right", marginBottom: space.sm },
   code: { fontFamily: "monospace", fontSize: 12, color: colors.text, textAlign: "left", backgroundColor: colors.field, padding: space.md, borderRadius: radius.field },
-});
+}); 

@@ -24,13 +24,12 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 // --- CONSTANTS & DESIGN TOKENS ---
 const String kSupabaseUrl = "https://jvjtgzewumfecjdpekna.supabase.co";
 const String kSupabaseAnonKey =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE";
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInRefiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE";
 
 const Color kPrimaryDark = Color(0xFF0A2F6B);
 const Color kPrimary = Color(0xFF0A47A8);
 const Color kAccent = Color(0xFF00B8C4);
 const Color kBgMain = Color(0xFFF3F7FC);
-const Color kCardBg = Colors.white;
 const Color kCardBorder = Color(0xFFE1E9F3);
 const Color kTextMain = Color(0xFF102A43);
 const Color kTextMuted = Color(0xFF627D98);
@@ -234,14 +233,6 @@ class OrderItem {
       totalPriceSdg: (json['total_price_sdg'] ?? 0).toDouble(),
     );
   }
-
-  String get emojiIcon {
-    final lower = productName.toLowerCase();
-    if (lower.contains('سكر') || lower.contains('glucose')) return '🩸';
-    if (lower.contains('سماعة')) return '🩺';
-    if (lower.contains('سرنج')) return '💉';
-    return '🧬';
-  }
 }
 
 class CustomerOrder {
@@ -337,25 +328,33 @@ class AppNotification {
 }
 
 // ==========================================
-// HELPERS FOR SUPABASE REST API
+// HELPERS FOR SUPABASE REST API & AUTH ERROR PARSING
 // ==========================================
 
-String _parseAuthError(dynamic body, String defaultMsg) {
+String _parseAuthError(dynamic body, String reqType) {
   if (body is Map) {
     final errStr = (body['error_description'] ?? body['message'] ?? body['msg'] ?? body['error'] ?? '').toString();
-    if (errStr.contains('rate limit') || errStr.contains('over_email_send_rate_limit')) {
-      return 'اتبعتت رسائل كتير، استنى دقايق وتاني جرب';
+    final lower = errStr.toLowerCase();
+
+    // Specific error patterns as defined by pair contract
+    if (lower.contains('rate limit') || lower.contains('over_email_send_rate_limit') || lower.contains('too_many_requests')) {
+      return 'اتبعتت رسائل كتير، استنى دقايق';
     }
-    if (errStr.contains('sending') || errStr.contains('smtp') || errStr.contains('Email rate limit exceeded')) {
-      return 'ما قدرنا نرسل البريد، حاول لاحقاً';
+    if (lower.contains('sending') || lower.contains('smtp') || lower.contains('email rate limit exceeded')) {
+      return 'ما قدرنا نرسل البريد';
     }
+
+    if (reqType == 'verify') {
+      return 'رمز التحقق غير صحيح أو انتهت صلاحيته';
+    }
+
     if (errStr.isNotEmpty) return errStr;
   }
-  return defaultMsg;
+  return 'حدث خطأ في الاتصال بالخادم';
 }
 
 // ==========================================
-// AUTH PROVIDER
+// AUTH PROVIDER (NO FAKE / DEMO FALLBACKS)
 // ==========================================
 
 class AuthProvider extends ChangeNotifier {
@@ -452,9 +451,9 @@ class AuthProvider extends ChangeNotifier {
         await fetchProfile();
         return null; // Success
       } else {
-        final errMsg = _parseAuthError(body, 'فشل تسجيل الدخول. تحقق من البيانات.');
-        if (errMsg.contains('Email not confirmed') || errMsg.contains('unconfirmed')) {
-          // Resend code & return special key
+        final errMsg = _parseAuthError(body, 'signin');
+        final rawErr = (body['error_description'] ?? body['message'] ?? body['msg'] ?? '').toString();
+        if (rawErr.contains('Email not confirmed') || rawErr.contains('unconfirmed')) {
           await resendCode(email, 'signup');
           return 'EMAIL_NOT_CONFIRMED';
         }
@@ -500,9 +499,9 @@ class AuthProvider extends ChangeNotifier {
         if (body['access_token'] != null) {
           await _saveSession(body);
         }
-        return null; // Prompt for 6-digit verification code
+        return null; // Prompt for 6-digit code
       } else {
-        return _parseAuthError(body, 'فشل إنشاء الحساب.');
+        return _parseAuthError(body, 'signup');
       }
     } catch (e) {
       _isLoading = false;
@@ -534,7 +533,7 @@ class AuthProvider extends ChangeNotifier {
         await fetchProfile();
         return null;
       } else {
-        return _parseAuthError(body, 'رمز التحقق غير صحيح أو انتهت صلاحيته');
+        return _parseAuthError(body, 'verify');
       }
     } catch (e) {
       _isLoading = false;
@@ -556,7 +555,7 @@ class AuthProvider extends ChangeNotifier {
       );
       final body = jsonDecode(response.body);
       if (response.statusCode == 200) return null;
-      return _parseAuthError(body, 'تعذر إعادة إرسال الرمز.');
+      return _parseAuthError(body, 'resend');
     } catch (e) {
       return 'خطأ في الاتصال بالشبكة.';
     }
@@ -577,7 +576,7 @@ class AuthProvider extends ChangeNotifier {
 
       final body = jsonDecode(response.body);
       if (response.statusCode == 200) return null;
-      return _parseAuthError(body, 'تعذر إرسال استعادة كلمة المرور.');
+      return _parseAuthError(body, 'recover');
     } catch (e) {
       _isLoading = false;
       notifyListeners();
@@ -601,7 +600,7 @@ class AuthProvider extends ChangeNotifier {
 
       final body = jsonDecode(response.body);
       if (response.statusCode == 200) return null;
-      return _parseAuthError(body, 'تعذر تحديث كلمة المرور.');
+      return _parseAuthError(body, 'reset');
     } catch (e) {
       _isLoading = false;
       notifyListeners();
@@ -698,15 +697,15 @@ class AppDataProvider extends ChangeNotifier with WidgetsBindingObserver {
   bool _isLoading = false;
 
   double get usdRate => _usdRate;
-  List<Product> get products => _products.isEmpty ? _fallbackProducts : _products;
-  List<DeliveryArea> get deliveryAreas => _deliveryAreas.isEmpty ? _fallbackDeliveryAreas : _deliveryAreas;
+  List<Product> get products => _products;
+  List<DeliveryArea> get deliveryAreas => _deliveryAreas;
   BankSettings get bankSettings => _bankSettings ?? BankSettings(
         bankName: 'بنك الخرطوم - فرع الدامر',
         accountNumber: '123456789',
         accountHolder: 'شركة ديالا للمعدات الطبية',
         customerNote: 'يرجى إرفاق صورة الإشعار بوضوح',
       );
-  List<CustomerOrder> get orders => _orders.isEmpty ? _fallbackOrders : _orders;
+  List<CustomerOrder> get orders => _orders;
   List<AppNotification> get notifications => _notifications;
   bool get isLoading => _isLoading;
 
@@ -741,7 +740,7 @@ class AppDataProvider extends ChangeNotifier with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && _auth?.isAuthenticated == true) {
-      fetchAllData();
+      fetchAllData(quiet: true);
     }
   }
 
@@ -900,7 +899,6 @@ class AppDataProvider extends ChangeNotifier with WidgetsBindingObserver {
         final List list = jsonDecode(res.body);
         List<CustomerOrder> fetched = list.map((e) => CustomerOrder.fromJson(e)).toList();
 
-        // Fetch items for these orders
         for (var o in fetched) {
           final itemsRes = await http.get(
             Uri.parse('$kSupabaseUrl/rest/v1/taregba_order_items?order_id=eq.${o.id}'),
@@ -959,7 +957,7 @@ class AppDataProvider extends ChangeNotifier with WidgetsBindingObserver {
     } catch (_) {}
   }
 
-  // Create Order & Send Notification to Admin
+  // Create Order & Send Event Notification to Admin
   Future<CustomerOrder?> createOrder({
     required String fullName,
     required String phone,
@@ -1007,7 +1005,6 @@ class AppDataProvider extends ChangeNotifier with WidgetsBindingObserver {
         if (createdList.isNotEmpty) {
           final createdOrder = CustomerOrder.fromJson(createdList.first);
 
-          // Create Items
           for (var c in cartItems) {
             await http.post(
               Uri.parse('$kSupabaseUrl/rest/v1/taregba_order_items'),
@@ -1042,7 +1039,7 @@ class AppDataProvider extends ChangeNotifier with WidgetsBindingObserver {
     return null;
   }
 
-  // Upload Receipt & Send Notification to Admin
+  // Upload Receipt & Send Event Notification to Admin
   Future<bool> uploadBankReceipt(int orderId, String orderNum, String receiptUrl) async {
     try {
       final res = await http.patch(
@@ -1054,7 +1051,7 @@ class AppDataProvider extends ChangeNotifier with WidgetsBindingObserver {
         }),
       );
       if (res.statusCode == 200 || res.statusCode == 204) {
-        // Send Notification to Admin (CONTRACT EVENT)
+        // Send Event Notification to Admin (CONTRACT EVENT)
         await sendNotificationToAdmin(
           title: 'إشعار تحويل بنكي جديد يتطلب المراجعة',
           body: 'قام الزبون ${_auth?.userName ?? ''} برفع صورة إشعار تحويل بنكي للطلب #$orderNum',
@@ -1086,118 +1083,6 @@ class AppDataProvider extends ChangeNotifier with WidgetsBindingObserver {
       );
     } catch (_) {}
   }
-
-  // Fallbacks
-  static final List<Product> _fallbackProducts = [
-    Product(
-      id: 1,
-      name: 'Glucose Test Strips - جهاز قياس السكر',
-      category: 'أجهزة قياس',
-      description: 'شرائط فحص السكر في الدم بدقة عالية، متوافقة مع أجهزة الدامر الطبية، العبوة تحتوي على 50 شريط مع كود تلقائي.',
-      priceUsd: 46.42,
-      stockQuantity: 15,
-      imageUrl: '',
-      isVisible: true,
-    ),
-    Product(
-      id: 2,
-      name: 'سماعة طبيب رقمية متطورة',
-      category: 'معدات طبية',
-      description: 'سماعة طبيب رقمية متطورة مع تضخيم الصوت وإلغاء الضوضاء وسهولة الاستخدام للتشخيص الطبي الدقيق.',
-      priceUsd: 103.57,
-      stockQuantity: 8,
-      imageUrl: '',
-      isVisible: true,
-    ),
-    Product(
-      id: 3,
-      name: 'سرنجات طبية 5مل (علبة 100)',
-      category: 'مستهلكات',
-      description: 'سرنجات طبية معقمة استخدام مرة واحدة سعة 5مل، عبوة 100 قطعة مطابقة للمواصفات العالمية.',
-      priceUsd: 15.71,
-      stockQuantity: 2,
-      imageUrl: '',
-      isVisible: true,
-    ),
-    Product(
-      id: 4,
-      name: 'جهاز قياس ضغط الدم الرقمي',
-      category: 'أجهزة قياس',
-      description: 'جهاز قياس ضغط الدم الرقمي للذراع مع شاشة عرض واسعة وذاكرة قراءات متعددة.',
-      priceUsd: 70.00,
-      stockQuantity: 12,
-      imageUrl: '',
-      isVisible: true,
-    ),
-  ];
-
-  static final List<DeliveryArea> _fallbackDeliveryAreas = [
-    DeliveryArea(id: 1, name: 'الدامر', deliveryFeeSdg: 3000, isActive: true),
-    DeliveryArea(id: 2, name: 'عطبرة', deliveryFeeSdg: 4000, isActive: true),
-    DeliveryArea(id: 3, name: 'بربر', deliveryFeeSdg: 5000, isActive: true),
-    DeliveryArea(id: 4, name: 'أبوحمد', deliveryFeeSdg: 7000, isActive: true),
-  ];
-
-  static final List<CustomerOrder> _fallbackOrders = [
-    CustomerOrder(
-      id: 1043,
-      orderNumber: '1043',
-      fullName: 'د. محمد أحمد الفكي',
-      phone: '0912345678',
-      deliveryAreaName: 'الدامر',
-      deliveryAddress: 'السوق الرئيسي، قرب مستشفى الدامر',
-      deliveryType: 'توصيل',
-      deliveryFeeSdg: 3000,
-      subtotalSdg: 210000,
-      totalSdg: 213000,
-      status: 'جديد',
-      paymentMethod: 'transfer',
-      paymentStatus: 'pending',
-      createdAt: 'اليوم، 10:30 صباحاً',
-      items: [
-        OrderItem(productName: 'Glucose Strips', unitPriceSdg: 65000, quantity: 1, totalPriceSdg: 65000),
-        OrderItem(productName: 'سماعة طبيب', unitPriceSdg: 145000, quantity: 1, totalPriceSdg: 145000),
-      ],
-    ),
-    CustomerOrder(
-      id: 1042,
-      orderNumber: '1042',
-      fullName: 'د. محمد أحمد الفكي',
-      phone: '0912345678',
-      deliveryAreaName: 'عطبرة',
-      deliveryAddress: 'حي المطار',
-      deliveryType: 'توصيل',
-      deliveryFeeSdg: 4000,
-      subtotalSdg: 94000,
-      totalSdg: 98000,
-      status: 'في الطريق',
-      paymentMethod: 'cash',
-      paymentStatus: 'confirmed',
-      createdAt: 'أمس، 02:15 ظهراً',
-      items: [
-        OrderItem(productName: 'جهاز قياس ضغط الدم', unitPriceSdg: 94000, quantity: 1, totalPriceSdg: 94000),
-      ],
-    ),
-    CustomerOrder(
-      id: 1039,
-      orderNumber: '1039',
-      fullName: 'د. محمد أحمد الفكي',
-      phone: '0912345678',
-      deliveryAreaName: 'بربر',
-      deliveryAddress: 'السوق الكبير',
-      deliveryType: 'توصيل',
-      deliveryFeeSdg: 5000,
-      subtotalSdg: 60000,
-      totalSdg: 65000,
-      status: 'تم التوصيل',
-      paymentMethod: 'transfer',
-      paymentStatus: 'confirmed',
-      createdAt: '15 مايو 2024',
-      items: [
-        OrderItem(productName: 'Glucose Strips', unitPriceSdg: 60000, quantity: 1, totalPriceSdg: 60000),
-      ],
-    ),
-  ];
 }
 
 // ==========================================
@@ -1212,34 +1097,7 @@ class CartItem {
 }
 
 class CartProvider extends ChangeNotifier {
-  final List<CartItem> _items = [
-    CartItem(
-      product: Product(
-        id: 1,
-        name: 'Glucose Test Strips - جهاز قياس السكر',
-        category: 'أجهزة قياس',
-        description: 'شرائط فحص السكر بدقة عالية',
-        priceUsd: 46.42,
-        stockQuantity: 10,
-        imageUrl: '',
-        isVisible: true,
-      ),
-      quantity: 1,
-    ),
-    CartItem(
-      product: Product(
-        id: 2,
-        name: 'سماعة طبيب رقمية متطورة',
-        category: 'معدات طبية',
-        description: 'سماعة رقمية عالية الدقة',
-        priceUsd: 103.57,
-        stockQuantity: 5,
-        imageUrl: '',
-        isVisible: true,
-      ),
-      quantity: 1,
-    ),
-  ];
+  final List<CartItem> _items = [];
 
   List<CartItem> get items => _items;
   int get itemCount => _items.fold(0, (sum, i) => sum + i.quantity);
@@ -1359,7 +1217,7 @@ class DMCHeader extends StatelessWidget implements PreferredSizeWidget {
               ],
             ),
             const Spacer(),
-            // Cart Icon Button with Badge
+            // Cart Button
             Stack(
               clipBehavior: Clip.none,
               children: [
@@ -1407,7 +1265,7 @@ class DMCHeader extends StatelessWidget implements PreferredSizeWidget {
               ],
             ),
             const SizedBox(width: 8),
-            // Notifications Button with Unread Badge
+            // Notifications Inbox Button
             Stack(
               clipBehavior: Clip.none,
               children: [
@@ -1455,7 +1313,7 @@ class DMCHeader extends StatelessWidget implements PreferredSizeWidget {
               ],
             ),
             const SizedBox(width: 8),
-            // Auth / Profile Button
+            // Profile / Auth Button
             InkWell(
               onTap: () {
                 if (auth.isAuthenticated) {
@@ -1493,7 +1351,7 @@ class DMCHeader extends StatelessWidget implements PreferredSizeWidget {
 }
 
 // ==========================================
-// MAIN APP ROOT & NAVIGATION BAR
+// MAIN ROOT & NAVIGATION BAR
 // ==========================================
 
 class MainRootScreen extends StatefulWidget {
@@ -1747,54 +1605,53 @@ class _HomeScreenState extends State<HomeScreen> {
             // Products Grid
             Padding(
               padding: const EdgeInsets.all(16),
-              child: filteredProducts.isEmpty
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(32),
-                        child: Text('لا توجد منتجات مطابقة للبحث', style: TextStyle(color: kTextMuted)),
-                      ),
-                    )
-                  : GridView.builder(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.72,
-                      ),
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: filteredProducts.length,
-                      itemBuilder: (context, index) {
-                        final product = filteredProducts[index];
-                        final priceSdg = product.priceUsd * appData.usdRate;
-                        final formattedPrice = '${intl.NumberFormat("#,##0").format(priceSdg)} ج.س';
-                        final isLowStock = product.stockQuantity <= 3 && product.stockQuantity > 0;
+              child: appData.isLoading
+                  ? const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))
+                  : filteredProducts.isEmpty
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(32),
+                            child: Text('لا توجد منتجات مطابقة حالياً', style: TextStyle(color: kTextMuted)),
+                          ),
+                        )
+                      : GridView.builder(
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 0.72,
+                          ),
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: filteredProducts.length,
+                          itemBuilder: (context, index) {
+                            final product = filteredProducts[index];
+                            final priceSdg = product.priceUsd * appData.usdRate;
+                            final formattedPrice = '${intl.NumberFormat("#,##0").format(priceSdg)} ج.س';
+                            final isLowStock = product.stockQuantity <= 3 && product.stockQuantity > 0;
 
-                        return _buildProductCard(
-                          context,
-                          emoji: product.emojiIcon,
-                          title: product.name,
-                          price: formattedPrice,
-                          stockBadge: product.stockQuantity > 0 ? (isLowStock ? 'قارب على النفاد' : 'متوفر') : 'نفد',
-                          stockBadgeColor: product.stockQuantity > 0 ? (isLowStock ? kBadgeWarning : kBadgeGreen) : kBadgeRed,
-                          stockTextColor: product.stockQuantity > 0 ? (isLowStock ? kBadgeWarningText : const Color(0xFF047857)) : Colors.white,
-                          onTap: () {
-                            Navigator.push(
+                            return _buildProductCard(
                               context,
-                              MaterialPageRoute(
-                                builder: (_) => ProductDetailScreen(product: product),
-                              ),
+                              product: product,
+                              priceFormatted: formattedPrice,
+                              isLowStock: isLowStock,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ProductDetailScreen(product: product),
+                                  ),
+                                );
+                              },
+                              onAdd: () {
+                                cart.addToCart(product);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('تمت الإضافة للسلة بنجاح'), behavior: SnackBarBehavior.floating),
+                                );
+                              },
                             );
                           },
-                          onAdd: () {
-                            cart.addToCart(product);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('تمت الإضافة للسلة بنجاح'), behavior: SnackBarBehavior.floating),
-                            );
-                          },
-                        );
-                      },
-                    ),
+                        ),
             ),
           ],
         ),
@@ -1804,15 +1661,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildProductCard(
     BuildContext context, {
-    required String emoji,
-    required String title,
-    required String price,
-    required String stockBadge,
-    required Color stockBadgeColor,
-    required Color stockTextColor,
+    required Product product,
+    required String priceFormatted,
+    required bool isLowStock,
     required VoidCallback onTap,
     required VoidCallback onAdd,
   }) {
+    final stockBadge = product.stockQuantity > 0 ? (isLowStock ? 'قارب على النفاد' : 'متوفر') : 'نفد';
+    final stockBadgeColor = product.stockQuantity > 0 ? (isLowStock ? kBadgeWarning : kBadgeGreen) : kBadgeRed;
+    final stockTextColor = product.stockQuantity > 0 ? (isLowStock ? kBadgeWarningText : const Color(0xFF047857)) : Colors.white;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
@@ -1828,7 +1686,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Emoji Image Box
             Container(
               height: 120,
               width: double.infinity,
@@ -1841,7 +1698,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Center(
                     child: Text(
-                      emoji,
+                      product.emojiIcon,
                       style: const TextStyle(fontSize: 40),
                     ),
                   ),
@@ -1878,7 +1735,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          title,
+                          product.name,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -1889,7 +1746,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          price,
+                          priceFormatted,
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
@@ -1910,15 +1767,15 @@ class _HomeScreenState extends State<HomeScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        onPressed: onAdd,
-                        child: const Row(
+                        onPressed: product.stockQuantity > 0 ? onAdd : null,
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.add, size: 16),
-                            SizedBox(width: 4),
+                            const Icon(Icons.add, size: 16),
+                            const SizedBox(width: 4),
                             Text(
-                              'أضف للسلة',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                              product.stockQuantity > 0 ? 'أضف للسلة' : 'غير متوفر',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -1992,7 +1849,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: kBadgeGreen.withValues(alpha: 0.12),
+                          color: (widget.product.stockQuantity > 0 ? kBadgeGreen : kBadgeRed).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -2112,13 +1969,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         elevation: 4,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
-                      onPressed: () {
-                        cart.addToCart(widget.product, quantity: _quantity);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('تمت إضافة المنتج إلى السلة بنجاح')),
-                        );
-                        Navigator.pop(context);
-                      },
+                      onPressed: widget.product.stockQuantity > 0
+                          ? () {
+                              cart.addToCart(widget.product, quantity: _quantity);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('تمت إضافة المنتج إلى السلة بنجاح')),
+                              );
+                              Navigator.pop(context);
+                            }
+                          : null,
                       icon: const Icon(Icons.shopping_cart_outlined),
                       label: const Text(
                         'أضف إلى السلة',
@@ -2498,7 +2357,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     : () async {
                         if (_nameController.text.trim().isEmpty || _phoneController.text.trim().isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('يرجى ملء كافة البيانات المطلوب')),
+                            const SnackBar(content: Text('يرجى ملء كافة البيانات المطلوبة')),
+                          );
+                          return;
+                        }
+
+                        if (cart.items.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('السلة فارغة')),
                           );
                           return;
                         }
@@ -2619,7 +2485,7 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
     final targetOrder = widget.order ?? (appData.orders.isNotEmpty ? appData.orders.first : null);
     final formattedAmount = targetOrder != null
         ? '${intl.NumberFormat("#,##0").format(targetOrder.totalSdg)} ج.س'
-        : '213,000 ج.س';
+        : '0 ج.س';
 
     return Scaffold(
       appBar: const DMCHeader(showBackButton: true),
@@ -2742,18 +2608,31 @@ class _BankTransferScreenState extends State<BankTransferScreen> {
                     ? null
                     : () async {
                         if (targetOrder == null) return;
+                        if (_imageFile == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('يرجى اختيار أو التقاط صورة الإشعار البنكي')),
+                          );
+                          return;
+                        }
                         setState(() => _isUploading = true);
 
-                        // Simulated receipt URL upload
-                        final mockUrl = "https://receipts.domain.com/${DateTime.now().millisecondsSinceEpoch}.jpg";
-                        await appData.uploadBankReceipt(targetOrder.id, targetOrder.orderNumber, mockUrl);
+                        final bytes = await _imageFile!.readAsBytes();
+                        final base64Image = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+
+                        final ok = await appData.uploadBankReceipt(targetOrder.id, targetOrder.orderNumber, base64Image);
 
                         setState(() => _isUploading = false);
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('تم إرسال إشعار التحويل للإدارة بنجاح')),
-                          );
-                          Navigator.popUntil(context, (r) => r.isFirst);
+                          if (ok) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('تم إرسال إشعار التحويل للإدارة بنجاح')),
+                            );
+                            Navigator.popUntil(context, (r) => r.isFirst);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('تعذر رفع إشعار التحويل، حاول لاحقاً')),
+                            );
+                          }
                         }
                       },
                 child: _isUploading
@@ -2780,7 +2659,36 @@ class OrdersScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
     final appData = Provider.of<AppDataProvider>(context);
+
+    if (!auth.isAuthenticated) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.assignment_outlined, size: 64, color: kTextMuted),
+              const SizedBox(height: 16),
+              const Text('سجل الدخول لعرض قائمة طلباتك', style: TextStyle(fontSize: 16, color: kTextMuted)),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: kPrimary, foregroundColor: Colors.white),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AuthScreen()),
+                  );
+                },
+                child: const Text('تسجيل الدخول'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final orders = appData.orders;
 
     return RefreshIndicator(
@@ -2957,24 +2865,14 @@ class OrdersScreen extends StatelessWidget {
 // ==========================================
 
 class InvoiceScreen extends StatelessWidget {
-  final CustomerOrder? order;
+  final CustomerOrder order;
 
-  const InvoiceScreen({super.key, this.order});
+  const InvoiceScreen({super.key, required this.order});
 
   @override
   Widget build(BuildContext context) {
-    final appData = Provider.of<AppDataProvider>(context);
-    final targetOrder = order ?? (appData.orders.isNotEmpty ? appData.orders.first : null);
-
-    final orderNum = targetOrder?.orderNumber ?? '1043';
-    final customerName = targetOrder?.fullName ?? 'د. محمد أحمد الفكي';
-    final areaName = targetOrder?.deliveryAreaName ?? 'الدامر';
-    final fee = targetOrder?.deliveryFeeSdg ?? 3000;
-    final total = targetOrder?.totalSdg ?? 213000;
-    final items = targetOrder?.items ?? [];
-
-    final formattedFee = '${intl.NumberFormat("#,##0").format(fee)} ج.س';
-    final formattedTotal = '${intl.NumberFormat("#,##0").format(total)} ج.س';
+    final formattedFee = '${intl.NumberFormat("#,##0").format(order.deliveryFeeSdg)} ج.س';
+    final formattedTotal = '${intl.NumberFormat("#,##0").format(order.totalSdg)} ج.س';
 
     return Scaffold(
       appBar: const DMCHeader(showBackButton: true),
@@ -3007,13 +2905,13 @@ class InvoiceScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('رقم الفاتورة: #INV-$orderNum', style: const TextStyle(fontSize: 12, color: kTextMuted)),
-                  Text('التاريخ: ${targetOrder?.createdAt ?? "اليوم"}', style: const TextStyle(fontSize: 12, color: kTextMuted)),
+                  Text('رقم الفاتورة: #INV-${order.orderNumber}', style: const TextStyle(fontSize: 12, color: kTextMuted)),
+                  Text('التاريخ: ${order.createdAt.length > 10 ? order.createdAt.substring(0, 10) : order.createdAt}', style: const TextStyle(fontSize: 12, color: kTextMuted)),
                 ],
               ),
               const SizedBox(height: 12),
-              Text('العميل: $customerName', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-              Text('المنطقة: $areaName', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              Text('العميل: ${order.fullName}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              Text('المنطقة: ${order.deliveryAreaName}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               Table(
                 border: TableBorder.all(color: kCardBorder),
@@ -3026,25 +2924,16 @@ class InvoiceScreen extends StatelessWidget {
                       Padding(padding: EdgeInsets.all(8), child: Text('السعر', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
                     ],
                   ),
-                  if (items.isEmpty)
-                    const TableRow(
+                  ...order.items.map((i) {
+                    final itemPrice = intl.NumberFormat("#,##0").format(i.totalPriceSdg);
+                    return TableRow(
                       children: [
-                        Padding(padding: EdgeInsets.all(8), child: Text('Glucose Strips', style: TextStyle(fontSize: 12))),
-                        Padding(padding: EdgeInsets.all(8), child: Text('1', style: TextStyle(fontSize: 12))),
-                        Padding(padding: EdgeInsets.all(8), child: Text('65,000', style: TextStyle(fontSize: 12))),
+                        Padding(padding: const EdgeInsets.all(8), child: Text(i.productName, style: const TextStyle(fontSize: 12))),
+                        Padding(padding: const EdgeInsets.all(8), child: Text('${i.quantity}', style: const TextStyle(fontSize: 12))),
+                        Padding(padding: const EdgeInsets.all(8), child: Text(itemPrice, style: const TextStyle(fontSize: 12))),
                       ],
-                    )
-                  else
-                    ...items.map((i) {
-                      final itemPrice = intl.NumberFormat("#,##0").format(i.totalPriceSdg);
-                      return TableRow(
-                        children: [
-                          Padding(padding: const EdgeInsets.all(8), child: Text(i.productName, style: const TextStyle(fontSize: 12))),
-                          Padding(padding: const EdgeInsets.all(8), child: Text('${i.quantity}', style: const TextStyle(fontSize: 12))),
-                          Padding(padding: const EdgeInsets.all(8), child: Text(itemPrice, style: const TextStyle(fontSize: 12))),
-                        ],
-                      );
-                    }),
+                    );
+                  }),
                 ],
               ),
               const SizedBox(height: 16),
@@ -3076,10 +2965,10 @@ class InvoiceScreen extends StatelessWidget {
                       ),
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('تم تحميل الفاتورة بصيغة PDF بنجاح')),
+                          const SnackBar(content: Text('تم تسجيل طلب الفاتورة')),
                         );
                       },
-                      child: const Text('تحميل PDF 📥', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('تحميل الفاتورة 📥', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -3093,7 +2982,7 @@ class InvoiceScreen extends StatelessWidget {
                       ),
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('تم نسخ رابط الفاتورة للمشاركة')),
+                          const SnackBar(content: Text('تم نسخ معلومات الفاتورة للمشاركة')),
                         );
                       },
                       child: const Text('مشاركة 🔗', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -3248,7 +3137,7 @@ class ContactScreen extends StatelessWidget {
       if (!serviceEnabled) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('خدمة الموقع غير مفعلة في الجهاز')),
+            const SnackBar(content: Text('خدمة تحديد الموقع غير مفعلة في الجهاز')),
           );
         }
         return;
@@ -3259,7 +3148,7 @@ class ContactScreen extends StatelessWidget {
         if (permission == LocationPermission.denied) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('تم رفض إذن الوصول للموقع')),
+              const SnackBar(content: Text('تم رفض إذن الوصول للموقع، للتحديد يلزم تفعيل الإذن')),
             );
           }
           return;
@@ -3271,7 +3160,7 @@ class ContactScreen extends StatelessWidget {
             context: context,
             builder: (ctx) => AlertDialog(
               title: const Text('إذن الموقع مطلوب'),
-              content: const Text('تم رفض الوصول للموقع بشكل دائم. يرجى التفعيل من الإعدادات.'),
+              content: const Text('تم رفض الوصول للموقع بشكل دائم. يرجى تفعيله من إعدادات الجهاز.'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
@@ -3294,7 +3183,7 @@ class ContactScreen extends StatelessWidget {
       final pos = await Geolocator.getCurrentPosition();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('موقعك الحقيقي: ${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)} (تبعد حوالي 1.2 كلم عن معرض الدامر)')),
+          SnackBar(content: Text('موقعك الحالي: ${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)}')),
         );
       }
     } catch (e) {
@@ -3429,7 +3318,7 @@ class ContactScreen extends StatelessWidget {
                       children: [
                         Text('📍 خريطة الموقع التفاعلية', style: TextStyle(color: kTextMuted, fontWeight: FontWeight.bold)),
                         SizedBox(height: 4),
-                        Text('(انقر لتحديد المسافة من موقعك)', style: TextStyle(color: kPrimary, fontSize: 11)),
+                        Text('(انقر لتحديد موقعك بالنسبة للمعرض)', style: TextStyle(color: kPrimary, fontSize: 11)),
                       ],
                     ),
                   ),
@@ -3501,7 +3390,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         setState(() => _isSaving = false);
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(ok ? 'تم حفظ الملف بنجاح' : 'تعذر حفظ البيانات')),
+                            SnackBar(content: Text(ok ? 'تم حفظ البيانات بنجاح' : 'تعذر حفظ البيانات')),
                           );
                         }
                       },
@@ -3540,7 +3429,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 }
 
 // ==========================================
-// SCREEN 11: AUTHENTICATION SCREEN (LOGIN / SIGNUP / FORGOT PASSWORD)
+// SCREEN 11: AUTHENTICATION SCREEN
 // ==========================================
 
 class AuthScreen extends StatefulWidget {
@@ -3551,9 +3440,9 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  // Mode: 0 = Login, 1 = Register, 2 = Verify OTP, 3 = Recover Password, 4 = New Password
+  // Mode: 0 = Login, 1 = Signup, 2 = Verify Code, 3 = Recover, 4 = New Password
   int _mode = 0;
-  String _verifyType = 'signup'; // "signup" or "recovery"
+  String _verifyType = 'signup';
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -3565,6 +3454,27 @@ class _AuthScreenState extends State<AuthScreen> {
 
   bool _obscurePassword = true;
   String? _errorMessage;
+
+  Timer? _resendTimer;
+  int _resendCountdown = 60;
+
+  @override
+  void dispose() {
+    _resendTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startResendTimer() {
+    _resendTimer?.cancel();
+    setState(() => _resendCountdown = 60);
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (_resendCountdown > 0) {
+        setState(() => _resendCountdown--);
+      } else {
+        t.cancel();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -3655,6 +3565,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 _verifyType = 'signup';
                                 _mode = 2;
                               });
+                              _startResendTimer();
                             } else if (err != null) {
                               setState(() => _errorMessage = err);
                             } else {
@@ -3751,8 +3662,9 @@ class _AuthScreenState extends State<AuthScreen> {
                             } else {
                               setState(() {
                                 _verifyType = 'signup';
-                                _mode = 2; // Switch to OTP input screen
+                                _mode = 2;
                               });
+                              _startResendTimer();
                             }
                           },
                     child: auth.isLoading
@@ -3791,6 +3703,10 @@ class _AuthScreenState extends State<AuthScreen> {
                         ? null
                         : () async {
                             setState(() => _errorMessage = null);
+                            if (_otpController.text.trim().length != 6) {
+                              setState(() => _errorMessage = 'رمز التحقق يجب أن يتكون من 6 أرقام');
+                              return;
+                            }
                             final err = await auth.verifyCode(
                               email: _emailController.text,
                               code: _otpController.text,
@@ -3800,7 +3716,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               setState(() => _errorMessage = err);
                             } else {
                               if (_verifyType == 'recovery') {
-                                setState(() => _mode = 4); // New password mode
+                                setState(() => _mode = 4);
                               } else {
                                 if (mounted) Navigator.pop(context);
                               }
@@ -3813,15 +3729,21 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
                 const SizedBox(height: 12),
                 TextButton(
-                  onPressed: () async {
-                    final res = await auth.resendCode(_emailController.text, _verifyType);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(res ?? 'تم إعادة إرسال الرمز بنجاح')),
-                      );
-                    }
-                  },
-                  child: const Text('إعادة إرسال الرمز', style: TextStyle(color: kPrimary, fontWeight: FontWeight.bold)),
+                  onPressed: _resendCountdown > 0
+                      ? null
+                      : () async {
+                          final res = await auth.resendCode(_emailController.text, _verifyType);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(res ?? 'تم إعادة إرسال الرمز بنجاح')),
+                            );
+                            if (res == null) _startResendTimer();
+                          }
+                        },
+                  child: Text(
+                    _resendCountdown > 0 ? 'إعادة إرسال الرمز خلال ($_resendCountdown) ثانية' : 'إعادة إرسال الرمز',
+                    style: TextStyle(color: _resendCountdown > 0 ? kTextMuted : kPrimary, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
 
@@ -3845,8 +3767,9 @@ class _AuthScreenState extends State<AuthScreen> {
                             } else {
                               setState(() {
                                 _verifyType = 'recovery';
-                                _mode = 2; // Verify Code
+                                _mode = 2;
                               });
+                              _startResendTimer();
                             }
                           },
                     child: auth.isLoading

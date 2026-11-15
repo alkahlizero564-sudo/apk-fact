@@ -2,8 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Alert, View, Text, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform, Image } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { setRefImage } from "../services/attachment";
-import { AiImage } from "../services/instantPreview";
+import { setRefPics, getRefPics, RefPic } from "../services/attachment";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -36,6 +35,7 @@ import type { RootScreenProps } from "../navigation";
 type Start = "blank" | "template" | "paste" | "pair";
 
 const STEPS = ["البداية", "اللغة", "التفاصيل", "الفهم", "التصميم", "المراجعة"];
+const MAX_PICS = 5;
 
 const LANG_PITCH: Record<Lang, string> = {
   html: "الأسرع في البناء. ممتاز للمتاجر والمنيو والصفحات التعريفية.",
@@ -68,7 +68,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
       ? getGalleryPick() ?? undefined
       : TEMPLATES.find((t) => t.id === route.params?.templateId);
 
-  const [step, setStep] = useState(preset ? 2 : 0);
+  const [step, setStep] = useState(preset ? 2 : route.params?.description ? 1 : 0);
   const [start, setStart] = useState<Start>(preset ? "template" : "blank");
   const [template, setTemplate] = useState<Template | undefined>(preset);
   const [lang, setLang] = useState<Lang>(preset?.lang ?? "html");
@@ -81,35 +81,39 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
   const [spec, setSpec] = useState<Spec | null>(null); // the requirements the owner approved
   const [understandBusy, setUnderstandBusy] = useState(false);
   const understandRef = useRef<UnderstandHandle>(null);
-  const [text, setText] = useState(preset?.description ?? "");
+  const [text, setText] = useState(preset?.description ?? route.params?.description ?? "");
   const [code, setCode] = useState("");
   const [related, setRelated] = useState("");
-  // An optional reference picture the owner attaches to the description (a design to mimic, a sketch, an example).
-  const [refPic, setRefPic] = useState<{ uri: string; image: AiImage } | null>(null);
+  // Optional reference pictures the owner attaches to the description (a design to mimic, sketches, examples).
+  const [refPics, setRefPicsState] = useState<RefPic[]>(() => getRefPics());
 
-  // Keep the shared holder in sync with the attached picture, and clear it when leaving this screen.
+  // Keep the shared holder in sync with the attached pictures, and clear it when leaving this screen.
   useEffect(() => {
-    setRefImage(refPic?.image ?? null);
-    return () => setRefImage(null);
-  }, [refPic]);
+    setRefPics(refPics);
+    return () => setRefPics([]);
+  }, [refPics]);
 
   async function pickReferenceImage() {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert("إذن الصور", "نحتاج إذن الوصول للصور لإرفاق صورة مرجعية.");
+        Alert.alert("إذن الصور", "نحتاج إذن الوصول للصور لإرفاق صور مرجعية.");
         return;
       }
       const res = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.5,
         base64: true,
-        allowsEditing: false,
+        allowsMultipleSelection: true,
+        selectionLimit: MAX_PICS - refPics.length,
       });
-      const a = res.canceled ? null : res.assets?.[0];
-      if (a?.base64) setRefPic({ uri: a.uri, image: { data: a.base64, mime: a.mimeType || "image/jpeg" } });
+      if (res.canceled) return;
+      const added: RefPic[] = (res.assets ?? [])
+        .filter((a) => a.base64)
+        .map((a) => ({ uri: a.uri, image: { data: a.base64!, mime: a.mimeType || "image/jpeg" } }));
+      setRefPicsState((prev) => [...prev, ...added].slice(0, MAX_PICS));
     } catch (e: any) {
-      Alert.alert("تعذّر إرفاق الصورة", e?.message ?? "جرّب مرة أخرى");
+      Alert.alert("تعذّر إرفاق الصور", e?.message ?? "جرّب مرة أخرى");
     }
   }
   const [apps, setApps] = useState<AppInfo[]>([]);
@@ -137,7 +141,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
     code: string; related: string; owner: Owner | null; spec: Spec | null;
   };
   useEffect(() => {
-    if (preset) return;
+    if (preset || route.params?.description) return;
     loadWork<Work>("create").then((w) => {
       if (!w || !(w.name || w.text || w.code)) return;
       Alert.alert("تكمّل اللي كنت شغال فيه؟", `عندك تطبيق ما كمّلته${w.name ? `: «${w.name}»` : ""}. تكمّل من مكانك؟`, [
@@ -401,7 +405,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
                       <Text style={styles.tplTitle} numberOfLines={1}>
                         {t.title}
                       </Text>
-<View style={styles.tplFoot}>
+                      <View style={styles.tplFoot}>
                         <LangBadge lang={t.lang} />
                         <Pressable
                           onPress={() => navigation.navigate("InstantPreview", { templateId: t.id, fromWizard: true })}
@@ -503,25 +507,40 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
                   maxLength={2000}
                   counter
                 />
-                {refPic ? (
-                  <View style={styles.refRow}>
-                    <Image source={{ uri: refPic.uri }} style={styles.refThumb} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.refTitle}>صورة مرجعية مرفقة</Text>
-                      <Text style={styles.subhint}>الذكاء الاصطناعي بيستلهم شكلها في الفهم والتصميم.</Text>
-                    </View>
-                    <Pressable onPress={() => setRefPic(null)} hitSlop={10} style={styles.refRemove}>
-                      <Ionicons name="close" size={18} color={colors.text} />
-                    </Pressable>
-                  </View>
+                {refPics.length > 0 ? (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.picsRow}>
+                    {refPics.map((p, i) => (
+                      <View key={p.uri + i} style={styles.picWrap}>
+                        <Image source={{ uri: p.uri }} style={styles.pic} />
+                        <Pressable
+                          onPress={() => setRefPicsState((prev) => prev.filter((_, j) => j !== i))}
+                          hitSlop={8}
+                          style={styles.picX}
+                          accessibilityLabel="حذف الصورة"
+                        >
+                          <Ionicons name="close" size={14} color={colors.text} />
+                        </Pressable>
+                      </View>
+                    ))}
+                    {refPics.length < MAX_PICS ? (
+                      <Pressable onPress={pickReferenceImage} style={styles.picAdd} accessibilityLabel="إضافة صورة">
+                        <Ionicons name="add" size={26} color={colors.textMuted} />
+                      </Pressable>
+                    ) : null}
+                  </ScrollView>
                 ) : (
                   <Button
-                    title="أرفق صورة مرجعية (اختياري)"
+                    title="أرفق صور مرجعية (اختياري)"
                     icon="image-outline"
                     variant="secondary"
                     onPress={pickReferenceImage}
                   />
                 )}
+                {refPics.length > 0 ? (
+                  <Text style={styles.subhint}>
+                    {refPics.length} من {MAX_PICS} صور. الذكاء الاصطناعي بيستلهم شكلها.
+                  </Text>
+                ) : null}
                 <Button
                   title="معاينة فورية قبل الإنشاء"
                   icon={lang === "html" ? "flash-outline" : "sparkles-outline"}
@@ -663,10 +682,32 @@ const styles = StyleSheet.create({
   q: { ...type.sectionTitle, fontSize: 20, color: colors.text, textAlign: "right", marginBottom: space.sm },
   subq: { ...type.label, color: colors.text, textAlign: "right", marginTop: space.sm },
   subhint: { ...type.hint, color: colors.textMuted, textAlign: "right" },
-  refRow: { flexDirection: "row-reverse", alignItems: "center", gap: space.md, backgroundColor: colors.surface, borderRadius: radius.card, padding: space.md, marginTop: space.sm },
-  refThumb: { width: 54, height: 54, borderRadius: radius.field, backgroundColor: colors.bg },
-  refTitle: { ...type.body, color: colors.text, textAlign: "right", fontWeight: "600" },
-  refRemove: { padding: space.xs },
+  picsRow: { flexDirection: "row-reverse", gap: space.sm, paddingVertical: space.xs },
+  picWrap: { width: 76, height: 76 },
+  pic: { width: 76, height: 76, borderRadius: 16, backgroundColor: colors.surface },
+  picX: {
+    position: "absolute",
+    top: -6,
+    left: -6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  picAdd: {
+    width: 76,
+    height: 76,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: space.sm, marginTop: space.sm, marginBottom: space.md },
   grid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: space.md },
   tpl: {
@@ -725,4 +766,4 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
-});
+}); 

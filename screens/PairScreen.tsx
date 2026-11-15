@@ -2,13 +2,12 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, View, Text, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform, Image } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { setRefImage } from "../services/attachment";
-import { AiImage } from "../services/instantPreview";
+import { setRefPics, getRefPics, RefPic } from "../services/attachment";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Button, Card, Chip, Field, IconButton, ListRow, Timeline, Banner, Sheet, useSteps } from "../components/ui";
-import { AppAvatar, LANG_ICONS, LangBadge } from "../components/appVisuals";
+import { AppAvatar, LANG_ICONS } from "../components/appVisuals";
 import { LANGS, PAIR_LANGS, Lang } from "../services/langs";
 import { appExists } from "../services/appActions";
 import { takeGalleryPairPick } from "../services/galleryPick";
@@ -23,8 +22,12 @@ import { Spec, specText } from "../services/understand";
 import { loginLine, LOGIN_LABELS, LOGIN_CHOICES, LoginMode, PairLogin, suggestedChoice, usesEmail } from "../services/login";
 import { saveApprovedDesign, clearDraft, DesignTarget } from "../services/design";
 import { loadDraft as loadWork, clearDraft as clearWork, useAutoSave } from "../services/drafts";
-import { colors, langColors, space, radius, type } from "../theme";
+import { colors, langColors, space, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
+
+const CARD = "#111114";
+const SOFT = "#1B1B20";
+const MAX_PICS = 5;
 
 const EXAMPLES = [
   { label: "مطعم وطلبات", text: "مطعم: الزبون يتصفح المنيو ويطلب ويتابع حالة طلبه، والإدارة تستقبل الطلبات وتغيّر حالتها (جديد، قيد التحضير، في الطريق، تم التسليم) وتدير المنيو والأسعار." },
@@ -40,7 +43,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
   const [base, setBase] = useState(picked?.base ?? "");
   const [lang, setLang] = useState<Lang>(picked?.lang ?? "flutter");
   const [description, setDescription] = useState(picked?.description ?? "");
-  const [refPic, setRefPic] = useState<{ uri: string; image: AiImage } | null>(null);
+  const [refPics, setRefPicsState] = useState<RefPic[]>(() => getRefPics());
   const [admins, setAdmins] = useState("");
   const [pin, setPin] = useState("");
   const [loginSheet, setLoginSheet] = useState(false);
@@ -67,23 +70,32 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
   const [understandBusy, setUnderstandBusy] = useState(false);
   const understandRef = useRef<UnderstandHandle>(null);
 
-  // An optional reference picture for both apps; synced to the shared holder so understanding and design use it.
+  // Optional reference pictures for both apps; synced to the shared holder so understanding and design use them.
   useEffect(() => {
-    setRefImage(refPic?.image ?? null);
-    return () => setRefImage(null);
-  }, [refPic]);
+    setRefPics(refPics);
+    return () => setRefPics([]);
+  }, [refPics]);
   async function pickReferenceImage() {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert("إذن الصور", "نحتاج إذن الوصول للصور لإرفاق صورة مرجعية.");
+        Alert.alert("إذن الصور", "نحتاج إذن الوصول للصور لإرفاق صور مرجعية.");
         return;
       }
-      const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.5, base64: true });
-      const a = res.canceled ? null : res.assets?.[0];
-      if (a?.base64) setRefPic({ uri: a.uri, image: { data: a.base64, mime: a.mimeType || "image/jpeg" } });
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.5,
+        base64: true,
+        allowsMultipleSelection: true,
+        selectionLimit: MAX_PICS - refPics.length,
+      });
+      if (res.canceled) return;
+      const added: RefPic[] = (res.assets ?? [])
+        .filter((a) => a.base64)
+        .map((a) => ({ uri: a.uri, image: { data: a.base64!, mime: a.mimeType || "image/jpeg" } }));
+      setRefPicsState((prev) => [...prev, ...added].slice(0, MAX_PICS));
     } catch (e: any) {
-      Alert.alert("تعذّر إرفاق الصورة", e?.message ?? "جرّب مرة أخرى");
+      Alert.alert("تعذّر إرفاق الصور", e?.message ?? "جرّب مرة أخرى");
     }
   }
   const [designs, setDesigns] = useState<Record<string, string>>({});
@@ -259,7 +271,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         {!owner && (phase === "form" || phase === "understand" || phase === "design") ? (
           <>
             <Text style={styles.label}>التطبيقين دول لمين؟</Text>
@@ -293,12 +305,12 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
             <Card style={styles.pairCard}>
               {(["customer", "admin"] as const).map((r) => (
                 <View key={r} style={styles.pairItem}>
-                  <AppAvatar name={apps[r]} lang={lang} size={52} />
+                  <AppAvatar name={apps[r]} lang={lang} size={56} />
                   <Text style={styles.pairName}>{apps[r]}</Text>
                   <Text style={styles.pairRole}>{r === "customer" ? "تطبيق الزبون" : "تطبيق الإدارة"}</Text>
                 </View>
               ))}
-              <Ionicons name="swap-horizontal" size={22} color={colors.accent} style={styles.link} />
+              <Ionicons name="swap-horizontal" size={22} color="#FFFFFF" style={styles.link} />
             </Card>
             <Card>
               <Timeline steps={steps} />
@@ -416,20 +428,35 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
               maxLength={12000}
               counter
             />
-            {refPic ? (
-              <View style={styles.refRow}>
-                <Image source={{ uri: refPic.uri }} style={styles.refThumb} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.refTitle}>صورة مرجعية مرفقة</Text>
-                  <Text style={styles.refHint}>الذكاء بيستلهم شكلها في تصميم التطبيقين.</Text>
-                </View>
-                <Pressable onPress={() => setRefPic(null)} hitSlop={10} style={{ padding: space.xs }}>
-                  <Ionicons name="close" size={18} color={colors.text} />
-                </Pressable>
-              </View>
+            {refPics.length > 0 ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.picsRow}>
+                {refPics.map((p, i) => (
+                  <View key={p.uri + i} style={styles.picWrap}>
+                    <Image source={{ uri: p.uri }} style={styles.pic} />
+                    <Pressable
+                      onPress={() => setRefPicsState((prev) => prev.filter((_, j) => j !== i))}
+                      hitSlop={8}
+                      style={styles.picX}
+                      accessibilityLabel="حذف الصورة"
+                    >
+                      <Ionicons name="close" size={14} color={colors.text} />
+                    </Pressable>
+                  </View>
+                ))}
+                {refPics.length < MAX_PICS ? (
+                  <Pressable onPress={pickReferenceImage} style={styles.picAdd} accessibilityLabel="إضافة صورة">
+                    <Ionicons name="add" size={26} color={colors.textMuted} />
+                  </Pressable>
+                ) : null}
+              </ScrollView>
             ) : (
-              <Button title="أرفق صورة مرجعية (اختياري)" icon="image-outline" variant="secondary" onPress={pickReferenceImage} />
+              <Button title="أرفق صور مرجعية (اختياري)" icon="image-outline" variant="secondary" onPress={pickReferenceImage} />
             )}
+            {refPics.length > 0 ? (
+              <Text style={styles.namesHint}>
+                {refPics.length} من {MAX_PICS} صور. الذكاء الاصطناعي بيستلهم شكلها في تصميم التطبيقين.
+              </Text>
+            ) : null}
             <View style={styles.chips}>
               {EXAMPLES.map((e) => (
                 <Chip key={e.label} label={e.label} selected={description === e.text} onPress={() => setDescription(e.text)} />
@@ -442,7 +469,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
 
             <Pressable onPress={() => setOwnerState(null)} accessibilityRole="button">
               <Text style={styles.namesHint}>
-                {owner?.kind === "client" ? `للزبون: ${owner.name}` : "لي (الأساسي)"} · <Text style={{ color: colors.primary }}>تغيير</Text>
+                {owner?.kind === "client" ? `للزبون: ${owner.name}` : "لي (الأساسي)"} · <Text style={{ color: "#FFFFFF", fontWeight: "700" }}>تغيير</Text>
               </Text>
             </Pressable>
             <Text style={styles.label}>قاعدة البيانات</Text>
@@ -465,7 +492,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
               accessibilityRole="switch"
               accessibilityState={{ checked: usePush, disabled: lang === "python" }}
             >
-              <Ionicons name={usePush ? "toggle" : "toggle-outline"} size={34} color={usePush ? colors.accent : colors.textMuted} />
+              <Ionicons name={usePush ? "toggle" : "toggle-outline"} size={34} color={usePush ? "#FFFFFF" : colors.textMuted} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.toggleTitle}>إشعارات حتى والتطبيق مقفول</Text>
                 <Text style={styles.toggleSub}>طلب جديد يوصل للإدارة، وتغيير الحالة يوصل للزبون (Firebase)</Text>
@@ -537,7 +564,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
               <Ionicons
                 name={method === m ? "radio-button-on" : "radio-button-off"}
                 size={20}
-                color={method === m ? colors.primary : colors.textMuted}
+                color={method === m ? "#FFFFFF" : colors.textMuted}
               />
               <Text style={styles.choiceText}>{LOGIN_LABELS[m]}</Text>
             </Pressable>
@@ -614,70 +641,94 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
 }
 
 const styles = StyleSheet.create({
-  choice: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: space.sm,
-    padding: space.md,
-    borderRadius: radius.field,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceAlt,
-  },
-  choiceOn: { borderColor: colors.primary },
-  choiceText: { ...type.body, color: colors.text, textAlign: "right", flex: 1 },
-  sheetText: { ...type.body, color: colors.textMuted, textAlign: "right", marginBottom: space.md },
   root: { flex: 1, backgroundColor: colors.bg },
   top: { paddingHorizontal: space.lg, paddingBottom: space.md },
   topRow: { flexDirection: "row-reverse", alignItems: "center", gap: space.md },
-  title: { ...type.screenTitle, fontSize: 24, fontWeight: "800", color: colors.text, textAlign: "right" },
-  subtitle: { ...type.hint, color: colors.textMuted, textAlign: "right" },
-  body: { paddingHorizontal: space.lg, paddingBottom: space.xxl, gap: space.md },
-  label: { ...type.label, color: colors.text, textAlign: "right" },
+  title: { color: colors.text, fontSize: 28, fontWeight: "700", textAlign: "right" },
+  subtitle: { ...type.hint, color: "#8A8A94", textAlign: "right", marginTop: 2 },
+  body: { paddingHorizontal: space.lg, paddingBottom: 60, gap: space.md },
+  label: { ...type.label, color: "#C9C9D1", textAlign: "right" },
+
   langs: { flexDirection: "row-reverse", gap: space.sm },
   lang: {
     flex: 1,
     alignItems: "center",
     gap: 4,
     paddingVertical: space.md,
-    borderRadius: radius.field,
+    borderRadius: 20,
     borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.field,
+    borderColor: "transparent",
+    backgroundColor: CARD,
   },
-  langText: { color: colors.textMuted, fontWeight: "800" },
+  langText: { color: colors.textMuted, fontWeight: "700" },
   chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: space.sm, marginTop: -space.sm },
-  refRow: { flexDirection: "row-reverse", alignItems: "center", gap: space.md, backgroundColor: colors.surface, borderRadius: radius.card, padding: space.md, marginTop: space.sm },
-  refThumb: { width: 54, height: 54, borderRadius: radius.field, backgroundColor: colors.bg },
-  refTitle: { ...type.body, color: colors.text, textAlign: "right", fontWeight: "600" },
-  refHint: { ...type.hint, color: colors.textMuted, textAlign: "right" },
+
+  picsRow: { flexDirection: "row-reverse", gap: space.sm, paddingVertical: space.xs },
+  picWrap: { width: 76, height: 76 },
+  pic: { width: 76, height: 76, borderRadius: 16, backgroundColor: CARD },
+  picX: {
+    position: "absolute",
+    top: -6,
+    left: -6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: SOFT,
+    borderWidth: 1,
+    borderColor: "#2A2A32",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  picAdd: {
+    width: 76,
+    height: 76,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderColor: "#2A2A32",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
   toggle: {
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: space.md,
     padding: space.lg,
-    borderRadius: radius.card,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: 24,
+    backgroundColor: CARD,
   },
-  toggleTitle: { fontSize: 15, fontWeight: "800", color: colors.text, textAlign: "right" },
-  toggleSub: { ...type.hint, color: colors.textMuted, textAlign: "right" },
+  toggleTitle: { fontSize: 15, fontWeight: "700", color: colors.text, textAlign: "right" },
+  toggleSub: { ...type.hint, color: "#8A8A94", textAlign: "right" },
+
   pairCard: { flexDirection: "row-reverse", justifyContent: "space-around", alignItems: "center" },
   pairItem: { alignItems: "center", gap: 6, flex: 1 },
-  pairName: { fontWeight: "900", color: colors.text },
-  pairRole: { ...type.hint, color: colors.textMuted },
+  pairName: { fontWeight: "700", color: colors.text },
+  pairRole: { ...type.hint, color: "#8A8A94" },
   link: { position: "absolute", alignSelf: "center", left: "47%" },
   row: { flexDirection: "row-reverse", gap: space.md },
+
   footer: {
     flexDirection: "row-reverse",
     gap: space.md,
     paddingHorizontal: space.lg,
     paddingTop: space.md,
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    backgroundColor: colors.bg,
   },
   names: { gap: 0 },
-  namesHint: { fontSize: 12, color: colors.textMuted, textAlign: "right", marginTop: -space.sm, marginBottom: space.lg },
-}); 
+  namesHint: { fontSize: 12, color: "#8A8A94", textAlign: "right", marginTop: -space.sm, marginBottom: space.lg },
+
+  choice: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: space.sm,
+    padding: space.md,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: "transparent",
+    backgroundColor: SOFT,
+  },
+  choiceOn: { borderColor: "#FFFFFF" },
+  choiceText: { ...type.body, color: colors.text, textAlign: "right", flex: 1 },
+  sheetText: { ...type.body, color: colors.textMuted, textAlign: "right", marginBottom: space.md },
+});

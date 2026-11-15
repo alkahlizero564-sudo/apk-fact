@@ -16,11 +16,16 @@ import {
   Easing,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, gradient, space, radius, type } from "../theme";
+import { colors, space, radius, type } from "../theme";
 
 export type IconName = React.ComponentProps<typeof Ionicons>["name"];
+
+// Midnight Black look: flat dark cards, no heavy borders, a white primary action.
+const CARD = "#111114";
+const SOFT = "#1B1B20";
+const HAIR = "#1C1C22";
+const SOFT_TEXT = "#C9C9D1";
 
 /* ---------- Layout ---------- */
 
@@ -41,7 +46,7 @@ export function Screen({
 }) {
   const insets = useSafeAreaInsets();
   const header = (
-    <View style={[styles.header, { paddingTop: insets.top + space.md }]}>
+    <View style={[styles.header, { paddingTop: insets.top + space.lg }]}>
       <View style={styles.headerRow}>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>{title}</Text>
@@ -116,8 +121,7 @@ type ButtonProps = {
 
 export function Button({ title, onPress, variant = "primary", icon, loading, disabled, style }: ButtonProps) {
   const inactive = !!(disabled || loading);
-  const fg =
-    variant === "primary" ? colors.primaryText : variant === "danger" ? colors.errorText : colors.infoText;
+  const fg = variant === "primary" ? "#000000" : variant === "danger" ? colors.errorText : colors.text;
   return (
     <Pressable
       accessibilityRole="button"
@@ -129,14 +133,11 @@ export function Button({ title, onPress, variant = "primary", icon, loading, dis
         variant === "secondary" && styles.buttonSecondary,
         variant === "ghost" && styles.buttonGhost,
         variant === "danger" && styles.buttonDanger,
-        pressed && { transform: [{ scale: 0.98 }], opacity: 0.92 },
-        inactive && { opacity: 0.55 },
+        pressed && { transform: [{ scale: 0.98 }], opacity: 0.9 },
+        inactive && { opacity: 0.45 },
         style,
       ]}
     >
-      {variant === "primary" && (
-        <LinearGradient colors={gradient} start={{ x: 1, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
-      )}
       {loading ? (
         <ActivityIndicator color={fg} />
       ) : (
@@ -214,7 +215,7 @@ export function Field({ label, icon, helper, error, ltr, secret, counter, right,
           <Ionicons
             name={icon}
             size={18}
-            color={focused ? colors.infoText : colors.textMuted}
+            color={focused ? colors.text : colors.textMuted}
             style={multiline ? { marginTop: 2 } : undefined}
           />
         ) : null}
@@ -222,7 +223,7 @@ export function Field({ label, icon, helper, error, ltr, secret, counter, right,
           {...input}
           multiline={multiline}
           secureTextEntry={secret && !revealed}
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor="#6B6B75"
           onFocus={(e) => {
             setFocused(true);
             input.onFocus?.(e);
@@ -268,7 +269,7 @@ export function Chip({
   icon,
   selected,
   onPress,
-  tint = colors.primary,
+  tint = "#FFFFFF",
 }: {
   label: string;
   icon?: IconName;
@@ -283,7 +284,7 @@ export function Chip({
       accessibilityState={{ selected: !!selected }}
       style={({ pressed }) => [
         styles.chip,
-        selected && { backgroundColor: tint + "26", borderColor: tint },
+        selected && { backgroundColor: tint + "26", borderColor: tint + "99" },
         pressed && { opacity: 0.8 },
       ]}
     >
@@ -314,7 +315,7 @@ export function Segmented<T extends string>({
             accessibilityState={{ selected: active }}
             style={[styles.segment, active && styles.segmentActive]}
           >
-            <Text style={[styles.segmentText, active && { color: colors.text }]}>{o.label}</Text>
+            <Text style={[styles.segmentText, active && { color: "#000000" }]}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -327,7 +328,7 @@ export function Segmented<T extends string>({
 export function ListRow({
   icon,
   leading,
-  tint = colors.infoText,
+  tint = SOFT_TEXT,
   title,
   subtitle,
   value,
@@ -355,11 +356,11 @@ export function ListRow({
       onPress={onPress}
       disabled={!onPress}
       accessibilityRole={onPress ? "button" : undefined}
-      style={({ pressed }) => [styles.row, !last && styles.rowDivider, pressed && { backgroundColor: colors.surfaceAlt }]}
+      style={({ pressed }) => [styles.row, !last && styles.rowDivider, pressed && { backgroundColor: SOFT }]}
     >
       {leading ??
         (icon ? (
-          <View style={[styles.rowIcon, { backgroundColor: color + "22" }]}>
+          <View style={[styles.rowIcon, { backgroundColor: color + "1F" }]}>
             <Ionicons name={icon} size={18} color={color} />
           </View>
         ) : null)}
@@ -375,14 +376,14 @@ export function ListRow({
       </View>
       {value ? <Text style={styles.rowValue}>{value}</Text> : null}
       {right}
-      {onPress && chevron ? <Ionicons name="chevron-back" size={18} color={colors.textMuted} /> : null}
+      {onPress && chevron ? <Ionicons name="chevron-back" size={18} color="#6B6B75" /> : null}
     </Pressable>
   );
 }
 
-export function Badge({ label, color = colors.infoText, icon }: { label: string; color?: string; icon?: IconName }) {
+export function Badge({ label, color = SOFT_TEXT, icon }: { label: string; color?: string; icon?: IconName }) {
   return (
-    <View style={[styles.badge, { backgroundColor: color + "1F", borderColor: color + "55" }]}>
+    <View style={[styles.badge, { backgroundColor: color + "1F" }]}>
       <Text style={[styles.badgeText, { color }]}>{label}</Text>
       {icon ? <Ionicons name={icon} size={11} color={color} /> : null}
     </View>
@@ -403,7 +404,7 @@ export function EmptyState({
   return (
     <View style={styles.empty}>
       <View style={styles.emptyIcon}>
-        <Ionicons name={icon} size={30} color={colors.infoText} />
+        <Ionicons name={icon} size={30} color={SOFT_TEXT} />
       </View>
       <Text style={styles.emptyTitle}>{title}</Text>
       {text ? <Text style={styles.emptyText}>{text}</Text> : null}
@@ -416,7 +417,7 @@ export function EmptyState({
 
 export function Banner({ kind, text }: { kind: "info" | "ok" | "error"; text: string }) {
   const map = {
-    info: { bg: colors.infoBg, fg: colors.infoText, icon: "information-circle" as IconName },
+    info: { bg: SOFT, fg: SOFT_TEXT, icon: "information-circle" as IconName },
     ok: { bg: colors.okBg, fg: colors.okText, icon: "checkmark-circle" as IconName },
     error: { bg: colors.errorBg, fg: colors.errorText, icon: "alert-circle" as IconName },
   }[kind];
@@ -451,8 +452,8 @@ export function Timeline({ steps }: { steps: TimelineStep[] }) {
             : st.state === "error"
             ? colors.errorText
             : st.state === "active"
-            ? colors.infoText
-            : colors.textMuted;
+            ? "#FFFFFF"
+            : "#4A4A54";
         return (
           <View key={st.key} style={styles.step}>
             <View style={{ flex: 1, paddingBottom: last ? 0 : space.lg }}>
@@ -499,7 +500,7 @@ export function Stepper({ steps, current }: { steps: string[]; current: number }
             <View
               style={[
                 styles.stepperBar,
-                (done || active) && { backgroundColor: active ? colors.primary : colors.okText },
+                (done || active) && { backgroundColor: active ? "#FFFFFF" : colors.okText },
               ]}
             />
             <Text style={[styles.stepperLabel, (done || active) && { color: colors.text }]} numberOfLines={1}>
@@ -601,16 +602,14 @@ export function StatusLine({ status }: { status: Status }) {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   screenContent: { paddingHorizontal: space.lg, paddingBottom: 140 },
-  header: { paddingBottom: space.lg },
+  header: { paddingBottom: space.xl },
   headerRow: { flexDirection: "row-reverse", alignItems: "center", gap: space.sm },
-  headerTitle: { ...type.screenTitle, fontSize: 28, fontWeight: "800", color: colors.text, textAlign: "right" },
-  headerSubtitle: { ...type.body, color: colors.textMuted, marginTop: 2, textAlign: "right" },
+  headerTitle: { ...type.screenTitle, fontSize: 30, fontWeight: "700", color: colors.text, textAlign: "right" },
+  headerSubtitle: { ...type.body, color: colors.textMuted, marginTop: 4, textAlign: "right" },
 
   card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: CARD,
+    borderRadius: 24,
     padding: space.lg,
   },
   sectionHead: {
@@ -619,22 +618,22 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: space.md,
   },
-  sectionTitle: { ...type.sectionTitle, color: colors.text, textAlign: "right" },
+  sectionTitle: { ...type.sectionTitle, fontSize: 17, fontWeight: "700", color: colors.text, textAlign: "right" },
 
   button: {
-    minHeight: 52,
-    borderRadius: radius.button,
-    paddingHorizontal: space.lg,
+    minHeight: 54,
+    borderRadius: 999,
+    paddingHorizontal: space.xl,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    backgroundColor: colors.primary,
+    backgroundColor: "#FFFFFF",
   },
-  buttonSecondary: { backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: colors.infoBorder },
+  buttonSecondary: { backgroundColor: SOFT },
   buttonGhost: { backgroundColor: "transparent" },
-  buttonDanger: { backgroundColor: colors.errorBg, borderWidth: 1, borderColor: colors.errorText + "55" },
+  buttonDanger: { backgroundColor: colors.errorBg },
   buttonInner: { flexDirection: "row-reverse", alignItems: "center", gap: space.sm },
-  buttonText: { fontSize: 16, fontWeight: "800" },
+  buttonText: { fontSize: 15, fontWeight: "700" },
 
   iconButton: {
     width: 42,
@@ -642,27 +641,25 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: "#16161A",
   },
 
   fieldLabelRow: { flexDirection: "row-reverse", justifyContent: "space-between", marginBottom: space.sm },
-  fieldLabel: { ...type.label, color: colors.text, textAlign: "right" },
+  fieldLabel: { ...type.label, color: SOFT_TEXT, textAlign: "right" },
   fieldCounter: { fontSize: 12, color: colors.textMuted },
   fieldBox: {
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: space.sm,
-    minHeight: 52,
-    paddingHorizontal: space.md,
-    borderRadius: radius.field,
-    backgroundColor: colors.field,
+    minHeight: 54,
+    paddingHorizontal: space.lg,
+    borderRadius: 20,
+    backgroundColor: CARD,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: "transparent",
   },
   fieldBoxMulti: { alignItems: "flex-start", paddingVertical: space.md },
-  fieldFocused: { borderColor: colors.primary, backgroundColor: colors.surface },
+  fieldFocused: { borderColor: "#3A3A44" },
   fieldError: { borderColor: colors.errorText },
   fieldInput: { flex: 1, fontSize: 15, color: colors.text, paddingVertical: space.sm },
   fieldInputMulti: { minHeight: 110, textAlignVertical: "top", paddingVertical: 0 },
@@ -673,37 +670,35 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: radius.pill,
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    borderColor: "transparent",
+    backgroundColor: CARD,
   },
-  chipText: { color: colors.textMuted, fontWeight: "700", fontSize: 13 },
+  chipText: { color: SOFT_TEXT, fontWeight: "600", fontSize: 13 },
 
   segmented: {
     flexDirection: "row-reverse",
-    backgroundColor: colors.field,
-    borderRadius: radius.pill,
+    backgroundColor: CARD,
+    borderRadius: 999,
     padding: 4,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
-  segment: { flex: 1, paddingVertical: 10, borderRadius: radius.pill, alignItems: "center" },
-  segmentActive: { backgroundColor: colors.surfaceAlt },
-  segmentText: { color: colors.textMuted, fontWeight: "700", fontSize: 13 },
+  segment: { flex: 1, paddingVertical: 10, borderRadius: 999, alignItems: "center" },
+  segmentActive: { backgroundColor: "#FFFFFF" },
+  segmentText: { color: colors.textMuted, fontWeight: "600", fontSize: 13 },
 
   row: {
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: space.md,
-    paddingVertical: 14,
+    paddingVertical: 15,
     paddingHorizontal: space.lg,
   },
-  rowDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  rowIcon: { width: 36, height: 36, borderRadius: 11, alignItems: "center", justifyContent: "center" },
-  rowTitle: { fontSize: 15, fontWeight: "700", color: colors.text, textAlign: "right" },
+  rowDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: HAIR },
+  rowIcon: { width: 38, height: 38, borderRadius: 13, alignItems: "center", justifyContent: "center" },
+  rowTitle: { fontSize: 15, fontWeight: "600", color: colors.text, textAlign: "right" },
   rowSubtitle: { fontSize: 12.5, color: colors.textMuted, marginTop: 2, textAlign: "right", lineHeight: 18 },
   rowValue: { fontSize: 13, color: colors.textMuted },
 
@@ -711,13 +706,12 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: 4,
-    paddingHorizontal: 8,
+    paddingHorizontal: 9,
     paddingVertical: 3,
-    borderRadius: radius.pill,
-    borderWidth: 1,
+    borderRadius: 999,
     alignSelf: "flex-end",
   },
-  badgeText: { fontSize: 11, fontWeight: "800" },
+  badgeText: { fontSize: 11, fontWeight: "700" },
 
   empty: { alignItems: "center", paddingVertical: space.xxl, paddingHorizontal: space.xl, gap: space.sm },
   emptyIcon: {
@@ -726,7 +720,7 @@ const styles = StyleSheet.create({
     borderRadius: 34,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.primarySoft,
+    backgroundColor: SOFT,
     marginBottom: space.sm,
   },
   emptyTitle: { ...type.sectionTitle, color: colors.text, textAlign: "center" },
@@ -736,7 +730,7 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     alignItems: "flex-start",
     gap: space.sm,
-    borderRadius: radius.field,
+    borderRadius: 18,
     padding: space.md,
     marginTop: space.md,
   },
@@ -752,37 +746,35 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  stepLine: { flex: 1, width: 2, backgroundColor: colors.border, marginVertical: 4 },
-  stepTitle: { fontSize: 15, fontWeight: "700", color: colors.text, textAlign: "right", marginTop: 3 },
+  stepLine: { flex: 1, width: 2, backgroundColor: "#23232A", marginVertical: 4 },
+  stepTitle: { fontSize: 15, fontWeight: "600", color: colors.text, textAlign: "right", marginTop: 3 },
   stepDetail: { fontSize: 12.5, color: colors.textMuted, textAlign: "right", marginTop: 2 },
 
   stepper: { flexDirection: "row-reverse", gap: space.sm, marginBottom: space.xl },
   stepperItem: { flex: 1, gap: 6 },
-  stepperBar: { height: 4, borderRadius: 2, backgroundColor: colors.border },
-  stepperLabel: { fontSize: 12, fontWeight: "700", color: colors.textMuted, textAlign: "right" },
+  stepperBar: { height: 4, borderRadius: 2, backgroundColor: "#23232A" },
+  stepperLabel: { fontSize: 11.5, fontWeight: "600", color: "#6B6B75", textAlign: "right" },
 
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.6)" },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.7)" },
   sheet: {
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    backgroundColor: CARD,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
     paddingHorizontal: space.lg,
     paddingTop: space.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   sheetHandle: {
     alignSelf: "center",
     width: 44,
     height: 5,
     borderRadius: 3,
-    backgroundColor: colors.border,
+    backgroundColor: "#2A2A32",
     marginBottom: space.md,
   },
   sheetHead: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: space.lg },
   sheetTitle: { ...type.sectionTitle, color: colors.text },
-});
+}); 

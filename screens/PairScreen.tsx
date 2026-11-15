@@ -413,7 +413,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
               onChangeText={setDescription}
               placeholder="شنو بيعمل الزبون؟ وشنو بتعمل الإدارة؟ ومتى يوصل إشعار لمين؟"
               multiline
-              maxLength={2500}
+              maxLength={12000}
               counter
             />
             {refPic ? (
@@ -680,4 +680,4 @@ const styles = StyleSheet.create({
   },
   names: { gap: 0 },
   namesHint: { fontSize: 12, color: colors.textMuted, textAlign: "right", marginTop: -space.sm, marginBottom: space.lg },
-});
+}); 

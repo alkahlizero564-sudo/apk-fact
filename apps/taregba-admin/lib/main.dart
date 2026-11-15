@@ -9,7 +9,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_config.dart';
 
-// --- CONSTANTS & DESIGN TOKENS ---
+// --- BACKEND & CONSTANTS ---
 const String kSupabaseUrl = "https://jvjtgzewumfecjdpekna.supabase.co";
 const String kSupabaseAnonKey =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE";
@@ -24,7 +24,6 @@ const Color kTextMain = Color(0xFF102A43);
 const Color kTextMuted = Color(0xFF627D98);
 const Color kBadgeRed = Color(0xFFEF4444);
 const Color kBadgeGreen = Color(0xFF10B981);
-const Color kBadgeWarning = Color(0xFFF59E0B);
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -48,7 +47,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProxyProvider<AuthProvider, AdminAppDataProvider>(
           create: (_) => AdminAppDataProvider(null),
-          update: (_, auth, previous) => AdminAppDataProvider(auth)..updateAuth(auth),
+          update: (_, auth, previous) => (previous ?? AdminAppDataProvider(auth))..updateAuth(auth),
         ),
       ],
       child: const DmcAdminApp(),
@@ -62,7 +61,7 @@ class DmcAdminApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'DMC الإدارة - Diala Medical & Chemical Equipment',
+      title: 'DMC الإدارة - Diala Medical Equipment',
       debugShowCheckedModeBanner: false,
       builder: (context, child) {
         return Directionality(
@@ -131,7 +130,7 @@ class Product {
     return Product(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
       name: json['name'] ?? '',
-      category: json['category'] ?? 'مستلهكات طبية',
+      category: json['category'] ?? 'مستلزمات طبية',
       description: json['description'] ?? '',
       priceUsd: (json['price_usd'] ?? 0).toDouble(),
       stockQuantity: json['stock_quantity'] ?? 0,
@@ -180,45 +179,10 @@ class BankSettingsModel {
 
   factory BankSettingsModel.fromJson(Map<String, dynamic> json) {
     return BankSettingsModel(
-      bankName: json['bank_name'] ?? 'بنك الخرطوم - فرع الدامر',
-      accountNumber: json['account_number'] ?? '123456789',
+      bankName: json['bank_name'] ?? 'بنك الخرطوم',
+      accountNumber: json['account_number'] ?? '',
       accountHolder: json['account_holder'] ?? 'شركة ديالا للمعدات الطبية',
-      customerNote: json['customer_note'] ?? 'يرجى إرفاق صورة إشعار التحويل الواضحة للبدء في تجهيز طلبكم مباشرة.',
-    );
-  }
-}
-
-class OrderItem {
-  final int id;
-  final int orderId;
-  final int? productId;
-  final String productName;
-  final double unitPriceUsd;
-  final double unitPriceSdg;
-  final int quantity;
-  final double totalPriceSdg;
-
-  OrderItem({
-    required this.id,
-    required this.orderId,
-    this.productId,
-    required this.productName,
-    required this.unitPriceUsd,
-    required this.unitPriceSdg,
-    required this.quantity,
-    required this.totalPriceSdg,
-  });
-
-  factory OrderItem.fromJson(Map<String, dynamic> json) {
-    return OrderItem(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
-      orderId: json['order_id'] is int ? json['order_id'] : int.tryParse(json['order_id']?.toString() ?? '0') ?? 0,
-      productId: json['product_id'] is int ? json['product_id'] : int.tryParse(json['product_id']?.toString() ?? ''),
-      productName: json['product_name'] ?? '',
-      unitPriceUsd: (json['unit_price_usd'] ?? 0).toDouble(),
-      unitPriceSdg: (json['unit_price_sdg'] ?? 0).toDouble(),
-      quantity: json['quantity'] ?? 1,
-      totalPriceSdg: (json['total_price_sdg'] ?? 0).toDouble(),
+      customerNote: json['customer_note'] ?? '',
     );
   }
 }
@@ -241,7 +205,6 @@ class CustomerOrder {
   final String? receiptUrl;
   final String? rejectReason;
   final String createdAt;
-  List<OrderItem> items;
 
   CustomerOrder({
     required this.id,
@@ -261,13 +224,12 @@ class CustomerOrder {
     this.receiptUrl,
     this.rejectReason,
     required this.createdAt,
-    this.items = const [],
   });
 
   factory CustomerOrder.fromJson(Map<String, dynamic> json) {
     return CustomerOrder(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
-      orderNumber: json['order_number']?.toString() ?? '1042',
+      orderNumber: json['order_number']?.toString() ?? '',
       customerId: json['customer_id']?.toString() ?? '',
       fullName: json['full_name'] ?? '',
       phone: json['phone'] ?? '',
@@ -372,7 +334,7 @@ class AuthProvider extends ChangeNotifier {
   String? get userEmail => _userEmail;
   String? get userRole => _userRole;
   bool get isLoading => _isLoading;
-  bool get isAdminUnlocked => _isAdminUnlocked;
+  bool get isAdminUnlocked => _isAdminUnlocked || _userRole == 'admin';
 
   AuthProvider() {
     _loadSession();
@@ -396,12 +358,13 @@ class AuthProvider extends ChangeNotifier {
 
     if (_accessToken != null && _accessToken!.isNotEmpty) {
       _isLoggedIn = true;
-      _initPostLoginTasks();
+      notifyListeners();
+      await _initPostLoginTasks();
     }
     notifyListeners();
   }
 
-  String _handleAuthError(dynamic responseBody, int statusCode) {
+  String _handleAuthError(dynamic responseBody, int statusCode, {bool isVerify = false}) {
     try {
       final decoded = jsonDecode(responseBody);
       final msg = decoded['error_description'] ?? decoded['msg'] ?? decoded['message'] ?? decoded['error'];
@@ -413,9 +376,13 @@ class AuthProvider extends ChangeNotifier {
         if (str.contains('smtp') || str.contains('email rate limit') || str.contains('error sending') || str.contains('sending')) {
           return 'ما قدرنا نرسل البريد';
         }
+        if (isVerify && (str.contains('invalid') || str.contains('expired') || str.contains('token'))) {
+          return 'رمز التحقق غير صحيح أو انتهت صلاحيته';
+        }
         return msg.toString();
       }
     } catch (_) {}
+    if (isVerify) return 'رمز التحقق غير صحيح أو انتهت صلاحيته';
     if (statusCode == 401) return 'انتهت صلاحية الجلسة أو بيانات الدخول غير صحيحة';
     return 'حدث خطأ في الاتصال بالسيرفر ($statusCode)';
   }
@@ -449,6 +416,7 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     _isLoading = true;
     notifyListeners();
+
     try {
       final res = await http.post(
         Uri.parse('$kSupabaseUrl/auth/v1/signup'),
@@ -502,17 +470,18 @@ class AuthProvider extends ChangeNotifier {
         await _saveSessionFromData(body, email);
         return null;
       }
-      return _handleAuthError(res.body, res.statusCode);
+      return _handleAuthError(res.body, res.statusCode, isVerify: true);
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-      return 'فشل التحقق من الرمز: $e';
+      return 'رمز التحقق غير صحيح أو انتهت صلاحيته';
     }
   }
 
   Future<String?> signIn(String email, String password) async {
     _isLoading = true;
     notifyListeners();
+
     try {
       final res = await http.post(
         Uri.parse('$kSupabaseUrl/auth/v1/token?grant_type=password'),
@@ -544,6 +513,7 @@ class AuthProvider extends ChangeNotifier {
   Future<String?> recoverPassword(String email) async {
     _isLoading = true;
     notifyListeners();
+
     try {
       final res = await http.post(
         Uri.parse('$kSupabaseUrl/auth/v1/recover'),
@@ -577,7 +547,7 @@ class AuthProvider extends ChangeNotifier {
         await _saveSessionFromData(body, email);
         return null;
       }
-      return _handleAuthError(res.body, res.statusCode);
+      return _handleAuthError(res.body, res.statusCode, isVerify: true);
     } catch (e) {
       _isLoading = false;
       notifyListeners();
@@ -623,8 +593,11 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _initPostLoginTasks() async {
-    await fetchProfile();
+    // 1. Call taregba_claim_admin {}
     await _claimAdminRpc(null);
+    // 2. Read profile again
+    await fetchProfile();
+    // 3. Register device for push
     await _registerDevicePush();
   }
 
@@ -641,12 +614,18 @@ class AuthProvider extends ChangeNotifier {
           _userRole = list.first['role'];
           final prefs = await SharedPreferences.getInstance();
           if (_userRole != null) await prefs.setString('user_role', _userRole!);
+          if (_userRole == 'admin') {
+            _isAdminUnlocked = true;
+            await prefs.setBool('is_admin_unlocked', true);
+          }
+          notifyListeners();
         }
       }
     } catch (_) {}
   }
 
   Future<bool> _claimAdminRpc(String? pin) async {
+    if (_accessToken == null) return false;
     try {
       final bodyMap = pin != null ? {'pin': pin} : <String, dynamic>{};
       final res = await http.post(
@@ -676,14 +655,18 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> tryClaimAdminWithPin(String pin) async {
-    return await _claimAdminRpc(pin);
+    final ok = await _claimAdminRpc(pin);
+    if (ok) {
+      await fetchProfile();
+    }
+    return ok;
   }
 
   Future<void> _registerDevicePush() async {
     try {
       await FirebaseMessaging.instance.requestPermission(alert: true, badge: true, sound: true);
       final token = await FirebaseMessaging.instance.getToken();
-      if (token != null) {
+      if (token != null && _accessToken != null) {
         await http.post(
           Uri.parse('$kSupabaseUrl/rest/v1/rpc/taregba_register_device'),
           headers: authHeaders,
@@ -708,7 +691,7 @@ class AuthProvider extends ChangeNotifier {
 }
 
 // ==========================================
-// ADMIN APP DATA PROVIDER
+// ADMIN APP DATA PROVIDER (LIVE SYNC)
 // ==========================================
 class AdminAppDataProvider extends ChangeNotifier {
   AuthProvider? _auth;
@@ -721,8 +704,8 @@ class AdminAppDataProvider extends ChangeNotifier {
   List<CustomerOrder> _orders = [];
   List<PurchaseRecord> _purchases = [];
   BankSettingsModel _bankSettings = BankSettingsModel(
-    bankName: 'بنك الخرطوم - فرع الدامر',
-    accountNumber: '123456789',
+    bankName: 'بنك الخرطوم',
+    accountNumber: '',
     accountHolder: 'شركة ديالا للمعدات الطبية',
     customerNote: 'يرجى إرفاق صورة إشعار التحويل الواضحة للبدء في تجهيز طلبكم مباشرة.',
   );
@@ -766,9 +749,6 @@ class AdminAppDataProvider extends ChangeNotifier {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       fetchNotificationsQuiet();
       fetchCurrentScreenDataQuiet();
-      if (message.notification != null) {
-        // App banner notification handled via snackbar/push banner
-      }
     });
   }
 
@@ -1051,25 +1031,6 @@ class AdminAppDataProvider extends ChangeNotifier {
     } catch (_) {}
   }
 
-  Future<void> saveBankSettings(BankSettingsModel model) async {
-    _bankSettings = model;
-    notifyListeners();
-    try {
-      await http.post(
-        Uri.parse('$kSupabaseUrl/rest/v1/taregba_bank_settings'),
-        headers: _auth!.authHeaders,
-        body: jsonEncode({
-          'bank_name': model.bankName,
-          'account_number': model.accountNumber,
-          'account_holder': model.accountHolder,
-          'customer_note': model.customerNote,
-          'updated_at': DateTime.now().toUtc().toIso8601String(),
-        }),
-      );
-      await fetchBankSettings();
-    } catch (_) {}
-  }
-
   Future<void> reviewPayment(int orderId, bool confirm, String? reason, CustomerOrder order) async {
     try {
       final newStatus = confirm ? 'قيد التجهيز' : 'ملغي';
@@ -1085,7 +1046,6 @@ class AdminAppDataProvider extends ChangeNotifier {
         }),
       );
 
-      // Event Notification to Customer
       final notifTitle = confirm ? 'تم تأكيد الدفع وجاري تجهيز طلبك' : 'تم رفض إشعار التحويل البنكي';
       final notifBody = confirm
           ? 'تم تأكيد إشعار التحويل للطلب #${order.orderNumber} وجاري العمل على تجهيز طلبك.'
@@ -1136,7 +1096,6 @@ class AdminAppDataProvider extends ChangeNotifier {
         }),
       );
 
-      // Notify all customers via to_role customer
       await http.post(
         Uri.parse('$kSupabaseUrl/rest/v1/taregba_notifications'),
         headers: _auth!.authHeaders,
@@ -1205,7 +1164,7 @@ class _AdminPinEntryScreenState extends State<AdminPinEntryScreen> {
                   children: [
                     const Text('دخول الإدارة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: kPrimaryDark)),
                     const SizedBox(height: 6),
-                    const Text('أدخل رمز الإدارة السري للمتابعة', style: TextStyle(fontSize: 12, color: kTextMuted)),
+                    const Text('أدخل رمز الإدارة للمتابعة', style: TextStyle(fontSize: 12, color: kTextMuted)),
                     const SizedBox(height: 20),
                     if (_errorMsg != null)
                       Container(
@@ -1319,7 +1278,7 @@ class AuthWelcomeScreen extends StatelessWidget {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SignUpScreen())),
-                        child: const Text('حساب جديد (تسجيل)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        child: const Text('حساب جديد', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -1374,8 +1333,6 @@ class _DedicatedLoginScreenState extends State<DedicatedLoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text('تسجيل الدخول', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: kPrimaryDark)),
-                    const SizedBox(height: 4),
-                    const Text('البريد الإلكتروني وكلمة المرور', style: TextStyle(fontSize: 12, color: kTextMuted)),
                     const SizedBox(height: 16),
                     if (_errorMsg != null)
                       Container(
@@ -1418,12 +1375,20 @@ class _DedicatedLoginScreenState extends State<DedicatedLoginScreen> {
                         onPressed: auth.isLoading
                             ? null
                             : () async {
+                                final email = _emailCtrl.text.trim();
+                                if (email.isEmpty) {
+                                  setState(() => _errorMsg = 'يرجى إدخال البريد الإلكتروني');
+                                  return;
+                                }
                                 setState(() => _errorMsg = null);
-                                final err = await auth.signIn(_emailCtrl.text, _passCtrl.text);
+
+                                final err = await auth.signIn(email, _passCtrl.text);
                                 if (err == 'EMAIL_NOT_CONFIRMED' && mounted) {
-                                  Navigator.push(context, MaterialPageRoute(builder: (_) => OtpVerifyScreen(email: _emailCtrl.text.trim())));
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => OtpVerifyScreen(email: email)));
                                 } else if (err != null && mounted) {
                                   setState(() => _errorMsg = err);
+                                } else if (mounted) {
+                                  Navigator.pop(context);
                                 }
                               },
                         child: auth.isLoading
@@ -1688,6 +1653,8 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                                 final err = await auth.verifySignup(widget.email, _codeCtrl.text);
                                 if (err != null && mounted) {
                                   setState(() => _errorMsg = err);
+                                } else if (mounted) {
+                                  Navigator.of(context).popUntil((route) => route.isFirst);
                                 }
                               },
                         child: auth.isLoading
@@ -1703,7 +1670,9 @@ class _OtpVerifyScreenState extends State<OtpVerifyScreen> {
                               final err = await auth.resendCode(widget.email);
                               if (err == null) {
                                 _startCountdown();
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إعادة إرسال الرمز بنجاح')));
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إعادة إرسال الرمز بنجاح')));
+                                }
                               } else {
                                 setState(() => _errorMsg = err);
                               }
@@ -1768,7 +1737,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       const SizedBox(height: 6),
                       const Text('أدخل بريدك الإلكتروني لتلقي رمز الاستعادة', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: kTextMuted)),
                       const SizedBox(height: 16),
-                      TextField(controller: _emailCtrl, decoration: const InputDecoration(labelText: 'البريد الإلكتروني')),
+                      TextField(controller: _emailCtrl, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'البريد الإلكتروني')),
                       const SizedBox(height: 20),
                       SizedBox(
                         width: double.infinity,
@@ -1860,8 +1829,29 @@ class MainAdminNavigation extends StatefulWidget {
   State<MainAdminNavigation> createState() => _MainAdminNavigationState();
 }
 
-class _MainAdminNavigationState extends State<MainAdminNavigation> {
+class _MainAdminNavigationState extends State<MainAdminNavigation> with WidgetsBindingObserver {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final appData = Provider.of<AdminAppDataProvider>(context, listen: false);
+      appData.fetchNotificationsQuiet();
+      appData.fetchCurrentScreenDataQuiet();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   final List<Widget> _screens = const [
     AdminDashboardScreen(),
@@ -2011,7 +2001,7 @@ class AdminNotificationsInboxScreen extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(n.body, style: const TextStyle(fontSize: 12, color: kTextMuted)),
                         const SizedBox(height: 4),
-                        Text(n.createdAt.substring(0, 16).replaceAll('T', ' '), style: const TextStyle(fontSize: 10, color: kTextMuted)),
+                        Text(n.createdAt.length >= 16 ? n.createdAt.substring(0, 16).replaceAll('T', ' ') : n.createdAt, style: const TextStyle(fontSize: 10, color: kTextMuted)),
                       ],
                     ),
                     trailing: !n.isRead
@@ -2049,7 +2039,6 @@ class AdminDashboardScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(14),
       children: [
-        // Banner Card: New Orders Count
         Container(
           decoration: BoxDecoration(
             gradient: const LinearGradient(
@@ -2081,7 +2070,6 @@ class AdminDashboardScreen extends StatelessWidget {
         ),
         const SizedBox(height: 12),
 
-        // Dollar Rate Settings Card
         Card(
           elevation: 0.5,
           color: kCardBg,
@@ -2094,7 +2082,7 @@ class AdminDashboardScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('سعر الدولار اليوم (settings)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: kTextMain)),
+                    const Text('سعر صرف الدولار اليوم (ج.س)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: kTextMain)),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(color: kPrimary.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(999)),
@@ -2147,7 +2135,6 @@ class AdminDashboardScreen extends StatelessWidget {
         ),
         const SizedBox(height: 12),
 
-        // Delivery Areas & Rates Card
         Card(
           elevation: 0.5,
           color: kCardBg,
@@ -2314,7 +2301,26 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
         ),
         Expanded(
           child: filtered.isEmpty
-              ? EmptyStateView(onBackToDashboard: () => setState(() => _selectedChip = 0))
+              ? Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(color: kPrimary.withValues(alpha: 0.08), shape: BoxShape.circle),
+                        alignment: Alignment.center,
+                        child: const Text('📋', style: TextStyle(fontSize: 36)),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('لا توجد طلبات مطابقة حالياً', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: kTextMain)),
+                      const SizedBox(height: 6),
+                      const Text('عند وصول أي طلب جديد من الزبائن سيظهر هنا فوراً.', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: kTextMuted)),
+                    ],
+                  ),
+                )
               : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   itemCount: filtered.length,
@@ -2439,39 +2445,6 @@ class OrderCardItem extends StatelessWidget {
   }
 }
 
-class EmptyStateView extends StatelessWidget {
-  final VoidCallback? onBackToDashboard;
-  const EmptyStateView({super.key, this.onBackToDashboard});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(color: kPrimary.withValues(alpha: 0.08), shape: BoxShape.circle),
-            alignment: Alignment.center,
-            child: const Text('📋', style: TextStyle(fontSize: 36)),
-          ),
-          const SizedBox(height: 16),
-          const Text('لا توجد طلبات مطابقة حالياً', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: kTextMain)),
-          const SizedBox(height: 6),
-          const SizedBox(
-            width: 240,
-            child: Text('عند وصول أي طلب جديد من الزبائن سيظهر هنا فوراً.', textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: kTextMuted, height: 1.4)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 // ==========================================
 // 3. PAYMENT REVIEW SCREEN
 // ==========================================
@@ -2519,7 +2492,21 @@ class _AdminConfirmPaymentScreenState extends State<AdminConfirmPaymentScreen> {
                 Text('المبلغ المطلوب: ${widget.order.totalSdg.toStringAsFixed(0)} ج.س', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 14),
                 if (widget.order.receiptUrl != null && widget.order.receiptUrl!.isNotEmpty)
-                  Image.network(widget.order.receiptUrl!, height: 180, width: double.infinity, fit: BoxFit.cover)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      widget.order.receiptUrl!,
+                      height: 200,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Container(
+                        height: 140,
+                        color: Colors.grey.shade200,
+                        alignment: Alignment.center,
+                        child: const Text('تعذر تحميل صورة الإشعار'),
+                      ),
+                    ),
+                  )
                 else
                   Container(
                     height: 140,
@@ -2583,7 +2570,7 @@ class _AdminConfirmPaymentScreenState extends State<AdminConfirmPaymentScreen> {
 }
 
 // ==========================================
-// 4, 5, 6. PRODUCTS & INVENTORY
+// 4. PRODUCTS & INVENTORY
 // ==========================================
 class AdminProductsScreen extends StatelessWidget {
   const AdminProductsScreen({super.key});
@@ -2619,7 +2606,7 @@ class AdminProductsScreen extends StatelessWidget {
                         children: [
                           Text(p.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: kTextMain)),
                           const SizedBox(height: 2),
-                          Text('السعر بالدولار: \$${p.priceUsd.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, color: kTextMuted)),
+                          Text('السعر بالدولار: \$${p.priceUsd.toStringAsFixed(2)} | المخزون: ${p.stockQuantity}', style: const TextStyle(fontSize: 12, color: kTextMuted)),
                           const SizedBox(height: 2),
                           Text('${(p.priceUsd * data.usdRate).toStringAsFixed(0)} ج.س', style: const TextStyle(fontWeight: FontWeight.w800, color: kPrimary, fontSize: 13)),
                         ],
@@ -2651,7 +2638,7 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
   late TextEditingController _nameCtrl;
   late TextEditingController _usdPriceCtrl;
   late TextEditingController _stockCtrl;
-  String _selectedCategory = 'أجهزة قياس';
+  String _selectedCategory = 'مستلزمات طبية';
 
   @override
   void initState() {
@@ -2667,7 +2654,7 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
     final data = Provider.of<AdminAppDataProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('إضافة / تعديل منتج')),
+      appBar: AppBar(title: Text(widget.product == null ? 'إضافة منتج جديد' : 'تعديل المنتج')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(14),
         child: Card(
@@ -2689,12 +2676,6 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: kPrimary, foregroundColor: Colors.white),
                     onPressed: () async {
-                      final picker = ImagePicker();
-                      final img = await picker.pickImage(source: ImageSource.gallery);
-                      String imageUrl = widget.product?.imageUrl ?? '';
-                      if (img != null) {
-                        imageUrl = img.path;
-                      }
                       await data.saveProduct(
                         id: widget.product?.id,
                         name: _nameCtrl.text,
@@ -2703,7 +2684,7 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
                         priceUsd: double.tryParse(_usdPriceCtrl.text) ?? 0,
                         stockQuantity: int.tryParse(_stockCtrl.text) ?? 0,
                         lowStockThreshold: 5,
-                        imageUrl: imageUrl,
+                        imageUrl: widget.product?.imageUrl ?? '',
                       );
                       if (mounted) Navigator.pop(context);
                     },
@@ -2720,7 +2701,7 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
 }
 
 // ==========================================
-// 7. PURCHASES SCREEN
+// 5. PURCHASES SCREEN
 // ==========================================
 class AdminPurchasesScreen extends StatefulWidget {
   const AdminPurchasesScreen({super.key});
@@ -2781,13 +2762,15 @@ class _AdminPurchasesScreenState extends State<AdminPurchasesScreen> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: kPrimary, foregroundColor: Colors.white),
                     onPressed: () async {
-                      await data.addPurchase(
-                        supplierName: _supplierCtrl.text,
-                        totalAmountSdg: double.tryParse(_amountCtrl.text) ?? 0,
-                        paymentStatus: _paymentStatus,
-                      );
-                      _supplierCtrl.clear();
-                      _amountCtrl.clear();
+                      if (_supplierCtrl.text.isNotEmpty) {
+                        await data.addPurchase(
+                          supplierName: _supplierCtrl.text,
+                          totalAmountSdg: double.tryParse(_amountCtrl.text) ?? 0,
+                          paymentStatus: _paymentStatus,
+                        );
+                        _supplierCtrl.clear();
+                        _amountCtrl.clear();
+                      }
                     },
                     child: const Text('حفظ الفاتورة'),
                   ),
@@ -2816,7 +2799,7 @@ class _AdminPurchasesScreenState extends State<AdminPurchasesScreen> {
 }
 
 // ==========================================
-// 8. REPORTS SCREEN
+// 6. REPORTS SCREEN
 // ==========================================
 class AdminReportsScreen extends StatelessWidget {
   const AdminReportsScreen({super.key});
@@ -2830,19 +2813,17 @@ class AdminReportsScreen extends StatelessWidget {
         SizedBox(height: 14),
         Card(
           child: Padding(
-            padding: contextPadding,
-            child: Text('التقارير مرتبطة بقاعدة بيانات Supabase وتحديثات الطلبات المؤكدة لحظياً.'),
+            padding: EdgeInsets.all(16),
+            child: Text('التقارير متزامنة لحظياً مع إشعارات وتحديثات الطلبات في Supabase.'),
           ),
         ),
       ],
     );
   }
-
-  static const contextPadding = EdgeInsets.all(16);
 }
 
 // ==========================================
-// 11. PROMOS & NOTIFICATIONS SCREEN
+// 7. PROMOS & NOTIFICATIONS SCREEN
 // ==========================================
 class AdminPromosScreen extends StatefulWidget {
   const AdminPromosScreen({super.key});
@@ -2882,10 +2863,12 @@ class _AdminPromosScreenState extends State<AdminPromosScreen> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: kPrimary, foregroundColor: Colors.white),
                     onPressed: () async {
-                      await data.sendBroadcastPromo(_titleCtrl.text, _bodyCtrl.text);
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال الإشعار لجميع الزبائن بنجاح')));
-                        Navigator.pop(context);
+                      if (_titleCtrl.text.isNotEmpty && _bodyCtrl.text.isNotEmpty) {
+                        await data.sendBroadcastPromo(_titleCtrl.text, _bodyCtrl.text);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال الإشعار لجميع الزبائن بنجاح')));
+                          Navigator.pop(context);
+                        }
                       }
                     },
                     child: const Text('🚀 إرسال لكل الزبائن', style: TextStyle(fontWeight: FontWeight.bold)),

@@ -4,7 +4,7 @@ import type { Owner } from "./components/OwnerSheet";
 
 export type RootStackParamList = {
   Tabs: undefined;
-  Create: { templateId?: string } | undefined;
+  Create: { templateId?: string; description?: string } | undefined;
   AppDetail: { name: string; lang: Lang };
   Preview: { name: string };
   Pair: { owner?: Owner } | undefined;

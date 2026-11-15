@@ -1,17 +1,20 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, StyleSheet, Pressable, RefreshControl, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, StyleSheet, Pressable, RefreshControl, ScrollView, ActivityIndicator } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Field, Segmented, EmptyState, Button, Banner, Card } from "../components/ui";
-import { AppAvatar, LangBadge } from "../components/appVisuals";
+import { EmptyState, Button, Banner } from "../components/ui";
+import { AppAvatar } from "../components/appVisuals";
 import { listApps, AppInfo } from "../services/appActions";
-import { LANGS, Lang } from "../services/langs";
-import { colors, space, radius, type } from "../theme";
+import { LANGS, LANG_ORDER, Lang } from "../services/langs";
+import { colors, space } from "../theme";
 import type { RootStackParamList } from "../navigation";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+const CARD = "#111114";
+const SOFT_TEXT = "#C9C9D1";
 
 export default function AppsScreen() {
   const nav = useNavigation<Nav>();
@@ -39,17 +42,23 @@ export default function AppsScreen() {
 
   const q = query.trim().toLowerCase();
   const shown = (apps ?? []).filter((a) => (filter === "all" || a.lang === filter) && a.name.includes(q));
+  const filters: { value: Lang | "all"; label: string }[] = [
+    { value: "all", label: "الكل" },
+    ...LANG_ORDER.map((l) => ({ value: l as Lang | "all", label: LANGS[l].label })),
+  ];
 
   return (
     <ScrollView
       style={styles.root}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + space.md }]}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + space.lg }]}
       keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
-          tintColor={colors.accent}
-          colors={[colors.primary]}
+          tintColor="#FFFFFF"
+          colors={["#FFFFFF"]}
+          progressBackgroundColor="#16161A"
           onRefresh={async () => {
             setRefreshing(true);
             await load();
@@ -58,59 +67,79 @@ export default function AppsScreen() {
         />
       }
     >
-      <View style={styles.header}>
-        <Text style={styles.title}>تطبيقاتي</Text>
-        <Text style={styles.subtitle}>{apps ? `${apps.length} تطبيق` : "جاري التحميل…"}</Text>
+      <Text style={styles.title}>تطبيقاتي</Text>
+      <Text style={styles.subtitle}>{apps ? `${apps.length} تطبيق` : "جاري التحميل…"}</Text>
+
+      <View style={styles.search}>
+        <Ionicons name="search-outline" size={18} color="#6B6B75" />
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder="ابحث باسم التطبيق"
+          placeholderTextColor="#6B6B75"
+          autoCapitalize="none"
+          autoCorrect={false}
+          style={styles.searchInput}
+          textAlign="right"
+        />
+        {query ? (
+          <Pressable onPress={() => setQuery("")} hitSlop={10} accessibilityLabel="مسح">
+            <Ionicons name="close-circle" size={18} color="#6B6B75" />
+          </Pressable>
+        ) : null}
       </View>
 
-      <Field label="بحث" icon="search-outline" value={query} onChangeText={setQuery} placeholder="اسم التطبيق" ltr autoCapitalize="none" />
-      <Segmented<Lang | "all">
-        value={filter}
-        onChange={setFilter}
-        options={[
-          { value: "all", label: "الكل" },
-          { value: "html", label: LANGS.html.label },
-          { value: "flutter", label: LANGS.flutter.label },
-          { value: "kotlin", label: LANGS.kotlin.label },
-          { value: "python", label: LANGS.python.label },
-        ]}
-      />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
+        {filters.map((f) => {
+          const on = filter === f.value;
+          return (
+            <Pressable
+              key={f.value}
+              onPress={() => setFilter(f.value)}
+              style={[styles.filter, on && styles.filterOn]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+            >
+              <Text style={[styles.filterText, on && { color: "#000000", fontWeight: "700" }]}>{f.label}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
 
-      <View style={{ height: space.lg }} />
       {error ? <Banner kind="error" text={error} /> : null}
-      {!apps && !error ? <ActivityIndicator color={colors.accent} style={{ marginTop: space.xxl }} /> : null}
+      {!apps && !error ? <ActivityIndicator color="#FFFFFF" style={{ marginTop: space.xxl }} /> : null}
 
       {apps && apps.length === 0 ? (
-        <Card>
-          <EmptyState
-            icon="apps-outline"
-            title="ما في تطبيقات لسه"
-            text="كل تطبيق تبنيه بيظهر هنا، ومن صفحته تعاينه وتبنيه وتعدّله."
-            action={<Button title="أنشئ أول تطبيق" icon="add" onPress={() => nav.navigate("Create")} />}
-          />
-        </Card>
+        <EmptyState
+          icon="apps-outline"
+          title="ما في تطبيقات لسه"
+          text="كل تطبيق تبنيه بيظهر هنا، ومن صفحته تعاينه وتبنيه وتعدّله."
+          action={<Button title="أنشئ أول تطبيق" icon="add" onPress={() => nav.navigate("Create")} />}
+        />
       ) : null}
       {apps && apps.length > 0 && shown.length === 0 ? (
         <EmptyState icon="search-outline" title="ما في نتائج" text="جرّب اسم تاني أو غيّر الفلتر." />
       ) : null}
 
-      <View style={styles.grid}>
+      <View style={styles.list}>
         {shown.map((a) => (
           <Pressable
             key={a.name}
             onPress={() => nav.navigate("AppDetail", { name: a.name, lang: a.lang })}
-            style={({ pressed }) => [styles.card, pressed && { transform: [{ scale: 0.97 }] }]}
+            style={({ pressed }) => [styles.item, pressed && { backgroundColor: "#16161A" }]}
             accessibilityRole="button"
             accessibilityLabel={`${a.name}، ${LANGS[a.lang].label}`}
           >
-            <View style={styles.cardTop}>
-              <AppAvatar name={a.name} lang={a.lang} size={50} />
-              <Ionicons name="chevron-back" size={18} color={colors.textMuted} />
+            <AppAvatar name={a.name} lang={a.lang} size={52} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.name} numberOfLines={1}>
+                {a.name}
+              </Text>
+              <Text style={styles.meta} numberOfLines={1}>
+                {LANGS[a.lang].label} · {LANGS[a.lang].tools}
+              </Text>
             </View>
-            <Text style={styles.name} numberOfLines={1}>
-              {a.name}
-            </Text>
-            <LangBadge lang={a.lang} />
+            <Ionicons name="chevron-back" size={18} color="#4A4A54" />
           </Pressable>
         ))}
       </View>
@@ -121,19 +150,34 @@ export default function AppsScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: space.lg, paddingBottom: 140 },
-  header: { marginBottom: space.lg },
-  title: { ...type.screenTitle, fontSize: 28, fontWeight: "800", color: colors.text, textAlign: "right" },
-  subtitle: { ...type.body, color: colors.textMuted, textAlign: "right" },
-  grid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: space.md },
-  card: {
-    width: "47.8%",
-    padding: space.lg,
+  title: { color: colors.text, fontSize: 32, fontWeight: "700", textAlign: "right" },
+  subtitle: { color: "#8A8A94", fontSize: 14, textAlign: "right", marginTop: 4, marginBottom: space.lg },
+
+  search: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
     gap: space.sm,
-    borderRadius: radius.card,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    height: 52,
+    paddingHorizontal: space.lg,
+    borderRadius: 999,
+    backgroundColor: CARD,
   },
-  cardTop: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "flex-start", marginBottom: space.sm },
-  name: { fontSize: 16, fontWeight: "800", color: colors.text, textAlign: "right" },
+  searchInput: { flex: 1, color: colors.text, fontSize: 15, paddingVertical: 0 },
+
+  filters: { flexDirection: "row-reverse", gap: space.sm, paddingVertical: space.lg },
+  filter: { paddingVertical: 9, paddingHorizontal: 18, borderRadius: 999, backgroundColor: CARD },
+  filterOn: { backgroundColor: "#FFFFFF" },
+  filterText: { color: SOFT_TEXT, fontSize: 13, fontWeight: "600" },
+
+  list: { gap: space.sm },
+  item: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: space.md,
+    padding: space.md,
+    borderRadius: 24,
+    backgroundColor: CARD,
+  },
+  name: { color: colors.text, fontSize: 16, fontWeight: "700", textAlign: "right" },
+  meta: { color: "#6B6B75", fontSize: 12.5, textAlign: "right", marginTop: 3 },
 });

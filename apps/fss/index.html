@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>فف - منصة الأخبار والمقالات</title>
+  <style>
+    /* ==========================================
+       DESIGN SYSTEM & TOKENS (Dark Luxe Style)
+       ========================================== */
+    :root {
+      /* Colors */
+      --bg-dark: #0F0F12;
+      --surface-dark: #18181F;
+      --surface-card: #21212B;
+      --surface-hover: #2B2B38;
+      
+      --accent-gold: #D4AF37;
+      --accent-gold-light: #F3E5AB;
+      --accent-gold-gradient: linear-gradient(135deg, #BF953F 0%, #FCF6BA 25%, #B38728 50%, #FBF5B7 75%, #AA771C 100%);
+      --accent-gold-soft: rgba(212, 175, 55, 0.12);
+      
+      --text-primary: #F8F9FA;
+      --text-secondary: #A0A0B2;
+      --text-muted: #6C6C80;
+      
+      --border-subtle: rgba(212, 175, 55, 0.15);
+      --border-hairline: rgba(255, 255, 255, 0.07);
+
+      --danger: #FF5252;
+      --success: #4CAF50;
+
+      /* Typography */
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Arabic", "Helvetica Neue", Tahoma, sans-serif;
+      --font-size-xs: 12px;
+      --font-size-sm: 14px;
+      --font-size-md: 16px;
+      --font-size-lg: 19px;
+      --font-size-xl: 24px;
+      --font-size-hero: 32px;
+
+      /* Spacing */
+      --space-4: 4px;
+      --space-8: 8px;
+      --space-12: 12px;
+      --space-16: 16px;
+      --space-20: 20px;
+      --space-24: 24px;
+      --space-32: 32px;
+
+      /* Radii */
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-full: 999px;
+
+      /* Shadows */
+      --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.4);
+      --shadow-gold: 0 4px 20px rgba(212, 175, 55, 0.25);
+      
+      /* Dynamic User Settings Default */
+      --user-font-scale: 1;
+    }
+
+    /* Light Theme Overrides (Controlled via Settings) */
+    body.light-theme {
+      --bg-dark: #F4F4F7;
+      --surface-dark: #FFFFFF;
+      --surface-card: #F0F0F5;
+      --surface-hover: #E5E5ED;
+      
+      --accent-gold: #B38728;
+      --accent-gold-light: #8A6414;
+      --accent-gold-soft: rgba(179, 135, 40, 0.12);
+      
+      --text-primary: #121215;
+      --text-secondary: #555566;
+      --text-muted: #888899;
+      
+      --border-subtle: rgba(179, 135, 40, 0.25);
+      --border-hairline: rgba(0, 0, 0, 0.08);
+    }
+
+    /* Reset & Base */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: #050507;
+      font-family: var(--font-family);
+      color: var(--text-primary);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      direction: rtl;
+      overflow-x: hidden;
+    }
+
+    /* ==========================================
+       APP CONTAINER (PHONE FRAME)
+       ========================================== */
+    .app-container {
+      width: 100%;
+      max-width: 420px;
+      height: 100vh;
+      max-height: 880px;
+      background-color: var(--bg-dark);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    }
+
+    @media (min-width: 440px) {
+      .app-container {
+        height: 840px;
+        border-radius: 36px;
+        border: 2px solid var(--border-subtle);
+      }
+    }
+
+    /* Standard Views Frame */
+    .view-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 64px; /* Space for bottom navigation */
+      overflow-y: auto;
+      display: none;
+      flex-direction: column;
+      background-color: var(--bg-dark);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .view-screen.active {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Utility Scrollbar */
+    .view-screen::-webkit-scrollbar { display: none; }
+
+    /* ==========================================
+       SIGNATURE LUXE HEADER & LOGO
+       ========================================== */
+    .app-header {
+      padding: var(--space-16) var(--space-20);
+      background: var(--surface-dark);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    /* App Logo Icon: "فف" Signature Frame */
+    .brand-logo-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: var(--accent-gold-gradient);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0F0F12;
+      font-weight: 900;
+      font-size: 20px;
+      letter-spacing: -1px;
+      box-shadow: var(--shadow-gold);
+      flex-shrink: 0;
+    }
+
+    .brand-name {
+      font-size: var(--font-size-xl);
+      font-weight: 800;
+      background: var(--accent-gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-subtitle {
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0px;
+      margin-top: -3px;
+    }
+
+    /* Icon Buttons */
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-full);
+      background: var(--surface-card);
+      border: 1px solid var(--border-hairline);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.15s ease;
+    }
+    .icon-btn:active {
+      background: var(--surface-hover);
+      transform: scale(0.95);
+    }
+
+    /* ==========================================
+       SEARCH & CATEGORIES BAR
+       ========================================== */
+    .search-section {
+      padding: var(--space-16) var(--space-20) var(--space-12);
+    }
+
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 48px;
+      background: var(--surface-dark);
+      border: 1px solid var(--border-hairline);
+      border-radius: var(--radius-md);
+      padding: 0 44px 0 16px;
+      color: var(--text-primary);
+      font-size: var(--font-size-sm);
+      font-family: inherit;
+      transition: border-color 0.2s ease;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent-gold);
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 14px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    /* Categories Scrollable Row */
+    .categories-row {
+      display: flex;
+      gap: 10px;
+      padding: 0 var(--space-20) var(--space-16);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .categories-row::-webkit-scrollbar { display: none; }
+
+    .category-chip {
+      padding: 8px 18px;
+      border-radius: var(--radius-full);
+      background: var(--surface-dark);
+      border: 1px solid var(--border-hairline);
+      color: var(--text-secondary);
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .category-chip.active {
+      background: var(--accent-gold-soft);
+      border-color: var(--accent-gold);
+      color: var(--accent-gold);
+      font-weight: 700;
+    }
+
+    /* ==========================================
+       CARDS & NEWS CONTENT
+       ========================================== */
+    .news-feed {
+      padding: 0 var(--space-20) var(--space-24);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-20);
+    }
+
+    /* Featured Hero Card */
+    .hero-card {
+      position: relative;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+      box-shadow: var(--shadow-card);
+      transition: transform 0.2s ease;
+    }
+    .hero-card:active {
+      transform: scale(0.99);
+    }
+
+    .hero-image-wrapper {
+      position: relative;
+      height: 210px;
+      width: 100%;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .hero-gradient-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, var(--surface-card) 0%, transparent 80%);
+    }
+
+    .badge-category {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: rgba(15, 15, 18, 0.85);
+      border: 1px solid var(--accent-gold);
+      color: var(--accent-gold);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-xs);
+      font-weight: 700;
+      backdrop-filter: blur(4px);
+      z-index: 2;
+    }
+
+    .hero-content {
+      padding: var(--space-16);
+    }
+
+    .hero-title {
+      font-size: calc(var(--font-size-lg) * var(--user-font-scale));
+      font-weight: 800;
+      line-height: 1.4;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .news-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-muted);
+      font-size: calc(var(--font-size-xs) * var(--user-font-scale));
+    }
+
+    .news-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Standard News Card */
+    .news-card {
+      display: flex;
+      gap: 14px;
+      background: var(--surface-dark);
+      padding: var(--space-12);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-hairline);
+      cursor: pointer;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .news-card:active {
+      transform: scale(0.98);
+      border-color: var(--border-subtle);
+    }
+
+    .news-thumb {
+      width: 96px;
+      height: 96px;
+      border-radius: var(--radius-sm);
+      object-fit: cover;
+      background-size: cover;
+      background-position: center;
+      flex-shrink: 0;
+    }
+
+    .news-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex: 1;
+    }
+
+    .news-card-title {
+      font-size: calc(var(--font-size-sm) * var(--user-font-scale));
+      font-weight: 700;
+      line-height: 1.4;
+      color: var(--text-primary);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Section Header */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-12);
+    }
+
+    .section-title {
+      font-size: var(--font-size-md);
+      font-weight: 800;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 16px;
+      background: var(--accent-gold);
+      border-radius: 2px;
+    }
+
+    /* ==========================================
+       ARTICLE DETAILS SCREEN
+       ========================================== */
+    .details-nav-bar {
+      padding: var(--space-16) var(--space-20);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: rgba(24, 24, 31, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-hairline);
+      z-index: 100;
+    }
+
+    body.light-theme .details-nav-bar {
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .article-hero-img {
+      width: 100%;
+      height: 240px;
+      object-fit: cover;
+    }
+
+    .article-body-container {
+      padding: var(--space-20);
+    }
+
+    .article-header {
+      margin-bottom: var(--space-20);
+    }
+
+    .article-category-badge {
+      display: inline-block;
+      color: var(--accent-gold);
+      font-size: var(--font-size-xs);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .article-main-title {
+      font-size: calc(var(--font-size-xl) * var(--user-font-scale));
+      font-weight: 800;
+      line-height: 1.35;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+
+    .article-author-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: var(--space-16);
+      border-bottom: 1px solid var(--border-hairline);
+    }
+
+    .author-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .author-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-full);
+      background: var(--accent-gold-soft);
+      border: 1px solid var(--accent-gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-gold);
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .article-text {
+      font-size: calc(var(--font-size-md) * var(--user-font-scale));
+      line-height: 1.8;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-32);
+    }
+
+    .article-text p {
+      margin-bottom: 16px;
+    }
+
+    .related-articles {
+      margin-top: var(--space-32);
+      padding-top: var(--space-24);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* ==========================================
+       SETTINGS SCREEN
+       ========================================== */
+    .settings-group {
+      background: var(--surface-dark);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-hairline);
+      margin-bottom: var(--space-20);
+      overflow: hidden;
+    }
+
+    .settings-group-title {
+      font-size: var(--font-size-xs);
+      color: var(--accent-gold);
+      font-weight: 700;
+      padding: 16px 16px 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-hairline);
+    }
+    .setting-item:last-child {
+      border-bottom: none;
+    }
+
+    .setting-label-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .setting-icon {
+      color: var(--accent-gold);
+    }
+
+    .setting-title {
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .setting-subtitle {
+      font-size: var(--font-size-xs);
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Custom Switch Toggle */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 26px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: var(--surface-card);
+      transition: .3s;
+      border-radius: 34px;
+      border: 1px solid var(--border-hairline);
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: var(--text-muted);
+      transition: .3s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--accent-gold-soft);
+      border-color: var(--accent-gold);
+    }
+    input:checked + .slider:before {
+      transform: translateX(22px);
+      background-color: var(--accent-gold);
+    }
+
+    /* Font Size Stepper Control */
+    .font-size-control {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface-card);
+      padding: 4px 8px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-hairline);
+    }
+
+    .font-size-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--surface-dark);
+      border: none;
+      color: var(--text-primary);
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .font-size-indicator {
+      font-size: var(--font-size-sm);
+      color: var(--accent-gold);
+      font-weight: 700;
+      min-width: 24px;
+      text-align: center;
+    }
+
+    /* Toast notification */
+    .toast-msg {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--accent-gold-gradient);
+      color: #0F0F12;
+      padding: 10px 20px;
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-sm);
+      font-weight: 700;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      z-index: 200;
+      white-space: nowrap;
+    }
+    .toast-msg.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ==========================================
+       EMPTY & LOADING SKELETON STATES
+       ========================================== */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-48) var(--space-20);
+      text-align: center;
+    }
+
+    .empty-icon-wrapper {
+      width: 80px;
+      height: 80px;
+      border-radius: var(--radius-full);
+      background: var(--accent-gold-soft);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-gold);
+      margin-bottom: var(--space-16);
+      border: 1px dashed var(--accent-gold);
+    }
+
+    .empty-title {
+      font-size: var(--font-size-lg);
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .empty-desc {
+      font-size: var(--font-size-sm);
+      color: var(--text-muted);
+      max-width: 260px;
+      margin-bottom: var(--space-24);
+      line-height: 1.5;
+    }
+
+    /* Skeleton Loading Effects */
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface-card) 25%, var(--surface-hover) 50%, var(--surface-card) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-loading 1.5s infinite;
+      border-radius: var(--radius-sm);
+    }
+
+    @keyframes skeleton-loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .skeleton-hero {
+      height: 200px;
+      width: 100%;
+      border-radius: var(--radius-lg);
+      margin-bottom: 16px;
+    }
+
+    .skeleton-line {
+      height: 14px;
+      margin-bottom: 8px;
+      width: 100%;
+    }
+    .skeleton-line.short { width: 60%; }
+
+    /* ==========================================
+       BOTTOM NAVIGATION BAR
+       ========================================== */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: var(--surface-dark);
+      border-top: 1px solid var(--border-hairline);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      transition: color 0.2s ease;
+      background: none;
+      border: none;
+      width: 33.33%;
+      height: 100%;
+    }
+
+    .nav-item.active {
+      color: var(--accent-gold);
+    }
+
+    .nav-item svg {
+      width: 22px;
+      height: 22px;
+      stroke-width: 2;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================
+       MOBILE APP CONTAINER
+       ========================================== -->
+  <div class="app-container">
+
+    <!-- Toast Notification -->
+    <div id="app-toast" class="toast-msg">تم التحديث بنجاح</div>
+
+    <!-- 1. HOME SCREEN (الرئيسية) -->
+    <div id="home-view" class="view-screen active">
+      <!-- App Header -->
+      <header class="app-header">
+        <div class="brand-logo-container" onclick="switchScreen('home-view')">
+          <div class="brand-icon">فف</div>
+          <div>
+            <div class="brand-name">فف</div>
+            <div class="brand-subtitle">تطبيقفقق اليي</div>
+          </div>
+        </div>
+        <button class="icon-btn" onclick="switchScreen('settings-view')" title="الإعدادات">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </header>
+
+      <!-- Search Input Section -->
+      <div class="search-section">
+        <div class="search-box">
+          <svg class="search-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          <input type="text" class="search-input" id="home-search-input" placeholder="ابحث عن الأخبار والمقالات..." oninput="handleSearch(this.value)">
+        </div>
+      </div>
+
+      <!-- Horizontal Categories Bar -->
+      <div class="categories-row" id="categories-row">
+        <div class="category-chip active" onclick="filterCategory(this, 'all')">الكل</div>
+        <div class="category-chip" onclick="filterCategory(this, 'tech')">تكنولوجيا</div>
+        <div class="category-chip" onclick="filterCategory(this, 'business')">اقتصاد وأعمال</div>
+        <div class="category-chip" onclick="filterCategory(this, 'culture')">ثقافة وفن</div>
+        <div class="category-chip" onclick="filterCategory(this, 'world')">أخبار عالمية</div>
+      </div>
+
+      <!-- Main Feed Container -->
+      <div id="feed-container">
+        <!-- Rendered dynamically by JS -->
+      </div>
+    </div>
+
+    <!-- 2. ARTICLE DETAILS SCREEN (تفاصيل الخبر) -->
+    <div id="article-view" class="view-screen">
+      <div class="details-nav-bar">
+        <button class="icon-btn" onclick="switchScreen('home-view')" title="رجوع">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+          </svg>
+        </button>
+        <div style="font-weight: 700; color: var(--accent-gold); font-size: 14px;">فف للأخبار</div>
+        <button class="icon-btn" onclick="shareArticle()" title="مشاركة">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
+          </svg>
+        </button>
+      </div>
+
+      <img id="detail-image" class="article-hero-img" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80" alt="صورة الخبر">
+
+      <div class="article-body-container">
+        <div class="article-header">
+          <span id="detail-category" class="article-category-badge">تكنولوجيا</span>
+          <h1 id="detail-title" class="article-main-title">مستقبل الذكاء الاصطناعي الفائق في تحليل البيانات الضخمة</h1>
+          
+          <div class="article-author-row">
+            <div class="author-info">
+              <div class="author-avatar">فف</div>
+              <div>
+                <div style="font-size: 13px; font-weight: 700; color: var(--text-primary);">محرر فف الرئيسي</div>
+                <div id="detail-date" style="font-size: 11px; color: var(--text-muted);">24 أكتوبر 2025</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="detail-text" class="article-text">
+          <p>يشهد العالم اليوم ثورة تكنولوجية غير مسبوقة تقودها أنظمة الذكاء الاصطناعي الفائق، حيث أصبحت القدرة على تحليل كميات هائلة من البيانات في أجزاء من الثانية خطوة محورية نحو تطوير الاقتصاد الرقمي.</p>
+          <p>تشير الدراسات الحديثة إلى أن الاعتماد على تقنيات التعلم العميق يساهم في رفع كفاءة اتخاذ القرار داخل المؤسسات بنسبة تزيد عن 45%، مما يتيح التنبؤ بالاتجاهات المستقبلية بدقة عالية.</p>
+          <p>ضمن رؤية منصة «فف»، نضع بين يديك التغطية الشاملة لكافة المستجدات التقنية والعلمية فور حدوثها لتكون دائماً في مقدمة الركب.</p>
+        </div>
+
+        <!-- Related Articles Section -->
+        <div class="related-articles">
+          <div class="section-header">
+            <span class="section-title">مقالات ذات صلة</span>
+          </div>
+
+          <div id="related-articles-list">
+            <!-- Populated dynamically by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. SETTINGS SCREEN (الإعدادات) -->
+    <div id="settings-view" class="view-screen">
+      <div class="details-nav-bar">
+        <div style="font-weight: 800; font-size: var(--font-size-lg); color: var(--text-primary);">الإعدادات</div>
+      </div>
+
+      <div style="padding: var(--space-20);">
+        <!-- Reading Customization Group -->
+        <div class="settings-group">
+          <div class="settings-group-title">تخصيص القراءة</div>
+          
+          <div class="setting-item">
+            <div class="setting-label-box">
+              <svg class="setting-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+              </svg>
+              <div>
+                <div class="setting-title">حجم الخط</div>
+                <div class="setting-subtitle">تكبير أو تصغير نص المقالات</div>
+              </div>
+            </div>
+            <div class="font-size-control">
+              <button class="font-size-btn" onclick="changeFontSize(-0.1)">-</button>
+              <span id="font-size-label" class="font-size-indicator">100%</span>
+              <button class="font-size-btn" onclick="changeFontSize(0.1)">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Appearance Group -->
+        <div class="settings-group">
+          <div class="settings-group-title">المظهر والتنبيهات</div>
+          
+          <div class="setting-item">
+            <div class="setting-label-box">
+              <svg class="setting-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+              </svg>
+              <div>
+                <div class="setting-title">المظهر الداكن (ليلي)</div>
+                <div class="setting-subtitle">تفعيل الوضع الليلي الأنيق</div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="theme-toggle" checked onchange="toggleTheme(this)">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-label-box">
+              <svg class="setting-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+              </svg>
+              <div>
+                <div class="setting-title">إشعارات الأخبار العاجلة</div>
+                <div class="setting-subtitle">استلام التنبيهات لأهم المقالات</div>
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="notif-toggle" checked onchange="toggleNotifications(this)">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- App Info Group -->
+        <div class="settings-group">
+          <div class="settings-group-title">عن التطبيق</div>
+          
+          <div class="setting-item">
+            <div class="setting-label-box">
+              <div class="brand-icon" style="width: 28px; height: 28px; font-size: 14px;">فف</div>
+              <div>
+                <div class="setting-title">نسخة التطبيق</div>
+                <div class="setting-subtitle">تطبيقفقق اليي v1.0.0 (Web App)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GLOBAL BOTTOM NAVIGATION BAR -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" id="nav-home" onclick="switchScreen('home-view')">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+        </svg>
+        <span>الرئيسية</span>
+      </button>
+      
+      <button class="nav-item" id="nav-article" onclick="openCurrentOrFirstArticle()">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+        </svg>
+        <span>الأخبار</span>
+      </button>
+
+      <button class="nav-item" id="nav-settings" onclick="switchScreen('settings-view')">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+        <span>الإعدادات</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ==========================================
+       JAVASCRIPT LOGIC & NAVIGATION
+       ========================================== -->
+  <script>
+    // Articles Database
+    const articlesDB = [
+      {
+        id: 0,
+        title: "مستقبل الذكاء الاصطناعي الفائق في تحليل البيانات الضخمة",
+        category: "تكنولوجيا",
+        catKey: "tech",
+        date: "24 أكتوبر 2025",
+        timeAgo: "منذ 15 دقيقة",
+        views: "1.4 ألف قراءة",
+        image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
+        content: "<p>يشهد العالم اليوم ثورة تكنولوجية غير مسبوقة تقودها أنظمة الذكاء الاصطناعي الفائق، حيث أصبحت القدرة على تحليل كميات هائلة من البيانات في أجزاء من الثانية خطوة محورية نحو تطوير الاقتصاد الرقمي.</p><p>تشير الدراسات الحديثة إلى أن الاعتماد على تقنيات التعلم العميق يساهم في رفع كفاءة اتخاذ القرار داخل المؤسسات بنسبة تزيد عن 45%، مما يتيح التنبؤ بالاتجاهات المستقبلية بدقة عالية.</p><p>ضمن رؤية منصة «فف»، نضع بين يديك التغطية الشاملة لكافة المستجدات التقنية والعلمية فور حدوثها لتكون دائماً في مقدمة الركب.</p>"
+      },
+      {
+        id: 1,
+        title: "تحولات الأسواق المالية العالمية والنمو المستدام في عام 2025",
+        category: "اقتصاد وأعمال",
+        catKey: "business",
+        date: "24 أكتوبر 2025",
+        timeAgo: "منذ ساعة",
+        views: "980 قراءة",
+        image: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=800&q=80",
+        content: "<p>تتجه الأسواق المالية نحو مرحلة جديدة من التوازن المالي في ظل التغيرات الاقتصادية العالمية والتحديات الجيوسياسية الراهنة.</p><p>يرى الخبراء أن الاستثمار في الطاقة النظيفة والتكنولوجيا الخضراء يشكل القاطرة الرئيسية للنمو المستدام خلال السنوات القادمة.</p><p>تُظهر التحليلات الفنية نمواً متزايداً في إقبال المستثمرين على القطاعات المبتكرة والصناديق الاستثمارية المرنة.</p>"
+      },
+      {
+        id: 2,
+        title: "استراتيجيات قيادة الأعمال الفعالة في العصر الرقمي الحديث",
+        category: "إدارة",
+        catKey: "business",
+        date: "23 أكتوبر 2025",
+        timeAgo: "منذ 3 ساعات",
+        views: "2.1 ألف قراءة",
+        image: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=800&q=80",
+        content: "<p>القيادة الناجحة اليوم تطلب التكيف السريع مع التحول الرقمي وتمكين فرق العمل من الابتكار المستمر.</p><p>نستعرض في هذا المقال أهم المهارات التي يجب أن يتحلى بها قادة المستقبل لتحقيق النجاح المؤسسي والاستدامة التنظيمية.</p>"
+      },
+      {
+        id: 3,
+        title: "اكتشافات فضائية جديدة تعيد كتابة نشأة المجرات المجاورة",
+        category: "علوم",
+        catKey: "world",
+        date: "22 أكتوبر 2025",
+        timeAgo: "منذ 5 ساعات",
+        views: "3.5 ألف قراءة",
+        image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80",
+        content: "<p>أعلنت وكالات الفضاء عن التوصل إلى صور وبيانات جديدة من التلسكوبات الحديثة كشفت تفاصيل غير مسبوقة عن ولادة النجوم.</p><p>هذا الاكتشاف يفتح آفاقاً جديدة لفهم أسرار الكون وتطوره على مر الملايين من السنين الضوئية.</p>"
+      },
+      {
+        id: 4,
+        title: "معارض الفن الحديث وتجسيد الهوية الثقافية في الأعمال المعاصرة",
+        category: "ثقافة وفن",
+        catKey: "culture",
+        date: "21 أكتوبر 2025",
+        timeAgo: "منذ يومين",
+        views: "850 قراءة",
+        image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=800&q=80",
+        content: "<p>شهدت معارض الفن الحديث إقبالاً واسعاً لمشاهدة اللوحات والتصاميم المبتكرة التي تمزج بين الأصالة التراثية والرؤية المستقبلية للفن المعاصر.</p>"
+      }
+    ];
+
+    let activeCategory = 'all';
+    let searchQuery = '';
+    let currentArticleId = 0;
+    let currentFontScale = 1.0;
+
+    // Save and restore settings via LocalStorage
+    function loadSavedSettings() {
+      const savedScale = localStorage.getItem('vav_font_scale');
+      if (savedScale) {
+        currentFontScale = parseFloat(savedScale);
+        applyFontScale();
+      }
+
+      const savedTheme = localStorage.getItem('vav_theme');
+      const themeToggle = document.getElementById('theme-toggle');
+      if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+        if (themeToggle) themeToggle.checked = false;
+      } else {
+        document.body.classList.remove('light-theme');
+        if (themeToggle) themeToggle.checked = true;
+      }
+
+      const savedNotif = localStorage.getItem('vav_notifications');
+      const notifToggle = document.getElementById('notif-toggle');
+      if (savedNotif === 'false') {
+        if (notifToggle) notifToggle.checked = false;
+      } else {
+        if (notifToggle) notifToggle.checked = true;
+      }
+    }
+
+    // Render Home Feed
+    function renderFeed() {
+      const feedContainer = document.getElementById('feed-container');
+      
+      const filtered = articlesDB.filter(item => {
+        const matchesCategory = (activeCategory === 'all') || (item.catKey === activeCategory);
+        const matchesSearch = searchQuery === '' || 
+                              item.title.toLowerCase().includes(searchQuery) || 
+                              item.category.toLowerCase().includes(searchQuery);
+        return matchesCategory && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        feedContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon-wrapper">
+              <svg width="36" height="36" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div class="empty-title">لا توجد نتائج بحث</div>
+            <div class="empty-desc">لم نتمكن من العثور على أي مقالات تطابق الكلمة المدخلة. حاول البحث باستخدام كلمات أخرى.</div>
+            <button class="category-chip active" onclick="resetSearch()">العودة للرئيسية</button>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '<div class="news-feed">';
+
+      // Hero Card (First matching article)
+      const hero = filtered[0];
+      html += `
+        <div class="hero-card" onclick="openArticle(${hero.id})">
+          <div class="hero-image-wrapper" style="background-image: url('${hero.image}');">
+            <div class="hero-gradient-overlay"></div>
+            <span class="badge-category">${hero.category}</span>
+          </div>
+          <div class="hero-content">
+            <h2 class="hero-title">${hero.title}</h2>
+            <div class="news-meta">
+              <div class="news-meta-item">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>${hero.timeAgo}</span>
+              </div>
+              <span>•</span>
+              <div class="news-meta-item">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                <span>${hero.views}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Remaining articles list
+      if (filtered.length > 1) {
+        html += `
+          <div class="section-header">
+            <span class="section-title">أحدث المقالات</span>
+          </div>
+        `;
+
+        for (let i = 1; i < filtered.length; i++) {
+          const item = filtered[i];
+          html += `
+            <div class="news-card" onclick="openArticle(${item.id})">
+              <div class="news-thumb" style="background-image: url('${item.image}');"></div>
+              <div class="news-info">
+                <h3 class="news-card-title">${item.title}</h3>
+                <div class="news-meta">
+                  <span>${item.category}</span>
+                  <span>•</span>
+                  <span>${item.timeAgo}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      html += '</div>';
+      feedContainer.innerHTML = html;
+    }
+
+    // View Switcher Function
+    function switchScreen(screenId) {
+      document.querySelectorAll('.view-screen').forEach(screen => {
+        screen.classList.remove('active');
+      });
+
+      const targetScreen = document.getElementById(screenId);
+      if (targetScreen) {
+        targetScreen.classList.add('active');
+        targetScreen.scrollTop = 0;
+      }
+
+      // Update Navigation active state
+      document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+      if (screenId === 'home-view') {
+        document.getElementById('nav-home').classList.add('active');
+      } else if (screenId === 'article-view') {
+        document.getElementById('nav-article').classList.add('active');
+      } else if (screenId === 'settings-view') {
+        document.getElementById('nav-settings').classList.add('active');
+      }
+    }
+
+    // Open Article Detail View
+    function openArticle(id) {
+      currentArticleId = id;
+      const article = articlesDB.find(a => a.id === id) || articlesDB[0];
+
+      document.getElementById('detail-title').innerText = article.title;
+      document.getElementById('detail-category').innerText = article.category;
+      document.getElementById('detail-date').innerText = article.date;
+      document.getElementById('detail-image').src = article.image;
+      document.getElementById('detail-text').innerHTML = article.content;
+
+      // Render Related Articles (excluding current)
+      const related = articlesDB.filter(a => a.id !== article.id).slice(0, 2);
+      const relatedContainer = document.getElementById('related-articles-list');
+      
+      relatedContainer.innerHTML = related.map(rel => `
+        <div class="news-card" onclick="openArticle(${rel.id})" style="margin-bottom: 12px;">
+          <div class="news-thumb" style="background-image: url('${rel.image}');"></div>
+          <div class="news-info">
+            <h3 class="news-card-title">${rel.title}</h3>
+            <div class="news-meta">
+              <span>${rel.category}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      switchScreen('article-view');
+    }
+
+    function openCurrentOrFirstArticle() {
+      openArticle(currentArticleId);
+    }
+
+    // Category Filter Chip Click
+    function filterCategory(chip, categoryKey) {
+      document.querySelectorAll('.categories-row .category-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeCategory = categoryKey;
+      renderFeed();
+    }
+
+    // Search Handling
+    function handleSearch(val) {
+      searchQuery = val.trim().toLowerCase();
+      renderFeed();
+    }
+
+    function resetSearch() {
+      searchQuery = '';
+      activeCategory = 'all';
+      const input = document.getElementById('home-search-input');
+      if (input) input.value = '';
+
+      document.querySelectorAll('.categories-row .category-chip').forEach((c, idx) => {
+        if (idx === 0) c.classList.add('active');
+        else c.classList.remove('active');
+      });
+
+      renderFeed();
+      switchScreen('home-view');
+    }
+
+    // Settings: Font Size Stepper
+    function changeFontSize(delta) {
+      currentFontScale = Math.min(Math.max(0.8, currentFontScale + delta), 1.4);
+      currentFontScale = Math.round(currentFontScale * 10) / 10;
+      applyFontScale();
+      localStorage.setItem('vav_font_scale', currentFontScale);
+      showToast(`تم تغيير حجم الخط: ${Math.round(currentFontScale * 100)}%`);
+    }
+
+    function applyFontScale() {
+      document.documentElement.style.setProperty('--user-font-scale', currentFontScale);
+      const label = document.getElementById('font-size-label');
+      if (label) label.innerText = Math.round(currentFontScale * 100) + '%';
+    }
+
+    // Settings: Theme Switcher (Dark / Light Luxe)
+    function toggleTheme(checkbox) {
+      if (checkbox.checked) {
+        document.body.classList.remove('light-theme');
+        localStorage.setItem('vav_theme', 'dark');
+        showToast('تم تفعيل الوضع الليلي');
+      } else {
+        document.body.classList.add('light-theme');
+        localStorage.setItem('vav_theme', 'light');
+        showToast('تم تفعيل الوضع النهاري');
+      }
+    }
+
+    // Settings: Notifications Switcher
+    function toggleNotifications(checkbox) {
+      if (checkbox.checked) {
+        if ("Notification" in window) {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              localStorage.setItem('vav_notifications', 'true');
+              showToast('تم تفعيل التنبيهات بنجاح');
+            } else {
+              checkbox.checked = false;
+              localStorage.setItem('vav_notifications', 'false');
+              showToast('تم رفض إذن الإشعارات');
+            }
+          });
+        } else {
+          localStorage.setItem('vav_notifications', 'true');
+          showToast('تم تفعيل الإشعارات');
+        }
+      } else {
+        localStorage.setItem('vav_notifications', 'false');
+        showToast('تم إيقاف الإشعارات');
+      }
+    }
+
+    // Share Article Placeholder Function
+    function shareArticle() {
+      const current = articlesDB.find(a => a.id === currentArticleId) || articlesDB[0];
+      if (navigator.share) {
+        navigator.share({
+          title: `فف - ${current.title}`,
+          url: window.location.href
+        }).catch(() => {});
+      } else {
+        showToast('تم نسخ رابط المقال بنجاح!');
+      }
+    }
+
+    // Helper: Toast Message
+    function showToast(msg) {
+      const toast = document.getElementById('app-toast');
+      if (!toast) return;
+      toast.innerText = msg;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2400);
+    }
+
+    // Initialize App
+    document.addEventListener('DOMContentLoaded', () => {
+      loadSavedSettings();
+      renderFeed();
+    });
+  </script>
+</body>
+</html>

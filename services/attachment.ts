@@ -1,18 +1,29 @@
-// The reference image the owner attaches to their app description. Held here (not in navigation params, which must
-// stay small) so the understanding, design and instant-preview steps can send it to the AI as a visual guide.
+// The reference images the owner attaches to their app description. Held here (not in navigation params, which must
+// stay small) so the home screen, the wizard and the AI steps all see the same pictures.
 import { AiImage } from "./instantPreview";
 
-let current: AiImage | null = null;
+export type RefPic = { uri: string; image: AiImage };
 
+let pics: RefPic[] = [];
+
+export function setRefPics(p: RefPic[]) {
+  pics = p;
+}
+
+export function getRefPics(): RefPic[] {
+  return pics;
+}
+
+/** Older callers: set a single image, or clear. */
 export function setRefImage(im: AiImage | null) {
-  current = im;
+  pics = im ? [{ uri: "", image: im }] : [];
 }
 
 export function getRefImage(): AiImage | null {
-  return current;
+  return pics[0]?.image ?? null;
 }
 
-/** The attached image as the array the AI helpers expect (empty when none). */
+/** All attached images as the array the AI helpers expect (empty when none). */
 export function refImages(): AiImage[] {
-  return current ? [current] : [];
+  return pics.map((p) => p.image);
 }

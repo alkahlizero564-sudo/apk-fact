@@ -5,7 +5,6 @@ import { createBottomTabNavigator, BottomTabBarProps } from "@react-navigation/b
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 
 import HomeScreen from "./screens/HomeScreen";
@@ -19,7 +18,7 @@ import ChatScreen from "./screens/ChatScreen";
 import GalleryScreen from "./screens/GalleryScreen";
 import PairScreen from "./screens/PairScreen";
 import UpdateScreen from "./screens/UpdateScreen";
-import { colors, gradient } from "./theme";
+import { colors } from "./theme";
 import ErrorBoundary from "./components/ErrorBoundary";
 import type { RootStackParamList } from "./navigation";
 
@@ -46,7 +45,7 @@ const TABS: Record<string, { label: string; on: IconName; off: IconName }> = {
   Settings: { label: "الإعدادات", on: "settings", off: "settings-outline" },
 };
 
-/** Floating pill tab bar, right-to-left, with the "new app" button in the middle. */
+/** Floating pill tab bar, right-to-left: the active tab is a white pill with its label, plus a "new app" button. */
 function TabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const items = state.routes.map((route, index) => {
@@ -59,15 +58,13 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
           const e = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
           if (!focused && !e.defaultPrevented) navigation.navigate(route.name);
         }}
-        style={styles.tab}
+        style={[styles.tab, focused && styles.tabOn]}
         accessibilityRole="tab"
         accessibilityState={{ selected: focused }}
         accessibilityLabel={t.label}
       >
-        <View style={[styles.tabIcon, focused && styles.tabIconOn]}>
-          <Ionicons name={focused ? t.on : t.off} size={22} color={focused ? colors.text : colors.textMuted} />
-        </View>
-        <Text style={[styles.tabLabel, focused && { color: colors.text }]}>{t.label}</Text>
+        <Ionicons name={focused ? t.on : t.off} size={20} color={focused ? "#000000" : "#8A8A94"} />
+        {focused ? <Text style={styles.tabLabel}>{t.label}</Text> : null}
       </Pressable>
     );
   });
@@ -75,18 +72,16 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
     <Pressable
       key="new"
       onPress={() => navigation.getParent()?.navigate("Create")}
-      style={({ pressed }) => [styles.plusWrap, pressed && { transform: [{ scale: 0.94 }] }]}
+      style={({ pressed }) => [styles.plus, pressed && { transform: [{ scale: 0.93 }] }]}
       accessibilityRole="button"
       accessibilityLabel="تطبيق جديد"
     >
-      <LinearGradient colors={gradient} start={{ x: 1, y: 0 }} end={{ x: 0, y: 1 }} style={styles.plus}>
-        <Ionicons name="add" size={30} color={colors.primaryText} />
-      </LinearGradient>
+      <Ionicons name="add" size={24} color="#000000" />
     </Pressable>
   );
   return (
     <View style={[styles.barWrap, { paddingBottom: Math.max(insets.bottom, 12) }]} pointerEvents="box-none">
-      <View style={styles.bar}>{[items[0], items[1], plus, items[2]]}</View>
+      <View style={styles.bar}>{[...items, plus]}</View>
     </View>
   );
 }
@@ -131,35 +126,41 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  barWrap: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 16 },
+  barWrap: { position: "absolute", left: 0, right: 0, bottom: 0, alignItems: "center" },
   bar: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    justifyContent: "space-around",
-    height: 72,
-    borderRadius: 28,
-    backgroundColor: "rgba(16,18,27,0.97)",
+    gap: 6,
+    padding: 6,
+    borderRadius: 999,
+    backgroundColor: "#16161A",
     borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 8,
+    borderColor: "#23232A",
     shadowColor: "#000",
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.5,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 8 },
     elevation: 16,
   },
-  tab: { alignItems: "center", justifyContent: "center", gap: 2, minWidth: 64, height: "100%" },
-  tabIcon: { paddingHorizontal: 14, paddingVertical: 4, borderRadius: 999 },
-  tabIconOn: { backgroundColor: colors.primarySoft },
-  tabLabel: { fontSize: 11, fontWeight: "800", color: colors.textMuted },
-  plusWrap: { marginTop: -34 },
-  plus: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
+  tab: {
+    flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 4,
-    borderColor: colors.bg,
+    gap: 6,
+    height: 44,
+    minWidth: 46,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+  },
+  tabOn: { backgroundColor: "#FFFFFF", paddingHorizontal: 18 },
+  tabLabel: { fontSize: 13, fontWeight: "700", color: "#000000" },
+  plus: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    marginRight: 2,
   },
 });

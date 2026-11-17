@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Alert, View, Text, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform, Image } from "react-native";
 import { setRefPics, getRefPics, RefPic, pickRefPics, MAX_PICS } from "../services/attachment";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "../components/icons";
 import {
   Button,
   Card,
@@ -403,7 +403,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
                       </View>
                       {sel ? (
                         <View style={styles.tplCheck}>
-                          <Ionicons name="checkmark" size={14} color={colors.bg} />
+                          <Ionicons name="checkmark" size={14} color={colors.base} />
                         </View>
                       ) : null}
                     </Pressable>

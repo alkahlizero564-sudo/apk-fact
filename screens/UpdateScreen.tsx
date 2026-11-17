@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, Alert, ScrollView } from "react-native";
 import { WebView } from "react-native-webview";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "../components/icons";
 import {
   Card,
   Button,
@@ -38,7 +38,7 @@ import { confirmPermissions } from "../services/permissionPrompt";
 
 type Stage = "write" | "working" | "review" | "publishing" | "done";
 
-const CARD = "#111114";
+const CARD = colors.glass;
 
 const IDEAS = [
   "أضف شاشة جديدة لـ…",
@@ -293,9 +293,9 @@ export default function UpdateScreen({ navigation, route }: RootScreenProps<"Upd
               </View>
               <View style={styles.frame}>
                 {preview ? (
-                  <WebView key={previewKey + shown} originWhitelist={["*"]} source={{ html: preview.html }} style={{ flex: 1, backgroundColor: colors.bg }} nestedScrollEnabled />
+                  <WebView key={previewKey + shown} originWhitelist={["*"]} source={{ html: preview.html }} style={{ flex: 1, backgroundColor: colors.base }} nestedScrollEnabled />
                 ) : (
-                  <ActivityIndicator color="#FFFFFF" style={{ marginTop: space.xxl }} />
+                  <ActivityIndicator color={colors.accent} style={{ marginTop: space.xxl }} />
                 )}
               </View>
             </Block>
@@ -352,14 +352,14 @@ export default function UpdateScreen({ navigation, route }: RootScreenProps<"Upd
 const styles = StyleSheet.create({
   topBar: { flexDirection: "row-reverse", minHeight: 42, marginBottom: space.sm },
   hero: { alignItems: "center", gap: 6, marginBottom: space.xl },
-  title: { color: "#8A8A94", fontSize: 14, marginTop: space.md },
+  title: { color: colors.textMuted, fontSize: 14, marginTop: space.md },
   name: { color: colors.text, fontSize: 26, fontWeight: "700", textAlign: "center" },
   row: { flexDirection: "row", gap: 6, flexWrap: "wrap", justifyContent: "center", marginTop: 2 },
-  meta: { fontSize: 12.5, color: "#8A8A94", textAlign: "center" },
+  meta: { fontSize: 12.5, color: colors.textMuted, textAlign: "center" },
 
   block: { marginBottom: space.xl },
   blockTitle: { color: colors.text, fontSize: 17, fontWeight: "700", textAlign: "right", marginBottom: space.md },
-  hint: { ...type.hint, color: "#8A8A94", textAlign: "right", marginTop: space.sm },
+  hint: { ...type.hint, color: colors.textMuted, textAlign: "right", marginTop: space.sm },
   chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: space.sm, marginBottom: space.lg },
 
   previewHead: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: space.md },

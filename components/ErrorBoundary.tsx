@@ -2,7 +2,7 @@
 // (services/drafts.ts), so «رجوع للرئيسية» goes back without losing it; the error text can be shared.
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, Share, Pressable } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "./icons";
 import { colors, radius, space, type } from "../theme";
 
 type State = { error: Error | null; key: number };

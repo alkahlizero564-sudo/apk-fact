@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, Linking, Alert, ScrollView } from "r
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as SecureStore from "expo-secure-store";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "../components/icons";
 import {
   Card,
   ListRow,
@@ -41,14 +41,14 @@ type Service = {
 };
 
 const GEMINI_MODEL_KEY = "GEMINI_MODEL";
-const OFF = "#2A2A32";
+const OFF = colors.glassBorder;
 
 const SERVICES: Service[] = [
   {
     id: "github",
     title: "GitHub",
     icon: "logo-github",
-    tint: "#E5E7EB",
+    tint: colors.softText,
     hint: "مكان حفظ تطبيقاتك وبنائها.",
     fields: [
       { key: "GITHUB_TOKEN", label: "Personal Access Token", placeholder: "ghp_...", secret: true },
@@ -295,7 +295,7 @@ function ModelPicker({ onChange }: { onChange: (id: string) => void }) {
                   <Ionicons
                     name={m.id === selected ? "radio-button-on" : "radio-button-off"}
                     size={20}
-                    color={m.id === selected ? "#FFFFFF" : colors.textMuted}
+                    color={m.id === selected ? colors.accent : colors.textMuted}
                   />
                 }
                 onPress={() => choose(m.id)}
@@ -700,7 +700,7 @@ export default function SettingsScreen() {
 
         <Group title="الأداة">
           <ListRow icon="rocket-outline" title="تحديث APK Fact" subtitle="بناء نسخة جديدة من الأداة" onPress={() => setOpen("tool")} />
-          <ListRow icon="logo-github" tint="#E5E7EB" title="المستودع" value={REPO.split("/")[1]} chevron={false} />
+          <ListRow icon="logo-github" tint={colors.softText} title="المستودع" value={REPO.split("/")[1]} chevron={false} />
           <ListRow icon="information-circle-outline" title="الإصدار" value="2.0" chevron={false} last />
         </Group>
       </ScrollView>
@@ -738,19 +738,19 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: space.lg,
-    backgroundColor: "#111114",
+    backgroundColor: colors.glass,
     borderRadius: 24,
     padding: space.lg,
     marginBottom: space.xl,
   },
   summaryNum: { color: colors.text, fontSize: 22, fontWeight: "700", textAlign: "right" },
-  summaryText: { color: "#8A8A94", fontSize: 13, textAlign: "right", marginTop: 2 },
-  track: { width: 110, height: 8, borderRadius: 4, backgroundColor: "#23232A", overflow: "hidden" },
-  fill: { height: 8, borderRadius: 4, backgroundColor: "#FFFFFF" },
+  summaryText: { color: colors.textMuted, fontSize: 13, textAlign: "right", marginTop: 2 },
+  track: { width: 110, height: 8, borderRadius: 4, backgroundColor: colors.glassBorder, overflow: "hidden" },
+  fill: { height: 8, borderRadius: 4, backgroundColor: colors.primary },
 
   groupWrap: { marginBottom: space.xl },
-  groupLabel: { color: "#8A8A94", fontSize: 13, fontWeight: "600", textAlign: "right", marginBottom: space.sm, marginRight: space.sm },
-  group: { backgroundColor: "#111114", borderRadius: 24, overflow: "hidden" },
+  groupLabel: { color: colors.textMuted, fontSize: 13, fontWeight: "600", textAlign: "right", marginBottom: space.sm, marginRight: space.sm },
+  group: { backgroundColor: colors.glass, borderRadius: 24, overflow: "hidden" },
   dot: { width: 8, height: 8, borderRadius: 4 },
 
   minutesBig: { fontSize: 28, fontWeight: "800", color: colors.text, textAlign: "right" },

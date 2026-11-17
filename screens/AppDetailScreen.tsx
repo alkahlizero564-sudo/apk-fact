@@ -871,12 +871,12 @@ const styles = StyleSheet.create({
   name: { fontSize: 26, fontWeight: "700", color: colors.text, textAlign: "center", marginTop: space.sm },
   badgeRow: { flexDirection: "row", justifyContent: "center" },
   client: { fontSize: 13, color: colors.accent, textAlign: "center", fontWeight: "600" },
-  path: { fontSize: 12, color: "#6B6B75", textAlign: "center", fontFamily: "monospace" },
+  path: { fontSize: 12, color: colors.faint, textAlign: "center", fontFamily: "monospace" },
   actions: { flexDirection: "row-reverse", gap: space.md },
 
   groupWrap: { marginBottom: space.xl },
-  groupLabel: { color: "#8A8A94", fontSize: 13, fontWeight: "600", textAlign: "right", marginBottom: space.sm, marginRight: space.sm },
-  group: { backgroundColor: "#111114", borderRadius: 24, overflow: "hidden" },
+  groupLabel: { color: colors.textMuted, fontSize: 13, fontWeight: "600", textAlign: "right", marginBottom: space.sm, marginRight: space.sm },
+  group: { backgroundColor: colors.glass, borderRadius: 24, overflow: "hidden" },
 
   chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: space.sm, marginBottom: space.lg },
   sheetSubtitle: { ...type.label, color: colors.text, textAlign: "right", marginBottom: space.sm },

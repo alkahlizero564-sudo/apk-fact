@@ -3,7 +3,7 @@ import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Image, Alert 
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "../components/icons";
 import { AppAvatar } from "../components/appVisuals";
 import { listApps, AppInfo } from "../services/appActions";
 import { TEMPLATES } from "../services/templates";
@@ -72,7 +72,7 @@ export default function HomeScreen() {
           value={text}
           onChangeText={setText}
           placeholder="صف فكرة تطبيقك هنا..."
-          placeholderTextColor="#6B6B75"
+          placeholderTextColor={colors.faint}
           multiline
           maxLength={2000}
           style={styles.input}
@@ -105,7 +105,7 @@ export default function HomeScreen() {
             accessibilityRole="button"
             accessibilityLabel="إرفاق صور"
           >
-            <Ionicons name="image-outline" size={18} color="#C9C9D1" />
+            <Ionicons name="image-outline" size={18} color={colors.softText} />
             <Text style={styles.imgBtnText}>{pics.length > 0 ? `${pics.length} من ${MAX_PICS}` : "صور"}</Text>
           </Pressable>
 
@@ -115,7 +115,7 @@ export default function HomeScreen() {
             accessibilityRole="button"
             accessibilityLabel="ابدأ"
           >
-            <Ionicons name="arrow-up" size={22} color="#000" />
+            <Ionicons name="arrow-up" size={22} color={colors.primaryText} />
           </Pressable>
         </View>
       </View>
@@ -134,11 +134,11 @@ export default function HomeScreen() {
 
       <View style={styles.quickRow}>
         <Pressable onPress={() => nav.navigate("Pair")} style={styles.quick}>
-          <Ionicons name="git-merge-outline" size={18} color="#C9C9D1" />
+          <Ionicons name="git-merge-outline" size={18} color={colors.softText} />
           <Text style={styles.quickText}>تطبيقين متصلين</Text>
         </Pressable>
         <Pressable onPress={() => nav.navigate("Gallery")} style={styles.quick}>
-          <Ionicons name="color-palette-outline" size={18} color="#C9C9D1" />
+          <Ionicons name="color-palette-outline" size={18} color={colors.softText} />
           <Text style={styles.quickText}>معرض التصاميم</Text>
         </Pressable>
       </View>
@@ -173,14 +173,14 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  brand: { color: "#8A8A94", fontSize: 14, textAlign: "center", marginBottom: space.xl },
+  brand: { color: colors.textMuted, fontSize: 14, textAlign: "center", marginBottom: space.xl },
   hello: { color: colors.text, fontSize: 30, fontWeight: "700", lineHeight: 42, textAlign: "right" },
 
-  box: { backgroundColor: "#111114", borderRadius: 28, padding: space.lg, marginTop: space.xl },
+  box: { backgroundColor: colors.glass, borderRadius: 28, padding: space.lg, marginTop: space.xl },
   input: { color: colors.text, fontSize: 15, lineHeight: 24, minHeight: 80, maxHeight: 200, textAlignVertical: "top" },
   picsRow: { flexDirection: "row-reverse", gap: space.sm, paddingVertical: space.md },
   picWrap: { width: 64, height: 64 },
-  pic: { width: 64, height: 64, borderRadius: 14, backgroundColor: "#1B1B20" },
+  pic: { width: 64, height: 64, borderRadius: 14, backgroundColor: colors.glassStrong },
   picX: {
     position: "absolute",
     top: -6,
@@ -188,9 +188,9 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#1B1B20",
+    backgroundColor: colors.glassStrong,
     borderWidth: 1,
-    borderColor: "#2A2A32",
+    borderColor: colors.glassBorder,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -202,14 +202,14 @@ const styles = StyleSheet.create({
     height: 38,
     paddingHorizontal: 14,
     borderRadius: 999,
-    backgroundColor: "#1B1B20",
+    backgroundColor: colors.glassStrong,
   },
-  imgBtnText: { color: "#C9C9D1", fontSize: 13 },
-  sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
+  imgBtnText: { color: colors.softText, fontSize: 13 },
+  sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },
 
   chipsRow: { flexDirection: "row-reverse", gap: space.sm, marginTop: space.lg },
-  chip: { backgroundColor: "#111114", borderRadius: 999, paddingVertical: 9, paddingHorizontal: 16 },
-  chipText: { color: "#C9C9D1", fontSize: 13 },
+  chip: { backgroundColor: colors.glass, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 16 },
+  chipText: { color: colors.softText, fontSize: 13 },
 
   quickRow: { flexDirection: "row-reverse", gap: space.sm, marginTop: space.lg },
   quick: {
@@ -220,15 +220,15 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     borderRadius: 18,
-    backgroundColor: "#111114",
+    backgroundColor: colors.glass,
   },
-  quickText: { color: "#C9C9D1", fontSize: 13 },
+  quickText: { color: colors.softText, fontSize: 13 },
 
   secHead: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginTop: space.xl, marginBottom: space.md },
   secTitle: { color: colors.text, fontSize: 16, fontWeight: "700" },
-  secLink: { color: "#8A8A94", fontSize: 13 },
+  secLink: { color: colors.textMuted, fontSize: 13 },
   appsRow: { flexDirection: "row-reverse", gap: space.md },
-  appCard: { width: 130, backgroundColor: "#111114", borderRadius: 22, padding: space.md, gap: 6 },
+  appCard: { width: 130, backgroundColor: colors.glass, borderRadius: 22, padding: space.md, gap: 6 },
   appName: { color: colors.text, fontSize: 14, fontWeight: "600", textAlign: "right", marginTop: 6 },
-  appLang: { color: "#6B6B75", fontSize: 12, textAlign: "right" },
+  appLang: { color: colors.faint, fontSize: 12, textAlign: "right" },
 }); 

@@ -4,15 +4,15 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet, FlatList, Pressable, TextInput, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "../components/icons";
 import { colors, space } from "../theme";
 import { IconButton } from "../components/ui";
 import { buildGallery, galleryTemplate, galleryPairStart, CATEGORIES, PAIR_CATEGORIES, GALLERY_COUNT, PAIR_GALLERY_COUNT, GalleryItem } from "../services/gallery";
 import { setGalleryPick, setGalleryPairPick, GALLERY_PICK } from "../services/galleryPick";
 import type { RootScreenProps } from "../navigation";
 
-const CARD = "#111114";
-const SOFT_TEXT = "#C9C9D1";
+const CARD = colors.glass;
+const SOFT_TEXT = colors.softText;
 
 export default function GalleryScreen({ navigation }: RootScreenProps<"Gallery">) {
   const insets = useSafeAreaInsets();
@@ -55,28 +55,28 @@ export default function GalleryScreen({ navigation }: RootScreenProps<"Gallery">
 
       <View style={styles.modes}>
         <Pressable onPress={() => switchMode(false)} style={[styles.mode, !pair && styles.modeOn]}>
-          <Ionicons name="phone-portrait-outline" size={16} color={!pair ? "#000000" : "#8A8A94"} />
+          <Ionicons name="phone-portrait-outline" size={16} color={!pair ? colors.primaryText : colors.textMuted} />
           <Text style={[styles.modeText, !pair && styles.modeTextOn]}>تطبيق واحد</Text>
         </Pressable>
         <Pressable onPress={() => switchMode(true)} style={[styles.mode, pair && styles.modeOn]}>
-          <Ionicons name="git-merge-outline" size={16} color={pair ? "#000000" : "#8A8A94"} />
+          <Ionicons name="git-merge-outline" size={16} color={pair ? colors.primaryText : colors.textMuted} />
           <Text style={[styles.modeText, pair && styles.modeTextOn]}>زبون + إدارة</Text>
         </Pressable>
       </View>
 
       <View style={styles.searchRow}>
-        <Ionicons name="search" size={18} color="#6B6B75" />
+        <Ionicons name="search" size={18} color={colors.faint} />
         <TextInput
           style={styles.search}
           value={query}
           onChangeText={setQuery}
           placeholder="ابحث: مطعم، أزرق، فاخر…"
-          placeholderTextColor="#6B6B75"
+          placeholderTextColor={colors.faint}
           textAlign="right"
         />
         {query ? (
           <Pressable onPress={() => setQuery("")} hitSlop={8}>
-            <Ionicons name="close-circle" size={18} color="#6B6B75" />
+            <Ionicons name="close-circle" size={18} color={colors.faint} />
           </Pressable>
         ) : null}
       </View>
@@ -158,7 +158,7 @@ function Tile({ item, onStart, onPreview }: { item: GalleryItem; onStart: () => 
 const styles = StyleSheet.create({
   topBar: { flexDirection: "row-reverse", marginBottom: space.md },
   title: { color: colors.text, fontSize: 32, fontWeight: "700", textAlign: "right" },
-  subtitle: { color: "#8A8A94", fontSize: 14, textAlign: "right", marginTop: 4, marginBottom: space.lg },
+  subtitle: { color: colors.textMuted, fontSize: 14, textAlign: "right", marginTop: 4, marginBottom: space.lg },
 
   modes: { flexDirection: "row-reverse", gap: space.sm, backgroundColor: CARD, borderRadius: 999, padding: 4 },
   mode: {
@@ -170,9 +170,9 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 999,
   },
-  modeOn: { backgroundColor: "#FFFFFF" },
-  modeText: { color: "#8A8A94", fontSize: 13, fontWeight: "600" },
-  modeTextOn: { color: "#000000", fontWeight: "700" },
+  modeOn: { backgroundColor: colors.primary },
+  modeText: { color: colors.textMuted, fontSize: 13, fontWeight: "600" },
+  modeTextOn: { color: colors.primaryText, fontWeight: "700" },
 
   searchRow: {
     flexDirection: "row-reverse",
@@ -188,9 +188,9 @@ const styles = StyleSheet.create({
 
   chips: { flexDirection: "row-reverse", gap: space.sm, paddingVertical: space.lg },
   chip: { paddingHorizontal: 18, paddingVertical: 9, borderRadius: 999, backgroundColor: CARD },
-  chipOn: { backgroundColor: "#FFFFFF" },
+  chipOn: { backgroundColor: colors.primary },
   chipText: { color: SOFT_TEXT, fontSize: 13, fontWeight: "600" },
-  chipTextOn: { color: "#000000", fontWeight: "700" },
+  chipTextOn: { color: colors.primaryText, fontWeight: "700" },
 
   tile: { flex: 1, backgroundColor: CARD, borderRadius: 24, padding: space.sm },
   mock: { height: 150, padding: 12, gap: 8, overflow: "hidden" },
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   mockBtn: { height: 22, width: "55%", marginTop: 2 },
   tileFooter: { flexDirection: "row-reverse", alignItems: "center", gap: space.xs, paddingHorizontal: 6, paddingTop: space.sm, paddingBottom: 2 },
   tileTitle: { color: colors.text, fontSize: 14, fontWeight: "700", textAlign: "right" },
-  tileSub: { color: "#6B6B75", fontSize: 12, textAlign: "right", marginTop: 2 },
-  eye: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: "#1B1B20" },
-  empty: { color: "#8A8A94", fontSize: 15, textAlign: "center", marginTop: space.xxl },
+  tileSub: { color: colors.faint, fontSize: 12, textAlign: "right", marginTop: 2 },
+  eye: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: colors.glassStrong },
+  empty: { color: colors.textMuted, fontSize: 15, textAlign: "center", marginTop: space.xxl },
 });

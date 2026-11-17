@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "../components/icons";
 import { colors, space, type } from "../theme";
 import { Button, IconButton } from "../components/ui";
 import { chatReply, extractSpec, stripSpec, ChatMsg, ChatSpec } from "../services/chat";
@@ -16,8 +16,8 @@ import type { RootScreenProps } from "../navigation";
 const GREETING =
   "أهلاً 👋 أنا هنا أبني لك تطبيقك بالدردشة. احكِ لي فكرتك: التطبيق يعمل شنو؟ وتريده تطبيقاً واحداً، أم تطبيقين متصلين (زبون + إدارة)؟";
 
-const CARD = "#111114";
-const SOFT = "#1B1B20";
+const CARD = colors.glass;
+const SOFT = colors.glassStrong;
 
 type Bubble = ChatMsg & { kind?: "status" };
 
@@ -121,12 +121,12 @@ export default function ChatScreen({ navigation }: RootScreenProps<"Chat">) {
           ))}
           {busy ? (
             <View style={[styles.bubble, styles.ai]}>
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={colors.accent} />
             </View>
           ) : null}
           {building ? (
             <View style={[styles.bubble, styles.ai, { flexDirection: "row-reverse", alignItems: "center", gap: space.sm }]}>
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={colors.accent} />
               <Text style={styles.aiText}>{status || "يبني…"}</Text>
             </View>
           ) : null}
@@ -176,14 +176,14 @@ export default function ChatScreen({ navigation }: RootScreenProps<"Chat">) {
               style={[styles.attachBtn, (building || pics.length >= MAX_PICS) && { opacity: 0.4 }]}
               accessibilityLabel="إرفاق صور"
             >
-              <Ionicons name="image-outline" size={20} color="#C9C9D1" />
+              <Ionicons name="image-outline" size={20} color={colors.softText} />
             </Pressable>
             <TextInput
               style={styles.input}
               value={input}
               onChangeText={setInput}
               placeholder="اكتب رسالتك…"
-              placeholderTextColor="#6B6B75"
+              placeholderTextColor={colors.faint}
               multiline
               editable={!building}
               textAlign="right"
@@ -194,7 +194,7 @@ export default function ChatScreen({ navigation }: RootScreenProps<"Chat">) {
               style={[styles.sendBtn, !canSend && { opacity: 0.35 }]}
               accessibilityLabel="إرسال"
             >
-              <Ionicons name="arrow-up" size={20} color="#000000" />
+              <Ionicons name="arrow-up" size={20} color={colors.primaryText} />
             </Pressable>
           </View>
         </View>
@@ -225,10 +225,10 @@ const styles = StyleSheet.create({
   list: { padding: space.lg, gap: space.sm, paddingBottom: space.xl },
 
   bubble: { maxWidth: "86%", borderRadius: 22, paddingHorizontal: space.lg, paddingVertical: 12 },
-  mine: { alignSelf: "flex-start", backgroundColor: "#FFFFFF", borderBottomRightRadius: 6 },
+  mine: { alignSelf: "flex-start", backgroundColor: colors.primary, borderBottomRightRadius: 6 },
   ai: { alignSelf: "flex-end", backgroundColor: CARD, borderBottomLeftRadius: 6 },
   msg: { ...type.body },
-  mineText: { color: "#000000", textAlign: "right" },
+  mineText: { color: colors.primaryText, textAlign: "right" },
   aiText: { color: colors.text, textAlign: "right" },
 
   specCard: { alignSelf: "stretch", backgroundColor: CARD, borderRadius: 24, padding: space.lg, gap: space.sm, marginTop: space.sm },
@@ -246,12 +246,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: SOFT,
     borderWidth: 1,
-    borderColor: "#2A2A32",
+    borderColor: colors.glassBorder,
     alignItems: "center",
     justifyContent: "center",
   },
 
-  inputBar: { paddingHorizontal: space.lg, paddingTop: space.sm, backgroundColor: colors.bg },
+  inputBar: { paddingHorizontal: space.lg, paddingTop: space.sm, backgroundColor: colors.glassBar },
   pill: {
     flexDirection: "row-reverse",
     alignItems: "flex-end",
@@ -263,5 +263,5 @@ const styles = StyleSheet.create({
   },
   attachBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: SOFT },
   input: { flex: 1, maxHeight: 120, color: colors.text, fontSize: 15, lineHeight: 22, paddingHorizontal: space.sm, paddingTop: 9, paddingBottom: 9 },
-  sendBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
+  sendBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },
 }); 

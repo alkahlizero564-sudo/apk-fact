@@ -4,7 +4,7 @@ import { Alert, View, Text, StyleSheet, Pressable, ScrollView, KeyboardAvoidingV
 import { setRefPics, getRefPics, RefPic, pickRefPics, MAX_PICS } from "../services/attachment";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "../components/icons";
 import { Button, Card, Chip, Field, IconButton, ListRow, Timeline, Banner, Sheet, useSteps } from "../components/ui";
 import { AppAvatar, LANG_ICONS } from "../components/appVisuals";
 import { LANGS, PAIR_LANGS, Lang } from "../services/langs";
@@ -24,8 +24,8 @@ import { loadDraft as loadWork, clearDraft as clearWork, useAutoSave } from "../
 import { colors, langColors, space, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
 
-const CARD = "#111114";
-const SOFT = "#1B1B20";
+const CARD = colors.glass;
+const SOFT = colors.glassStrong;
 
 const EXAMPLES = [
   { label: "مطعم وطلبات", text: "مطعم: الزبون يتصفح المنيو ويطلب ويتابع حالة طلبه، والإدارة تستقبل الطلبات وتغيّر حالتها (جديد، قيد التحضير، في الطريق، تم التسليم) وتدير المنيو والأسعار." },
@@ -294,7 +294,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
                   <Text style={styles.pairRole}>{r === "customer" ? "تطبيق الزبون" : "تطبيق الإدارة"}</Text>
                 </View>
               ))}
-              <Ionicons name="swap-horizontal" size={22} color="#FFFFFF" style={styles.link} />
+              <Ionicons name="swap-horizontal" size={22} color={colors.accent} style={styles.link} />
             </Card>
             <Card>
               <Timeline steps={steps} />
@@ -453,7 +453,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
 
             <Pressable onPress={() => setOwnerState(null)} accessibilityRole="button">
               <Text style={styles.namesHint}>
-                {owner?.kind === "client" ? `للزبون: ${owner.name}` : "لي (الأساسي)"} · <Text style={{ color: "#FFFFFF", fontWeight: "700" }}>تغيير</Text>
+                {owner?.kind === "client" ? `للزبون: ${owner.name}` : "لي (الأساسي)"} · <Text style={{ color: colors.accent, fontWeight: "700" }}>تغيير</Text>
               </Text>
             </Pressable>
             <Text style={styles.label}>قاعدة البيانات</Text>
@@ -476,7 +476,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
               accessibilityRole="switch"
               accessibilityState={{ checked: usePush, disabled: lang === "python" }}
             >
-              <Ionicons name={usePush ? "toggle" : "toggle-outline"} size={34} color={usePush ? "#FFFFFF" : colors.textMuted} />
+              <Ionicons name={usePush ? "toggle" : "toggle-outline"} size={34} color={usePush ? colors.accent : colors.textMuted} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.toggleTitle}>إشعارات حتى والتطبيق مقفول</Text>
                 <Text style={styles.toggleSub}>طلب جديد يوصل للإدارة، وتغيير الحالة يوصل للزبون (Firebase)</Text>
@@ -548,7 +548,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
               <Ionicons
                 name={method === m ? "radio-button-on" : "radio-button-off"}
                 size={20}
-                color={method === m ? "#FFFFFF" : colors.textMuted}
+                color={method === m ? colors.accent : colors.textMuted}
               />
               <Text style={styles.choiceText}>{LOGIN_LABELS[m]}</Text>
             </Pressable>
@@ -629,9 +629,9 @@ const styles = StyleSheet.create({
   top: { paddingHorizontal: space.lg, paddingBottom: space.md },
   topRow: { flexDirection: "row-reverse", alignItems: "center", gap: space.md },
   title: { color: colors.text, fontSize: 28, fontWeight: "700", textAlign: "right" },
-  subtitle: { ...type.hint, color: "#8A8A94", textAlign: "right", marginTop: 2 },
+  subtitle: { ...type.hint, color: colors.textMuted, textAlign: "right", marginTop: 2 },
   body: { paddingHorizontal: space.lg, paddingBottom: 60, gap: space.md },
-  label: { ...type.label, color: "#C9C9D1", textAlign: "right" },
+  label: { ...type.label, color: colors.softText, textAlign: "right" },
 
   langs: { flexDirection: "row-reverse", gap: space.sm },
   lang: {
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     backgroundColor: SOFT,
     borderWidth: 1,
-    borderColor: "#2A2A32",
+    borderColor: colors.glassBorder,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -669,7 +669,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1.5,
     borderStyle: "dashed",
-    borderColor: "#2A2A32",
+    borderColor: colors.glassBorder,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -683,12 +683,12 @@ const styles = StyleSheet.create({
     backgroundColor: CARD,
   },
   toggleTitle: { fontSize: 15, fontWeight: "700", color: colors.text, textAlign: "right" },
-  toggleSub: { ...type.hint, color: "#8A8A94", textAlign: "right" },
+  toggleSub: { ...type.hint, color: colors.textMuted, textAlign: "right" },
 
   pairCard: { flexDirection: "row-reverse", justifyContent: "space-around", alignItems: "center" },
   pairItem: { alignItems: "center", gap: 6, flex: 1 },
   pairName: { fontWeight: "700", color: colors.text },
-  pairRole: { ...type.hint, color: "#8A8A94" },
+  pairRole: { ...type.hint, color: colors.textMuted },
   link: { position: "absolute", alignSelf: "center", left: "47%" },
   row: { flexDirection: "row-reverse", gap: space.md },
 
@@ -697,10 +697,10 @@ const styles = StyleSheet.create({
     gap: space.md,
     paddingHorizontal: space.lg,
     paddingTop: space.md,
-    backgroundColor: colors.bg,
+    backgroundColor: colors.glassBar,
   },
   names: { gap: 0 },
-  namesHint: { fontSize: 12, color: "#8A8A94", textAlign: "right", marginTop: -space.sm, marginBottom: space.lg },
+  namesHint: { fontSize: 12, color: colors.textMuted, textAlign: "right", marginTop: -space.sm, marginBottom: space.lg },
 
   choice: {
     flexDirection: "row-reverse",
@@ -712,7 +712,7 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
     backgroundColor: SOFT,
   },
-  choiceOn: { borderColor: "#FFFFFF" },
+  choiceOn: { borderColor: colors.primary },
   choiceText: { ...type.body, color: colors.text, textAlign: "right", flex: 1 },
   sheetText: { ...type.body, color: colors.textMuted, textAlign: "right", marginBottom: space.md },
 });

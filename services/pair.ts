@@ -3,7 +3,7 @@
 import * as SecureStore from "expo-secure-store";
 import { githubApi, latestRunId, listWorkflowRuns, getFailureLog, triggerWorkflow, getFileText } from "./github";
 import { REPO } from "./config";
-import { runSql } from "./supabase";
+import { runSql, smtpSender } from "./supabase";
 import { listProjects, secretName, tokenFor } from "./projects";
 import { setRepoSecret, setRepoVariable } from "./repoSecrets";
 import type { Lang } from "./langs";
@@ -82,7 +82,7 @@ async function syncSecrets(push: boolean, supabaseRef?: string) {
         port: (await get("SMTP_PORT")) || "587",
         user: await get("SMTP_USER"),
         pass: await get("SMTP_PASS"),
-        from: (await get("SMTP_FROM")) || (await get("SMTP_USER")),
+        from: smtpSender(await get("SMTP_FROM"), await get("SMTP_USER")),
         name: "APK Fact",
       })
     );

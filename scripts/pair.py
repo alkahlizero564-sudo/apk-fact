@@ -258,12 +258,36 @@ def cmd_auth(a):
     print("Sign-in is on: " + ", ".join(f"{r} {m}" for r, m in login.items()), flush=True)
 
 
+# Logins of mail relays are not mailboxes: Brevo's SMTP login looks like "abc123@smtp-brevo.com", SendGrid's is
+# "apikey". Used as the sender, the relay accepts the login but drops or refuses every code email.
+RELAY_LOGIN_DOMAINS = ("smtp-brevo.com",)
+
+
+def smtp_sender_problem(sender):
+    """Why this sender address can't send the codes, or "" when it looks like a real mailbox."""
+    sender = (sender or "").strip()
+    if "@" not in sender:
+        return f"the sender «{sender or '(empty)'}» is not an email address"
+    if sender.lower().rsplit("@", 1)[1] in RELAY_LOGIN_DOMAINS:
+        return f"the sender «{sender}» is the mail server's login name, not a real sender address"
+    return ""
+
+
 def check_smtp(smtp):
-    """Logs in to the mail server with the saved SMTP settings (sends nothing). A wrong app password otherwise
-    shows up only when a customer waits for a code that never comes."""
+    """Logs in to the mail server with the saved SMTP settings and asks it whether it would send from the sender
+    address (MAIL FROM / RCPT TO, then RSET: nothing is sent). A wrong app password or an unverified sender
+    otherwise shows up only when a customer waits for a code that never comes."""
     import smtplib
     import ssl
     host, port = smtp["host"], int(smtp.get("port") or 587)
+    user = smtp.get("user", "")
+    sender = (smtp.get("from") or user).strip()
+    fix = ("Set «SMTP: عنوان المرسل» in APK Fact > الإعدادات > Supabase to an email you verified with the mail service "
+           "(Brevo: Senders, Domains & Dedicated IPs > Senders > Add a sender, then confirm the email), save, "
+           "and create the pair again.")
+    problem = smtp_sender_problem(sender)
+    if problem:
+        raise SystemExit(f"The sign-in code emails would never arrive: {problem}. {fix}")
     pwd = str(smtp.get("pass", "")).replace(" ", "") if "gmail" in host else smtp.get("pass", "")
     try:
         if port == 465:
@@ -271,14 +295,29 @@ def check_smtp(smtp):
         else:
             s = smtplib.SMTP(host, port, timeout=30)
             s.starttls(context=ssl.create_default_context())
-        s.login(smtp.get("user", ""), pwd)
-        s.quit()
-        print(f"Mail server OK: {host} accepts the login of {smtp.get('user', '')}", flush=True)
+        s.login(user, pwd)
+        code, msg = s.mail(sender)
+        if code < 400:
+            code, msg = s.rcpt(sender)
+        try:
+            s.rset()
+            s.quit()
+        except smtplib.SMTPException:
+            pass
+        if code >= 400:
+            raise SystemExit(f"The mail server {host} refuses to send from {sender} ({code} "
+                             f"{msg.decode('utf-8', 'replace')[:200]}): the sign-in codes would never arrive. {fix}")
+        print(f"Mail server OK: {host} accepts the login of {user} and sending from {sender}", flush=True)
     except smtplib.SMTPAuthenticationError as e:
         raise SystemExit(
             f"The mail server {host} refused the SMTP login ({e.smtp_code}): the email codes would never arrive. "
             "For Gmail use an App Password (Google account > Security > 2-Step Verification > App passwords), "
             "then save it in APK Fact > الإعدادات > Supabase > SMTP and create the pair again.")
+    except (smtplib.SMTPSenderRefused, smtplib.SMTPRecipientsRefused) as e:
+        raise SystemExit(f"The mail server {host} refuses to send from {sender} ({e}): the sign-in codes would "
+                         f"never arrive. {fix}")
+    except SystemExit:
+        raise
     except Exception as e:  # network errors: do not block, but say it
         print(f"::warning::Could not check the mail server {host}:{port} ({e})", flush=True)
 

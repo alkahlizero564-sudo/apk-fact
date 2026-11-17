@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Alert, Image, Linking, Share, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Alert, Image, Linking, Share, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import {
@@ -15,6 +15,7 @@ import {
   useSteps,
 } from "../components/ui";
 import { AppAvatar, LANG_ICONS, LangBadge } from "../components/appVisuals";
+import { Ionicons } from "../components/icons";
 import {
   generateApp,
   makeAiPreview,
@@ -41,7 +42,8 @@ import { saveToVault, vaultStatus, listVaultApps, VaultApp } from "../services/v
 import { LANGS } from "../services/langs";
 import { publishedVersion, PublishedVersion, pairInfo, PairInfo } from "../services/updates";
 import { listAdmins, addAdmin, removeAdmin, AdminAccount, setAdminPin, adminMode, openAdminMode, AdminMode } from "../services/pair";
-import { colors, langColors, space, radius, type } from "../theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { colors, gradient, langColors, space, radius, type } from "../theme";
 import type { RootScreenProps } from "../navigation";
 
 type Op = "edit" | "aiPreview" | "paste" | "build" | "store" | "live";
@@ -438,52 +440,63 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
           <IconButton icon="arrow-forward" label="رجوع" onPress={() => navigation.goBack()} />
         </View>
 
+        {/* Hero: big icon in a gradient ring, name, badges */}
         <View style={styles.hero}>
-          {iconUri ? (
-            <Image source={{ uri: iconUri }} style={styles.icon} />
-          ) : (
-            <AppAvatar name={name} lang={lang} size={92} />
-          )}
+          <LinearGradient colors={gradient as unknown as string[]} start={{ x: 1, y: 0 }} end={{ x: 0, y: 1 }} style={styles.ring}>
+            <View style={styles.ringInner}>
+              {iconUri ? <Image source={{ uri: iconUri }} style={styles.icon} /> : <AppAvatar name={name} lang={lang} size={96} />}
+            </View>
+          </LinearGradient>
           <Text style={styles.name}>{label || name}</Text>
           <View style={styles.badgeRow}>
             <LangBadge lang={lang} />
+            {published ? (
+              <View style={styles.verBadge}>
+                <Text style={styles.verText}>v{published.versionName ?? published.version}</Text>
+              </View>
+            ) : null}
           </View>
           {client ? <Text style={styles.client}>للزبون: {client}</Text> : null}
           <Text style={styles.path}>{label ? `${name} · ` : ""}apps/{name}</Text>
         </View>
 
+        {/* Main actions: four round buttons */}
         <View style={styles.actions}>
-          <Button title="معاينة" icon="eye-outline" variant="secondary" onPress={() => navigation.navigate("Preview", { name })} style={{ flex: 1 }} />
-          <Button title="ابنِ وثبّت" icon="download-outline" onPress={startBuild} disabled={running} style={{ flex: 1 }} />
+          {[
+            { key: "preview", label: "معاينة", icon: "eye" as const, onPress: () => navigation.navigate("Preview", { name }) },
+            { key: "build", label: "ابنِ وثبّت", icon: "download" as const, onPress: startBuild, primary: true },
+            { key: "live", label: "رابط حيّ", icon: "link" as const, onPress: startPublishLive },
+            { key: "update", label: "تحديث", icon: "cloud-upload" as const, onPress: () => navigation.navigate("Update", { name, lang }) },
+          ].map((a) => {
+            const off = running && a.key !== "preview" && a.key !== "update";
+            return (
+              <Pressable
+                key={a.key}
+                onPress={a.onPress}
+                disabled={off}
+                style={({ pressed }) => [styles.action, off && { opacity: 0.4 }, pressed && { transform: [{ scale: 0.94 }] }]}
+                accessibilityRole="button"
+                accessibilityLabel={a.label}
+              >
+                <View style={[styles.actionCircle, a.primary && styles.actionPrimary]}>
+                  {a.primary ? (
+                    <LinearGradient colors={gradient as unknown as string[]} start={{ x: 1, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
+                  ) : null}
+                  <Ionicons name={a.icon} size={24} color={a.primary ? colors.primaryText : colors.text} />
+                </View>
+                <Text style={styles.actionLabel}>{a.label}</Text>
+              </Pressable>
+            );
+          })}
         </View>
-        <Button
-          title="انشر رابطاً حيّاً (بلا تثبيت)"
-          icon="link-outline"
-          variant="secondary"
-          onPress={startPublishLive}
-          disabled={running}
-          style={{ marginTop: space.sm }}
-        />
         {result?.kind === "ok" && op === "live" && liveUrl ? (
-          <View style={[styles.actions, { marginTop: space.sm }]}>
+          <View style={[styles.liveRow, { marginTop: space.lg }]}>
             <Button title="افتح الرابط" icon="open-outline" onPress={() => Linking.openURL(liveUrl)} style={{ flex: 1 }} />
             <Button title="شارك الرابط" icon="share-social-outline" variant="secondary" onPress={() => Share.share({ message: liveUrl })} style={{ flex: 1 }} />
           </View>
         ) : null}
-
         <View style={{ height: space.xl }} />
 
-        <Group>
-          <ListRow
-            icon="cloud-upload-outline"
-            tint={colors.accent}
-            title="تحديث التطبيق"
-            subtitle="غيّر، احذف، أضف بالذكاء الاصطناعي مع معاينة فورية، والتطبيق المثبّت يجيه إشعار بالتحديث"
-            value={published ? `v${published.versionName ?? published.version}` : undefined}
-            onPress={() => navigation.navigate("Update", { name, lang })}
-            last
-          />
-        </Group>
 
         <Group title="تطوير">
           <ListRow
@@ -867,12 +880,21 @@ export default function AppDetailScreen({ navigation, route }: RootScreenProps<"
 const styles = StyleSheet.create({
   topBar: { flexDirection: "row-reverse", marginBottom: space.md },
   hero: { alignItems: "center", gap: 8, marginBottom: space.xl },
-  icon: { width: 92, height: 92, borderRadius: 30 },
-  name: { fontSize: 26, fontWeight: "700", color: colors.text, textAlign: "center", marginTop: space.sm },
-  badgeRow: { flexDirection: "row", justifyContent: "center" },
+  ring: { width: 124, height: 124, borderRadius: 62, padding: 3, shadowColor: colors.glow, shadowOpacity: 0.7, shadowRadius: 24, elevation: 14 },
+  ringInner: { flex: 1, borderRadius: 60, backgroundColor: colors.base, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  icon: { width: 96, height: 96, borderRadius: 30 },
+  name: { fontSize: 26, fontWeight: "800", color: colors.text, textAlign: "center", marginTop: space.sm },
+  badgeRow: { flexDirection: "row-reverse", justifyContent: "center", gap: 6 },
+  verBadge: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999, backgroundColor: colors.okBg, borderWidth: 1, borderColor: colors.okText + "66" },
+  verText: { color: colors.okText, fontSize: 11, fontWeight: "800" },
   client: { fontSize: 13, color: colors.accent, textAlign: "center", fontWeight: "600" },
   path: { fontSize: 12, color: colors.faint, textAlign: "center", fontFamily: "monospace" },
-  actions: { flexDirection: "row-reverse", gap: space.md },
+  actions: { flexDirection: "row-reverse", justifyContent: "space-between", backgroundColor: colors.glass, borderRadius: 26, borderWidth: 1, borderColor: colors.glassBorder, paddingVertical: space.lg, paddingHorizontal: space.sm },
+  action: { flex: 1, alignItems: "center", gap: 8 },
+  actionCircle: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", overflow: "hidden", backgroundColor: colors.glassStrong, borderWidth: 1, borderColor: colors.glassBorder },
+  actionPrimary: { borderColor: "rgba(255,255,255,0.25)", shadowColor: colors.glow, shadowOpacity: 0.8, shadowRadius: 14, elevation: 12 },
+  actionLabel: { color: colors.softText, fontSize: 12.5, fontWeight: "700" },
+  liveRow: { flexDirection: "row-reverse", gap: space.md },
 
   groupWrap: { marginBottom: space.xl },
   groupLabel: { color: colors.textMuted, fontSize: 13, fontWeight: "600", textAlign: "right", marginBottom: space.sm, marginRight: space.sm },

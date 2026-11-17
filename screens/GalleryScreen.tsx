@@ -6,7 +6,7 @@ import { View, Text, StyleSheet, FlatList, Pressable, TextInput, ScrollView } fr
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "../components/icons";
 import { colors, space } from "../theme";
-import { IconButton } from "../components/ui";
+import { IconButton, RtlRow } from "../components/ui";
 import { buildGallery, galleryTemplate, galleryPairStart, CATEGORIES, PAIR_CATEGORIES, GALLERY_COUNT, PAIR_GALLERY_COUNT, GalleryItem } from "../services/gallery";
 import { setGalleryPick, setGalleryPairPick, GALLERY_PICK } from "../services/galleryPick";
 import type { RootScreenProps } from "../navigation";
@@ -81,13 +81,13 @@ export default function GalleryScreen({ navigation }: RootScreenProps<"Gallery">
         ) : null}
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <RtlRow contentContainerStyle={styles.chips}>
         {chips.map((c) => (
           <Pressable key={c.key} onPress={() => setCategory(c.key)} style={[styles.chip, category === c.key && styles.chipOn]}>
             <Text style={[styles.chipText, category === c.key && styles.chipTextOn]}>{c.title}</Text>
           </Pressable>
         ))}
-      </ScrollView>
+      </RtlRow>
     </View>
   );
 

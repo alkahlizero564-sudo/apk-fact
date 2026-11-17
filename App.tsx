@@ -20,7 +20,7 @@ import ChatScreen from "./screens/ChatScreen";
 import GalleryScreen from "./screens/GalleryScreen";
 import PairScreen from "./screens/PairScreen";
 import UpdateScreen from "./screens/UpdateScreen";
-import { colors, gradient } from "./theme";
+import { colors, gradient, space } from "./theme";
 import ErrorBoundary from "./components/ErrorBoundary";
 import type { RootStackParamList } from "./navigation";
 
@@ -68,53 +68,67 @@ const navTheme = {
 
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
-const TABS: Record<string, { label: string; on: IconName; off: IconName }> = {
-  Home: { label: "الرئيسية", on: "home", off: "home-outline" },
-  Apps: { label: "تطبيقاتي", on: "apps", off: "apps-outline" },
-  Settings: { label: "الإعدادات", on: "settings", off: "settings-outline" },
-};
+// Dock slots, right to left. A slot is a tab of this navigator, or (Gallery) a screen pushed on the root stack.
+const DOCK: { key: string; label: string; icon: IconName; tab?: string; push?: keyof RootStackParamList }[] = [
+  { key: "Home", label: "الرئيسية", icon: "home", tab: "Home" },
+  { key: "Apps", label: "تطبيقاتي", icon: "apps", tab: "Apps" },
+  { key: "new", label: "", icon: "add" },
+  { key: "Gallery", label: "المعرض", icon: "color-palette", push: "Gallery" },
+  { key: "Settings", label: "الإعدادات", icon: "settings", tab: "Settings" },
+];
 
-/** Floating pill tab bar, right-to-left: the active tab is a white pill with its label, plus a "new app" button. */
+/** Bottom dock: a full-width glass bar with four labelled slots and a raised gradient "new app" button in the middle. */
 function TabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const items = state.routes.map((route, index) => {
-    const focused = state.index === index;
-    const t = TABS[route.name];
-    return (
-      <Pressable
-        key={route.key}
-        onPress={() => {
-          const e = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
-          if (!focused && !e.defaultPrevented) navigation.navigate(route.name);
-        }}
-        style={[styles.tab, focused && styles.tabOn]}
-        accessibilityRole="tab"
-        accessibilityState={{ selected: focused }}
-        accessibilityLabel={t.label}
-      >
-        {focused ? (
-          <LinearGradient colors={gradient as unknown as string[]} start={{ x: 1, y: 0 }} end={{ x: 0, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 999 }]} />
-        ) : null}
-        <Ionicons name={focused ? t.on : t.off} size={20} color={focused ? colors.primaryText : colors.textMuted} />
-        {focused ? <Text style={styles.tabLabel}>{t.label}</Text> : null}
-      </Pressable>
-    );
-  });
-  const plus = (
-    <Pressable
-      key="new"
-      onPress={() => navigation.getParent()?.navigate("Create")}
-      style={({ pressed }) => [styles.plus, pressed && { transform: [{ scale: 0.93 }] }]}
-      accessibilityRole="button"
-      accessibilityLabel="تطبيق جديد"
-    >
-      <LinearGradient colors={gradient as unknown as string[]} start={{ x: 1, y: 0 }} end={{ x: 0, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 999 }]} />
-      <Ionicons name="add" size={26} color={colors.primaryText} />
-    </Pressable>
-  );
+  const current = state.routes[state.index]?.name;
   return (
-    <View style={[styles.barWrap, { paddingBottom: Math.max(insets.bottom, 12) }]} pointerEvents="box-none">
-      <View style={styles.bar}>{[...items, plus]}</View>
+    <View style={styles.dockWrap} pointerEvents="box-none">
+      <View style={[styles.dock, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+        {DOCK.map((d) => {
+          if (d.key === "new") {
+            return (
+              <View key="new" style={styles.slot} pointerEvents="box-none">
+                <Pressable
+                  onPress={() => navigation.getParent()?.navigate("Create")}
+                  style={({ pressed }) => [styles.fab, pressed && { transform: [{ scale: 0.92 }] }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="تطبيق جديد"
+                >
+                  <LinearGradient colors={gradient as unknown as string[]} start={{ x: 1, y: 0 }} end={{ x: 0, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 999 }]} />
+                  <Ionicons name="add" size={32} color={colors.primaryText} />
+                </Pressable>
+              </View>
+            );
+          }
+          const focused = !!d.tab && d.tab === current;
+          return (
+            <Pressable
+              key={d.key}
+              onPress={() => {
+                if (d.push) {
+                  navigation.getParent()?.navigate(d.push as never);
+                  return;
+                }
+                const route = state.routes.find((r) => r.name === d.tab)!;
+                const e = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
+                if (!focused && !e.defaultPrevented) navigation.navigate(d.tab!);
+              }}
+              style={styles.slot}
+              accessibilityRole={d.tab ? "tab" : "button"}
+              accessibilityState={{ selected: focused }}
+              accessibilityLabel={d.label}
+            >
+              <View style={[styles.slotIcon, focused && styles.slotIconOn]}>
+                {focused ? (
+                  <LinearGradient colors={gradient as unknown as string[]} start={{ x: 1, y: 0 }} end={{ x: 0, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />
+                ) : null}
+                <Ionicons name={d.icon} size={21} color={focused ? colors.primaryText : colors.textMuted} />
+              </View>
+              <Text style={[styles.slotLabel, focused && styles.slotLabelOn]}>{d.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -159,46 +173,42 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  barWrap: { position: "absolute", left: 0, right: 0, bottom: 0, alignItems: "center" },
-  bar: {
+  dockWrap: { position: "absolute", left: 0, right: 0, bottom: 0 },
+  dock: {
     flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 6,
-    padding: 6,
-    borderRadius: 999,
+    alignItems: "flex-end",
+    paddingTop: 10,
+    paddingHorizontal: space.sm,
     backgroundColor: colors.glassBar,
-    borderWidth: 1,
+    borderTopWidth: 1,
     borderColor: colors.glassBorderStrong,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     shadowColor: colors.glow,
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: -6 },
+    elevation: 20,
+  },
+  slot: { flex: 1, alignItems: "center", gap: 4 },
+  slotIcon: { width: 44, height: 32, borderRadius: 14, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  slotIconOn: { shadowColor: colors.glow, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8 },
+  slotLabel: { fontSize: 11, fontWeight: "700", color: colors.textMuted },
+  slotLabelOn: { color: colors.text },
+  fab: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    marginTop: -34,
+    marginBottom: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    borderWidth: 4,
+    borderColor: colors.base,
+    shadowColor: colors.glow,
+    shadowOpacity: 0.8,
+    shadowRadius: 18,
     elevation: 16,
-  },
-  tab: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    height: 44,
-    minWidth: 46,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    overflow: "hidden",
-  },
-  tabOn: { paddingHorizontal: 18 },
-  tabLabel: { fontSize: 13, fontWeight: "800", color: colors.primaryText },
-  plus: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-    marginRight: 2,
-    shadowColor: colors.glow,
-    shadowOpacity: 0.7,
-    shadowRadius: 14,
-    elevation: 12,
   },
 });

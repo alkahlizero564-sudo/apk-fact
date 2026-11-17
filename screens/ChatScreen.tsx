@@ -5,7 +5,7 @@ import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, KeyboardAvoid
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "../components/icons";
 import { colors, space, type } from "../theme";
-import { Button, IconButton } from "../components/ui";
+import { Button, IconButton, RtlRow } from "../components/ui";
 import { chatReply, extractSpec, stripSpec, ChatMsg, ChatSpec } from "../services/chat";
 import { setRefPics, refImages, RefPic, pickRefPics, MAX_PICS } from "../services/attachment";
 import { generateApp, Report } from "../services/appActions";
@@ -150,7 +150,7 @@ export default function ChatScreen({ navigation }: RootScreenProps<"Chat">) {
         </ScrollView>
 
         {pics.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.picsRow}>
+          <RtlRow contentContainerStyle={styles.picsRow}>
             {pics.map((p, i) => (
               <View key={p.uri + i} style={styles.picWrap}>
                 <Image source={{ uri: p.uri }} style={styles.pic} />
@@ -164,7 +164,7 @@ export default function ChatScreen({ navigation }: RootScreenProps<"Chat">) {
                 </Pressable>
               </View>
             ))}
-          </ScrollView>
+          </RtlRow>
         ) : null}
 
         <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, space.md) }]}>

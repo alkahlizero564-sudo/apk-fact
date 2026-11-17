@@ -108,6 +108,30 @@ export function Section({
   );
 }
 
+/**
+ * A horizontal row for right-to-left content: items are laid out row-reverse, so the FIRST item sits at the right
+ * end of the content. A plain horizontal ScrollView opens at the left (showing the LAST items first); this one
+ * opens at the right end, until the user scrolls it.
+ */
+export function RtlRow({ contentContainerStyle, children }: { contentContainerStyle?: StyleProp<ViewStyle>; children: React.ReactNode }) {
+  const ref = useRef<ScrollView>(null);
+  const touched = useRef(false);
+  return (
+    <ScrollView
+      ref={ref}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={contentContainerStyle}
+      onScrollBeginDrag={() => (touched.current = true)}
+      onContentSizeChange={() => {
+        if (!touched.current) ref.current?.scrollToEnd({ animated: false });
+      }}
+    >
+      {children}
+    </ScrollView>
+  );
+}
+
 /* ---------- Buttons ---------- */
 
 type ButtonProps = {

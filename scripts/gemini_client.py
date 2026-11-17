@@ -1,4 +1,8 @@
+import datetime
+import hashlib
 import json
+import os
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -13,8 +17,15 @@ class GeminiError(Exception):
         self.body = body
 
 
+# The reply is STREAMED (server-sent events): bytes keep arriving while the model writes, so a long generation is
+# never cut off. Without streaming, nothing arrives until the whole file is written, and the 300 s socket timeout
+# killed every reply that took longer (a full Flutter app often does) — then it started again from zero.
+# The timeout now only fires if the server sends nothing at all for this long (e.g. a very long thinking phase).
+STALL_SECONDS = 300
+
+
 def _request(model, prompt, key, temperature, json_mode=True):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse"
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"responseMimeType": "application/json" if json_mode else "text/plain",
@@ -25,18 +36,67 @@ def _request(model, prompt, key, temperature, json_mode=True):
         data=json.dumps(payload).encode("utf-8"),
         headers={"Content-Type": "application/json", "x-goog-api-key": key},
     )
+    out = []
     try:
-        with urllib.request.urlopen(req, timeout=300) as r:
-            data = json.load(r)
+        with urllib.request.urlopen(req, timeout=STALL_SECONDS) as r:
+            for raw in r:  # one "data: {json}" line per chunk
+                line = raw.decode("utf-8", "replace").strip()
+                if not line.startswith("data:"):
+                    continue
+                data = line[5:].strip()
+                if not data or data == "[DONE]":
+                    continue
+                try:
+                    obj = json.loads(data)
+                except ValueError:
+                    continue
+                if "error" in obj:
+                    err = obj["error"]
+                    raise GeminiError(err.get("code", -1) if isinstance(err, dict) else -1, json.dumps(err))
+                for c in (obj.get("candidates") or [])[:1]:
+                    for part in (c.get("content") or {}).get("parts") or []:
+                        if part.get("text") and not part.get("thought"):
+                            out.append(part["text"])
     except urllib.error.HTTPError as e:
         raise GeminiError(e.code, e.read().decode("utf-8", "replace"))
-    except Exception as e:  # timeout or network problem
+    except GeminiError:
+        raise
+    except Exception as e:  # timeout (no bytes for STALL_SECONDS) or network problem
         raise GeminiError(0, str(e))
-    try:
-        parts = data["candidates"][0]["content"]["parts"]
-        return "".join(p.get("text", "") for p in parts)
-    except (KeyError, IndexError):
+    text = "".join(out)
+    if not text:
         raise GeminiError(-1, "empty or blocked response")
+    return text
+
+
+# Keys out of daily quota, bad keys and retired models are remembered for the whole build job (every step and every
+# script of the job share this file), so later calls skip them at once instead of failing on each of them again.
+# Keys are stored only as a short hash; the record expires with the day (quotas reset daily).
+_DEAD_FILE = os.path.join(os.environ.get("RUNNER_TEMP") or tempfile.gettempdir(), "gemini-dead.json")
+
+
+def _kid(key):
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()[:12]
+
+
+def _load_dead():
+    try:
+        with open(_DEAD_FILE, encoding="utf-8") as f:
+            d = json.load(f)
+        if d.get("day") == datetime.date.today().isoformat():
+            return set(d.get("keys", [])), {tuple(x) for x in d.get("pairs", [])}, set(d.get("models", []))
+    except (OSError, ValueError):
+        pass
+    return set(), set(), set()
+
+
+def _save_dead(keys, pairs, models):
+    try:
+        with open(_DEAD_FILE, "w", encoding="utf-8") as f:
+            json.dump({"day": datetime.date.today().isoformat(), "keys": sorted(keys),
+                       "pairs": sorted(list(p) for p in pairs), "models": sorted(models)}, f)
+    except OSError:
+        pass
 
 
 def _classify(e):
@@ -54,18 +114,18 @@ def _classify(e):
 
 def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=5, json_mode=True):
     models = [model] + [m for m in FALLBACK_MODELS if m != model]
-    dead_keys = set()
-    dead_pairs = set()
-    dead_models = set()
+    dead_keys, dead_pairs, dead_models = _load_dead()  # by key hash: {kid}, {(kid, model)}, {model}
     cooldown = {}
     last = "no keys"
+    skipped = 0
     for round_no in range(max_rounds):
         for m in models:
             if m in dead_models:
                 continue
             for n, key in enumerate(keys, start=1):
-                pair = (n, m)
-                if key in dead_keys or pair in dead_pairs or cooldown.get(pair, 0) > time.time():
+                k = _kid(key)
+                if k in dead_keys or (k, m) in dead_pairs or cooldown.get((k, m), 0) > time.time():
+                    skipped += 1
                     continue
                 try:
                     return _request(m, prompt, key, temperature, json_mode)
@@ -74,20 +134,25 @@ def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=5, json_mode=Tr
                     kind = _classify(e)
                     print(f"Gemini [{m}] key #{n} failed ({kind}): {last}", flush=True)
                     if kind == "invalid":
-                        dead_keys.add(key)
+                        dead_keys.add(k)
                     elif kind == "gone":
                         dead_models.add(m)
-                        break
                     elif kind == "quota_day":
-                        dead_pairs.add(pair)
+                        dead_pairs.add((k, m))
                     elif kind == "cooldown":
-                        cooldown[pair] = time.time() + 60
-                    else:
+                        cooldown[(k, m)] = time.time() + 60
+                    if kind in ("invalid", "gone", "quota_day"):
+                        _save_dead(dead_keys, dead_pairs, dead_models)
+                    if kind == "gone":
+                        break
+                    if kind == "retry":
                         break  # model busy or unreachable: go to the next model now
+        if round_no == 0 and skipped:
+            print(f"Skipped {skipped} key/model pair(s) already out of today's quota", flush=True)
         all_dead = all(
-            m in dead_models or k in dead_keys or (n, m) in dead_pairs
+            m in dead_models or _kid(k) in dead_keys or (_kid(k), m) in dead_pairs
             for m in models
-            for n, k in enumerate(keys, start=1)
+            for k in keys
         )
         if all_dead or round_no == max_rounds - 1:
             break

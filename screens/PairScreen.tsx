@@ -1,8 +1,7 @@
 // Two connected apps (customer + admin) on Supabase, with the sign-in the owner wrote in the description, and push notifications.
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, View, Text, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform, Image } from "react-native";
-import * as ImagePicker from "expo-image-picker";
-import { setRefPics, getRefPics, RefPic } from "../services/attachment";
+import { setRefPics, getRefPics, RefPic, pickRefPics, MAX_PICS } from "../services/attachment";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,7 +26,6 @@ import type { RootScreenProps } from "../navigation";
 
 const CARD = "#111114";
 const SOFT = "#1B1B20";
-const MAX_PICS = 5;
 
 const EXAMPLES = [
   { label: "مطعم وطلبات", text: "مطعم: الزبون يتصفح المنيو ويطلب ويتابع حالة طلبه، والإدارة تستقبل الطلبات وتغيّر حالتها (جديد، قيد التحضير، في الطريق، تم التسليم) وتدير المنيو والأسعار." },
@@ -77,22 +75,8 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
   }, [refPics]);
   async function pickReferenceImage() {
     try {
-      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) {
-        Alert.alert("إذن الصور", "نحتاج إذن الوصول للصور لإرفاق صور مرجعية.");
-        return;
-      }
-      const res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.5,
-        base64: true,
-        allowsMultipleSelection: true,
-        selectionLimit: MAX_PICS - refPics.length,
-      });
-      if (res.canceled) return;
-      const added: RefPic[] = (res.assets ?? [])
-        .filter((a) => a.base64)
-        .map((a) => ({ uri: a.uri, image: { data: a.base64!, mime: a.mimeType || "image/jpeg" } }));
+      const added = await pickRefPics(MAX_PICS - refPics.length, refPics);
+      if (!added.length) return;
       setRefPicsState((prev) => [...prev, ...added].slice(0, MAX_PICS));
     } catch (e: any) {
       Alert.alert("تعذّر إرفاق الصور", e?.message ?? "جرّب مرة أخرى");

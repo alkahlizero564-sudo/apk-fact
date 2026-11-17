@@ -4,11 +4,10 @@ import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
 import { colors, space, type } from "../theme";
 import { Button, IconButton } from "../components/ui";
 import { chatReply, extractSpec, stripSpec, ChatMsg, ChatSpec } from "../services/chat";
-import { setRefPics, refImages, RefPic } from "../services/attachment";
+import { setRefPics, refImages, RefPic, pickRefPics, MAX_PICS } from "../services/attachment";
 import { generateApp, Report } from "../services/appActions";
 import { createPair } from "../services/pair";
 import { LANGS } from "../services/langs";
@@ -19,7 +18,6 @@ const GREETING =
 
 const CARD = "#111114";
 const SOFT = "#1B1B20";
-const MAX_PICS = 5;
 
 type Bubble = ChatMsg & { kind?: "status" };
 
@@ -47,22 +45,8 @@ export default function ChatScreen({ navigation }: RootScreenProps<"Chat">) {
 
   async function attachImage() {
     try {
-      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) {
-        Alert.alert("إذن الصور", "نحتاج إذن الوصول للصور لإرفاق صور.");
-        return;
-      }
-      const res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.5,
-        base64: true,
-        allowsMultipleSelection: true,
-        selectionLimit: MAX_PICS - pics.length,
-      });
-      if (res.canceled) return;
-      const added: RefPic[] = (res.assets ?? [])
-        .filter((a) => a.base64)
-        .map((a) => ({ uri: a.uri, image: { data: a.base64!, mime: a.mimeType || "image/jpeg" } }));
+      const added = await pickRefPics(MAX_PICS - pics.length, pics);
+      if (!added.length) return;
       setPics((prev) => [...prev, ...added].slice(0, MAX_PICS));
     } catch (e: any) {
       Alert.alert("تعذّر إرفاق الصور", e?.message ?? "جرّب مرة أخرى");

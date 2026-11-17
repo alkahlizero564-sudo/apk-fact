@@ -3,18 +3,16 @@ import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Image, Alert 
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { AppAvatar } from "../components/appVisuals";
 import { listApps, AppInfo } from "../services/appActions";
 import { TEMPLATES } from "../services/templates";
 import { LANGS } from "../services/langs";
-import { getRefPics, setRefPics, RefPic } from "../services/attachment";
+import { getRefPics, setRefPics, RefPic, pickRefPics, MAX_PICS } from "../services/attachment";
 import { colors, space } from "../theme";
 import type { RootStackParamList } from "../navigation";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
-const MAX_PICS = 5;
 
 export default function HomeScreen() {
   const nav = useNavigation<Nav>();
@@ -41,22 +39,8 @@ export default function HomeScreen() {
 
   async function pickImages() {
     try {
-      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) {
-        Alert.alert("إذن الصور", "نحتاج إذن الوصول للصور لإرفاق صور مرجعية.");
-        return;
-      }
-      const res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.5,
-        base64: true,
-        allowsMultipleSelection: true,
-        selectionLimit: MAX_PICS - pics.length,
-      });
-      if (res.canceled) return;
-      const added: RefPic[] = (res.assets ?? [])
-        .filter((a) => a.base64)
-        .map((a) => ({ uri: a.uri, image: { data: a.base64!, mime: a.mimeType || "image/jpeg" } }));
+      const added = await pickRefPics(MAX_PICS - pics.length, pics);
+      if (!added.length) return;
       updatePics([...pics, ...added].slice(0, MAX_PICS));
     } catch (e: any) {
       Alert.alert("تعذّر إرفاق الصور", e?.message ?? "جرّب مرة أخرى");

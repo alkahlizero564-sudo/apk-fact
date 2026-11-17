@@ -110,6 +110,23 @@ export async function testEmailCode(email: string): Promise<EmailCodeTest> {
  * so changing the sender account does not need the apps to be created again. Returns the host, or null
  * when no SMTP is set.
  */
+// Logins of mail relays are not mailboxes: Brevo's SMTP login looks like "abc123@smtp-brevo.com", SendGrid's is
+// "apikey". Used as the sender, the relay accepts the login but drops or refuses every code email.
+const RELAY_LOGIN_DOMAINS = ["smtp-brevo.com"];
+
+/** The sender address for the code emails; throws a clear message when it can't be one. */
+export function smtpSender(from: string, user: string): string {
+  const sender = (from || user).trim();
+  const domain = sender.includes("@") ? sender.split("@").pop()!.toLowerCase() : "";
+  if (!domain || RELAY_LOGIN_DOMAINS.includes(domain)) {
+    throw new Error(
+      `«${sender || "فارغ"}» مش عنوان مرسل، ده اسم الدخول لخادم البريد — رسائل الرمز ما بتوصل منه. ` +
+        "اكتب في «SMTP: عنوان المرسل» بريدك الذي وثّقته في Brevo (Senders، Domains & Dedicated IPs ← Senders ← Add a sender، ثم أكّد من رسالة البريد)."
+    );
+  }
+  return sender;
+}
+
 export async function applySmtpSettings(): Promise<string | null> {
   const get = async (k: string) => ((await SecureStore.getItemAsync(k)) ?? "").trim();
   const host = await get("SMTP_HOST");
@@ -122,7 +139,7 @@ export async function applySmtpSettings(): Promise<string | null> {
     smtp_user: user,
     // Gmail shows app passwords in groups of 4 ("abcd efgh ..."); the spaces are not part of it.
     smtp_pass: /gmail/i.test(host) ? rawPass.replace(/\s+/g, "") : rawPass,
-    smtp_admin_email: (await get("SMTP_FROM")) || user,
+    smtp_admin_email: smtpSender(await get("SMTP_FROM"), user),
     smtp_sender_name: "APK Fact",
     rate_limit_email_sent: 100,
   };

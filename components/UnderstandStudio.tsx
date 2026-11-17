@@ -5,7 +5,7 @@ import { refImages } from "../services/attachment";
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "./icons";
 import { Button, Card, Chip, Field, Banner, IconButton } from "./ui";
 import { Spec, ListKey, LIST_TITLES, understandIdea, refineSpec, permLabel, IdeaTarget } from "../services/understand";
 import { colors, space, radius, type } from "../theme";

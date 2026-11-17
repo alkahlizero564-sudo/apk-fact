@@ -5,7 +5,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Modal, ActivityIndicator, Pressable } from "react-native";
 import { WebView } from "react-native-webview";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "./icons";
+import Backdrop from "./Backdrop";
 import { Button, Chip, Field, Banner, IconButton } from "./ui";
 import { DesignTarget, designApp, reviseDesign, loadDraft, saveDraft } from "../services/design";
 import { colors, space, radius, type } from "../theme";
@@ -230,6 +231,7 @@ export default function DesignStudio({ targets, onChange, onBusy }: Props) {
 
       <Modal visible={full} animationType="slide" onRequestClose={() => setFull(false)}>
         <View style={[styles.fullRoot, { paddingTop: insets.top }]}>
+          <Backdrop />
           <View style={styles.fullBar}>
             <IconButton icon="close" label="إغلاق" onPress={() => setFull(false)} />
             <Text style={styles.fullTitle}>{target?.label}</Text>
@@ -282,7 +284,7 @@ const styles = StyleSheet.create({
   redoText: { color: colors.infoText, fontWeight: "800", fontSize: 13 },
   version: { flex: 1, textAlign: "left", color: colors.textMuted, fontSize: 12 },
   chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: space.sm, marginTop: space.sm, marginBottom: space.md },
-  fullRoot: { flex: 1, backgroundColor: colors.bg },
+  fullRoot: { flex: 1, backgroundColor: colors.base },
   fullBar: { flexDirection: "row-reverse", alignItems: "center", gap: space.md, padding: space.md },
   fullTitle: { ...type.label, color: colors.text, flex: 1, textAlign: "right" },
 });

@@ -3,7 +3,7 @@
 // client's name, kept with the app (apps/<app>/client.txt).
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "./icons";
 import { Sheet, Button, Chip, Field } from "./ui";
 import DbProjectsPanel from "./DbProjectsPanel";
 import { listProjects, DbProject } from "../services/projects";

@@ -16,16 +16,17 @@ import {
   Easing,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { colors, space, radius, type } from "../theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "./icons";
+import { colors, gradient, space, radius, type } from "../theme";
 
 export type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
-// Midnight Black look: flat dark cards, no heavy borders, a white primary action.
-const CARD = "#111114";
-const SOFT = "#1B1B20";
-const HAIR = "#1C1C22";
-const SOFT_TEXT = "#C9C9D1";
+// Glass Gradient look: frosted translucent cards with a thin light edge, glowing gradient primary actions.
+const CARD = colors.glass;
+const SOFT = colors.glassStrong;
+const HAIR = colors.glassBorder;
+const SOFT_TEXT = colors.softText;
 
 /* ---------- Layout ---------- */
 
@@ -121,7 +122,7 @@ type ButtonProps = {
 
 export function Button({ title, onPress, variant = "primary", icon, loading, disabled, style }: ButtonProps) {
   const inactive = !!(disabled || loading);
-  const fg = variant === "primary" ? "#000000" : variant === "danger" ? colors.errorText : colors.text;
+  const fg = variant === "primary" ? colors.primaryText : variant === "danger" ? colors.errorText : colors.text;
   return (
     <Pressable
       accessibilityRole="button"
@@ -130,6 +131,7 @@ export function Button({ title, onPress, variant = "primary", icon, loading, dis
       disabled={inactive}
       style={({ pressed }) => [
         styles.button,
+        variant === "primary" && styles.buttonPrimary,
         variant === "secondary" && styles.buttonSecondary,
         variant === "ghost" && styles.buttonGhost,
         variant === "danger" && styles.buttonDanger,
@@ -138,6 +140,9 @@ export function Button({ title, onPress, variant = "primary", icon, loading, dis
         style,
       ]}
     >
+      {variant === "primary" ? (
+        <LinearGradient colors={gradient as unknown as string[]} start={{ x: 1, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
+      ) : null}
       {loading ? (
         <ActivityIndicator color={fg} />
       ) : (
@@ -223,7 +228,7 @@ export function Field({ label, icon, helper, error, ltr, secret, counter, right,
           {...input}
           multiline={multiline}
           secureTextEntry={secret && !revealed}
-          placeholderTextColor="#6B6B75"
+          placeholderTextColor={colors.faint}
           onFocus={(e) => {
             setFocused(true);
             input.onFocus?.(e);
@@ -269,7 +274,7 @@ export function Chip({
   icon,
   selected,
   onPress,
-  tint = "#FFFFFF",
+  tint = colors.primary,
 }: {
   label: string;
   icon?: IconName;
@@ -284,7 +289,7 @@ export function Chip({
       accessibilityState={{ selected: !!selected }}
       style={({ pressed }) => [
         styles.chip,
-        selected && { backgroundColor: tint + "26", borderColor: tint + "99" },
+        selected && { backgroundColor: tint + "33", borderColor: tint },
         pressed && { opacity: 0.8 },
       ]}
     >
@@ -315,7 +320,7 @@ export function Segmented<T extends string>({
             accessibilityState={{ selected: active }}
             style={[styles.segment, active && styles.segmentActive]}
           >
-            <Text style={[styles.segmentText, active && { color: "#000000" }]}>{o.label}</Text>
+            <Text style={[styles.segmentText, active && { color: colors.primaryText }]}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -360,7 +365,7 @@ export function ListRow({
     >
       {leading ??
         (icon ? (
-          <View style={[styles.rowIcon, { backgroundColor: color + "1F" }]}>
+          <View style={[styles.rowIcon, { backgroundColor: color + "26", borderColor: color + "55" }]}>
             <Ionicons name={icon} size={18} color={color} />
           </View>
         ) : null)}
@@ -376,7 +381,7 @@ export function ListRow({
       </View>
       {value ? <Text style={styles.rowValue}>{value}</Text> : null}
       {right}
-      {onPress && chevron ? <Ionicons name="chevron-back" size={18} color="#6B6B75" /> : null}
+      {onPress && chevron ? <Ionicons name="chevron-back" size={18} color={colors.faint} /> : null}
     </Pressable>
   );
 }
@@ -403,9 +408,9 @@ export function EmptyState({
 }) {
   return (
     <View style={styles.empty}>
-      <View style={styles.emptyIcon}>
-        <Ionicons name={icon} size={30} color={SOFT_TEXT} />
-      </View>
+      <LinearGradient colors={gradient as unknown as string[]} start={{ x: 1, y: 0 }} end={{ x: 0, y: 1 }} style={styles.emptyIcon}>
+        <Ionicons name={icon} size={30} color={colors.primaryText} />
+      </LinearGradient>
       <Text style={styles.emptyTitle}>{title}</Text>
       {text ? <Text style={styles.emptyText}>{text}</Text> : null}
       {action}
@@ -417,7 +422,7 @@ export function EmptyState({
 
 export function Banner({ kind, text }: { kind: "info" | "ok" | "error"; text: string }) {
   const map = {
-    info: { bg: SOFT, fg: SOFT_TEXT, icon: "information-circle" as IconName },
+    info: { bg: colors.infoBg, fg: colors.infoText, icon: "information-circle" as IconName },
     ok: { bg: colors.okBg, fg: colors.okText, icon: "checkmark-circle" as IconName },
     error: { bg: colors.errorBg, fg: colors.errorText, icon: "alert-circle" as IconName },
   }[kind];
@@ -452,8 +457,8 @@ export function Timeline({ steps }: { steps: TimelineStep[] }) {
             : st.state === "error"
             ? colors.errorText
             : st.state === "active"
-            ? "#FFFFFF"
-            : "#4A4A54";
+            ? colors.accent
+            : colors.faint;
         return (
           <View key={st.key} style={styles.step}>
             <View style={{ flex: 1, paddingBottom: last ? 0 : space.lg }}>
@@ -466,7 +471,7 @@ export function Timeline({ steps }: { steps: TimelineStep[] }) {
                 {st.state === "active" ? (
                   <ActivityIndicator size="small" color={color} />
                 ) : st.state === "done" ? (
-                  <Ionicons name="checkmark" size={14} color={colors.bg} />
+                  <Ionicons name="checkmark" size={14} color={colors.base} />
                 ) : st.state === "error" ? (
                   <Ionicons name="close" size={14} color={color} />
                 ) : null}
@@ -500,7 +505,7 @@ export function Stepper({ steps, current }: { steps: string[]; current: number }
             <View
               style={[
                 styles.stepperBar,
-                (done || active) && { backgroundColor: active ? "#FFFFFF" : colors.okText },
+                (done || active) && { backgroundColor: active ? colors.accent : colors.okText },
               ]}
             />
             <Text style={[styles.stepperLabel, (done || active) && { color: colors.text }]} numberOfLines={1}>
@@ -604,12 +609,14 @@ const styles = StyleSheet.create({
   screenContent: { paddingHorizontal: space.lg, paddingBottom: 140 },
   header: { paddingBottom: space.xl },
   headerRow: { flexDirection: "row-reverse", alignItems: "center", gap: space.sm },
-  headerTitle: { ...type.screenTitle, fontSize: 30, fontWeight: "700", color: colors.text, textAlign: "right" },
+  headerTitle: { ...type.screenTitle, fontSize: 30, fontWeight: "800", color: colors.text, textAlign: "right", letterSpacing: 0.2 },
   headerSubtitle: { ...type.body, color: colors.textMuted, marginTop: 4, textAlign: "right" },
 
   card: {
     backgroundColor: CARD,
-    borderRadius: 24,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: HAIR,
     padding: space.lg,
   },
   sectionHead: {
@@ -618,7 +625,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: space.md,
   },
-  sectionTitle: { ...type.sectionTitle, fontSize: 17, fontWeight: "700", color: colors.text, textAlign: "right" },
+  sectionTitle: { ...type.sectionTitle, fontSize: 17, color: colors.text, textAlign: "right" },
 
   button: {
     minHeight: 54,
@@ -627,13 +634,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: SOFT,
+    borderWidth: 1,
+    borderColor: HAIR,
+  },
+  buttonPrimary: {
+    backgroundColor: colors.primary,
+    borderColor: "rgba(255,255,255,0.22)",
+    shadowColor: colors.glow,
+    shadowOpacity: 0.55,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 10,
   },
   buttonSecondary: { backgroundColor: SOFT },
-  buttonGhost: { backgroundColor: "transparent" },
-  buttonDanger: { backgroundColor: colors.errorBg },
+  buttonGhost: { backgroundColor: "transparent", borderColor: "transparent" },
+  buttonDanger: { backgroundColor: colors.errorBg, borderColor: colors.errorText + "55" },
   buttonInner: { flexDirection: "row-reverse", alignItems: "center", gap: space.sm },
-  buttonText: { fontSize: 15, fontWeight: "700" },
+  buttonText: { fontSize: 15, fontWeight: "800", letterSpacing: 0.2 },
 
   iconButton: {
     width: 42,
@@ -641,7 +659,9 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#16161A",
+    backgroundColor: CARD,
+    borderWidth: 1,
+    borderColor: HAIR,
   },
 
   fieldLabelRow: { flexDirection: "row-reverse", justifyContent: "space-between", marginBottom: space.sm },
@@ -653,13 +673,13 @@ const styles = StyleSheet.create({
     gap: space.sm,
     minHeight: 54,
     paddingHorizontal: space.lg,
-    borderRadius: 20,
-    backgroundColor: CARD,
-    borderWidth: 1.5,
-    borderColor: "transparent",
+    borderRadius: radius.field,
+    backgroundColor: colors.field,
+    borderWidth: 1,
+    borderColor: HAIR,
   },
   fieldBoxMulti: { alignItems: "flex-start", paddingVertical: space.md },
-  fieldFocused: { borderColor: "#3A3A44" },
+  fieldFocused: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
   fieldError: { borderColor: colors.errorText },
   fieldInput: { flex: 1, fontSize: 15, color: colors.text, paddingVertical: space.sm },
   fieldInputMulti: { minHeight: 110, textAlignVertical: "top", paddingVertical: 0 },
@@ -674,7 +694,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "transparent",
+    borderColor: HAIR,
     backgroundColor: CARD,
   },
   chipText: { color: SOFT_TEXT, fontWeight: "600", fontSize: 13 },
@@ -683,10 +703,12 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     backgroundColor: CARD,
     borderRadius: 999,
+    borderWidth: 1,
+    borderColor: HAIR,
     padding: 4,
   },
   segment: { flex: 1, paddingVertical: 10, borderRadius: 999, alignItems: "center" },
-  segmentActive: { backgroundColor: "#FFFFFF" },
+  segmentActive: { backgroundColor: colors.primary, shadowColor: colors.glow, shadowOpacity: 0.5, shadowRadius: 10, elevation: 6 },
   segmentText: { color: colors.textMuted, fontWeight: "600", fontSize: 13 },
 
   row: {
@@ -697,7 +719,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.lg,
   },
   rowDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: HAIR },
-  rowIcon: { width: 38, height: 38, borderRadius: 13, alignItems: "center", justifyContent: "center" },
+  rowIcon: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   rowTitle: { fontSize: 15, fontWeight: "600", color: colors.text, textAlign: "right" },
   rowSubtitle: { fontSize: 12.5, color: colors.textMuted, marginTop: 2, textAlign: "right", lineHeight: 18 },
   rowValue: { fontSize: 13, color: colors.textMuted },
@@ -720,8 +742,8 @@ const styles = StyleSheet.create({
     borderRadius: 34,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: SOFT,
     marginBottom: space.sm,
+    overflow: "hidden",
   },
   emptyTitle: { ...type.sectionTitle, color: colors.text, textAlign: "center" },
   emptyText: { ...type.body, color: colors.textMuted, textAlign: "center", marginBottom: space.md },
@@ -731,6 +753,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: space.sm,
     borderRadius: 18,
+    borderWidth: 1,
+    borderColor: HAIR,
     padding: space.md,
     marginTop: space.md,
   },
@@ -746,24 +770,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  stepLine: { flex: 1, width: 2, backgroundColor: "#23232A", marginVertical: 4 },
+  stepLine: { flex: 1, width: 2, backgroundColor: HAIR, marginVertical: 4 },
   stepTitle: { fontSize: 15, fontWeight: "600", color: colors.text, textAlign: "right", marginTop: 3 },
   stepDetail: { fontSize: 12.5, color: colors.textMuted, textAlign: "right", marginTop: 2 },
 
   stepper: { flexDirection: "row-reverse", gap: space.sm, marginBottom: space.xl },
   stepperItem: { flex: 1, gap: 6 },
-  stepperBar: { height: 4, borderRadius: 2, backgroundColor: "#23232A" },
-  stepperLabel: { fontSize: 11.5, fontWeight: "600", color: "#6B6B75", textAlign: "right" },
+  stepperBar: { height: 4, borderRadius: 2, backgroundColor: HAIR },
+  stepperLabel: { fontSize: 11.5, fontWeight: "700", color: colors.faint, textAlign: "right" },
 
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.7)" },
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(3,5,20,0.72)" },
   sheet: {
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: CARD,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+    backgroundColor: colors.glassBar,
+    borderTopWidth: 1,
+    borderColor: colors.glassBorderStrong,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
     paddingHorizontal: space.lg,
     paddingTop: space.sm,
   },
@@ -772,7 +798,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 5,
     borderRadius: 3,
-    backgroundColor: "#2A2A32",
+    backgroundColor: colors.glassBorderStrong,
     marginBottom: space.md,
   },
   sheetHead: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: space.lg },

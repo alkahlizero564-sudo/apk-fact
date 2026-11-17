@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "./icons";
 import { Lang, LANGS } from "../services/langs";
 import { colors, langColors } from "../theme";
 import { Badge, IconName } from "./ui";
@@ -39,6 +39,6 @@ const styles = StyleSheet.create({
     left: -4,
     borderRadius: 999,
     padding: 3,
-    backgroundColor: colors.bg,
+    backgroundColor: colors.base,
   },
 });

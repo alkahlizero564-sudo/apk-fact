@@ -81,7 +81,7 @@ export default function InstantPreviewScreen({ navigation, route }: RootScreenPr
 
       {!html && !live && !error ? (
         <View style={styles.wait}>
-          <ActivityIndicator color="#FFFFFF" size="large" />
+          <ActivityIndicator color={colors.accent} size="large" />
           <Text style={styles.waitTitle}>بنجهّز معاينة فورية…</Text>
           <Text style={styles.waitText}>{status || "ثواني ونكون جاهزين"}</Text>
           <Text style={styles.waitHint}>المعاينة بتتحفظ، والمرة الجاية بتفتح فوراً.</Text>
@@ -98,16 +98,16 @@ export default function InstantPreviewScreen({ navigation, route }: RootScreenPr
       {/* While streaming: show the design being written live, with a small "drawing now" ribbon. */}
       {!html && live ? (
         <View style={styles.frame}>
-          <WebView originWhitelist={["*"]} source={{ html: live }} style={{ flex: 1, backgroundColor: colors.bg }} scrollEnabled={false} />
+          <WebView originWhitelist={["*"]} source={{ html: live }} style={{ flex: 1, backgroundColor: colors.base }} scrollEnabled={false} />
           <View style={styles.liveRibbon}>
-            <ActivityIndicator color="#000000" size="small" />
+            <ActivityIndicator color={colors.primaryText} size="small" />
             <Text style={styles.liveText}>يرسم التصميم مباشرة…</Text>
           </View>
         </View>
       ) : null}
       {html ? (
         <View style={styles.frame}>
-          <WebView originWhitelist={["*"]} source={{ html }} style={{ flex: 1, backgroundColor: colors.bg }} />
+          <WebView originWhitelist={["*"]} source={{ html }} style={{ flex: 1, backgroundColor: colors.base }} />
         </View>
       ) : null}
 
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     gap: space.md,
     paddingHorizontal: space.lg,
     paddingBottom: space.md,
-    backgroundColor: colors.bg,
+    backgroundColor: colors.glassBar,
   },
   titleWrap: { flex: 1, alignItems: "center", gap: 4 },
   title: { fontSize: 17, fontWeight: "700", color: colors.text },
@@ -144,16 +144,16 @@ const styles = StyleSheet.create({
   wait: { flex: 1, alignItems: "center", justifyContent: "center", padding: space.xl, gap: space.sm },
   waitTitle: { ...type.sectionTitle, color: colors.text, marginTop: space.md },
   waitText: { ...type.body, color: colors.textMuted, textAlign: "center" },
-  waitHint: { ...type.hint, color: "#6B6B75", textAlign: "center", marginTop: space.md },
+  waitHint: { ...type.hint, color: colors.faint, textAlign: "center", marginTop: space.md },
 
   frame: {
     flex: 1,
     marginHorizontal: space.md,
     borderRadius: 28,
     overflow: "hidden",
-    backgroundColor: "#111114",
+    backgroundColor: colors.glass,
   },
-  footer: { flexDirection: "row-reverse", gap: space.md, paddingHorizontal: space.lg, paddingTop: space.md, backgroundColor: colors.bg },
+  footer: { flexDirection: "row-reverse", gap: space.md, paddingHorizontal: space.lg, paddingTop: space.md, backgroundColor: colors.glassBar },
   liveRibbon: {
     position: "absolute",
     top: space.md,
@@ -161,10 +161,10 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: space.sm,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.primary,
     paddingHorizontal: space.md,
     paddingVertical: 7,
     borderRadius: 999,
   },
-  liveText: { ...type.hint, color: "#000000", fontWeight: "700" },
+  liveText: { ...type.hint, color: colors.primaryText, fontWeight: "700" },
 });

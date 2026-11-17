@@ -3,7 +3,7 @@ import { View, Text, TextInput, StyleSheet, Pressable, RefreshControl, ScrollVie
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "../components/icons";
 import { EmptyState, Button, Banner } from "../components/ui";
 import { AppAvatar } from "../components/appVisuals";
 import { listApps, AppInfo } from "../services/appActions";
@@ -13,8 +13,8 @@ import type { RootStackParamList } from "../navigation";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-const CARD = "#111114";
-const SOFT_TEXT = "#C9C9D1";
+const CARD = colors.glass;
+const SOFT_TEXT = colors.softText;
 
 export default function AppsScreen() {
   const nav = useNavigation<Nav>();
@@ -56,9 +56,9 @@ export default function AppsScreen() {
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
-          tintColor="#FFFFFF"
-          colors={["#FFFFFF"]}
-          progressBackgroundColor="#16161A"
+          tintColor={colors.accent}
+          colors={[colors.accent]}
+          progressBackgroundColor={colors.glassStrong}
           onRefresh={async () => {
             setRefreshing(true);
             await load();
@@ -71,12 +71,12 @@ export default function AppsScreen() {
       <Text style={styles.subtitle}>{apps ? `${apps.length} تطبيق` : "جاري التحميل…"}</Text>
 
       <View style={styles.search}>
-        <Ionicons name="search-outline" size={18} color="#6B6B75" />
+        <Ionicons name="search-outline" size={18} color={colors.faint} />
         <TextInput
           value={query}
           onChangeText={setQuery}
           placeholder="ابحث باسم التطبيق"
-          placeholderTextColor="#6B6B75"
+          placeholderTextColor={colors.faint}
           autoCapitalize="none"
           autoCorrect={false}
           style={styles.searchInput}
@@ -84,7 +84,7 @@ export default function AppsScreen() {
         />
         {query ? (
           <Pressable onPress={() => setQuery("")} hitSlop={10} accessibilityLabel="مسح">
-            <Ionicons name="close-circle" size={18} color="#6B6B75" />
+            <Ionicons name="close-circle" size={18} color={colors.faint} />
           </Pressable>
         ) : null}
       </View>
@@ -100,14 +100,14 @@ export default function AppsScreen() {
               accessibilityRole="button"
               accessibilityState={{ selected: on }}
             >
-              <Text style={[styles.filterText, on && { color: "#000000", fontWeight: "700" }]}>{f.label}</Text>
+              <Text style={[styles.filterText, on && { color: colors.primaryText, fontWeight: "700" }]}>{f.label}</Text>
             </Pressable>
           );
         })}
       </ScrollView>
 
       {error ? <Banner kind="error" text={error} /> : null}
-      {!apps && !error ? <ActivityIndicator color="#FFFFFF" style={{ marginTop: space.xxl }} /> : null}
+      {!apps && !error ? <ActivityIndicator color={colors.accent} style={{ marginTop: space.xxl }} /> : null}
 
       {apps && apps.length === 0 ? (
         <EmptyState
@@ -126,7 +126,7 @@ export default function AppsScreen() {
           <Pressable
             key={a.name}
             onPress={() => nav.navigate("AppDetail", { name: a.name, lang: a.lang })}
-            style={({ pressed }) => [styles.item, pressed && { backgroundColor: "#16161A" }]}
+            style={({ pressed }) => [styles.item, pressed && { backgroundColor: colors.glassStrong }]}
             accessibilityRole="button"
             accessibilityLabel={`${a.name}، ${LANGS[a.lang].label}`}
           >
@@ -139,7 +139,7 @@ export default function AppsScreen() {
                 {LANGS[a.lang].label} · {LANGS[a.lang].tools}
               </Text>
             </View>
-            <Ionicons name="chevron-back" size={18} color="#4A4A54" />
+            <Ionicons name="chevron-back" size={18} color={colors.glassBorderStrong} />
           </Pressable>
         ))}
       </View>
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: space.lg, paddingBottom: 140 },
   title: { color: colors.text, fontSize: 32, fontWeight: "700", textAlign: "right" },
-  subtitle: { color: "#8A8A94", fontSize: 14, textAlign: "right", marginTop: 4, marginBottom: space.lg },
+  subtitle: { color: colors.textMuted, fontSize: 14, textAlign: "right", marginTop: 4, marginBottom: space.lg },
 
   search: {
     flexDirection: "row-reverse",
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
 
   filters: { flexDirection: "row-reverse", gap: space.sm, paddingVertical: space.lg },
   filter: { paddingVertical: 9, paddingHorizontal: 18, borderRadius: 999, backgroundColor: CARD },
-  filterOn: { backgroundColor: "#FFFFFF" },
+  filterOn: { backgroundColor: colors.primary },
   filterText: { color: SOFT_TEXT, fontSize: 13, fontWeight: "600" },
 
   list: { gap: space.sm },
@@ -179,5 +179,5 @@ const styles = StyleSheet.create({
     backgroundColor: CARD,
   },
   name: { color: colors.text, fontSize: 16, fontWeight: "700", textAlign: "right" },
-  meta: { color: "#6B6B75", fontSize: 12.5, textAlign: "right", marginTop: 3 },
+  meta: { color: colors.faint, fontSize: 12.5, textAlign: "right", marginTop: 3 },
 });

@@ -4,19 +4,7 @@ import { Alert, View, Text, StyleSheet, Pressable, ScrollView, KeyboardAvoidingV
 import { setRefPics, getRefPics, RefPic, pickRefPics, MAX_PICS } from "../services/attachment";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "../components/icons";
-import {
-  Button,
-  Card,
-  Chip,
-  Field,
-  IconButton,
-  ListRow,
-  Stepper,
-  Timeline,
-  Banner,
-  useSteps,
-  IconName,
-} from "../components/ui";
+import { Button, Card, Chip, Field, IconButton, ListRow, Stepper, Timeline, Banner, useSteps, IconName, RtlRow } from "../components/ui";
 import { AppAvatar, LANG_ICONS, LangBadge } from "../components/appVisuals";
 import { TEMPLATES, Template } from "../services/templates";
 import { getGalleryPick, GALLERY_PICK } from "../services/galleryPick";
@@ -492,7 +480,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
                   counter
                 />
                 {refPics.length > 0 ? (
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.picsRow}>
+                  <RtlRow contentContainerStyle={styles.picsRow}>
                     {refPics.map((p, i) => (
                       <View key={p.uri + i} style={styles.picWrap}>
                         <Image source={{ uri: p.uri }} style={styles.pic} />
@@ -511,7 +499,7 @@ export default function CreateScreen({ navigation, route }: RootScreenProps<"Cre
                         <Ionicons name="add" size={26} color={colors.textMuted} />
                       </Pressable>
                     ) : null}
-                  </ScrollView>
+                  </RtlRow>
                 ) : (
                   <Button
                     title="أرفق صور مرجعية (اختياري)"

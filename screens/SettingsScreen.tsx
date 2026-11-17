@@ -27,7 +27,8 @@ import { REPO } from "../services/config";
 import DbProjectsPanel from "../components/DbProjectsPanel";
 import { privacyStatus, setupUpdatesRepo, makeRepoPrivate, appsWithInstalls, PrivacyStatus, monthMinutes, FREE_MINUTES, BILLING_URL } from "../services/privacy";
 import { parseServiceAccount } from "../services/pair";
-import { colors, space, radius, type } from "../theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { colors, gradient, space, radius, type } from "../theme";
 
 type FieldDef = { key: string; label: string; placeholder?: string; secret?: boolean };
 type Service = {
@@ -627,31 +628,48 @@ export default function SettingsScreen() {
         <Text style={styles.title}>الإعدادات</Text>
 
         <View style={styles.summary}>
+          <LinearGradient colors={gradient as unknown as string[]} start={{ x: 1, y: 0 }} end={{ x: 0, y: 1 }} style={styles.pctRing}>
+            <View style={styles.pctInner}>
+              <Text style={styles.pctText}>{pct}%</Text>
+            </View>
+          </LinearGradient>
           <View style={{ flex: 1 }}>
             <Text style={styles.summaryNum}>
               {ready} من {SERVICES.length}
             </Text>
             <Text style={styles.summaryText}>خدمات مضبوطة</Text>
           </View>
-          <View style={styles.track}>
-            <View style={[styles.fill, { width: `${pct}%` }]} />
-          </View>
         </View>
 
-        <Group title="الخدمات">
-          {SERVICES.map((s, i) => (
-            <ListRow
-              key={s.id}
-              icon={s.icon}
-              tint={s.tint}
-              title={s.title}
-              subtitle={configured[s.id] ? "مضبوط" : "غير مضبوط"}
-              right={<View style={[styles.dot, { backgroundColor: configured[s.id] ? colors.okText : OFF }]} />}
-              onPress={() => setOpen(s.id)}
-              last={i === SERVICES.length - 1}
-            />
-          ))}
-        </Group>
+        <Text style={styles.gridTitle}>الخدمات</Text>
+        <View style={styles.svcGrid}>
+          {SERVICES.map((s) => {
+            const on = configured[s.id];
+            return (
+              <Pressable
+                key={s.id}
+                onPress={() => setOpen(s.id)}
+                style={({ pressed }) => [styles.svc, on && styles.svcOn, pressed && { transform: [{ scale: 0.97 }] }]}
+                accessibilityRole="button"
+                accessibilityLabel={`${s.title}، ${on ? "مضبوط" : "غير مضبوط"}`}
+              >
+                <View style={styles.svcTop}>
+                  <View style={[styles.svcIcon, { backgroundColor: s.tint + "26", borderColor: s.tint + "66" }]}>
+                    <Ionicons name={s.icon} size={22} color={s.tint} />
+                  </View>
+                  <View style={[styles.svcState, { backgroundColor: on ? colors.okBg : colors.glassStrong }]}>
+                    <View style={[styles.dot, { backgroundColor: on ? colors.okText : colors.faint }]} />
+                    <Text style={[styles.svcStateText, { color: on ? colors.okText : colors.textMuted }]}>{on ? "مضبوط" : "اضبطه"}</Text>
+                  </View>
+                </View>
+                <Text style={styles.svcTitle}>{s.title}</Text>
+                <Text style={styles.svcHint} numberOfLines={2}>
+                  {s.hint}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
         <Group title="الأمان والبيانات">
           <ListRow
@@ -740,9 +758,24 @@ const styles = StyleSheet.create({
     gap: space.lg,
     backgroundColor: colors.glass,
     borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.glassBorder,
     padding: space.lg,
     marginBottom: space.xl,
   },
+  pctRing: { width: 64, height: 64, borderRadius: 32, padding: 3 },
+  pctInner: { flex: 1, borderRadius: 30, backgroundColor: colors.base, alignItems: "center", justifyContent: "center" },
+  pctText: { color: colors.text, fontSize: 15, fontWeight: "800" },
+  gridTitle: { color: colors.textMuted, fontSize: 13, fontWeight: "700", textAlign: "right", marginBottom: space.md },
+  svcGrid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: space.md, marginBottom: space.xl },
+  svc: { width: "47.8%", backgroundColor: colors.glass, borderRadius: 24, borderWidth: 1, borderColor: colors.glassBorder, padding: space.md, gap: 4 },
+  svcOn: { borderColor: colors.okText + "55" },
+  svcTop: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: space.sm },
+  svcIcon: { width: 44, height: 44, borderRadius: 15, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  svcState: { flexDirection: "row-reverse", alignItems: "center", gap: 5, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
+  svcStateText: { fontSize: 10.5, fontWeight: "800" },
+  svcTitle: { color: colors.text, fontSize: 15, fontWeight: "800", textAlign: "right" },
+  svcHint: { color: colors.textMuted, fontSize: 11.5, lineHeight: 16, textAlign: "right" },
   summaryNum: { color: colors.text, fontSize: 22, fontWeight: "700", textAlign: "right" },
   summaryText: { color: colors.textMuted, fontSize: 13, textAlign: "right", marginTop: 2 },
   track: { width: 110, height: 8, borderRadius: 4, backgroundColor: colors.glassBorder, overflow: "hidden" },

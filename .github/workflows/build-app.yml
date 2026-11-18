@@ -86,7 +86,7 @@ jobs:
           SRC="$GITHUB_WORKSPACE/apps/$APP"
 
           # Apps of a connected pair: every piece of the connection in the code before building (scripts/pair_wiring.py).
-          if [ -f "$SRC/pair.json" ]; then python "$GITHUB_WORKSPACE/scripts/pair_wiring.py" fix "$APP" || true; fi
+          if [ -f "$SRC/pair.json" ]; then PAIR_FIX_QUICK=1 GEMINI_STALL_SECONDS=120 python "$GITHUB_WORKSPACE/scripts/pair_wiring.py" fix "$APP" || true; fi
           # JavaScript errors don't fail the APK build but leave the app broken: fix them first.
           for k in 1 2; do
             if node "$GITHUB_WORKSPACE/scripts/check_html.js" "$SRC/index.html" > /tmp/check.log; then

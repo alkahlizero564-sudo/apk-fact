@@ -21,7 +21,8 @@ class GeminiError(Exception):
 # never cut off. Without streaming, nothing arrives until the whole file is written, and the 300 s socket timeout
 # killed every reply that took longer (a full Flutter app often does) — then it started again from zero.
 # The timeout now only fires if the server sends nothing at all for this long (e.g. a very long thinking phase).
-STALL_SECONDS = 300
+# A build sets GEMINI_STALL_SECONDS lower: there an optional AI step must not hold the build for 5 minutes.
+STALL_SECONDS = int(os.environ.get("GEMINI_STALL_SECONDS") or 300)
 
 
 def _request(model, prompt, key, temperature, json_mode=True):

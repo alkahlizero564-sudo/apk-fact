@@ -168,9 +168,16 @@ def problems(app, st):
                            capture_output=True, text=True)
         if r.returncode != 0:
             return ""  # cannot check here; the build analyzes the code anyway
+        # Quick mode (a build): only analyze, no extra AI rounds; the build checks and fixes the code right after.
         r = subprocess.run([sys.executable, str(HERE / "check_flutter.py"), str(f.parent.parent), str(proj),
-                            "--rounds", "2"], capture_output=True, text=True, cwd=str(HERE))
+                            "--rounds", "0" if QUICK else "2"], capture_output=True, text=True, cwd=str(HERE))
         return "" if r.returncode == 0 else (r.stdout + r.stderr)[-3000:]
+
+
+# PAIR_FIX_QUICK=1 (set by the build workflows): the generation already tried the AI completion, so a build gives it
+# one short try instead of two long ones. Builds of pair apps waited 5-15 minutes here on exhausted or stuck Gemini
+# keys before compiling for 2 minutes.
+QUICK = os.environ.get("PAIR_FIX_QUICK") == "1"
 
 
 def ai_complete(app, gaps):
@@ -197,7 +204,8 @@ def ai_complete(app, gaps):
         + (" and a last line `DEPS: ` with the packages used, comma separated" if st["lang"] != "html" else "") +
         f".\n\nCURRENT FILE:\n```{fence}\n{f.read_text(encoding='utf-8')}\n```\n"
     )
-    blocks, _ = parse_reply(call_gemini(model, prompt, keys, temperature=0.2, json_mode=False))
+    blocks, _ = parse_reply(call_gemini(model, prompt, keys, temperature=0.2, json_mode=False,
+                                       max_rounds=1 if QUICK else 5))
     new = blocks.get(fence, "")
     if len(new) < len(f.read_text(encoding="utf-8")) * 0.6:
         print("The AI reply was empty or much shorter than the app: not used", flush=True)
@@ -224,7 +232,7 @@ def fix(app):
         print(f"{app}: connected — every piece of the pair contract is in the code", flush=True)
         return 0
     print(f"{app}: missing pieces of the connection:\n- " + "\n- ".join(gaps), flush=True)
-    for attempt in range(2):
+    for attempt in range(1 if QUICK else 2):
         try:
             ai_complete(app, gaps)
         except (Exception, SystemExit) as e:

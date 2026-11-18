@@ -18,6 +18,36 @@ export type DesignTarget = {
   role?: "customer" | "admin";
 };
 
+// The look the owner picks before the first design (DesignStudio asks). It replaces the automatic design direction.
+export type DesignFeel = "luxe" | "simple" | "modern";
+
+export const FEELS: { key: DesignFeel; title: string; text: string; icon: string }[] = [
+  { key: "luxe", title: "فخم وعصري", text: "ألوان غنية، تفاصيل راقية، إحساس منتج غالٍ", icon: "diamond" },
+  { key: "simple", title: "بسيط وسهل الاستخدام", text: "واضح ونظيف، أزرار كبيرة، يفهمه أي شخص", icon: "hand-left" },
+  { key: "modern", title: "عصري وبسيط معاً", text: "شكل حديث وأنيق دون تعقيد", icon: "sparkles" },
+];
+
+const FEEL_DIRECTION: Record<DesignFeel, string> = {
+  luxe:
+    "The owner wants it LUXURIOUS and MODERN: it must feel like an expensive, premium product. Use rich deep colors " +
+    "with refined accents (gold / metallic or jewel tones), elegant typography with strong hierarchy, generous " +
+    "spacing, subtle depth (soft shadows, glass or tasteful gradients), large beautiful imagery and polished " +
+    "details on every component. Contemporary, never old-fashioned.",
+  simple:
+    "The owner wants it SIMPLE and very EASY TO USE: anyone (including older or non-technical people) must understand " +
+    "every screen at first glance. Clean light layout, few colors, large clear text, big tap targets, a visible text " +
+    "label on every button and icon, one main action per screen, short flows and minimal decoration.",
+  modern:
+    "The owner wants it MODERN and SIMPLE at the same time: a fresh, contemporary look (current design trends, " +
+    "rounded shapes, tasteful color accents, nice micro-details) that stays clean and uncluttered, with clear " +
+    "hierarchy, large tap targets and obvious navigation — stylish without sacrificing ease of use.",
+};
+
+/** True when the description already sets the visual identity (a design picked in the gallery). */
+export function hasOwnStyle(description: string) {
+  return description.includes("الهوية البصرية");
+}
+
 const PLATFORM: Record<Lang, string> = {
   html: "a modern mobile web app (it will ship as a WebView app)",
   react: "a React single-page mobile app (one self-contained index.html using React 18 and hooks via CDN, no build step), styled to look and feel like a native mobile app inside a WebView",
@@ -111,7 +141,8 @@ export async function designApp(
   onStatus: (s: string) => void,
   brandFrom?: string,
   images: AiImage[] = [],
-  onPartial?: (html: string) => void
+  onPartial?: (html: string) => void,
+  feel?: DesignFeel
 ) {
   let prompt =
     `App name: ${t.title}\n${platformLine(t)}\n${roleLine(t)}\n\nWhat the app is and does:\n${forApp(t.description, t.role)}\n` +
@@ -126,6 +157,11 @@ export async function designApp(
       "corner radius, icon style and component look, so the two apps feel like one product:\n```html\n" +
       brandFrom.slice(0, 40000) +
       "\n```\n";
+  } else if (feel) {
+    // The owner chose the look: follow it, still unique to this business.
+    prompt +=
+      `\n${FEEL_DIRECTION[feel]} Make THIS app visually unique to «${t.title}» and its audience within that look, and ` +
+      "commit to it on every screen (palette, typography, shape language, one signature element).\n";
   } else {
     // Push this app towards its own identity, nudged to a different design direction than other apps.
     prompt +=

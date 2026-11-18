@@ -16,6 +16,7 @@ import {
   findAppApkAsset,
   getAssetDownloadInfo,
 } from "./github";
+import { addJob, setJobRun, finishJob } from "./jobs";
 import { REPO } from "./config";
 import { UPDATES_NAME } from "./privacy";
 import { LANGS, LANG_ORDER, Lang, detectLang } from "./langs";
@@ -33,13 +34,26 @@ export function cleanName(n: string) {
   return n.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
 }
 
-async function waitForRun(prevId: number, workflow: string, minutes: number) {
+/**
+ * Follows the first run of `workflow` newer than `prevId` until it ends. `title` records it as a background job
+ * (services/jobs.ts), so the owner is notified when it ends even after leaving APK Fact or after this loop gives up.
+ */
+async function waitForRun(prevId: number, workflow: string, minutes: number, title?: string) {
+  const job = title ? await addJob({ title, workflow, prevId }) : null;
   const started = Date.now();
+  let known = false;
   while (Date.now() - started < minutes * 60 * 1000) {
     await sleep(5000);
     const runs = await listWorkflowRuns(REPO, workflow);
     const run = runs.find((r: any) => r.id > prevId);
-    if (run && run.status === "completed") return run;
+    if (run && job && !known) {
+      known = true;
+      await setJobRun(job, run.id);
+    }
+    if (run && run.status === "completed") {
+      if (job) await finishJob(job, run.conclusion === "success");
+      return run;
+    }
   }
   return null;
 }
@@ -88,7 +102,7 @@ export async function generateApp(
   report("send", "done", related ? `مرتبط بـ ${related}` : undefined);
 
   report("ai", "active");
-  const run = await waitForRun(prevId, info.generateWorkflow, 8);
+  const run = await waitForRun(prevId, info.generateWorkflow, 8, `${kind === "edit" ? "تعديل" : "إنشاء"} ${name}`);
   if (!run) {
     report("ai", "error");
     throw new Error("أخذ وقت أطول من المتوقع. افتح التطبيق من تطبيقاتي بعد شوية.");
@@ -116,7 +130,7 @@ export async function makeAiPreview(name: string, lang: Lang, report: Report) {
   await pushFile(REPO, info.requestFile, `${name}\n@preview\n\n(request id: ${Date.now()})\n`, `Preview: ${name}`);
   report("send", "done");
   report("ai", "active");
-  const run = await waitForRun(prevId, info.generateWorkflow, 6);
+  const run = await waitForRun(prevId, info.generateWorkflow, 6, `معاينة ${name}`);
   if (!run) {
     report("ai", "error");
     throw new Error("المعاينة أخذت وقت طويل. جرّب بعد شوية.");
@@ -253,13 +267,20 @@ export async function startBuild(name: string, lang: Lang, notes = "", store = f
 /** Waits for the build of `name` started after `prevId` (several apps can build at the same time). */
 export async function waitForBuild(name: string, lang: Lang, prevId: number) {
   const workflow = LANGS[lang].buildWorkflow;
+  const job = await addJob({ title: `بناء ${name}`, workflow, prevId, match: `Build ${name}` });
   const started = Date.now();
+  let known = false;
   while (Date.now() - started < 50 * 60 * 1000) {
     await sleep(15000);
     const runs = await listWorkflowRuns(REPO, workflow);
     // Runs are named "Build <app>"; older runs without that name still match the first newer run.
     const r = runs.find((x: any) => x.id > prevId && (x.title === `Build ${name}` || !String(x.title || "").startsWith("Build ")));
+    if (r && !known) {
+      known = true;
+      await setJobRun(job, r.id);
+    }
     if (r && r.status === "completed") {
+      await finishJob(job, r.conclusion === "success");
       if (r.conclusion !== "success") await failWithLog(r.id, `فشل بناء ${name}.`);
       return r;
     }
@@ -385,7 +406,7 @@ export async function publishLive(name: string, report: Report): Promise<string>
   report("send", "done");
 
   report("ai", "active");
-  const run = await waitForRun(prevId, "publish-live.yml", 5);
+  const run = await waitForRun(prevId, "publish-live.yml", 5, `رابط حيّ: ${name}`);
   if (!run) {
     report("ai", "error");
     throw new Error("أخذ وقتاً أطول من المتوقع. جرّب بعد شوية.");

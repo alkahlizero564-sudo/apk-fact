@@ -2,6 +2,7 @@
 // The phone syncs the needed keys to GitHub secrets, starts generate-pair.yml and follows its steps.
 import * as SecureStore from "expo-secure-store";
 import { githubApi, latestRunId, listWorkflowRuns, getFailureLog, triggerWorkflow, getFileText } from "./github";
+import { addJob, setJobRun, finishJob } from "./jobs";
 import { REPO } from "./config";
 import { runSql, smtpSender } from "./supabase";
 import { listProjects, secretName, tokenFor } from "./projects";
@@ -138,12 +139,15 @@ export async function createPair(o: PairOptions, report: Report) {
   });
   report("sync", "done");
 
+  // Followed as a background job too: the owner is notified when the pair is ready even after leaving APK Fact.
+  const bgJob = await addJob({ title: `إنشاء ${o.base} (زبون + إدارة)`, workflow: "generate-pair.yml", prevId });
   const started = Date.now();
   let runId = 0;
   while (Date.now() - started < 60 * 60 * 1000) {
     await sleep(6000);
     if (!runId) {
       runId = (await listWorkflowRuns(REPO, "generate-pair.yml")).find((r: any) => r.id > prevId)?.id ?? 0;
+      if (runId) await setJobRun(bgJob, runId);
       continue;
     }
     const jobs = (await (await githubApi(`/repos/${REPO}/actions/runs/${runId}/jobs`)).json()).jobs ?? [];
@@ -157,6 +161,7 @@ export async function createPair(o: PairOptions, report: Report) {
         report(key, st.conclusion === "success" ? "done" : st.conclusion === "skipped" ? "done" : "error");
     }
     if (job.status === "completed") {
+      await finishJob(bgJob, job.conclusion === "success");
       if (job.conclusion === "success") return pairApps(o.base);
       const tail = await getFailureLog(REPO, runId);
       throw new Error("فشل إنشاء التطبيقين." + (tail ? "\n" + tail : ""));

@@ -15,14 +15,19 @@
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE",
-        "REQUEST_INSTALL_PACKAGES"
+        "REQUEST_INSTALL_PACKAGES",
+        "POST_NOTIFICATIONS",
+        "RECEIVE_BOOT_COMPLETED",
+        "WAKE_LOCK",
+        "VIBRATE"
       ]
     },
     "ios": {
       "bundleIdentifier": "com.yourname.apkfact"
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-notifications"
     ],
     "extra": {
       "eas": {

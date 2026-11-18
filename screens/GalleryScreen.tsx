@@ -2,7 +2,7 @@
 // it — the AI builds a complete app on that category and follows that exact style and palette. Each tile is a
 // lightweight mock drawn from the palette/style (instant, offline); an eye button opens a real AI preview.
 import React, { useMemo, useState } from "react";
-import { View, Text, StyleSheet, FlatList, Pressable, TextInput, ScrollView } from "react-native";
+import { View, Text, StyleSheet, FlatList, Pressable, TextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "../components/icons";
 import { colors, space } from "../theme";

@@ -89,6 +89,12 @@ jobs:
           python scripts/app_icon.py android "$PROJ/android/app/src/main/res" "$APP"
           # Package name (apps/<app>/package.txt or the default) and Android SDK 36 for Google Play.
           python scripts/app_id.py gradle "$(ls "$PROJ"/android/app/build.gradle* | head -1)" "$APP" flutter
+          # Skip Android's release lint (lintVitalAnalyzeRelease): a generated app doesn't need it, it costs minutes, and
+          # it crashed the build of tarag4 three times (LintDriver NoSuchMethodError). `prop = value` works in both
+          # build.gradle (Groovy) and build.gradle.kts (Kotlin).
+          GRADLE_FILE="$(ls "$PROJ"/android/app/build.gradle* | head -1)"
+          sed -i '0,/^android {/s//android {\n    lint {\n        checkReleaseBuilds = false\n        abortOnError = false\n    }/' "$GRADLE_FILE"
+          grep -n -A3 "^android {" "$GRADLE_FILE" | head -5
           # Android permissions (INTERNET too: release builds don't have it by default).
           python scripts/perms.py manifest "$APP" "$PROJ/android/app/src/main/AndroidManifest.xml"
 

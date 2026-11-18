@@ -1,4 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { AppState } from "react-native";
+// Defines the background task that follows GitHub jobs while the app is closed (must load at start-up).
+import "./services/backgroundJobs";
+import { checkJobs } from "./services/jobs";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { NavigationContainer, DarkTheme } from "@react-navigation/native";
 import { createBottomTabNavigator, BottomTabBarProps } from "@react-navigation/bottom-tabs";
@@ -144,6 +148,12 @@ function Tabs() {
 }
 
 export default function App() {
+  // Jobs that ended while APK Fact was closed: notify / clean up now, and again each time the app comes back.
+  useEffect(() => {
+    checkJobs();
+    const sub = AppState.addEventListener("change", (s) => s === "active" && checkJobs());
+    return () => sub.remove();
+  }, []);
   return (
     <SafeAreaProvider>
       <View style={{ flex: 1, backgroundColor: colors.base }}>

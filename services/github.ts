@@ -114,10 +114,10 @@ export async function triggerWorkflow(
   return true;
 }
 
-export async function listWorkflowRuns(repoFullName: string, workflowFile: string) {
+export async function listWorkflowRuns(repoFullName: string, workflowFile: string, perPage = 5) {
   const token = await getToken();
   const res = await fetch(
-    `${GITHUB_API}/repos/${repoFullName}/actions/workflows/${workflowFile}/runs?per_page=5`,
+    `${GITHUB_API}/repos/${repoFullName}/actions/workflows/${workflowFile}/runs?per_page=${perPage}`,
     { headers: authHeaders(token) }
   );
   if (!res.ok) {
@@ -196,6 +196,15 @@ export async function listDir(
   return Array.isArray(data)
     ? data.filter((x: any) => x.type === "dir").map((x: any) => x.name)
     : [];
+}
+
+/** One workflow run by id (status, conclusion, title), or null when GitHub can't be reached. */
+export async function getWorkflowRun(repoFullName: string, runId: number) {
+  const token = await getToken();
+  const res = await fetch(`${GITHUB_API}/repos/${repoFullName}/actions/runs/${runId}`, { headers: authHeaders(token) });
+  if (!res.ok) return null;
+  const r = await res.json();
+  return { id: r.id as number, status: r.status as string, conclusion: r.conclusion as string | null, title: r.display_title as string };
 }
 
 export async function latestRunId(repoFullName: string, workflowFile: string): Promise<number> {

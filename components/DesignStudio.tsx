@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "./icons";
 import Backdrop from "./Backdrop";
 import { Button, Chip, Field, Banner, IconButton } from "./ui";
-import { DesignTarget, designApp, reviseDesign, loadDraft, saveDraft } from "../services/design";
+import { DesignTarget, DesignFeel, FEELS, designApp, reviseDesign, loadDraft, saveDraft, hasOwnStyle } from "../services/design";
 import { colors, space, radius, type } from "../theme";
 
 const IDEAS = [
@@ -40,6 +40,12 @@ export default function DesignStudio({ targets, onChange, onBusy }: Props) {
   const [full, setFull] = useState(false);
   const [live, setLive] = useState<string | null>(null); // the current design as it's being written (streaming)
   const started = useRef("");
+  // The look the owner picks before the first design: asked unless every app has a saved draft or the description
+  // already sets the look (a design from the gallery).
+  const [feel, setFeel] = useState<DesignFeel | null>(null);
+  const feelRef = useRef<DesignFeel | null>(null);
+  const [asking, setAsking] = useState(false);
+  const ownStyle = targets.some((t) => hasOwnStyle(t.description));
   const lastLive = useRef(0);
 
   const sig = targets.map((t) => `${t.key}|${t.lang}|${t.description}`).join("\n");
@@ -89,7 +95,14 @@ export default function DesignStudio({ targets, onChange, onBusy }: Props) {
             setLive(partial);
           }
         };
-        const html = await designApp(t, (s) => setStatus(`${targets.length > 1 ? t.label + ": " : ""}${s}`), brand, refImages(), onPartial);
+        const html = await designApp(
+          t,
+          (s) => setStatus(`${targets.length > 1 ? t.label + ": " : ""}${s}`),
+          brand,
+          refImages(),
+          onPartial,
+          feelRef.current ?? undefined
+        );
         setLive(null);
         next = { ...next, [t.key]: [...(fresh ? next[t.key] ?? [] : []), html] };
         commit(next);
@@ -107,11 +120,31 @@ export default function DesignStudio({ targets, onChange, onBusy }: Props) {
     if (!targets.length || started.current === sig) return;
     started.current = sig;
     setActive(targets[0].key);
+    (async () => {
+      const drafts = await Promise.all(targets.map((t) => loadDraft(t)));
+      if (ownStyle || drafts.every((d) => d?.length)) {
+        generate(
+          targets.map((t) => t.key),
+          false
+        );
+      } else {
+        setAsking(true);
+      }
+    })();
+  }, [sig]);
+
+  /** The owner picked (or changed) the look: design every app in it. */
+  function chooseFeel(f: DesignFeel) {
+    if (busy) return;
+    const changed = feelRef.current !== null && feelRef.current !== f;
+    feelRef.current = f;
+    setFeel(f);
+    setAsking(false);
     generate(
       targets.map((t) => t.key),
-      false
+      changed || !!current(active)
     );
-  }, [sig]);
+  }
 
   async function applyChange() {
     const text = change.trim();
@@ -158,8 +191,40 @@ export default function DesignStudio({ targets, onChange, onBusy }: Props) {
         </View>
       ) : null}
 
+      {!asking && !ownStyle && (html || feel) ? (
+        <View style={styles.feelRow}>
+          <Text style={styles.feelRowLabel}>الطابع:</Text>
+          {FEELS.map((f) => (
+            <Chip key={f.key} label={f.title} selected={feel === f.key} onPress={() => feel !== f.key && chooseFeel(f.key)} />
+          ))}
+        </View>
+      ) : null}
+
       <View style={styles.frame}>
-        {html ? (
+        {asking ? (
+          <View style={styles.ask}>
+            <Text style={styles.askTitle}>كيف تريد شكل التطبيق؟</Text>
+            <Text style={styles.askHint}>اختر الطابع، والمصمّم يلتزم به في كل الشاشات{targets.length > 1 ? " (التطبيقين معاً)" : ""}.</Text>
+            {FEELS.map((f) => (
+              <Pressable
+                key={f.key}
+                onPress={() => chooseFeel(f.key)}
+                style={({ pressed }) => [styles.feelCard, pressed && { transform: [{ scale: 0.98 }], borderColor: colors.primary }]}
+                accessibilityRole="button"
+                accessibilityLabel={f.title}
+              >
+                <View style={styles.feelIcon}>
+                  <Ionicons name={f.icon as any} size={22} color={colors.accent} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.feelTitle}>{f.title}</Text>
+                  <Text style={styles.feelText}>{f.text}</Text>
+                </View>
+                <Ionicons name="chevron-back" size={18} color={colors.faint} />
+              </Pressable>
+            ))}
+          </View>
+        ) : html ? (
           <WebView key={`${active}-${versions}`} originWhitelist={["*"]} source={{ html }} style={styles.web} nestedScrollEnabled />
         ) : live ? (
           <View style={styles.web}>
@@ -184,6 +249,8 @@ export default function DesignStudio({ targets, onChange, onBusy }: Props) {
         ) : null}
       </View>
 
+      {!asking ? (
+      <>
       <View style={styles.tools}>
         <IconButton icon="expand-outline" label="ملء الشاشة" onPress={() => html && setFull(true)} />
         <IconButton icon="arrow-undo-outline" label="تراجع" onPress={undo} />
@@ -228,6 +295,8 @@ export default function DesignStudio({ targets, onChange, onBusy }: Props) {
         loading={busy && !!html}
         disabled={busy || change.trim().length < 3 || !html}
       />
+      </>
+      ) : null}
 
       <Modal visible={full} animationType="slide" onRequestClose={() => setFull(false)}>
         <View style={[styles.fullRoot, { paddingTop: insets.top }]}>
@@ -255,6 +324,15 @@ const styles = StyleSheet.create({
   },
   web: { flex: 1, backgroundColor: colors.surface },
   wait: { flex: 1, alignItems: "center", justifyContent: "center", gap: space.md, padding: space.xl },
+  ask: { flex: 1, justifyContent: "center", gap: space.md, padding: space.lg },
+  askTitle: { ...type.sectionTitle, color: colors.text, textAlign: "right" },
+  askHint: { ...type.hint, color: colors.textMuted, textAlign: "right", marginBottom: space.xs },
+  feelCard: { flexDirection: "row-reverse", alignItems: "center", gap: space.md, padding: space.md, borderRadius: 20, backgroundColor: colors.glass, borderWidth: 1, borderColor: colors.glassBorder },
+  feelIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: colors.primary },
+  feelTitle: { color: colors.text, fontSize: 15.5, fontWeight: "800", textAlign: "right" },
+  feelText: { color: colors.textMuted, fontSize: 12.5, textAlign: "right", marginTop: 2 },
+  feelRow: { flexDirection: "row-reverse", flexWrap: "wrap", alignItems: "center", gap: space.sm, marginBottom: space.md },
+  feelRowLabel: { color: colors.textMuted, fontSize: 13, fontWeight: "700" },
   waitText: { ...type.label, color: colors.text, textAlign: "center" },
   waitHint: { ...type.hint, color: colors.textMuted, textAlign: "center" },
   overlay: {

@@ -42,6 +42,20 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add apps fixes
-          git commit -m "Generate Python app" || echo "nothing to commit"
-          git pull --rebase
-          git push
+          if git diff --cached --quiet; then echo "nothing to commit"; exit 0; fi
+          git commit -m "Generate Python app"
+          # main may have moved while the AI generated (other runs push builds/versions). Merge it in, keeping THIS
+          # run's freshly generated files on a conflict (-X ours), and retry the push for the normal race. Without
+          # this, a push rejected as non-fast-forward lost the generated app.
+          for i in 1 2 3 4 5; do
+            git fetch origin main || true
+            if ! git merge -X ours --no-edit origin/main; then
+              git merge --abort || true
+              echo "::error::Could not save: the app's files changed on main during generation (was the app deleted or renamed?)."
+              exit 1
+            fi
+            if git push origin HEAD:main; then echo "saved on attempt $i"; exit 0; fi
+            sleep $((i * 3))
+          done
+          echo "::error::could not push the generated app to main after retries"
+          exit 1

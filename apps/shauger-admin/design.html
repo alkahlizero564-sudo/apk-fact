@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ليدر - تطبيق الإدارة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* ==========================================
+           DESIGN TOKENS & THEMING (Luxury Dark Luxe)
+           ========================================== */
+        :root {
+            --bg-app: #0c0f17;
+            --surface: #141a29;
+            --surface-elevated: #1e263c;
+            --surface-glass: rgba(20, 26, 41, 0.85);
+            
+            --primary: #d4af37; /* Metallic Gold */
+            --primary-light: #f3e5ab;
+            --primary-dark: #aa8c2c;
+            --primary-glow: rgba(212, 175, 55, 0.15);
+            
+            --accent: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            
+            --border: #2a3450;
+            --divider: rgba(255, 255, 255, 0.08);
+            
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 22px;
+            --radius-full: 9999px;
+            
+            --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+            --shadow-gold: 0 4px 20px rgba(212, 175, 55, 0.25);
+            
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="light"] {
+            --bg-app: #f8fafc;
+            --surface: #ffffff;
+            --surface-elevated: #f1f5f9;
+            --surface-glass: rgba(255, 255, 255, 0.9);
+            
+            --primary: #b89728;
+            --primary-light: #d4af37;
+            --primary-dark: #8c711d;
+            --primary-glow: rgba(184, 151, 40, 0.12);
+            
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --text-dim: #94a3b8;
+            
+            --border: #e2e8f0;
+            --divider: rgba(0, 0, 0, 0.06);
+            --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Tajawal', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #06090f;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* ==========================================
+           SCREENS SWITCHER BAR (Top Previewer)
+           ========================================== */
+        #apkfact-screens {
+            width: 100%;
+            background: rgba(12, 15, 23, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 16px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            direction: rtl;
+        }
+
+        #apkfact-screens::-webkit-scrollbar {
+            height: 4px;
+        }
+        #apkfact-screens::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: var(--radius-full);
+        }
+
+        .screen-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+
+        .screen-btn.active {
+            background: var(--primary);
+            color: #0c0f17;
+            border-color: var(--primary);
+            font-weight: 700;
+            box-shadow: var(--shadow-gold);
+        }
+
+        /* ==========================================
+           PHONE CONTAINER (Flutter Material 3 Frame)
+           ========================================== */
+        .phone-frame {
+            width: 100%;
+            max-width: 410px;
+            height: 844px;
+            background-color: var(--bg-app);
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-radius: 0;
+            margin: 20px 0;
+            border: 1px solid var(--border);
+        }
+
+        @media(min-width: 450px) {
+            .phone-frame {
+                border-radius: 40px;
+                height: 88vh;
+            }
+        }
+
+        /* ==========================================
+           APP COMMON COMPONENTS
+           ========================================== */
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: var(--surface-glass);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--divider);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .app-header h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .icon-btn:active {
+            transform: scale(0.92);
+        }
+
+        /* Bottom Nav - 4 items + Floating Center Action Button for New Post */
+        .bottom-nav {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 8px 4px;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 60;
+            align-items: center;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 11px;
+            font-weight: 500;
+            gap: 4px;
+            cursor: pointer;
+            transition: var(--transition);
+            padding: 4px 0;
+        }
+
+        .nav-item svg {
+            width: 22px;
+            height: 22px;
+            stroke-width: 2px;
+            transition: var(--transition);
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-item.active svg {
+            transform: translateY(-2px);
+        }
+
+        .nav-fab-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fab-btn {
+            width: 46px;
+            height: 46px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #0c0f17;
+            border-radius: var(--radius-full);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            box-shadow: var(--shadow-gold);
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: -10px;
+        }
+
+        .fab-btn:active {
+            transform: scale(0.9);
+        }
+
+        /* Screen views */
+        .screen-view {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 80px; /* space for bottom nav */
+            animation: fadeIn 0.2s ease-out forwards;
+        }
+
+        .screen-view.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Forms & Inputs */
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .custom-input, .custom-select, .custom-textarea {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            color: var(--text-main);
+            font-size: 15px;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .custom-input:focus, .custom-select:focus, .custom-textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        .custom-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #0c0f17;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: var(--shadow-gold);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        /* Drawer (Side Menu) */
+        .drawer-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 150;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .drawer-overlay.open {
+            display: block;
+            opacity: 1;
+        }
+
+        .side-drawer {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            width: 280px;
+            background: var(--surface);
+            z-index: 160;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--border);
+        }
+        .side-drawer.open {
+            transform: translateX(0);
+        }
+
+        .drawer-header {
+            padding: 24px 20px;
+            background: var(--surface-elevated);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .avatar-box {
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-full);
+            background: var(--primary-glow);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            font-size: 22px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .drawer-links {
+            padding: 12px 0;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .drawer-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 20px;
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: var(--transition);
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: right;
+            cursor: pointer;
+        }
+
+        .drawer-item:hover, .drawer-item:active {
+            background: var(--surface-elevated);
+            color: var(--primary);
+        }
+
+        .drawer-item svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2px;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .kpi-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            box-shadow: var(--shadow-card);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .kpi-value {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--primary);
+        }
+
+        .kpi-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Admin Cards & Lists */
+        .admin-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            margin: 12px 16px;
+            padding: 18px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            background: var(--primary-glow);
+            color: var(--primary);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        /* Student Row */
+        .student-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            margin-bottom: 10px;
+        }
+
+        .student-info h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .student-info p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .student-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-icon-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-full);
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-main);
+            font-size: 14px;
+            text-decoration: none;
+        }
+        .action-icon-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Empty states */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            text-align: center;
+            color: var(--text-muted);
+        }
+        .empty-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: var(--radius-full);
+            background: var(--primary-glow);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        /* Skeleton loader */
+        .skeleton-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            margin: 12px 16px;
+            padding: 18px;
+        }
+        .skeleton-line {
+            background: var(--surface-elevated);
+            border-radius: var(--radius-sm);
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 0.9; }
+            100% { opacity: 0.4; }
+        }
+
+        /* Toast Message */
+        .toast {
+            position: absolute;
+            bottom: 90px;
+            left: 20px;
+            right: 20px;
+            background: var(--surface-elevated);
+            border: 1px solid var(--primary);
+            color: var(--text-main);
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-card);
+            z-index: 300;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 600;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP SCREENS SWITCHER BAR -->
+    <div id="apkfact-screens">
+        <button class="screen-btn active" onclick="switchScreen('screen-admin-signin')">دخول الليدر</button>
+        <button class="screen-btn" onclick="switchScreen('screen-admin-stats')">الإحصائيات</button>
+        <button class="screen-btn" onclick="switchScreen('screen-admin-posts')">المنشورات</button>
+        <button class="screen-btn" onclick="switchScreen('screen-admin-newpost')">إنشاء منشور</button>
+        <button class="screen-btn" onclick="switchScreen('screen-admin-students')">الطلاب</button>
+        <button class="screen-btn" onclick="switchScreen('screen-admin-reactions')">التفاعلات</button>
+        <button class="screen-btn" onclick="switchScreen('screen-admin-settings')">الإعدادات</button>
+        <button class="screen-btn" onclick="switchScreen('screen-empty')">حالة فارغة</button>
+        <button class="screen-btn" onclick="switchScreen('screen-skeleton')">تحميل (Skeleton)</button>
+    </div>
+
+    <!-- PHONE FRAME CONTAINER -->
+    <div class="phone-frame" id="phoneContainer">
+
+        <!-- SIDE DRAWER (Menu) -->
+        <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()"></div>
+        <div class="side-drawer" id="sideDrawer">
+            <div class="drawer-header">
+                <div class="avatar-box">ليد</div>
+                <div>
+                    <h3 style="font-size: 16px; font-weight: 700;">ليدر الدفعة (أبوبكر)</h3>
+                    <p style="font-size: 12px; color: var(--primary);">حساب إدارة معتمد</p>
+                </div>
+            </div>
+            <div class="drawer-links">
+                <button class="drawer-item" onclick="toggleDrawer(); switchScreen('screen-admin-stats')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    الإحصائيات
+                </button>
+                <button class="drawer-item" onclick="toggleDrawer(); switchScreen('screen-admin-posts')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    المنشورات حسب النوع
+                </button>
+                <button class="drawer-item" onclick="toggleDrawer(); switchScreen('screen-admin-students')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    الطلاب حسب التخصص
+                </button>
+                <button class="drawer-item" onclick="toggleDrawer(); switchScreen('screen-admin-reactions')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                    متابعة التفاعلات
+                </button>
+                <button class="drawer-item" onclick="toggleDrawer(); switchScreen('screen-admin-settings')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    الإعدادات
+                </button>
+                <button class="drawer-item" style="color: var(--error);" onclick="toggleDrawer(); switchScreen('screen-admin-signin')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    تسجيل الخروج
+                </button>
+            </div>
+        </div>
+
+        <!-- ==========================================
+           1. SCREEN: ADMIN SIGN IN
+           ========================================== -->
+        <div id="screen-admin-signin" class="screen-view active" style="padding: 24px; justify-content: center;">
+            <div style="text-align: center; margin-bottom: 32px;">
+                <div style="width: 70px; height: 70px; background: var(--primary-glow); border: 2px solid var(--primary); border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: var(--primary); font-size: 28px; font-weight: 900;">ش</div>
+                <h2 style="font-size: 24px; font-weight: 700; color: var(--text-main);">ليدر - إدارة النظام</h2>
+                <p style="font-size: 14px; color: var(--text-muted); margin-top: 6px;">تسجيل دخول حساب الليدر المعتمد</p>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">البريد الإلكتروني</label>
+                <input type="email" class="custom-input" placeholder="leader@shauger.sd" value="leader@shauger.sd">
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">رقم الهاتف</label>
+                <input type="text" class="custom-input" placeholder="0912345678" value="0912345678">
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">كلمة السر</label>
+                <input type="password" class="custom-input" placeholder="••••••••" value="adminsecure123">
+            </div>
+
+            <button class="btn-primary" onclick="switchScreen('screen-admin-stats')" style="margin-top: 8px;">دخول لوحة التحكم</button>
+        </div>
+
+        <!-- ==========================================
+           2. SCREEN: STATISTICS (لوحة الإحصائيات)
+           ========================================== -->
+        <div id="screen-admin-stats" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="toggleDrawer()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+                <h1>لوحة الإحصائيات</h1>
+                <button class="icon-btn" onclick="showToast('تم تحديث البيانات تلقائياً')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                </button>
+            </header>
+
+            <div class="kpi-grid">
+                <div class="kpi-card" style="grid-column: span 2; background: linear-gradient(135deg, var(--surface) 0%, var(--surface-elevated) 100%);">
+                    <span class="kpi-label">العدد الكلي للطلاب المسجلين</span>
+                    <div class="kpi-value" style="font-size: 36px;">342 طالب</div>
+                    <span style="font-size: 11px; color: var(--success);">↑ تحديث فوري من قاعدة البيانات</span>
+                </div>
+                
+                <div class="kpi-card">
+                    <span class="kpi-label">ميكانيكا</span>
+                    <div class="kpi-value">98</div>
+                    <span style="font-size: 11px; color: var(--text-muted);">طالب مسجل</span>
+                </div>
+
+                <div class="kpi-card">
+                    <span class="kpi-label">تصنيع</span>
+                    <div class="kpi-value">76</div>
+                    <span style="font-size: 11px; color: var(--text-muted);">طالب مسجل</span>
+                </div>
+
+                <div class="kpi-card">
+                    <span class="kpi-label">مدنية</span>
+                    <div class="kpi-value">85</div>
+                    <span style="font-size: 11px; color: var(--text-muted);">طالب مسجل</span>
+                </div>
+
+                <div class="kpi-card">
+                    <span class="kpi-label">كهربا</span>
+                    <div class="kpi-value">83</div>
+                    <span style="font-size: 11px; color: var(--text-muted);">طالب مسجل</span>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">المسجلون الجدد</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--divider);">
+                    <span style="font-size: 13px;">اليوم</span>
+                    <span style="font-weight: 700; color: var(--primary);">12 طالب</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;">
+                    <span style="font-size: 13px;">هذا الأسبوع</span>
+                    <span style="font-weight: 700; color: var(--primary);">45 طالب</span>
+                </div>
+            </div>
+
+            <!-- Bottom Navigation -->
+            <nav class="bottom-nav">
+                <button class="nav-item active" onclick="switchScreen('screen-admin-stats')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    الإحصائيات
+                </button>
+                <button class="nav-item" onclick="switchScreen('screen-admin-posts')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    المنشورات
+                </button>
+                <div class="nav-fab-container">
+                    <button class="fab-btn" onclick="switchScreen('screen-admin-newpost')">+</button>
+                </div>
+                <button class="nav-item" onclick="switchScreen('screen-admin-students')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    الطلاب
+                </button>
+                <button class="nav-item" onclick="switchScreen('screen-admin-reactions')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                    التفاعلات
+                </button>
+            </nav>
+        </div>
+
+        <!-- ==========================================
+           3. SCREEN: POSTS MANAGEMENT (شاشة المنشورات)
+           ========================================== -->
+        <div id="screen-admin-posts" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="toggleDrawer()">☰</button>
+                <h1>إدارة المنشورات</h1>
+                <button class="icon-btn" onclick="switchScreen('screen-admin-newpost')">+</button>
+            </header>
+
+            <div class="admin-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span class="badge">جدول</span>
+                    <span style="font-size: 11px; color: var(--text-dim);">مُرْسَل إلى: ميكانيكا</span>
+                </div>
+                <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 6px;">جدول محاضرات الأسبوع الحالي - ميكانيكا</h3>
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">تم اعتماد جدول المحاضرات والسكاشن...</p>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-primary" style="padding: 6px 12px; font-size: 12px; background: var(--surface-elevated); color: var(--text-main); border: 1px solid var(--border);" onclick="showToast('جارٍ تعديل المنشور...')">تعديل</button>
+                    <button class="btn-primary" style="padding: 6px 12px; font-size: 12px; background: rgba(239, 68, 68, 0.15); color: var(--error); border: 1px solid rgba(239,68,68,0.3);" onclick="showToast('تم حذف المنشور بنجاح')">حذف</button>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: var(--accent);">محاضرة</span>
+                    <span style="font-size: 11px; color: var(--text-dim);">مُرْسَل إلى: كل التخصصات</span>
+                </div>
+                <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 6px;">ملخص محاضرة الديناميكا الحرارية</h3>
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">مرفق أدناه تسجيل الفيديو وملخص المحاضرة...</p>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-primary" style="padding: 6px 12px; font-size: 12px; background: var(--surface-elevated); color: var(--text-main); border: 1px solid var(--border);" onclick="showToast('جارٍ تعديل المنشور...')">تعديل</button>
+                    <button class="btn-primary" style="padding: 6px 12px; font-size: 12px; background: rgba(239, 68, 68, 0.15); color: var(--error); border: 1px solid rgba(239,68,68,0.3);" onclick="showToast('تم حذف المنشور بنجاح')">حذف</button>
+                </div>
+            </div>
+
+            <!-- Bottom Navigation -->
+            <nav class="bottom-nav">
+                <button class="nav-item" onclick="switchScreen('screen-admin-stats')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    الإحصائيات
+                </button>
+                <button class="nav-item active" onclick="switchScreen('screen-admin-posts')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    المنشورات
+                </button>
+                <div class="nav-fab-container">
+                    <button class="fab-btn" onclick="switchScreen('screen-admin-newpost')">+</button>
+                </div>
+                <button class="nav-item" onclick="switchScreen('screen-admin-students')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    الطلاب
+                </button>
+                <button class="nav-item" onclick="switchScreen('screen-admin-reactions')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                    التفاعلات
+                </button>
+            </nav>
+        </div>
+
+        <!-- ==========================================
+           4. SCREEN: NEW POST (إنشاء منشور جديد)
+           ========================================== -->
+        <div id="screen-admin-newpost" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="switchScreen('screen-admin-posts')">✕</button>
+                <h1>إنشاء منشور جديد</h1>
+                <div style="width: 40px;"></div>
+            </header>
+
+            <div style="padding: 16px;">
+                <div class="input-group">
+                    <label class="input-label">نوع المنشور</label>
+                    <select class="custom-select">
+                        <option value="جدول">جدول</option>
+                        <option value="محاضرة">محاضرة</option>
+                        <option value="فعالية">فعالية</option>
+                        <option value="خبر">خبر</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">العنوان</label>
+                    <input type="text" class="custom-input" placeholder="عنوان المنشور الرئيسي...">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">النص أو التفاصيل</label>
+                    <textarea class="custom-textarea" placeholder="اكتب تفاصيل المنشور هنا..."></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">المرفقات (يدعم حتى 60 مرفق أو أكثر)</label>
+                    <div style="border: 2px dashed var(--border); border-radius: var(--radius-md); padding: 20px; text-align: center; cursor: pointer; background: var(--surface);" onclick="showToast('تم اختيار 4 مرفقات بنجاح')">
+                        <span style="font-size: 28px;">📁</span>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-top: 6px;">اضغط لاختيار الصور والفيديوهات والملفات دفعة واحدة</p>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">الجهة المستهدفة (مع عدد الطلاب)</label>
+                    <select class="custom-select">
+                        <option value="all">كل التخصصات (342 طالب)</option>
+                        <option value="mech">ميكانيكا (98 طالب)</option>
+                        <option value="mfg">تصنيع (76 طالب)</option>
+                        <option value="civ">مدنية (85 طالب)</option>
+                        <option value="ele">كهربا (83 طالب)</option>
+                    </select>
+                </div>
+
+                <button class="btn-primary" onclick="showToast('تم نشر المنشور بنجاح وإرسال الإشعارات للطلاب!'); switchScreen('screen-admin-posts');">نشر وإرسال إشعار فوري</button>
+            </div>
+        </div>
+
+        <!-- ==========================================
+           5. SCREEN: STUDENTS LIST (قائمة الطلاب)
+           ========================================== -->
+        <div id="screen-admin-students" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="toggleDrawer()">☰</button>
+                <h1>قائمة الطلاب المسجلين</h1>
+                <div style="width: 40px;"></div>
+            </header>
+
+            <div style="padding: 16px 16px 0;">
+                <input type="text" class="custom-input" placeholder="بحث بالاسم أو رقم الهاتف..." style="margin-bottom: 12px;">
+                <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px;">
+                    <span class="badge" style="cursor: pointer; background: var(--primary); color: #0c0f17;">الكل (342)</span>
+                    <span class="badge" style="cursor: pointer;">ميكانيكا (98)</span>
+                    <span class="badge" style="cursor: pointer;">تصنيع (76)</span>
+                    <span class="badge" style="cursor: pointer;">مدنية (85)</span>
+                    <span class="badge" style="cursor: pointer;">كهربا (83)</span>
+                </div>
+            </div>
+
+            <div style="padding: 0 16px;">
+                <div class="student-row">
+                    <div class="student-info">
+                        <h4>أحمد محمد علي</h4>
+                        <p>0912345678 • ميكانيكا</p>
+                    </div>
+                    <div class="student-actions">
+                        <a href="tel:0912345678" class="action-icon-btn" title="اتصال">📞</a>
+                        <a href="https://wa.me/249912345678" class="action-icon-btn" title="واتساب" target="_blank">💬</a>
+                    </div>
+                </div>
+
+                <div class="student-row">
+                    <div class="student-info">
+                        <h4>عمر خالد حسن</h4>
+                        <p>0923456789 • كهربا</p>
+                    </div>
+                    <div class="student-actions">
+                        <a href="tel:0923456789" class="action-icon-btn">📞</a>
+                        <a href="https://wa.me/249923456789" class="action-icon-btn" target="_blank">💬</a>
+                    </div>
+                </div>
+
+                <div class="student-row">
+                    <div class="student-info">
+                        <h4>سارة إبراهيم عثمان</h4>
+                        <p>0998877665 • مدنية</p>
+                    </div>
+                    <div class="student-actions">
+                        <a href="tel:0998877665" class="action-icon-btn">📞</a>
+                        <a href="https://wa.me/249998877665" class="action-icon-btn" target="_blank">💬</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Navigation -->
+            <nav class="bottom-nav">
+                <button class="nav-item" onclick="switchScreen('screen-admin-stats')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    الإحصائيات
+                </button>
+                <button class="nav-item" onclick="switchScreen('screen-admin-posts')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    المنشورات
+                </button>
+                <div class="nav-fab-container">
+                    <button class="fab-btn" onclick="switchScreen('screen-admin-newpost')">+</button>
+                </div>
+                <button class="nav-item active" onclick="switchScreen('screen-admin-students')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    الطلاب
+                </button>
+                <button class="nav-item" onclick="switchScreen('screen-admin-reactions')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                    التفاعلات
+                </button>
+            </nav>
+        </div>
+
+        <!-- ==========================================
+           6. SCREEN: REACTIONS MONITOR (متابعة التفاعلات)
+           ========================================== -->
+        <div id="screen-admin-reactions" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="toggleDrawer()">☰</button>
+                <h1>متابعة تفاعلات الطلاب</h1>
+                <div style="width: 40px;"></div>
+            </header>
+
+            <div class="admin-card">
+                <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 8px;">جدول محاضرات الأسبوع الحالي - ميكانيكا</h3>
+                <div style="display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;">
+                    <span class="badge">👍 38 تفاعل</span>
+                    <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: var(--error); border-color: rgba(239,68,68,0.3);">❤️ 14 تفاعل</span>
+                    <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: var(--accent); border-color: rgba(59,130,246,0.3);">🙏 5 تفاعلات</span>
+                </div>
+
+                <div style="border-top: 1px solid var(--divider); padding-top: 10px;">
+                    <p style="font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--text-muted);">أسماء الطلاب المتفاعلين:</p>
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px dashed var(--divider);">
+                        <span>أحمد محمد علي</span>
+                        <span>👍 (ميكانيكا)</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px dashed var(--divider);">
+                        <span>عمر خالد حسن</span>
+                        <span>❤️ (كهربا)</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0;">
+                        <span>سارة إبراهيم عثمان</span>
+                        <span>👍 (مدنية)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Navigation -->
+            <nav class="bottom-nav">
+                <button class="nav-item" onclick="switchScreen('screen-admin-stats')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    الإحصائيات
+                </button>
+                <button class="nav-item" onclick="switchScreen('screen-admin-posts')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    المنشورات
+                </button>
+                <div class="nav-fab-container">
+                    <button class="fab-btn" onclick="switchScreen('screen-admin-newpost')">+</button>
+                </div>
+                <button class="nav-item" onclick="switchScreen('screen-admin-students')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    الطلاب
+                </button>
+                <button class="nav-item active" onclick="switchScreen('screen-admin-reactions')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                    التفاعلات
+                </button>
+            </nav>
+        </div>
+
+        <!-- ==========================================
+           7. SCREEN: SETTINGS (الإعدادات)
+           ========================================== -->
+        <div id="screen-admin-settings" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="toggleDrawer()">☰</button>
+                <h1>الإعدادات والوضع الليلي</h1>
+                <div style="width: 40px;"></div>
+            </header>
+
+            <div style="padding: 16px;">
+                <div class="admin-card" style="margin: 0 0 12px 0; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h3 style="font-size: 15px; font-weight: 700;">الوضع الليلي (Dark Theme)</h3>
+                        <p style="font-size: 12px; color: var(--text-muted);">مظهر Lux Luxury المخصص للتطبيق</p>
+                    </div>
+                    <input type="checkbox" id="themeToggle" checked onchange="toggleTheme()" style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer;">
+                </div>
+
+                <div class="admin-card" style="margin: 0 0 12px 0;">
+                    <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">تغيير كلمة السر</h3>
+                    <div class="input-group">
+                        <label class="input-label">كلمة السر الحالية</label>
+                        <input type="password" class="custom-input" placeholder="••••••••">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">كلمة السر الجديدة</label>
+                        <input type="password" class="custom-input" placeholder="••••••••">
+                    </div>
+                    <button class="btn-primary" onclick="showToast('تم تحديث كلمة السر بنجاح')">حفظ التغييرات</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+           8. SCREEN: EMPTY STATE (حالة فارغة)
+           ========================================== -->
+        <div id="screen-empty" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="toggleDrawer()">☰</button>
+                <h1>المنشورات</h1>
+                <div style="width: 40px;"></div>
+            </header>
+
+            <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <h3 style="font-size: 18px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">لا توجد منشورات سابقة</h3>
+                <p style="font-size: 14px; max-width: 260px; margin-bottom: 20px;">ابدأ بنشر الجدول أو المحاضرات والفعاليات الأولى للطلاب عبر زر الإنشاء أدناه.</p>
+                <button class="btn-primary" style="width: auto; padding: 10px 24px;" onclick="switchScreen('screen-admin-newpost')">إنشاء منشور جديد</button>
+            </div>
+        </div>
+
+        <!-- ==========================================
+           9. SCREEN: SKELETON LOADER (تحميل SKELETON)
+           ========================================== -->
+        <div id="screen-skeleton" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="toggleDrawer()">☰</button>
+                <h1>جاري التحميل...</h1>
+                <div style="width: 40px;"></div>
+            </header>
+
+            <div class="skeleton-card">
+                <div class="skeleton-line" style="width: 80px; height: 20px; margin-bottom: 12px;"></div>
+                <div class="skeleton-line" style="width: 100%; height: 24px; margin-bottom: 8px;"></div>
+                <div class="skeleton-line" style="width: 90%; height: 16px; margin-bottom: 16px;"></div>
+                <div class="skeleton-line" style="width: 100%; height: 80px; border-radius: 12px;"></div>
+            </div>
+
+            <div class="skeleton-card">
+                <div class="skeleton-line" style="width: 80px; height: 20px; margin-bottom: 12px;"></div>
+                <div class="skeleton-line" style="width: 100%; height: 24px; margin-bottom: 8px;"></div>
+                <div class="skeleton-line" style="width: 60%; height: 16px;"></div>
+            </div>
+        </div>
+
+        <!-- TOAST NOTIFICATION -->
+        <div class="toast" id="toastBox">
+            <span id="toastText">تمت العملية بنجاح</span>
+        </div>
+
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen-view').forEach(el => el.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            
+            document.querySelectorAll('.screen-btn').forEach(btn => btn.classList.remove('active'));
+            event && event.target && event.target.classList.contains('screen-btn') && event.target.classList.add('active');
+            
+            // Scroll frame top
+            const phone = document.getElementById('phoneContainer');
+            phone.scrollTop = 0;
+        }
+
+        function toggleDrawer() {
+            document.getElementById('sideDrawer').classList.toggle('open');
+            document.getElementById('drawerOverlay').classList.toggle('open');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toastBox');
+            const toastText = document.getElementById('toastText');
+            toastText.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            if (body.getAttribute('data-theme') === 'light') {
+                body.removeAttribute('data-theme');
+                showToast('تم تفعيل الوضع الليلي (Dark Luxe)');
+            } else {
+                body.setAttribute('data-theme', 'light');
+                showToast('تم تفعيل الوضع المضيء');
+            }
+        }
+    </script>
+</body>
+</html>

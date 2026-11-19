@@ -54,6 +54,9 @@ jobs:
       AI_PROVIDER: gemini
       # A model that sends nothing for 3 minutes is stuck; move to the next one instead of waiting 5.
       GEMINI_STALL_SECONDS: "180"
+      # The pair wiring check after each app: one AI try (the build checks it again), not two long ones. It took 12-21
+      # minutes per app and often still missed the same piece.
+      PAIR_FIX_QUICK: "1"
       BASE: ${{ inputs.base }}
     steps:
       - uses: actions/checkout@v4
@@ -96,10 +99,20 @@ jobs:
         run: python scripts/pair.py auth --base "$BASE"
       - name: "Firebase: notifications"
         run: python scripts/pair.py firebase --base "$BASE"
+      # The two apps are written AT THE SAME TIME: the admin app starts in the background here and the next step waits
+      # for it. They share only the contract and the database, and each follows its own approved design, so neither
+      # needs the other's code. One after the other took 50-70 minutes on a busy Gemini day.
       - name: Generate customer app
-        run: python scripts/pair.py generate --base "$BASE" --role customer
+        run: |
+          ( python scripts/pair.py generate --base "$BASE" --role admin; echo $? > "$RUNNER_TEMP/admin.rc" ) > "$RUNNER_TEMP/admin.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/admin.pid"
+          python scripts/pair.py generate --base "$BASE" --role customer
       - name: Generate admin app
-        run: python scripts/pair.py generate --base "$BASE" --role admin
+        run: |
+          # Shows the admin app's log as it is written, until that background job ends.
+          tail -n +1 -f "$RUNNER_TEMP/admin.log" --pid="$(cat "$RUNNER_TEMP/admin.pid")"
+          rc=$(cat "$RUNNER_TEMP/admin.rc" 2>/dev/null || echo 1)
+          if [ "$rc" != 0 ]; then echo "::error::the admin app failed (exit $rc)"; exit 1; fi
 
       - name: Save
         env:

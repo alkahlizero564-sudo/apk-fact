@@ -40,7 +40,7 @@ export async function setRepoSecret(name: string, value: string) {
 }
 
 export async function setRepoVariable(name: string, value: string) {
-  const created = await githubApi(`/repos/${REPO}/actions/variables`, { method: "POST", body: { name, value } });
+  const created = await githubApi(`/repos/${REPO}/actions/variables`, { method: "POST", body: { name, value }, retry: true }) // a repeat answers 409;
   if (created.status === 409) {
     await checkGithub(
       await githubApi(`/repos/${REPO}/actions/variables/${name}`, { method: "PATCH", body: { name, value } }),

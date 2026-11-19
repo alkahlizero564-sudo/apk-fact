@@ -189,12 +189,14 @@ export async function createPair(o: PairOptions, report: Report, progress: PairP
     }
     const job = jobs[0];
     if (!job) continue;
+    let failedBefore = false; // steps GitHub skips after a failure never ran: they stay open, not ✓
     for (const st of job.steps ?? []) {
+      if (st.status === "completed" && (st.conclusion === "failure" || st.conclusion === "cancelled")) failedBefore = true;
       const key = STEP_KEYS[st.name];
       if (!key) continue;
       if (st.status === "in_progress") report(key, "active");
       else if (st.status === "completed")
-        report(key, st.conclusion === "success" ? "done" : st.conclusion === "skipped" ? "done" : "error");
+        report(key, st.conclusion === "success" ? "done" : st.conclusion === "skipped" ? (failedBefore ? "pending" : "done") : "error");
     }
     if (job.status === "completed") {
       await finishJob(bgJob, job.conclusion === "success");

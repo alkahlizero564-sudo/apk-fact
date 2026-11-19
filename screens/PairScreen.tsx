@@ -10,7 +10,8 @@ import { AppAvatar, LANG_ICONS } from "../components/appVisuals";
 import { LANGS, PAIR_LANGS, Lang } from "../services/langs";
 import { appExists } from "../services/appActions";
 import { takeGalleryPairPick } from "../services/galleryPick";
-import { createPair, pairApps, pairReadiness, PairReadiness, setAdminPin } from "../services/pair";
+import { createPair, pairApps, pairReadiness, PairReadiness, PairProgress, setAdminPin } from "../services/pair";
+import { onNetworkWait } from "../services/net";
 import DesignStudio from "../components/DesignStudio";
 import DbProjectsPanel from "../components/DbProjectsPanel";
 import { OwnerPicker, Owner } from "../components/OwnerSheet";
@@ -67,6 +68,10 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
   const [spec, setSpec] = useState<Spec | null>(null); // the requirements the owner approved for both apps
   const [understandBusy, setUnderstandBusy] = useState(false);
   const understandRef = useRef<UnderstandHandle>(null);
+  // Where the creation got to: «إعادة المحاولة» after a network drop continues from there (same GitHub run).
+  const progress = useRef<PairProgress & { designsSaved?: boolean }>({});
+  const [netWait, setNetWait] = useState(false);
+  useEffect(() => onNetworkWait(setNetWait), []);
 
   // Optional reference pictures for both apps; synced to the shared holder so understanding and design use them.
   useEffect(() => {
@@ -183,7 +188,11 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
     if (!usePush) report("firebase", "done", lang === "python" ? "Python: إشعارات داخل التطبيق فقط" : "الإشعارات مطفية");
     try {
       report("design", "active");
-      for (const t of designTargets) if (designs[t.key]) await saveApprovedDesign(t.key, designs[t.key]);
+      if (!progress.current.designsSaved || progress.current.base !== clean) {
+        progress.current = { base: clean };
+        for (const t of designTargets) if (designs[t.key]) await saveApprovedDesign(t.key, designs[t.key]);
+        progress.current.designsSaved = true;
+      }
       report("design", "done");
       await createPair(
         {
@@ -196,7 +205,8 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
           adminName,
           supabaseRef: dbRef || undefined,
         },
-        report
+        report,
+        progress.current
       );
       if (owner?.kind === "client") {
         await setClient(apps.customer, owner.name);
@@ -208,6 +218,7 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
       await setAdminPin(clean.replace(/[^a-z0-9_]/g, "_"), dbRef, adminByEmail ? secretPin : pin.trim());
       designTargets.forEach((t) => clearDraft(t));
       setPhase("done");
+      progress.current = {};
       clearWork("pair");
     } catch (e: any) {
       setError(e.message);
@@ -299,6 +310,9 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
             <Card>
               <Timeline steps={steps} />
             </Card>
+            {phase === "running" && netWait ? (
+              <Banner kind="error" text="الشبكة مقطوعة… بنكمل تلقائياً أول ما ترجع، ما تحتاج تعيد شي." />
+            ) : null}
             {phase === "running" ? <Banner kind="info" text="بياخد من 5 إلى 15 دقيقة. تقدر تقفل الشاشة، والعملية بتكمل على GitHub." /> : null}
             {phase === "done" ? (
               <>
@@ -313,7 +327,15 @@ export default function PairScreen({ navigation, route }: RootScreenProps<"Pair"
               <>
                 <Banner kind="error" text={error} />
                 <View style={styles.row}>
-                  <Button title="تعديل" variant="secondary" onPress={() => setPhase("form")} style={{ flex: 1 }} />
+                  <Button
+                    title="تعديل"
+                    variant="secondary"
+                    onPress={() => {
+                      progress.current = {}; // an edited request is a new creation
+                      setPhase("form");
+                    }}
+                    style={{ flex: 1 }}
+                  />
                   <Button title="إعادة المحاولة" icon="refresh" onPress={submit} style={{ flex: 2 }} />
                 </View>
               </>

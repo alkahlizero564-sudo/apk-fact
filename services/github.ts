@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import { netFetch } from "./net";
 
 const GITHUB_API = "https://api.github.com";
 
@@ -17,9 +18,10 @@ function authHeaders(token: string) {
 }
 
 /** Authenticated GitHub API request (path starts with "/"). */
-export async function githubApi(path: string, init: { method?: string; body?: unknown } = {}) {
+export async function githubApi(path: string, init: { method?: string; body?: unknown; retry?: boolean } = {}) {
   const token = await getToken();
-  return fetch(`${GITHUB_API}${path}`, {
+  return netFetch(`${GITHUB_API}${path}`, {
+    retry: init.retry,
     method: init.method ?? "GET",
     headers: { ...authHeaders(token), ...(init.body !== undefined ? { "Content-Type": "application/json" } : {}) },
     body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
@@ -33,7 +35,7 @@ export async function githubToken() {
 
 export async function testGithubConnection(): Promise<{ login: string }> {
   const token = await getToken();
-  const res = await fetch(`${GITHUB_API}/user`, { headers: authHeaders(token) });
+  const res = await netFetch(`${GITHUB_API}/user`, { headers: authHeaders(token) });
   if (!res.ok) {
     throw new Error(`GitHub auth failed (${res.status}): ${await res.text()}`);
   }
@@ -51,7 +53,7 @@ export async function pushFile(
   const token = await getToken();
 
   let sha: string | undefined;
-  const existing = await fetch(
+  const existing = await netFetch(
     `${GITHUB_API}/repos/${repoFullName}/contents/${path}?ref=${branch}`,
     { headers: authHeaders(token) }
   );
@@ -62,7 +64,7 @@ export async function pushFile(
 
   const base64Content = base64Encode(content);
 
-  const res = await fetch(`${GITHUB_API}/repos/${repoFullName}/contents/${path}`, {
+  const res = await netFetch(`${GITHUB_API}/repos/${repoFullName}/contents/${path}`, {
     method: "PUT",
     headers: { ...authHeaders(token), "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -100,7 +102,7 @@ export async function triggerWorkflow(
   ref: string = "main"
 ) {
   const token = await getToken();
-  const res = await fetch(
+  const res = await netFetch(
     `${GITHUB_API}/repos/${repoFullName}/actions/workflows/${workflowFile}/dispatches`,
     {
       method: "POST",
@@ -116,7 +118,7 @@ export async function triggerWorkflow(
 
 export async function listWorkflowRuns(repoFullName: string, workflowFile: string, perPage = 5) {
   const token = await getToken();
-  const res = await fetch(
+  const res = await netFetch(
     `${GITHUB_API}/repos/${repoFullName}/actions/workflows/${workflowFile}/runs?per_page=${perPage}`,
     { headers: authHeaders(token) }
   );
@@ -136,7 +138,7 @@ export async function listWorkflowRuns(repoFullName: string, workflowFile: strin
 
 export async function createRepo(name: string, isPrivate: boolean = true) {
   const token = await getToken();
-  const res = await fetch(`${GITHUB_API}/user/repos`, {
+  const res = await netFetch(`${GITHUB_API}/user/repos`, {
     method: "POST",
     headers: { ...authHeaders(token), "Content-Type": "application/json" },
     body: JSON.stringify({ name, private: isPrivate, auto_init: true }),
@@ -171,7 +173,7 @@ export async function getFileText(
   branch: string = "main"
 ): Promise<string | null> {
   const token = await getToken();
-  const res = await fetch(
+  const res = await netFetch(
     `${GITHUB_API}/repos/${repoFullName}/contents/${path}?ref=${branch}&t=${Date.now()}`,
     { headers: { ...authHeaders(token), Accept: "application/vnd.github.raw+json" } }
   );
@@ -186,7 +188,7 @@ export async function listDir(
   branch: string = "main"
 ): Promise<string[]> {
   const token = await getToken();
-  const res = await fetch(
+  const res = await netFetch(
     `${GITHUB_API}/repos/${repoFullName}/contents/${path}?ref=${branch}&t=${Date.now()}`,
     { headers: authHeaders(token) }
   );
@@ -201,7 +203,7 @@ export async function listDir(
 /** One workflow run by id (status, conclusion, title), or null when GitHub can't be reached. */
 export async function getWorkflowRun(repoFullName: string, runId: number) {
   const token = await getToken();
-  const res = await fetch(`${GITHUB_API}/repos/${repoFullName}/actions/runs/${runId}`, { headers: authHeaders(token) });
+  const res = await netFetch(`${GITHUB_API}/repos/${repoFullName}/actions/runs/${runId}`, { headers: authHeaders(token) });
   if (!res.ok) return null;
   const r = await res.json();
   return { id: r.id as number, status: r.status as string, conclusion: r.conclusion as string | null, title: r.display_title as string };
@@ -230,14 +232,14 @@ export function errorPart(log: string): string {
 export async function getFailureLog(repoFullName: string, runId: number): Promise<string> {
   try {
     const token = await getToken();
-    const jr = await fetch(`${GITHUB_API}/repos/${repoFullName}/actions/runs/${runId}/jobs`, {
+    const jr = await netFetch(`${GITHUB_API}/repos/${repoFullName}/actions/runs/${runId}/jobs`, {
       headers: authHeaders(token),
     });
     if (!jr.ok) return "";
     const jobs = (await jr.json()).jobs || [];
     const job = jobs.find((j: any) => j.conclusion === "failure") || jobs[0];
     if (!job) return "";
-    const lr = await fetch(`${GITHUB_API}/repos/${repoFullName}/actions/jobs/${job.id}/logs`, {
+    const lr = await netFetch(`${GITHUB_API}/repos/${repoFullName}/actions/jobs/${job.id}/logs`, {
       headers: authHeaders(token),
     });
     if (!lr.ok) return "";
@@ -252,7 +254,7 @@ export async function findAppApkAsset(
   ext: ".apk" | ".aab" = ".apk"
 ): Promise<{ id: number; name: string; url: string } | null> {
   const token = await getToken();
-  const res = await fetch(
+  const res = await netFetch(
     `${GITHUB_API}/repos/${repoFullName}/releases?per_page=30&t=${Date.now()}`,
     { headers: authHeaders(token) }
   );
@@ -280,7 +282,7 @@ export async function deleteFile(
   branch: string = "main"
 ) {
   const token = await getToken();
-  const res = await fetch(`${GITHUB_API}/repos/${repoFullName}/contents/${path}`, {
+  const res = await netFetch(`${GITHUB_API}/repos/${repoFullName}/contents/${path}`, {
     method: "DELETE",
     headers: { ...authHeaders(token), "Content-Type": "application/json" },
     body: JSON.stringify({ message, sha, branch }),
@@ -297,7 +299,7 @@ export async function deleteFolder(
     throw new Error("مسار الحذف غير مسموح.");
   }
   const token = await getToken();
-  const res = await fetch(
+  const res = await netFetch(
     `${GITHUB_API}/repos/${repoFullName}/contents/${folder}?ref=${branch}&t=${Date.now()}`,
     { headers: authHeaders(token) }
   );
@@ -323,7 +325,7 @@ export async function pushBase64File(
   const token = await getToken();
 
   let sha: string | undefined;
-  const existing = await fetch(
+  const existing = await netFetch(
     `${GITHUB_API}/repos/${repoFullName}/contents/${path}?ref=${branch}&t=${Date.now()}`,
     { headers: authHeaders(token) }
   );
@@ -332,7 +334,7 @@ export async function pushBase64File(
     sha = data.sha;
   }
 
-  const res = await fetch(`${GITHUB_API}/repos/${repoFullName}/contents/${path}`, {
+  const res = await netFetch(`${GITHUB_API}/repos/${repoFullName}/contents/${path}`, {
     method: "PUT",
     headers: { ...authHeaders(token), "Content-Type": "application/json" },
     body: JSON.stringify({

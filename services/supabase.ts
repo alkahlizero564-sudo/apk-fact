@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import { netFetch } from "./net";
 import { tokenFor } from "./projects";
 
 const MGMT_API = "https://api.supabase.com/v1";
@@ -31,11 +32,13 @@ export async function testSupabaseConnection(): Promise<{ name: string; status: 
   return { name: data.name, status: data.status };
 }
 
-export async function runSql(query: string, projectRef?: string): Promise<any> {
+/** `retry`: send again after a network drop; only for statements that are safe to run twice. */
+export async function runSql(query: string, projectRef?: string, retry = false): Promise<any> {
   const token = await getManagementToken(projectRef);
   const ref = projectRef || (await getProjectRef());
 
-  const res = await fetch(`${MGMT_API}/projects/${ref}/database/query`, {
+  const res = await netFetch(`${MGMT_API}/projects/${ref}/database/query`, {
+    retry,
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,

@@ -124,33 +124,69 @@ const STEP_KEYS: Record<string, string> = {
 };
 
 // Steps: sync -> backend -> auth -> firebase -> customer -> admin -> save
-export async function createPair(o: PairOptions, report: Report) {
-  report("sync", "active");
-  await syncSecrets(o.push, o.supabaseRef);
-  const prevId = await latestRunId(REPO, "generate-pair.yml");
-  await triggerWorkflow(REPO, "generate-pair.yml", {
-    base: o.base,
-    lang: o.lang,
-    admins: o.admins,
-    push: o.push ? "true" : "false",
-    description: o.description,
-    names: [o.customerName, o.adminName].map((n) => (n ?? "").replace(/[|]/g, "").trim()).join("|"),
-    ...(o.supabaseRef ? { supabase_ref: o.supabaseRef } : {}),
-  });
+/** Where a pair creation got to, so «إعادة المحاولة» after a network drop follows the same run instead of
+ *  starting a second one. Kept by the screen between attempts. */
+export type PairProgress = { base?: string; prevId?: number; triggered?: boolean; runId?: number; bgJob?: string };
+
+export async function createPair(o: PairOptions, report: Report, progress: PairProgress = {}) {
+  if (progress.base !== o.base) {
+    for (const k of Object.keys(progress)) delete (progress as any)[k];
+    progress.base = o.base;
+  }
+  if (!progress.triggered) {
+    report("sync", "active");
+    await syncSecrets(o.push, o.supabaseRef);
+    if (progress.prevId === undefined) progress.prevId = await latestRunId(REPO, "generate-pair.yml");
+    // The start request may have reached GitHub even if its answer was lost: look for that run before starting again.
+    const already = (await listWorkflowRuns(REPO, "generate-pair.yml")).find((r: any) => r.id > progress.prevId!);
+    if (already) {
+      progress.runId = already.id;
+    } else {
+      await triggerWorkflow(REPO, "generate-pair.yml", {
+        base: o.base,
+        lang: o.lang,
+        admins: o.admins,
+        push: o.push ? "true" : "false",
+        description: o.description,
+        names: [o.customerName, o.adminName].map((n) => (n ?? "").replace(/[|]/g, "").trim()).join("|"),
+        ...(o.supabaseRef ? { supabase_ref: o.supabaseRef } : {}),
+      });
+    }
+    progress.triggered = true;
+  }
   report("sync", "done");
+  const prevId = progress.prevId!;
 
   // Followed as a background job too: the owner is notified when the pair is ready even after leaving APK Fact.
-  const bgJob = await addJob({ title: `إنشاء ${o.base} (زبون + إدارة)`, workflow: "generate-pair.yml", prevId });
+  if (!progress.bgJob) {
+    progress.bgJob = await addJob({ title: `إنشاء ${o.base} (زبون + إدارة)`, workflow: "generate-pair.yml", prevId });
+    if (progress.runId) await setJobRun(progress.bgJob, progress.runId);
+  }
+  const bgJob = progress.bgJob;
   const started = Date.now();
-  let runId = 0;
+  let runId = progress.runId ?? 0;
+  let offlineSince = 0;
   while (Date.now() - started < 60 * 60 * 1000) {
     await sleep(6000);
-    if (!runId) {
-      runId = (await listWorkflowRuns(REPO, "generate-pair.yml")).find((r: any) => r.id > prevId)?.id ?? 0;
-      if (runId) await setJobRun(bgJob, runId);
+    let jobs: any[];
+    try {
+      if (!runId) {
+        runId = (await listWorkflowRuns(REPO, "generate-pair.yml")).find((r: any) => r.id > prevId)?.id ?? 0;
+        if (runId) {
+          progress.runId = runId;
+          await setJobRun(bgJob, runId);
+        }
+        offlineSince = 0;
+        continue;
+      }
+      jobs = (await (await githubApi(`/repos/${REPO}/actions/runs/${runId}/jobs`)).json()).jobs ?? [];
+      offlineSince = 0;
+    } catch (e) {
+      // The work runs on GitHub whatever the phone's network does: keep following it (up to 10 minutes offline).
+      offlineSince = offlineSince || Date.now();
+      if (Date.now() - offlineSince > 10 * 60 * 1000) throw e;
       continue;
     }
-    const jobs = (await (await githubApi(`/repos/${REPO}/actions/runs/${runId}/jobs`)).json()).jobs ?? [];
     const job = jobs[0];
     if (!job) continue;
     for (const st of job.steps ?? []) {
@@ -192,7 +228,8 @@ export async function listAdmins(prefix: string, ref: string): Promise<AdminAcco
   const rows = await runSql(
     `select a.email, exists (select 1 from public.${p}_profiles pr where lower(pr.email) = lower(a.email)) as signed_up ` +
       `from public.${p}_admins a order by a.email;`,
-    ref
+    ref,
+    true
   );
   return (Array.isArray(rows) ? rows : []).map((r: any) => ({ email: r.email, signedUp: !!r.signed_up }));
 }
@@ -203,7 +240,7 @@ export async function addAdmin(prefix: string, ref: string, email: string) {
   await runSql(
     `insert into public.${p}_admins(email) values (${e}) on conflict do nothing; ` +
       `update public.${p}_profiles set role = 'admin' where lower(email) = ${e};`,
-    ref
+    ref, true
   );
 }
 
@@ -217,14 +254,14 @@ export async function removeAdmin(prefix: string, ref: string, email: string) {
   await runSql(
     `delete from public.${p}_admins where lower(email) = ${e}; ` +
       `update public.${p}_profiles set role = 'customer' where lower(email) = ${e};`,
-    ref
+    ref, true
   );
 }
 
 async function installAdminSql(p: string, ref: string) {
   const template = await getFileText(REPO, "scripts/templates/admin_pin.sql");
   if (!template) throw new Error("ملف صلاحيات الإدارة مش موجود في المستودع.");
-  await runSql(template.split("{p}").join(p), ref);
+  await runSql(template.split("{p}").join(p), ref, true);
 }
 
 /** Sets the secret admin PIN of a pair (installs the admin functions first; the SQL lives in the repo). */
@@ -235,7 +272,8 @@ export async function setAdminPin(prefix: string, ref: string, pin: string) {
   await runSql(
     `insert into public.${p}_admin_secret (id, pin_hash) values (1, extensions.crypt('${pin}', extensions.gen_salt('bf'))) ` +
       `on conflict (id) do update set pin_hash = excluded.pin_hash, updated_at = now();`,
-    ref
+    ref,
+    true
   );
 }
 
@@ -243,7 +281,7 @@ export async function setAdminPin(prefix: string, ref: string, pin: string) {
 export async function openAdminMode(prefix: string, ref: string) {
   const p = safePrefix(prefix);
   await installAdminSql(p, ref);
-  await runSql(`delete from public.${p}_admin_secret;`, ref);
+  await runSql(`delete from public.${p}_admin_secret;`, ref, true);
 }
 
 export type AdminMode = "missing" | "open" | "pin";
@@ -253,19 +291,20 @@ export async function adminMode(prefix: string, ref: string): Promise<AdminMode>
   const rows = await runSql(
     `select to_regprocedure('public.${p}_claim_admin(text)') is not null as installed, ` +
       `(to_regclass('public.${p}_admin_secret') is not null) as has_table;`,
-    ref
+    ref,
+    true
   );
   const r = Array.isArray(rows) ? rows[0] : null;
   if (!r?.installed) return "missing";
   if (!r.has_table) return "open";
-  const n = await runSql(`select count(*)::int as n from public.${p}_admin_secret;`, ref);
+  const n = await runSql(`select count(*)::int as n from public.${p}_admin_secret;`, ref, true);
   return Array.isArray(n) && n[0]?.n > 0 ? "pin" : "open";
 }
 
 export async function hasAdminPin(prefix: string, ref: string): Promise<boolean> {
   const p = safePrefix(prefix);
   try {
-    const rows = await runSql(`select count(*)::int as n from public.${p}_admin_secret;`, ref);
+    const rows = await runSql(`select count(*)::int as n from public.${p}_admin_secret;`, ref, true);
     return Array.isArray(rows) && rows[0]?.n > 0;
   } catch {
     return false;

@@ -1,0 +1,7 @@
+provider
+shared_preferences
+http
+url_launcher
+firebase_core
+firebase_messaging
+image_picker

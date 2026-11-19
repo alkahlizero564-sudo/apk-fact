@@ -1,0 +1,6 @@
+provider
+shared_preferences
+http
+path_provider
+firebase_core
+firebase_messaging

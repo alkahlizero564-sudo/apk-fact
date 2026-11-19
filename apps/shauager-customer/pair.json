@@ -1,0 +1,146 @@
+{
+ "pair": "shauager",
+ "prefix": "shauager",
+ "lang": "flutter",
+ "push": true,
+ "admins": [
+  "awadaljied8@gmail.com"
+ ],
+ "description": "فكرة المشروع\nنظام من تطبيقين مربوطين بقاعدة بيانات واحدة، الغرض منه تنظيم التواصل بين ليدر الدفعة والطلاب:\n- تطبيق الليدر: ينشر منه الجداول والمحاضرات والفعاليات والأخبار، ويتابع الطلاب المسجلين.\n- تطبيق الطلاب: الطالب يسجّل فيه ويشوف المنشورات الخاصة بتخصصه ويتفاعل معاها ويحمّل مرفقاتها.\nالتخصصات: ميكانيكا، تصنيع، مدنية، كهربا.\n\n==============================\nأولاً: تطبيق الطلاب\n==============================\n\n1) التسجيل\nالطالب يعمل حساب بالبيانات دي:\n- الاسم الكامل (إجباري).\n- رقم الهاتف السوداني (إجباري). يتأكد التطبيق إنه رقم سوداني صحيح: يبدأ بـ 09 أو 01 ويكون 10 أرقام، أو يبدأ بـ +249 وبعده 9 أرقام.\n- التخصص يختاره من قائمة: ميكانيكا / تصنيع / مدنية / كهربا.\n- كلمة السر.\nبعد التسجيل يدخل برقم الهاتف وكلمة السر، ويفضل الحساب مسجّل في الجهاز.\n\n2) الشاشة الرئيسية\n- قائمة بالمنشورات الجديدة فوق، وفيها المنشورات المرسلة لتخصص الطالب والمرسلة لكل التخصصات.\n- فلتر حسب النوع: الكل / جدول / محاضرات / فعاليات / أخبار.\n- كل منشور يظهر فيه العنوان والنص وتاريخ النشر ونوع المنشور، ومعاه المرفقات والتفاعلات.\n\n3) التفاعل بالإيموجي (بدون تعليقات)\n- الطالب يتفاعل مع المنشورات بالإيموجي بس، وما في تعليقات ولا كتابة.\n- الإيموجيات المتاحة: 👍 ❤️ 😂 😮 😢 🙏\n- تفاعل واحد لكل طالب في المنشور الواحد:\n  - ضغطة على زر التفاعل تحط 👍 مباشرة.\n  - ضغطة مطوّلة تفتح قائمة الإيموجيات ويختار منها.\n  - لو اختار إيموجي تاني يتغيّر تفاعله، ولو ضغط على نفس الإيموجي يتلغى.\n- تحت كل منشور يظهر عدد كل إيموجي (مثلاً: 👍 45  ❤️ 12  🙏 8).\n- الأرقام تتحدث مباشرة لما أي طالب يتفاعل.\n- الطلاب يشوفوا عدد التفاعلات بس، وأسماء المتفاعلين بتظهر لليدر بس.\n\n4) عرض المرفقات\n- الصور: تفتح بحجم كامل ويقدر يقلّب بينها ويكبّرها.\n- الفيديوهات: تشتغل جوه التطبيق.\n- الملفات (PDF وWord وغيرها): تفتح جوه التطبيق أو بأي تطبيق في الجهاز.\n\n5) تحميل المرفقات (اختياري للطالب)\n- التحميل اختياري، والطالب يقدر يشوف كل حاجة أونلاين من غير ما يحمّل.\n- زر تحميل على كل صورة وفيديو وملف.\n- زر \"تحميل الكل\" في المنشور، يحمّل كل مرفقاته دفعة واحدة.\n- شريط تقدّم يوضّح نسبة التحميل، ويقدر يلغي التحميل في أي وقت.\n- مكان الحفظ:\n  - الصور والفيديوهات تتحفظ في معرض الجهاز، في ألبوم باسم التطبيق.\n  - الملفات تتحفظ في مجلد التنزيلات (Downloads).\n- علامة ✓ على المرفق المحمّل مسبقاً، عشان ما يحمّله مرتين.\n- صفحة \"التحميلات\" فيها كل الحاجات الحمّلها الطالب، ويقدر يفتحها من غير إنترنت.\n- التطبيق يطلب صلاحية التخزين من الطالب أول مرة يحمّل فيها.\n\n6) الإشعارات\n- يصل للطالب إشعار فوري أول ما الليدر ينشر منشور يخص تخصصه أو يخص كل التخصصات.\n\n7) الملف الشخصي\n- فيه بيانات الطالب، ويقدر يعدّل الاسم أو التخصص.\n- زر تسجيل الخروج.\n\n==============================\nثانياً: تطبيق الليدر\n==============================\n\n1) الدخول\n- يدخل الليدر بحساب خاص (رقم الهاتف وكلمة السر).\n- الحساب ده ما بيتسجّل من التطبيق، بيتعمل مسبقاً في قاعدة البيانات عشان ما يدخل أي شخص كليدر.\n\n2) لوحة الإحصائيات (أول شاشة بعد الدخول)\n- العدد الكلي للطلاب المسجلين في تطبيق الطلاب.\n- عدد الطلاب في كل تخصص: ميكانيكا / تصنيع / مدنية / كهربا.\n- عدد المسجلين الجدد اليوم وفي الأسبوع ده.\n- الأرقام تتحدث تلقائياً أول ما يسجّل أي طالب جديد.\n\n3) قائمة الطلاب\n- قائمة بكل الطلاب المسجلين، وفيها الاسم ورقم الهاتف والتخصص وتاريخ التسجيل.\n- فلتر حسب التخصص.\n- بحث بالاسم أو رقم الهاتف.\n- الضغط على الرقم يفتح الاتصال أو واتساب مع الطالب.\n\n4) إنشاء منشور جديد\n- نوع المنشور: جدول / محاضرة / فعالية / خبر.\n- العنوان.\n- النص أو التفاصيل.\n- المرفقات:\n  - صور وفيديوهات وملفات، ويقدر يرفع عدد كبير يصل لـ 60 مرفق أو أكثر في المنشور الواحد.\n  - الاختيار المتعدد من المعرض أو الملفات دفعة واحدة.\n  - شريط تقدّم يوضّح نسبة الرفع لكل ملف.\n  - يقدر يحذف أي مرفق قبل النشر.\n- الجهة المستهدفة:\n  - كل التخصصات.\n  - أو تخصص واحد: ميكانيكا / تصنيع / مدنية / كهربا.\n  - يظهر جنب كل اختيار عدد الطلاب الحيوصل ليهم المنشور.\n- زر النشر: المنشور يصل للطلاب المعنيين ويرسل ليهم إشعار.\n\n5) إدارة المنشورات\n- قائمة بكل المنشورات القديمة.\n- تعديل أو حذف أي منشور.\n- يوضّح لكل منشور كان مرسل لأي تخصص.\n\n6) متابعة التفاعلات\n- تحت كل منشور يظهر عدد كل إيموجي ومجموع التفاعلات.\n- الضغط على التفاعلات يفتح قائمة بأسماء الطلاب المتفاعلين، مع الإيموجي العمله كل طالب وتخصصه.\n- فلتر حسب الإيموجي، مثلاً يشوف الناس العملوا 👍 بس.\n\n==============================\nثالثاً: الجانب التقني (مقترح)\n==============================\n- قاعدة البيانات والحسابات: Firebase (Authentication وFirestore).\n- تخزين الصور والفيديوهات والملفات: Firebase Storage.\n- الإشعارات: Firebase Cloud Messaging. كل طالب يشترك في موضوع (Topic) باسم تخصصه، وكل الطلاب يشتركوا في موضوع \"الكل\".\n- التفاعلات:\n  - تتخزن في مجموعة فرعية تحت كل منشور، فيها مستند واحد لكل طالب (معرّف الطالب + الإيموجي).\n  - العدادات تتحدث بعمليات ذرية (Atomic increment) عشان الأرقام تفضل دقيقة حتى لو كتار تفاعلوا في نفس الوقت.\n- الأداء:\n  - ضغط الصور قبل رفعها.\n  - رفع وتحميل المرفقات الكتيرة بالتوازي.\n  - تحميل المنشورات على صفحات (Pagination) عشان التطبيق يفضل سريع.\n- الواجهة: باللغة العربية وتصميم من اليمين لليسار (RTL).\n\n==============================\nرابعاً: ملاحظات عامة\n==============================\n- دفعة واحدة وليدر واحد.\n- الطالب يدخل طوالي بعد التسجيل، من غير موافقة الليدر.\n- التسجيل بكلمة سر، من غير رمز تحقق OTP.\n- الطالب يتفاعل بالإيموجي بس، وما بيقدر يعلّق أو يرسل رسائل لليدر.\n\n=== المواصفات اللي وافق عليها صاحب التطبيق (نفّذها كلها بند بند، ولا تضيف تطبيق مختلف) ===\nالفكرة: نظام من تطبيقين (تطبيق الطلاب وتطبيق الليدر) مبني بـ Flutter ومربوط بقاعدة بيانات واحدة لتنظيم التواصل ونشر الجداول والمحاضرات والفعاليات والأخبار بين ليدر الدفعة والطلاب في تخصصات ميكانيكا، تصنيع، مدنية، وكهربا.\nالشاشات:\n- الزبون: شاشة التسجيل وإنشاء الحساب (الاسم الكامل، رقم الهاتف السوداني، البريد الإلكتروني، رمز تأكيد البريد، اختيار التخصص، وكلمة المرور)\n- الزبون: شاشة تسجيل الدخول (البريد الإلكتروني أو رقم الهاتف وكلمة المرور)\n- الزبون: الشاشة الرئيسية (قائمة المنشورات حسب التخصص مع فلتر حسب النوع والمرفقات والتفاعلات)\n- الزبون: صفحة عرض المرفقات والوسائط (للصور والفيديوهات والملفات)\n- الزبون: صفحة التحميلات (التي تحتوي على كل الملفات التي حمّلها الطالب للعمل بدون إنترنت)\n- الزبون: شاشة الملف الشخصي (عرض وتعديل بيانات الطالب، وزر تسجيل الخروج)\n- الإدارة: شاشة تسجيل الدخول لليدر (الاسم، رقم الهاتف، البريد الإلكتروني، رمز تأكيد البريد، وكلمة المرور)\n- الإدارة: لوحة الإحصائيات (العدد الكلي للطلاب، أعدادهم في كل التخصصات، والمسجلين الجدد)\n- الإدارة: قائمة الطلاب (مع إمكانية الفلتر، البحث، والاتصال أو الواتساب)\n- الإدارة: شاشة إنشاء منشور جديد (تحديد النوع، العنوان، النص، المرفقات المتعددة، والجهات المستهدفة)\n- الإدارة: شاشة إدارة المنشورات (قائمة المنشورات القديمة مع خيارات التعديل والحذف)\n- الإدارة: شاشة متابعة التفاعلات (عرض أسماء الطلاب المتفاعلين، الإيموجي، والتخصصات)\nالميزات والوظائف:\n- الزبون: التسجيل بحساب جديد يتضمن التحقق من رقم الهاتف السوداني والبريد الإلكتروني\n- الزبون: حفظ حالة تسجيل الدخول في الجهاز\n- الزبون: فلترة المنشورات حسب النوع (الكل / جدول / محاضرات / فعاليات / أخبار)\n- الزبون: التفاعل بالإيموجي فقط (👍 ❤️ 😂 😮 😢 🙏) بدون تعليقات، بتفاعل واحد لكل طالب\n- الزبون: عرض أعداد التفاعلات وتحديثها مباشرة\n- الزبون: فتح الصور والفيديوهات والملفات داخل التطبيق أو عبر تطبيقات الجهاز\n- الزبون: تحميل المرفقات اختيارياً مع شريط تقدّم وإمكانية الإلغاء وحفظها في المعرض أو التنزيلات\n- الزبون: تلقي إشعارات فورية عند نشر محتوى جديد يخص التخصص أو الكل\n- الزبون: تعديل الاسم أو التخصص من الملف الشخصي وتسجيل الخروج\n- الإدارة: الدخول بحساب مسبق الإعداد في قاعدة البيانات\n- الإدارة: عرض إحصائيات فورية ومحدثة تلقائياً لأعداد الطلاب والتخصصات\n- الإدارة: البحث في قائمة الطلاب والاتصال بهم أو مراسلتهم عبر واتساب\n- الإدارة: رفع عدد كبير من المرفقات (حتى 60 أو أكثر) دفعة واحدة مع شريط تقدم\n- الإدارة: استهداف تخصص معين أو كل التخصصات مع ظهور عدد الطلاب المستهدفين\n- الإدارة: تعديل أو حذف المنشورات السابقة\n- الإدارة: متابعة تفاعلات الطلاب ومعرفة أسماء المتفاعلين وتخصصاتهم لكل إيموجي\n- الاثنين: الاتصال بقاعدة بيانات وتخزين سحابي مشترك (Firebase)\nالبيانات اللي التطبيق بيحفظها:\n- الزبون: بيانات الطالب وتشمل (الاسم الكامل، رقم الهاتف السوداني، البريد الإلكتروني، التخصص، كلمة المرور، تاريخ التسجيل)\n- الاثنين: المنشورات وتشمل (العنوان، النص، نوع المنشور، التخصص المستهدف، تاريخ النشر، المرفقات)\n- الاثنين: التفاعلات وتشمل (معرّف الطالب، معرّف المنشور، الإيموجي المستخدم، وعدادات الإيموجي الذرية)\nالأسماء والنصوص والأرقام والألوان:\n- اسم التطبيق: shauager\n- التخصصات: ميكانيكا، تصنيع، مدنية، كهربا\n- الإيموجيات المتاحة: 👍 ❤️ 😂 😮 😢 🙏\n- أنواع المنشورات: جدول، محاضرات، فعاليات، أخبار\nالصلاحيات: الصور والملفات، الإشعارات\nANDROID_PERMISSIONS: STORAGE, NOTIFICATIONS\nLOGIN: customer=phone_email_code admin=phone_email_code",
+ "login": {
+  "customer": "phone_email_code",
+  "admin": "phone_email_code"
+ },
+ "supabase": {
+  "url": "https://jvjtgzewumfecjdpekna.supabase.co",
+  "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE",
+  "ref": "jvjtgzewumfecjdpekna"
+ },
+ "schemaSql": "-- Shauager 22 (شواغر 22) - Database Schema Script\n-- Designed for PostgreSQL 15 / Supabase\n\n-- 1. STUDENT DETAILS / PROFILES EXTENSION\ncreate table if not exists public.shauager_student_details (\n    customer_id uuid primary key default auth.uid() references auth.users(id) on delete cascade,\n    full_name text not null,\n    phone text not null,\n    email text not null,\n    major text not null check (major in ('ميكانيكا', 'تصنيع', 'مدنية', 'كهربا')),\n    created_at timestamptz not null default now(),\n    updated_at timestamptz not null default now()\n);\n\n-- 2. OTP VERIFICATION CODES\ncreate table if not exists public.shauager_otp_verifications (\n    id uuid primary key default gen_random_uuid(),\n    email text not null,\n    code text not null,\n    is_verified boolean not null default false,\n    expires_at timestamptz not null,\n    created_at timestamptz not null default now()\n);\n\n-- 3. POSTS TABLE\ncreate table if not exists public.shauager_posts (\n    id uuid primary key default gen_random_uuid(),\n    title text not null,\n    content text not null,\n    post_type text not null check (post_type in ('جدول', 'محاضرات', 'فعاليات', 'أخبار')),\n    target_major text not null check (target_major in ('الكل', 'ميكانيكا', 'تصنيع', 'مدنية', 'كهربا')),\n    author_id uuid references auth.users(id) on delete set null,\n    count_like integer not null default 0,\n    count_love integer not null default 0,\n    count_laugh integer not null default 0,\n    count_wow integer not null default 0,\n    count_sad integer not null default 0,\n    count_pray integer not null default 0,\n    created_at timestamptz not null default now(),\n    updated_at timestamptz not null default now()\n);\n\n-- 4. POST ATTACHMENTS\ncreate table if not exists public.shauager_attachments (\n    id uuid primary key default gen_random_uuid(),\n    post_id uuid not null references public.shauager_posts(id) on delete cascade,\n    file_name text not null,\n    file_url text not null,\n    file_type text not null check (file_type in ('pdf', 'doc', 'image', 'video', 'other')),\n    file_size_bytes bigint not null default 0,\n    description text,\n    created_at timestamptz not null default now()\n);\n\n-- 5. POST REACTIONS (EMOJIS ONLY)\ncreate table if not exists public.shauager_reactions (\n    id uuid primary key default gen_random_uuid(),\n    post_id uuid not null references public.shauager_posts(id) on delete cascade,\n    customer_id uuid not null default auth.uid() references auth.users(id) on delete cascade,\n    emoji text not null check (emoji in ('👍', '❤️', '😂', '😮', '😢', '🙏')),\n    created_at timestamptz not null default now(),\n    constraint shauager_reactions_post_customer_unique unique (post_id, customer_id)\n);\n\n-- 6. STUDENT DOWNLOADS (OFFLINE TRACKING)\ncreate table if not exists public.shauager_downloads (\n    id uuid primary key default gen_random_uuid(),\n    customer_id uuid not null default auth.uid() references auth.users(id) on delete cascade,\n    attachment_id uuid not null references public.shauager_attachments(id) on delete cascade,\n    post_id uuid not null references public.shauager_posts(id) on delete cascade,\n    local_path text,\n    created_at timestamptz not null default now(),\n    constraint shauager_downloads_customer_attachment_unique unique (customer_id, attachment_id)\n);\n\n-- FUNCTION & TRIGGER FOR ATOMIC EMOJI COUNTS\ncreate or replace function public.shauager_sync_reaction_counts()\nreturns trigger as $$\ndeclare\n    target_post_id uuid;\nbegin\n    if (TG_OP = 'DELETE') then\n        target_post_id := OLD.post_id;\n    else\n        target_post_id := NEW.post_id;\n    end if;\n\n    update public.shauager_posts\n    set\n        count_like  = (select count(*) from public.shauager_reactions where post_id = target_post_id and emoji = '👍'),\n        count_love  = (select count(*) from public.shauager_reactions where post_id = target_post_id and emoji = '❤️'),\n        count_laugh = (select count(*) from public.shauager_reactions where post_id = target_post_id and emoji = '😂'),\n        count_wow   = (select count(*) from public.shauager_reactions where post_id = target_post_id and emoji = '😮'),\n        count_sad   = (select count(*) from public.shauager_reactions where post_id = target_post_id and emoji = '😢'),\n        count_pray  = (select count(*) from public.shauager_reactions where post_id = target_post_id and emoji = '🙏'),\n        updated_at  = now()\n    where id = target_post_id;\n\n    return null;\nend;\n$$ language plpgsql security definer;\n\ndrop trigger if exists trigger_shauager_reaction_count_update on public.shauager_reactions;\ncreate trigger trigger_shauager_reaction_count_update\nafter insert or update or delete on public.shauager_reactions\nfor each row execute function public.shauager_sync_reaction_counts();\n\n-- ENABLE ROW LEVEL SECURITY\nalter table public.shauager_student_details enable row level security;\nalter table public.shauager_otp_verifications enable row level security;\nalter table public.shauager_posts enable row level security;\nalter table public.shauager_attachments enable row level security;\nalter table public.shauager_reactions enable row level security;\nalter table public.shauager_downloads enable row level security;\n\n-- ROW LEVEL SECURITY POLICIES\n\n-- shauager_student_details Policies\ndrop policy if exists \"Students can read their own details\" on public.shauager_student_details;\ncreate policy \"Students can read their own details\"\non public.shauager_student_details for select to authenticated\nusing (customer_id = auth.uid() or public.shauager_is_admin());\n\ndrop policy if exists \"Students can insert their own details\" on public.shauager_student_details;\ncreate policy \"Students can insert their own details\"\non public.shauager_student_details for insert to authenticated\nwith check (customer_id = auth.uid() or public.shauager_is_admin());\n\ndrop policy if exists \"Students can update their own details\" on public.shauager_student_details;\ncreate policy \"Students can update their own details\"\non public.shauager_student_details for update to authenticated\nusing (customer_id = auth.uid() or public.shauager_is_admin())\nwith check (customer_id = auth.uid() or public.shauager_is_admin());\n\ndrop policy if exists \"Admins can manage student details\" on public.shauager_student_details;\ncreate policy \"Admins can manage student details\"\non public.shauager_student_details for all to authenticated\nusing (public.shauager_is_admin());\n\n-- shauager_otp_verifications Policies\ndrop policy if exists \"Users can access OTPs\" on public.shauager_otp_verifications;\ncreate policy \"Users can access OTPs\"\non public.shauager_otp_verifications for all to authenticated\nusing (true)\nwith check (true);\n\n-- shauager_posts Policies\ndrop policy if exists \"Authenticated users can view posts\" on public.shauager_posts;\ncreate policy \"Authenticated users can view posts\"\non public.shauager_posts for select to authenticated\nusing (true);\n\ndrop policy if exists \"Admins can create posts\" on public.shauager_posts;\ncreate policy \"Admins can create posts\"\non public.shauager_posts for insert to authenticated\nwith check (public.shauager_is_admin());\n\ndrop policy if exists \"Admins can update posts\" on public.shauager_posts;\ncreate policy \"Admins can update posts\"\non public.shauager_posts for update to authenticated\nusing (public.shauager_is_admin())\nwith check (public.shauager_is_admin());\n\ndrop policy if exists \"Admins can delete posts\" on public.shauager_posts;\ncreate policy \"Admins can delete posts\"\non public.shauager_posts for delete to authenticated\nusing (public.shauager_is_admin());\n\n-- shauager_attachments Policies\ndrop policy if exists \"Authenticated users can view attachments\" on public.shauager_attachments;\ncreate policy \"Authenticated users can view attachments\"\non public.shauager_attachments for select to authenticated\nusing (true);\n\ndrop policy if exists \"Admins can manage attachments\" on public.shauager_attachments;\ncreate policy \"Admins can manage attachments\"\non public.shauager_attachments for all to authenticated\nusing (public.shauager_is_admin())\nwith check (public.shauager_is_admin());\n\n-- shauager_reactions Policies\ndrop policy if exists \"Authenticated users can view reactions\" on public.shauager_reactions;\ncreate policy \"Authenticated users can view reactions\"\non public.shauager_reactions for select to authenticated\nusing (true);\n\ndrop policy if exists \"Students can react to posts\" on public.shauager_reactions;\ncreate policy \"Students can react to posts\"\non public.shauager_reactions for insert to authenticated\nwith check (customer_id = auth.uid() or public.shauager_is_admin());\n\ndrop policy if exists \"Students can change their reactions\" on public.shauager_reactions;\ncreate policy \"Students can change their reactions\"\non public.shauager_reactions for update to authenticated\nusing (customer_id = auth.uid() or public.shauager_is_admin())\nwith check (customer_id = auth.uid() or public.shauager_is_admin());\n\ndrop policy if exists \"Students can remove their reactions\" on public.shauager_reactions;\ncreate policy \"Students can remove their reactions\"\non public.shauager_reactions for delete to authenticated\nusing (customer_id = auth.uid() or public.shauager_is_admin());\n\n-- shauager_downloads Policies\ndrop policy if exists \"Students can view their own downloads\" on public.shauager_downloads;\ncreate policy \"Students can view their own downloads\"\non public.shauager_downloads for select to authenticated\nusing (customer_id = auth.uid() or public.shauager_is_admin());\n\ndrop policy if exists \"Students can add to downloads\" on public.shauager_downloads;\ncreate policy \"Students can add to downloads\"\non public.shauager_downloads for insert to authenticated\nwith check (customer_id = auth.uid() or public.shauager_is_admin());\n\ndrop policy if exists \"Students can delete their downloads record\" on public.shauager_downloads;\ncreate policy \"Students can delete their downloads record\"\non public.shauager_downloads for delete to authenticated\nusing (customer_id = auth.uid() or public.shauager_is_admin());\n\n-- SAMPLE SEED DATA\ninsert into public.shauager_posts (id, title, content, post_type, target_major, count_like, count_love, count_pray, count_wow, count_sad)\nvalues\n(\n    'a1000000-0000-0000-0000-000000000001',\n    'محاضرة ديناميكا الآلات - الفصل الرابع (Vibrations)',\n    'السلام عليكم يا شباب. دي سلايدات المحاضرة الرابعة مع أشكال التمارين المحلولة، الرجاء مراجعتها قبل معمل يوم الخميس.',\n    'محاضرات',\n    'ميكانيكا',\n    45, 12, 8, 0, 0\n),\n(\n    'a1000000-0000-0000-0000-000000000002',\n    'جدول امتحانات منتصف الفصل الدراسي (Midterm Schedule)',\n    'الجدول المعتمد من أمانة الشؤون العلمية لجميع تخصصات الدفعة (ميكانيكا، تصنيع، مدنية، كهربا). يبدأ الأسبوع القادم.',\n    'جدول',\n    'الكل',\n    0, 0, 34, 29, 19\n),\n(\n    'a1000000-0000-0000-0000-000000000003',\n    'المعرض الهندسي السنوي لابتكارات الطلاب',\n    'ندعو جميع الطلاب للمشاركة بمشاريعهم الهندسية في جميع المجالات (تصنيع، ميكانيكا، كهربا، مدنية). تسليم المشاريع بمبنى الأنشطة.',\n    'فعاليات',\n    'الكل',\n    88, 67, 0, 0, 0\n)\non conflict (id) do nothing;\n\ninsert into public.shauager_attachments (id, post_id, file_name, file_url, file_type, file_size_bytes, description)\nvalues\n(\n    'b1000000-0000-0000-0000-000000000001',\n    'a1000000-0000-0000-0000-000000000001',\n    'Dynamics_Ch4.pdf',\n    'https://storage.googleapis.com/shauager-files/Dynamics_Ch4.pdf',\n    'pdf',\n    4404019,\n    'سلايدات المحاضرة الرابعة'\n),\n(\n    'b1000000-0000-0000-0000-000000000002',\n    'a1000000-0000-0000-0000-000000000001',\n    'Sheet_Problems.docx',\n    'https://storage.googleapis.com/shauager-files/Sheet_Problems.docx',\n    'doc',\n    1153433,\n    'أشكال التمارين المحلولة'\n),\n(\n    'b1000000-0000-0000-0000-000000000003',\n    'a1000000-0000-0000-0000-000000000002',\n    'Midterm_Schedule_2024.jpg',\n    'https://storage.googleapis.com/shauager-files/Midterm_Schedule_2024.jpg',\n    'image',\n    2936012,\n    'صورة الجدول الرسمي'\n)\non conflict (id) do nothing;",
+ "contract": {
+  "tables": [
+   {
+    "name": "shauager_student_details",
+    "purpose": "Stores extended student registration details such as major, full name, phone number, and verified email.",
+    "columns": [
+     "customer_id uuid (PK, references auth.users)",
+     "full_name text",
+     "phone text",
+     "email text",
+     "major text (ميكانيكا | تصنيع | مدنية | كهربا)",
+     "created_at timestamptz",
+     "updated_at timestamptz"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "shauager_otp_verifications",
+    "purpose": "Stores temporary 4-digit verification codes sent to student emails during registration.",
+    "columns": [
+     "id uuid (PK)",
+     "email text",
+     "code text",
+     "is_verified boolean",
+     "expires_at timestamptz",
+     "created_at timestamptz"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "shauager_posts",
+    "purpose": "Stores announcement posts created by the batch leader including schedule, lectures, events, and news.",
+    "columns": [
+     "id uuid (PK)",
+     "title text",
+     "content text",
+     "post_type text (جدول | محاضرات | فعاليات | أخبار)",
+     "target_major text (الكل | ميكانيكا | تصنيع | مدنية | كهربا)",
+     "author_id uuid (references auth.users)",
+     "count_like integer",
+     "count_love integer",
+     "count_laugh integer",
+     "count_wow integer",
+     "count_sad integer",
+     "count_pray integer",
+     "created_at timestamptz",
+     "updated_at timestamptz"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "shauager_attachments",
+    "purpose": "Stores media and documents linked to posts (images, videos, PDF, DOC files) up to 60+ attachments per post.",
+    "columns": [
+     "id uuid (PK)",
+     "post_id uuid (references shauager_posts)",
+     "file_name text",
+     "file_url text",
+     "file_type text (pdf | doc | image | video | other)",
+     "file_size_bytes bigint",
+     "description text",
+     "created_at timestamptz"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "shauager_reactions",
+    "purpose": "Stores single emoji interactions per student per post (👍, ❤️, 😂, 😮, 😢, 🙏).",
+    "columns": [
+     "id uuid (PK)",
+     "post_id uuid (references shauager_posts)",
+     "customer_id uuid (references auth.users)",
+     "emoji text",
+     "created_at timestamptz"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "shauager_downloads",
+    "purpose": "Tracks attachments downloaded locally by students for offline access.",
+    "columns": [
+     "id uuid (PK)",
+     "customer_id uuid (references auth.users)",
+     "attachment_id uuid (references shauager_attachments)",
+     "post_id uuid (references shauager_posts)",
+     "local_path text",
+     "created_at timestamptz"
+    ],
+    "owner": "customer"
+   }
+  ],
+  "events": [
+   {
+    "when": "Leader creates a new post targeting a specific major or all majors in the Leader App",
+    "notify": "customer",
+    "title": "منشور جديد لمجال {target_major}"
+   },
+   {
+    "when": "Leader updates an existing exam or batch schedule post",
+    "notify": "customer",
+    "title": "تحديث جداول لجميع التخصصات"
+   },
+   {
+    "when": "Leader publishes a new engineering event or exhibition announcement",
+    "notify": "customer",
+    "title": "دعوة فعالية جديدة"
+   },
+   {
+    "when": "A new student completes registration and email verification in the Student App",
+    "notify": "admin",
+    "title": "انضمام طالب جديد للتطبيق"
+   }
+  ]
+ },
+ "apps": {
+  "customer": {
+   "name": "shauager-customer",
+   "packageId": "com.generated.app_shauager_customer"
+  },
+  "admin": {
+   "name": "shauager-admin",
+   "packageId": "com.generated.app_shauager_admin"
+  }
+ },
+ "role": "customer",
+ "pushFunction": "shauager-push"
+}

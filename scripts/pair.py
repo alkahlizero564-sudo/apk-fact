@@ -185,6 +185,28 @@ def state_login(st):
     return {r: ("none" if v == "none" else "code") for r in ROLES}
 
 
+# Tables APK Fact itself makes for every pair (pair_backend.base_sql, templates/admin_pin.sql): never dropped here.
+BASE_TABLES = ("admins", "profiles", "device_tokens", "notifications", "push_config", "admin_secret", "admin_attempts")
+
+
+def leftover_tables_sql(p):
+    """SQL dropping the business tables of prefix p, but not the base tables, nor the tables of another saved pair
+    whose prefix starts with p_ (e.g. shop_2 when p is shop)."""
+    others = sorted({str(json.loads(f.read_text(encoding="utf-8")).get("prefix", "")) for f in (ROOT / "apps").glob("*/pair.json")})
+    others = [o for o in others if o.startswith(p + "_") and re.fullmatch(r"[a-z0-9_]+", o)]
+    esc = lambda x: x.replace("_", "\\_")
+    skip = "".join(f" and tablename not like '{esc(o)}\\_%'" for o in others)
+    keep = ", ".join(f"'{p}_{t}'" for t in BASE_TABLES)
+    return (
+        "do $$ declare t text; begin\n"
+        f"  for t in select tablename from pg_tables where schemaname = 'public' and tablename like '{esc(p)}\\_%'"
+        f" and tablename not in ({keep}){skip} loop\n"
+        "    raise notice 'dropping leftover table %', t;\n"
+        "    execute format('drop table if exists public.%I cascade', t);\n"
+        "  end loop;\nend $$;\n"
+    )
+
+
 def cmd_backend(a):
     ref, token = need("SUPABASE_PROJECT_REF"), need("SUPABASE_ACCESS_TOKEN")
     description = Path(a.description_file).read_text(encoding="utf-8").strip()
@@ -199,6 +221,12 @@ def cmd_backend(a):
 
     print("Creating accounts, roles, devices and notifications tables…", flush=True)
     run_sql(sb.base_sql(p, admins))
+
+    if not state_paths(a.base)[0].exists():
+        # This pair was never saved: business tables under its prefix are leftovers of a cancelled or failed earlier
+        # run, maybe with other columns. `create table if not exists` would keep them, and the new schema then fails
+        # on them ("column ... does not exist", seed rows breaking an old check). Start those tables clean.
+        run_sql(leftover_tables_sql(p))
 
     print("Designing the business tables with AI…", flush=True)
     blocks, _ = parse_reply(call_gemini(MODEL, SCHEMA_PROMPT.format(description=description, p=p) + designs_note(a.base),

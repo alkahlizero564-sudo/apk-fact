@@ -166,7 +166,7 @@ export async function createPair(o: PairOptions, report: Report, progress: PairP
   const started = Date.now();
   let runId = progress.runId ?? 0;
   let offlineSince = 0;
-  while (Date.now() - started < 60 * 60 * 1000) {
+  while (Date.now() - started < 125 * 60 * 1000) { // generate-pair.yml may run up to 120 minutes
     await sleep(6000);
     let jobs: any[];
     try {

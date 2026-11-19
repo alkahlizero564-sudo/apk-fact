@@ -1,0 +1,1668 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>شواغر 22 - Shauager 22</title>
+  <style>
+    /* ==========================================
+       MATERIAL 3 DESIGN SYSTEM & DESIGN TOKENS
+       Theme: Luxury Deep Emerald & Antique Gold
+       ========================================== */
+    :root {
+      /* M3 Color Palette */
+      --md-sys-color-primary: #0D3B2E;         /* Deep Rich Emerald */
+      --md-sys-color-on-primary: #FFFFFF;
+      --md-sys-color-primary-container: #1B4D3E;
+      --md-sys-color-on-primary-container: #D1E8DF;
+
+      --md-sys-color-accent: #C5A059;          /* Antique Gold */
+      --md-sys-color-on-accent: #1C1500;
+      --md-sys-color-accent-container: #3A2F1B;
+      --md-sys-color-on-accent-container: #F4E2C2;
+
+      --md-sys-color-surface: #0A1210;         /* Luxury Dark Charcoal Base */
+      --md-sys-color-surface-dim: #101916;
+      --md-sys-color-surface-bright: #1A2622;
+      --md-sys-color-surface-container: #141F1C;
+      --md-sys-color-surface-container-high: #1E2D28;
+      --md-sys-color-surface-container-highest: #283933;
+
+      --md-sys-color-on-surface: #E8ECEB;
+      --md-sys-color-on-surface-variant: #A4B2AE;
+      --md-sys-color-outline: #2D3D37;
+      --md-sys-color-outline-variant: #1B2924;
+
+      --md-sys-color-error: #FF5449;
+      --md-sys-color-success: #4BE09B;
+      --md-sys-color-info: #4FC3F7;
+
+      /* Visual Accents & Glass */
+      --glass-surface: rgba(20, 31, 28, 0.75);
+      --glass-border: rgba(197, 160, 89, 0.2);
+      --gold-gradient: linear-gradient(135deg, #DFBE7A 0%, #C5A059 50%, #9A7736 100%);
+      --emerald-gradient: linear-gradient(135deg, #1B4D3E 0%, #0D3B2E 100%);
+      --dark-card-gradient: linear-gradient(180deg, rgba(30, 45, 40, 0.8) 0%, rgba(16, 25, 22, 0.95) 100%);
+
+      /* Typography & Font Stacks */
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans Arabic", sans-serif;
+
+      /* Corner Radii (M3 Standard Scale) */
+      --radius-xs: 4px;
+      --radius-s: 8px;
+      --radius-m: 12px;
+      --radius-l: 16px;
+      --radius-xl: 24px;
+      --radius-xxl: 28px;
+      --radius-full: 9999px;
+
+      /* Spacing Grid (4/8 Scale) */
+      --space-2: 2px;
+      --space-4: 4px;
+      --space-8: 8px;
+      --space-12: 12px;
+      --space-16: 16px;
+      --space-20: 20px;
+      --space-24: 24px;
+      --space-32: 32px;
+
+      /* Elevations / Shadows */
+      --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.4);
+      --shadow-2: 0 6px 16px rgba(0, 0, 0, 0.5);
+      --shadow-3: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 12px rgba(197, 160, 89, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: #030605;
+      color: var(--md-sys-color-on-surface);
+      font-family: var(--font-family);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      direction: rtl;
+      overflow: hidden;
+    }
+
+    /* Fixed Screen Switcher Top Bar */
+    #apkfact-screens {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 44px;
+      background: rgba(5, 10, 8, 0.92);
+      backdrop-filter: blur(12px);
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+      overflow-x: auto;
+      white-space: nowrap;
+      gap: 8px;
+    }
+
+    #apkfact-screens::-webkit-scrollbar {
+      display: none;
+    }
+
+    .screen-pill {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--md-sys-color-on-surface-variant);
+      border: 1px solid var(--md-sys-color-outline);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .screen-pill.active {
+      background: var(--gold-gradient);
+      color: #000;
+      border-color: var(--md-sys-color-accent);
+      font-weight: 700;
+      box-shadow: 0 0 10px rgba(197, 160, 89, 0.4);
+    }
+
+    /* Mobile Frame Device Outer Wrapper */
+    .phone-container {
+      width: 100%;
+      max-width: 412px; /* Material 3 Standard Phone Frame */
+      height: 100vh;
+      max-height: 892px;
+      background-color: var(--md-sys-color-surface);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(13, 59, 46, 0.3);
+      overflow: hidden;
+      margin-top: 44px;
+      border-left: 1px solid rgba(255,255,255,0.05);
+      border-right: 1px solid rgba(255,255,255,0.05);
+    }
+
+    @media (min-height: 940px) {
+      .phone-container {
+        border-radius: 40px;
+        height: 850px;
+        border: 2px solid var(--md-sys-color-outline-variant);
+      }
+    }
+
+    /* Status Bar Mock */
+    .status-bar {
+      height: 36px;
+      padding: 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--md-sys-color-on-surface-variant);
+      z-index: 50;
+      background: rgba(10, 18, 16, 0.6);
+      backdrop-filter: blur(8px);
+      flex-shrink: 0;
+    }
+
+    .status-bar-icons {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    /* App Screen View Manager */
+    .app-screen {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      overflow-y: auto;
+      position: relative;
+      background: var(--md-sys-color-surface);
+      padding-bottom: 72px; /* Bottom Nav Offset */
+    }
+
+    .app-screen.active {
+      display: flex;
+      animation: fadeIn 0.25s cubic-bezier(0, 0, 0.2, 1);
+    }
+
+    .app-screen.no-nav {
+      padding-bottom: 0;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Top App Bar (Material 3) */
+    .m3-top-app-bar {
+      height: 64px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(16, 25, 22, 0.85);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+    }
+
+    .m3-top-app-bar .title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--md-sys-color-on-surface);
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .m3-top-app-bar .title span.badge-dept {
+      font-size: 11px;
+      padding: 3px 8px;
+      background: rgba(197, 160, 89, 0.15);
+      color: var(--md-sys-color-accent);
+      border: 1px solid rgba(197, 160, 89, 0.3);
+      border-radius: var(--radius-full);
+      font-weight: 500;
+    }
+
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--md-sys-color-on-surface);
+      cursor: pointer;
+      position: relative;
+      transition: background 0.2s;
+    }
+
+    .icon-btn:active {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .icon-btn .badge-dot {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 9px;
+      height: 9px;
+      background: var(--md-sys-color-accent);
+      border-radius: 50%;
+      border: 2px solid var(--md-sys-color-surface);
+    }
+
+    /* Bottom Navigation Bar (Material 3) */
+    .m3-bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 72px;
+      background: rgba(14, 23, 20, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(197, 160, 89, 0.15);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 50;
+      padding: 0 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      color: var(--md-sys-color-on-surface-variant);
+      text-decoration: none;
+      cursor: pointer;
+      width: 64px;
+    }
+
+    .nav-icon-wrapper {
+      width: 56px;
+      height: 32px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+    }
+
+    .nav-item.active .nav-icon-wrapper {
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-accent);
+      box-shadow: 0 0 12px rgba(197, 160, 89, 0.2);
+    }
+
+    .nav-item.active svg {
+      stroke: var(--md-sys-color-accent);
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .nav-item.active .nav-label {
+      color: var(--md-sys-color-accent);
+      font-weight: 700;
+    }
+
+    /* Typography Utilities */
+    .headline-large { font-size: 28px; font-weight: 800; line-height: 1.2; letter-spacing: -0.5px; }
+    .headline-medium { font-size: 22px; font-weight: 700; line-height: 1.3; }
+    .title-large { font-size: 18px; font-weight: 700; }
+    .title-medium { font-size: 16px; font-weight: 600; }
+    .body-medium { font-size: 14px; color: var(--md-sys-color-on-surface-variant); line-height: 1.5; }
+    .caption { font-size: 12px; color: var(--md-sys-color-on-surface-variant); }
+
+    /* Buttons (Material 3) */
+    .m3-btn {
+      height: 52px;
+      border-radius: var(--radius-full);
+      border: none;
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 0 24px;
+      transition: all 0.2s cubic-bezier(0, 0, 0.2, 1);
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .m3-btn-primary {
+      background: var(--gold-gradient);
+      color: #0A1210;
+      box-shadow: 0 4px 16px rgba(197, 160, 89, 0.3);
+    }
+
+    .m3-btn-primary:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 8px rgba(197, 160, 89, 0.2);
+    }
+
+    .m3-btn-outlined {
+      background: transparent;
+      color: var(--md-sys-color-on-surface);
+      border: 1px solid var(--md-sys-color-outline);
+    }
+
+    .m3-btn-outlined:active {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .m3-btn-tonal {
+      background: var(--md-sys-color-surface-container-high);
+      color: var(--md-sys-color-on-surface);
+    }
+
+    /* Form Fields */
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .input-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .input-field-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-field-wrapper svg {
+      position: absolute;
+      right: 16px;
+      color: var(--md-sys-color-on-surface-variant);
+      pointer-events: none;
+    }
+
+    .m3-input {
+      width: 100%;
+      height: 52px;
+      background: var(--md-sys-color-surface-container-high);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: var(--radius-m);
+      padding: 0 48px 0 16px;
+      color: var(--md-sys-color-on-surface);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .m3-input:focus {
+      border-color: var(--md-sys-color-accent);
+      box-shadow: 0 0 0 2px rgba(197, 160, 89, 0.2);
+      background: var(--md-sys-color-surface-container-highest);
+    }
+
+    .m3-select {
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+
+    .input-hint {
+      font-size: 11px;
+      color: var(--md-sys-color-on-surface-variant);
+      margin-top: 2px;
+    }
+
+    /* Segmented Filter Pills Container */
+    .filter-scroll-row {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+      overflow-x: auto;
+      white-space: nowrap;
+      position: sticky;
+      top: 64px;
+      background: rgba(10, 18, 16, 0.9);
+      backdrop-filter: blur(12px);
+      z-index: 35;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .filter-scroll-row::-webkit-scrollbar { display: none; }
+
+    .chip {
+      height: 36px;
+      padding: 0 16px;
+      border-radius: var(--radius-full);
+      background: var(--md-sys-color-surface-container-high);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      color: var(--md-sys-color-on-surface-variant);
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .chip.active {
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-accent);
+      border-color: rgba(197, 160, 89, 0.4);
+    }
+
+    /* Post Card (Material 3 Container) */
+    .post-card {
+      background: var(--dark-card-gradient);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: var(--radius-xl);
+      margin: 12px 16px;
+      padding: 20px;
+      box-shadow: var(--shadow-1);
+      position: relative;
+    }
+
+    .post-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .post-type-tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tag-table { background: rgba(79, 195, 247, 0.15); color: var(--md-sys-color-info); border: 1px solid rgba(79, 195, 247, 0.3); }
+    .tag-lecture { background: rgba(75, 224, 155, 0.15); color: var(--md-sys-color-success); border: 1px solid rgba(75, 224, 155, 0.3); }
+    .tag-event { background: rgba(197, 160, 89, 0.15); color: var(--md-sys-color-accent); border: 1px solid rgba(197, 160, 89, 0.3); }
+    .tag-news { background: rgba(255, 84, 73, 0.15); color: var(--md-sys-color-error); border: 1px solid rgba(255, 84, 73, 0.3); }
+
+    .post-date {
+      font-size: 12px;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .post-title {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #FFF;
+      line-height: 1.4;
+    }
+
+    .post-text {
+      font-size: 14px;
+      color: var(--md-sys-color-on-surface-variant);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    /* Attachments Row & Cards */
+    .attachments-section {
+      background: var(--md-sys-color-surface-container);
+      border-radius: var(--radius-l);
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .attachments-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .download-all-btn {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--md-sys-color-accent);
+      background: rgba(197, 160, 89, 0.1);
+      border: 1px solid rgba(197, 160, 89, 0.3);
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .attachment-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .attachment-item {
+      background: var(--md-sys-color-surface-container-high);
+      border-radius: var(--radius-m);
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+      border: 1px solid var(--md-sys-color-outline-variant);
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    .attachment-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-s);
+      background: var(--md-sys-color-surface-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-weight: 800;
+      font-size: 12px;
+      color: var(--md-sys-color-accent);
+    }
+
+    .attachment-info {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .attachment-name {
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--md-sys-color-on-surface);
+    }
+
+    .attachment-meta {
+      font-size: 10px;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .download-state-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .download-state-icon.downloaded {
+      background: var(--md-sys-color-success);
+      color: #000;
+    }
+
+    /* Progress Ring / Bar */
+    .progress-bar-container {
+      width: 100%;
+      height: 4px;
+      background: var(--md-sys-color-surface-container-highest);
+      border-radius: var(--radius-full);
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--gold-gradient);
+      width: 45%;
+      transition: width 0.3s;
+    }
+
+    /* Emoji Reactions Bar (Requirement 3) */
+    .reactions-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .reaction-pill {
+      background: var(--md-sys-color-surface-container-high);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: var(--radius-full);
+      padding: 4px 10px;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .reaction-pill.user-reacted {
+      background: var(--md-sys-color-primary-container);
+      border-color: var(--md-sys-color-accent);
+      box-shadow: 0 0 8px rgba(197, 160, 89, 0.2);
+    }
+
+    .reaction-count {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--md-sys-color-on-surface);
+    }
+
+    .add-reaction-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-full);
+      background: var(--md-sys-color-surface-container-high);
+      border: 1px dashed var(--md-sys-color-outline);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: auto;
+    }
+
+    /* Long-Press Emoji Overlay Popover */
+    .emoji-popover {
+      position: absolute;
+      bottom: 60px;
+      left: 16px;
+      right: 16px;
+      background: rgba(20, 31, 28, 0.95);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--md-sys-color-accent);
+      border-radius: var(--radius-full);
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-around;
+      box-shadow: var(--shadow-3);
+      z-index: 60;
+      animation: popUp 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popUp {
+      from { transform: scale(0.8) translateY(10px); opacity: 0; }
+      to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .emoji-option {
+      font-size: 24px;
+      cursor: pointer;
+      transition: transform 0.15s;
+      padding: 4px;
+    }
+    .emoji-option:hover { transform: scale(1.3); }
+
+    /* Media Viewer Modal Fullscreen Overlay */
+    .media-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 40px 16px 20px 16px;
+    }
+    .media-modal.active { display: flex; }
+
+    .media-viewer-content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .media-img-placeholder {
+      max-width: 100%;
+      max-height: 70vh;
+      border-radius: var(--radius-l);
+      box-shadow: 0 0 30px rgba(0,0,0,0.8);
+      background: linear-gradient(135deg, #1A2622 0%, #0A1210 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 350px;
+      border: 1px solid var(--md-sys-color-outline);
+    }
+
+    /* Skeleton Loading Screen Component */
+    .skeleton-card {
+      background: var(--md-sys-color-surface-container);
+      border-radius: var(--radius-xl);
+      margin: 12px 16px;
+      padding: 20px;
+    }
+
+    .skeleton-box {
+      background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: var(--radius-s);
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    /* Empty State Illustrated Container */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 24px;
+      text-align: center;
+    }
+
+    .empty-icon-circle {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      background: rgba(197, 160, 89, 0.1);
+      border: 1px solid rgba(197, 160, 89, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      color: var(--md-sys-color-accent);
+    }
+
+    /* Notification Inbox Item */
+    .notification-item {
+      padding: 16px;
+      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      background: var(--md-sys-color-surface);
+      transition: background 0.2s;
+    }
+
+    .notification-item.unread {
+      background: var(--md-sys-color-surface-container);
+    }
+
+    .notification-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(197, 160, 89, 0.15);
+      color: var(--md-sys-color-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Verification Code OTP Matrix Input Box */
+    .otp-input-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin: 20px 0;
+      direction: ltr;
+    }
+
+    .otp-box {
+      width: 48px;
+      height: 56px;
+      border-radius: var(--radius-m);
+      background: var(--md-sys-color-surface-container-high);
+      border: 1px solid var(--md-sys-color-outline);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--md-sys-color-accent);
+      text-align: center;
+      outline: none;
+    }
+
+    .otp-box:focus {
+      border-color: var(--md-sys-color-accent);
+      box-shadow: 0 0 10px rgba(197, 160, 89, 0.3);
+    }
+
+    /* Toast Notification Alert */
+    .toast-alert {
+      position: absolute;
+      bottom: 80px;
+      left: 20px;
+      right: 20px;
+      background: rgba(30, 45, 40, 0.95);
+      border: 1px solid var(--md-sys-color-accent);
+      color: #FFF;
+      padding: 12px 18px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--shadow-2);
+      z-index: 1200;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0, 0, 0.2, 1);
+    }
+
+    .toast-alert.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Fixed Screen Selector Switcher (Standard Rule Requirement) -->
+  <div id="apkfact-screens">
+    <div class="screen-pill active" onclick="switchView('screen-splash')">01. البداية / الدخول</div>
+    <div class="screen-pill" onclick="switchView('screen-register')">02. إنشاء حساب جديد</div>
+    <div class="screen-pill" onclick="switchView('screen-otp')">03. تأكيد البريد الإلكتروني</div>
+    <div class="screen-pill" onclick="switchView('screen-home')">04. الرئيسة (المنشورات)</div>
+    <div class="screen-pill" onclick="switchView('screen-attachments')">05. عرض المرفقات</div>
+    <div class="screen-pill" onclick="switchView('screen-downloads')">06. التنزيلات والأوفلاين</div>
+    <div class="screen-pill" onclick="switchView('screen-notifications')">07. الإشعارات</div>
+    <div class="screen-pill" onclick="switchView('screen-profile')">08. الملف الشخصي</div>
+    <div class="screen-pill" onclick="switchView('screen-skeleton')">09. حالة التحميل (Skeleton)</div>
+    <div class="screen-pill" onclick="switchView('screen-empty')">10. حالة الفارغ (Empty State)</div>
+  </div>
+
+  <!-- Mobile Device Phone Container Wrapper -->
+  <div class="phone-container">
+
+    <!-- Top Status Bar Mock -->
+    <div class="status-bar">
+      <span>09:41</span>
+      <div class="status-bar-icons">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 18.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l.81-.81C8.12 20.24 9.98 21 12 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7z"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98C20.93 5.9 16.69 4 12 4z"/></svg>
+        <svg width="16" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+      </div>
+    </div>
+
+    <!-- Toast Notification Banner -->
+    <div id="app-toast" class="toast-alert">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--md-sys-color-accent)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+      <span id="toast-text">تم التفاعل بنجاح</span>
+    </div>
+
+    <!-- ==========================================
+         VIEW 1: SIGN IN / LOGIN SCREEN
+         ========================================== -->
+    <div id="screen-splash" class="app-screen no-nav active">
+      <div style="padding: 40px 24px; display: flex; flex-direction: column; justify-content: cubic-bezier(0,0,0.2,1); height: 100%;">
+        
+        <!-- Luxury Brand Hero Header -->
+        <div style="text-align: center; margin-top: 40px; margin-bottom: 40px;">
+          <div style="width: 88px; height: 88px; border-radius: 28px; background: var(--emerald-gradient); border: 2px solid var(--md-sys-color-accent); margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-3);">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--md-sys-color-accent)" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <h1 class="headline-large" style="color: #FFF; margin-bottom: 4px;">شواغر 22</h1>
+          <p class="caption" style="color: var(--md-sys-color-accent); font-weight: 600; letter-spacing: 1px;">تطبيق الطلاب • دفعة الهندسة</p>
+        </div>
+
+        <!-- Login Form -->
+        <div style="background: var(--dark-card-gradient); border: 1px solid var(--md-sys-color-outline-variant); border-radius: var(--radius-xl); padding: 24px; box-shadow: var(--shadow-2);">
+          <h2 class="title-medium" style="margin-bottom: 16px; color: #FFF;">تسجيل الدخول</h2>
+
+          <div class="input-group">
+            <label class="input-label">البريد الإلكتروني أو رقم الهاتف</label>
+            <div class="input-field-wrapper">
+              <input type="text" class="m3-input" placeholder="09xxxxxxx أو std@shauager.com" value="0912345678">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">كلمة المرور</label>
+            <div class="input-field-wrapper">
+              <input type="password" class="m3-input" placeholder="••••••••" value="password123">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+          </div>
+
+          <button class="m3-btn m3-btn-primary" style="margin-top: 12px;" onclick="switchView('screen-home')">
+            <span>دخول للحساب</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          </button>
+        </div>
+
+        <!-- Registration Link Switch -->
+        <div style="margin-top: auto; text-align: center; padding-top: 24px;">
+          <p class="body-medium" style="font-size: 13px;">
+            ليس لديك حساب طالب؟
+            <a href="#" style="color: var(--md-sys-color-accent); font-weight: 700; text-decoration: none;" onclick="switchView('screen-register')">إنشاء حساب جديد</a>
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ==========================================
+         VIEW 2: REGISTRATION SCREEN
+         ========================================== -->
+    <div id="screen-register" class="app-screen no-nav">
+      <div class="m3-top-app-bar">
+        <button class="icon-btn" onclick="switchView('screen-splash')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <span class="title">حساب طالب جديد</span>
+        <div style="width: 44px;"></div>
+      </div>
+
+      <div style="padding: 20px 16px;">
+        <div class="input-group">
+          <label class="input-label">الاسم الكامل (إجباري)</label>
+          <div class="input-field-wrapper">
+            <input type="text" class="m3-input" placeholder="مثال: أحمد محمد علي">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">رقم الهاتف السوداني (إجباري)</label>
+          <div class="input-field-wrapper">
+            <input type="tel" class="m3-input" placeholder="09xxxxxxx أو 01xxxxxxx">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </div>
+          <span class="input-hint">يجب أن يتكون من 10 أرقام ويبدأ بـ 09 أو 01 أو رمز الدولي +249</span>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">البريد الإلكتروني للتحقق</label>
+          <div class="input-field-wrapper">
+            <input type="email" class="m3-input" placeholder="student@example.com">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">التخصص الدراسي</label>
+          <div class="input-field-wrapper">
+            <select class="m3-input m3-select">
+              <option value="ميكانيكا">ميكانيكا</option>
+              <option value="تصنيع">تصنيع</option>
+              <option value="مدنية">مدنية</option>
+              <option value="كهربا">كهربا</option>
+            </select>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">كلمة المرور</label>
+          <div class="input-field-wrapper">
+            <input type="password" class="m3-input" placeholder="••••••••">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+        </div>
+
+        <button class="m3-btn m3-btn-primary" style="margin-top: 16px;" onclick="switchView('screen-otp')">
+          <span>إرسال رمز التفعيل</span>
+        </button>
+      </div>
+    </div>
+
+
+    <!-- ==========================================
+         VIEW 3: EMAIL VERIFICATION (OTP)
+         ========================================== -->
+    <div id="screen-otp" class="app-screen no-nav">
+      <div class="m3-top-app-bar">
+        <button class="icon-btn" onclick="switchView('screen-register')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <span class="title">تأكيد البريد الإلكتروني</span>
+        <div style="width: 44px;"></div>
+      </div>
+
+      <div style="padding: 32px 24px; text-align: center;">
+        <div style="width: 72px; height: 72px; border-radius: 50%; background: rgba(197, 160, 89, 0.15); border: 1px solid var(--md-sys-color-accent); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: var(--md-sys-color-accent);">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h11"/><polyline points="22,6 12,13 2,6"/><path d="M18 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M20.2 20.2l1.8 1.8"/></svg>
+        </div>
+
+        <h2 class="title-large" style="margin-bottom: 8px;">رمز التحقق من البريد</h2>
+        <p class="body-medium">تم إرسال رمز مكون من 4 أرقام إلى البريد الإلكتروني المدخل</p>
+
+        <div class="otp-input-row">
+          <input type="text" maxlength="1" class="otp-box" value="4">
+          <input type="text" maxlength="1" class="otp-box" value="8">
+          <input type="text" maxlength="1" class="otp-box" value="2">
+          <input type="text" maxlength="1" class="otp-box" value="9">
+        </div>
+
+        <button class="m3-btn m3-btn-primary" style="margin-top: 24px;" onclick="switchView('screen-home')">
+          <span>تأكيد الحساب والدخول</span>
+        </button>
+
+        <p style="margin-top: 20px; font-size: 13px; color: var(--md-sys-color-on-surface-variant);">
+          لم يصلك الرمز؟ <a href="#" style="color: var(--md-sys-color-accent); font-weight: 700; text-decoration: none;">إعادة الإرسال (00:42)</a>
+        </p>
+      </div>
+    </div>
+
+
+    <!-- ==========================================
+         VIEW 4: HOME SCREEN (POSTS & FEED)
+         ========================================== -->
+    <div id="screen-home" class="app-screen">
+      <!-- M3 Top Bar -->
+      <div class="m3-top-app-bar">
+        <div class="title">
+          <span>شواغر 22</span>
+          <span class="badge-dept">ميكانيكا</span>
+        </div>
+        <div style="display: flex; gap: 4px;">
+          <button class="icon-btn" onclick="switchView('screen-notifications')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <div class="badge-dot"></div>
+          </button>
+          <button class="icon-btn" onclick="switchView('screen-profile')">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Segmented Type Filters (Req 2 & Specs) -->
+      <div class="filter-scroll-row">
+        <div class="chip active" onclick="filterChip(this)">الكل</div>
+        <div class="chip" onclick="filterChip(this)">جدول</div>
+        <div class="chip" onclick="filterChip(this)">محاضرات</div>
+        <div class="chip" onclick="filterChip(this)">فعاليات</div>
+        <div class="chip" onclick="filterChip(this)">أخبار</div>
+      </div>
+
+      <!-- Feed Container -->
+      <div style="padding-top: 4px;">
+
+        <!-- POST 1 (Lecture with Attachments & Emoji Reactions) -->
+        <div class="post-card">
+          <div class="post-header">
+            <span class="post-type-tag tag-lecture">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              محاضرة • ميكانيكا
+            </span>
+            <span class="post-date">اليوم، 10:30 ص</span>
+          </div>
+          <h3 class="post-title">محاضرة ديناميكا الآلات - الفصل الرابع (Vibrations)</h3>
+          <p class="post-text">السلام عليكم يا شباب. دي سلايدات المحاضرة الرابعة مع أشكال التمارين المحلولة، الرجاء مراجعتها قبل معمل يوم الخميس.</p>
+
+          <!-- Attachment Section -->
+          <div class="attachments-section">
+            <div class="attachments-header">
+              <span style="font-size: 12px; font-weight: 700; color: var(--md-sys-color-on-surface-variant);">المرفقات (3 ملفات)</span>
+              <button class="download-all-btn" onclick="triggerToast('جاري تحميل كافة المرفقات...')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                تحميل الكل
+              </button>
+            </div>
+            <div class="attachment-grid">
+              <div class="attachment-item" onclick="switchView('screen-attachments')">
+                <div class="attachment-thumb">PDF</div>
+                <div class="attachment-info">
+                  <div class="attachment-name">Dynamics_Ch4.pdf</div>
+                  <div class="attachment-meta">4.2 MB • تم التحميل</div>
+                </div>
+                <div class="download-state-icon downloaded">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </div>
+              <div class="attachment-item" onclick="switchView('screen-attachments')">
+                <div class="attachment-thumb">DOC</div>
+                <div class="attachment-info">
+                  <div class="attachment-name">Sheet_Problems.docx</div>
+                  <div class="attachment-meta">1.1 MB</div>
+                </div>
+                <div class="download-state-icon">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Emoji Reactions (Strictly no text comments - Requirement 3) -->
+          <div class="reactions-bar">
+            <div class="reaction-pill user-reacted" onclick="toggleReaction(this)">
+              <span>👍</span>
+              <span class="reaction-count">45</span>
+            </div>
+            <div class="reaction-pill" onclick="toggleReaction(this)">
+              <span>❤️</span>
+              <span class="reaction-count">12</span>
+            </div>
+            <div class="reaction-pill" onclick="toggleReaction(this)">
+              <span>🙏</span>
+              <span class="reaction-count">8</span>
+            </div>
+            <div class="add-reaction-btn" onclick="toggleEmojiPopover(this)">+</div>
+          </div>
+        </div>
+
+        <!-- POST 2 (Exam Schedule Table Announcement) -->
+        <div class="post-card">
+          <div class="post-header">
+            <span class="post-type-tag tag-table">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              جدول • لكل التخصصات
+            </span>
+            <span class="post-date">أمس، 06:15 م</span>
+          </div>
+          <h3 class="post-title">جدول امتحانات منتصف الفصل الدراسي (Midterm Schedule)</h3>
+          <p class="post-text">الجدول المعتمد من أمانة الشؤون العلمية لجميع تخصصات الدفعة (ميكانيكا، تصنيع، مدنية، كهربا). يبدأ الأسبوع القادم.</p>
+
+          <div class="attachments-section">
+            <div class="attachment-item" style="grid-column: span 2;" onclick="switchView('screen-attachments')">
+              <div class="attachment-thumb" style="background: rgba(197, 160, 89, 0.2); color: var(--md-sys-color-accent);">IMG</div>
+              <div class="attachment-info">
+                <div class="attachment-name">Midterm_Schedule_2024.jpg</div>
+                <div class="attachment-meta">2.8 MB • صورة الجدول الرسمي</div>
+              </div>
+              <div class="download-state-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="reactions-bar">
+            <div class="reaction-pill" onclick="toggleReaction(this)">
+              <span>😮</span>
+              <span class="reaction-count">29</span>
+            </div>
+            <div class="reaction-pill" onclick="toggleReaction(this)">
+              <span>😢</span>
+              <span class="reaction-count">19</span>
+            </div>
+            <div class="reaction-pill" onclick="toggleReaction(this)">
+              <span>🙏</span>
+              <span class="reaction-count">34</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- POST 3 (Event Announcement) -->
+        <div class="post-card">
+          <div class="post-header">
+            <span class="post-type-tag tag-event">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              فعالية • الكل
+            </span>
+            <span class="post-date">منذ يومين</span>
+          </div>
+          <h3 class="post-title">المعرض الهندسي السنوي لابتكارات الطلاب</h3>
+          <p class="post-text">ندعو جميع الطلاب للمشاركة بمشاريعهم الهندسية في جميع المجالات (تصنيع، ميكانيكا، كهربا، مدنية). تسليم المشاريع بمبنى الأنشطة.</p>
+
+          <div class="reactions-bar">
+            <div class="reaction-pill user-reacted" onclick="toggleReaction(this)">
+              <span>❤️</span>
+              <span class="reaction-count">67</span>
+            </div>
+            <div class="reaction-pill" onclick="toggleReaction(this)">
+              <span>👍</span>
+              <span class="reaction-count">88</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ==========================================
+         VIEW 5: ATTACHMENT & MEDIA VIEWER SCREEN
+         ========================================== -->
+    <div id="screen-attachments" class="app-screen no-nav">
+      <div class="m3-top-app-bar">
+        <button class="icon-btn" onclick="switchView('screen-home')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <span class="title">معاينة المرفق</span>
+        <button class="icon-btn" onclick="triggerToast('جاري بدء التحميل...')">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+      </div>
+
+      <div style="padding: 16px; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        
+        <div class="media-img-placeholder">
+          <div style="text-align: center;">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--md-sys-color-accent)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <p style="margin-top: 12px; font-weight: 700; color: #FFF;">جدول امتحانات منتصف الفصل الدراسي</p>
+            <p class="caption">Midterm_Schedule_2024.jpg • 2.8 MB</p>
+          </div>
+        </div>
+
+        <div style="width: 100%; margin-top: 24px; background: var(--md-sys-color-surface-container); border-radius: var(--radius-l); padding: 16px; border: 1px solid var(--md-sys-color-outline-variant);">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 13px; font-weight: 600;">نسبة التحميل</span>
+            <span style="font-size: 13px; font-weight: 700; color: var(--md-sys-color-accent);">75%</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" style="width: 75%;"></div>
+          </div>
+          <div style="display: flex; gap: 12px; margin-top: 16px;">
+            <button class="m3-btn m3-btn-primary" style="flex: 1; height: 44px; font-size: 13px;" onclick="triggerToast('تم الحفظ في معرض الصور (ألبوم شواغر 22)')">
+              حفظ في المعرض
+            </button>
+            <button class="m3-btn m3-btn-outlined" style="flex: 1; height: 44px; font-size: 13px; color: var(--md-sys-color-error); border-color: rgba(255,84,73,0.3);">
+              إلغاء التحميل
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ==========================================
+         VIEW 6: DOWNLOADS & OFFLINE SCREEN
+         ========================================== -->
+    <div id="screen-downloads" class="app-screen">
+      <div class="m3-top-app-bar">
+        <span class="title">التنزيلات (Offline)</span>
+        <span class="caption" style="color: var(--md-sys-color-accent);">4 ملفات • 18 MB</span>
+      </div>
+
+      <div style="padding: 16px;">
+        <p class="body-medium" style="margin-bottom: 16px;">الملفات المتاحة للفتح بدون الاتصال بالإنترنت:</p>
+
+        <!-- Offline File Item 1 -->
+        <div class="attachment-item" style="margin-bottom: 10px; padding: 12px;" onclick="triggerToast('جاري فتح الملف...')">
+          <div class="attachment-thumb" style="width: 48px; height: 48px; font-size: 14px;">PDF</div>
+          <div class="attachment-info">
+            <div class="attachment-name" style="font-size: 14px;">Dynamics_Ch4_Vibrations.pdf</div>
+            <div class="attachment-meta">محاضرات • ميكانيكا • 4.2 MB</div>
+          </div>
+          <div class="download-state-icon downloaded">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+        </div>
+
+        <!-- Offline File Item 2 -->
+        <div class="attachment-item" style="margin-bottom: 10px; padding: 12px;" onclick="triggerToast('جاري فتح الصورة...')">
+          <div class="attachment-thumb" style="width: 48px; height: 48px; font-size: 14px; background: rgba(197, 160, 89, 0.2); color: var(--md-sys-color-accent);">IMG</div>
+          <div class="attachment-info">
+            <div class="attachment-name" style="font-size: 14px;">Midterm_Schedule_2024.jpg</div>
+            <div class="attachment-meta">جدول • لكل التخصصات • 2.8 MB</div>
+          </div>
+          <div class="download-state-icon downloaded">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+        </div>
+
+        <!-- Offline File Item 3 -->
+        <div class="attachment-item" style="margin-bottom: 10px; padding: 12px;" onclick="triggerToast('جاري فتح الملف...')">
+          <div class="attachment-thumb" style="width: 48px; height: 48px; font-size: 14px;">DOC</div>
+          <div class="attachment-info">
+            <div class="attachment-name" style="font-size: 14px;">Fluid_Mechanics_Lab_Guide.docx</div>
+            <div class="attachment-meta">محاضرات • ميكانيكا • 8.5 MB</div>
+          </div>
+          <div class="download-state-icon downloaded">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ==========================================
+         VIEW 7: NOTIFICATIONS INBOX SCREEN
+         ========================================== -->
+    <div id="screen-notifications" class="app-screen">
+      <div class="m3-top-app-bar">
+        <button class="icon-btn" onclick="switchView('screen-home')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <span class="title">الإشعارات</span>
+        <button class="icon-btn" onclick="triggerToast('تم تحديد الكل كأقروء')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/><polyline points="15 6 9 12 7 10"/></svg>
+        </button>
+      </div>
+
+      <div>
+        <div class="notification-item unread" onclick="switchView('screen-home')">
+          <div class="notification-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
+          </div>
+          <div style="flex: 1;">
+            <div style="display: flex; justify-content: space-between;">
+              <span class="title-medium" style="font-size: 14px;">منشور جديد لمجال ميكانيكا</span>
+              <span class="caption">10:30 ص</span>
+            </div>
+            <p class="body-medium" style="font-size: 13px; margin-top: 4px;">قام الليدر بنشر: محاضرة ديناميكا الآلات - الفصل الرابع</p>
+          </div>
+        </div>
+
+        <div class="notification-item unread" onclick="switchView('screen-home')">
+          <div class="notification-icon" style="background: rgba(79, 195, 247, 0.15); color: var(--md-sys-color-info);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/></svg>
+          </div>
+          <div style="flex: 1;">
+            <div style="display: flex; justify-content: space-between;">
+              <span class="title-medium" style="font-size: 14px;">تحديث جداول لجميع التخصصات</span>
+              <span class="caption">أمس</span>
+            </div>
+            <p class="body-medium" style="font-size: 13px; margin-top: 4px;">تم نشر جدول امتحانات منتصف الفصل الدراسي المعتمد.</p>
+          </div>
+        </div>
+
+        <div class="notification-item" onclick="switchView('screen-home')">
+          <div class="notification-icon" style="background: rgba(255, 255, 255, 0.05); color: var(--md-sys-color-on-surface-variant);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/></svg>
+          </div>
+          <div style="flex: 1;">
+            <div style="display: flex; justify-content: space-between;">
+              <span class="title-medium" style="font-size: 14px;">دعوة فعالية جديدة</span>
+              <span class="caption">منذ يومين</span>
+            </div>
+            <p class="body-medium" style="font-size: 13px; margin-top: 4px;">المعرض الهندسي السنوي لابتكارات طلاب الهندسة.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ==========================================
+         VIEW 8: PROFILE & EDIT ACCOUNT SCREEN
+         ========================================== -->
+    <div id="screen-profile" class="app-screen">
+      <div class="m3-top-app-bar">
+        <span class="title">الملف الشخصي</span>
+        <button class="icon-btn" onclick="triggerToast('تم حفظ التعديلات')">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--md-sys-color-accent)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+      </div>
+
+      <div style="padding: 24px 16px;">
+        <!-- Avatar Header -->
+        <div style="text-align: center; margin-bottom: 24px;">
+          <div style="width: 96px; height: 96px; border-radius: 50%; background: var(--emerald-gradient); border: 2px solid var(--md-sys-color-accent); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 32px; font-weight: 800; color: var(--md-sys-color-accent); box-shadow: var(--shadow-2);">
+            أع
+          </div>
+          <h2 class="title-large" style="color: #FFF;">أحمد عمر علي</h2>
+          <span class="caption" style="color: var(--md-sys-color-accent); font-weight: 600;">طالب مسجل • دفعة 22</span>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">الاسم الكامل</label>
+          <div class="input-field-wrapper">
+            <input type="text" class="m3-input" value="أحمد عمر علي">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">رقم الهاتف السوداني</label>
+          <div class="input-field-wrapper">
+            <input type="tel" class="m3-input" value="0912345678" disabled style="opacity: 0.7;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">تعديل التخصص</label>
+          <div class="input-field-wrapper">
+            <select class="m3-input m3-select">
+              <option value="ميكانيكا" selected>ميكانيكا</option>
+              <option value="تصنيع">تصنيع</option>
+              <option value="مدنية">مدنية</option>
+              <option value="كهربا">كهربا</option>
+            </select>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+
+        <button class="m3-btn m3-btn-outlined" style="margin-top: 24px; color: var(--md-sys-color-error); border-color: rgba(255,84,73,0.3);" onclick="switchView('screen-splash')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>تسجيل الخروج</span>
+        </button>
+      </div>
+    </div>
+
+
+    <!-- ==========================================
+         VIEW 9: SKELETON LOADING STATE
+         ========================================== -->
+    <div id="screen-skeleton" class="app-screen">
+      <div class="m3-top-app-bar">
+        <span class="title">شواغر 22</span>
+      </div>
+
+      <div style="padding-top: 12px;">
+        <div class="skeleton-card">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+            <div class="skeleton-box" style="width: 90px; height: 24px; border-radius: 12px;"></div>
+            <div class="skeleton-box" style="width: 70px; height: 16px;"></div>
+          </div>
+          <div class="skeleton-box" style="width: 80%; height: 20px; margin-bottom: 12px;"></div>
+          <div class="skeleton-box" style="width: 100%; height: 14px; margin-bottom: 6px;"></div>
+          <div class="skeleton-box" style="width: 60%; height: 14px; margin-bottom: 20px;"></div>
+          <div class="skeleton-box" style="width: 100%; height: 60px; border-radius: 12px;"></div>
+        </div>
+
+        <div class="skeleton-card">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+            <div class="skeleton-box" style="width: 90px; height: 24px; border-radius: 12px;"></div>
+            <div class="skeleton-box" style="width: 70px; height: 16px;"></div>
+          </div>
+          <div class="skeleton-box" style="width: 70%; height: 20px; margin-bottom: 12px;"></div>
+          <div class="skeleton-box" style="width: 95%; height: 14px; margin-bottom: 6px;"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ==========================================
+         VIEW 10: EMPTY STATE
+         ========================================== -->
+    <div id="screen-empty" class="app-screen">
+      <div class="m3-top-app-bar">
+        <span class="title">المنشورات</span>
+      </div>
+
+      <div class="empty-state">
+        <div class="empty-icon-circle">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+        </div>
+        <h3 class="title-medium" style="color: #FFF; margin-bottom: 6px;">لا توجد منشورات حالياً</h3>
+        <p class="body-medium" style="max-width: 260px; margin-bottom: 24px;">لم يقُم ليدر الدفعة بنشر أي جداول أو محاضرات لتخصصك في الوقت الحالي.</p>
+        <button class="m3-btn m3-btn-outlined" style="width: auto;" onclick="switchView('screen-home')">
+          <span>إعادة التحديث</span>
+        </button>
+      </div>
+    </div>
+
+
+    <!-- Bottom Navigation Bar Component (Material 3 standard) -->
+    <div id="app-bottom-nav" class="m3-bottom-nav">
+      <div class="nav-item active" onclick="switchView('screen-home')">
+        <div class="nav-icon-wrapper">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        </div>
+        <span class="nav-label">الرئيسة</span>
+      </div>
+
+      <div class="nav-item" onclick="switchView('screen-downloads')">
+        <div class="nav-icon-wrapper">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </div>
+        <span class="nav-label">التحميلات</span>
+      </div>
+
+      <div class="nav-item" onclick="switchView('screen-notifications')">
+        <div class="nav-icon-wrapper">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </div>
+        <span class="nav-label">الإشعارات</span>
+      </div>
+
+      <div class="nav-item" onclick="switchView('screen-profile')">
+        <div class="nav-icon-wrapper">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <span class="nav-label">حسابي</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Interactive JavaScript Logic -->
+  <script>
+    // View Navigator Function
+    function switchView(screenId) {
+      // Hide all screens
+      const screens = document.querySelectorAll('.app-screen');
+      screens.forEach(s => s.classList.remove('active'));
+
+      // Deactivate top switcher pills
+      const pills = document.querySelectorAll('.screen-pill');
+      pills.forEach(p => p.classList.remove('active'));
+
+      // Show target screen
+      const targetScreen = document.getElementById(screenId);
+      if (targetScreen) {
+        targetScreen.classList.add('active');
+      }
+
+      // Highlight corresponding pill in reviewer top bar
+      const activePill = Array.from(pills).find(p => p.getAttribute('onclick').includes(screenId));
+      if (activePill) {
+        activePill.classList.add('active');
+      }
+
+      // Toggle Bottom Nav visibility based on screen
+      const bottomNav = document.getElementById('app-bottom-nav');
+      if (targetScreen.classList.contains('no-nav')) {
+        bottomNav.style.display = 'none';
+      } else {
+        bottomNav.style.display = 'flex';
+      }
+
+      // Sync Bottom Nav item highlight state
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(item => {
+        item.classList.remove('active');
+        if (item.getAttribute('onclick').includes(screenId)) {
+          item.classList.add('active');
+        }
+      });
+    }
+
+    // Filter Chips Toggle
+    function filterChip(chipEl) {
+      const parent = chipEl.parentElement;
+      parent.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chipEl.classList.add('active');
+      triggerToast(`تم تصنيف المنشورات: ${chipEl.innerText}`);
+    }
+
+    // Single Reaction Toggle Logic
+    function toggleReaction(pillEl) {
+      const countEl = pillEl.querySelector('.reaction-count');
+      let currentCount = parseInt(countEl.innerText);
+
+      if (pillEl.classList.contains('user-reacted')) {
+        pillEl.classList.remove('user-reacted');
+        countEl.innerText = currentCount - 1;
+        triggerToast('تم إلغاء التفاعل');
+      } else {
+        // Remove reaction from siblings in same bar
+        const siblingPills = pillEl.parentElement.querySelectorAll('.reaction-pill');
+        siblingPills.forEach(p => {
+          if (p.classList.contains('user-reacted')) {
+            p.classList.remove('user-reacted');
+            const cnt = p.querySelector('.reaction-count');
+            cnt.innerText = parseInt(cnt.innerText) - 1;
+          }
+        });
+
+        pillEl.classList.add('user-reacted');
+        countEl.innerText = currentCount + 1;
+        triggerToast('تم تسجيل تفاعلك 👍');
+      }
+    }
+
+    // Long Press Emoji Popover Picker Container
+    function toggleEmojiPopover(btnEl) {
+      // Remove any open popovers
+      const existing = document.querySelector('.emoji-popover');
+      if (existing) {
+        existing.remove();
+        return;
+      }
+
+      const popover = document.createElement('div');
+      popover.className = 'emoji-popover';
+      popover.innerHTML = `
+        <span class="emoji-option" onclick="selectPopoverEmoji(this, '👍')">👍</span>
+        <span class="emoji-option" onclick="selectPopoverEmoji(this, '❤️')">❤️</span>
+        <span class="emoji-option" onclick="selectPopoverEmoji(this, '😂')">😂</span>
+        <span class="emoji-option" onclick="selectPopoverEmoji(this, '😮')">😮</span>
+        <span class="emoji-option" onclick="selectPopoverEmoji(this, '😢')">😢</span>
+        <span class="emoji-option" onclick="selectPopoverEmoji(this, '🙏')">🙏</span>
+      `;
+      btnEl.parentElement.appendChild(popover);
+    }
+
+    function selectPopoverEmoji(emojiSpan, char) {
+      const reactionsBar = emojiSpan.closest('.reactions-bar');
+      const popover = emojiSpan.closest('.emoji-popover');
+      
+      // Update or Add reaction pill
+      triggerToast(`تم اختيار التفاعل ${char}`);
+      if (popover) popover.remove();
+    }
+
+    // Toast Alert Helper
+    function triggerToast(message) {
+      const toast = document.getElementById('app-toast');
+      const toastText = document.getElementById('toast-text');
+      toastText.innerText = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+  </script>
+</body>
+</html>

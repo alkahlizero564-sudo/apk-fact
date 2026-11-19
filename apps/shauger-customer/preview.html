@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شواغر 22 - تطبيق الطالب</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-app: #0c0f17;
+            --surface: #141a29;
+            --surface-elevated: #1e263c;
+            --surface-glass: rgba(20, 26, 41, 0.85);
+            
+            --primary: #d4af37;
+            --primary-light: #f3e5ab;
+            --primary-dark: #aa8c2c;
+            --primary-glow: rgba(212, 175, 55, 0.15);
+            
+            --accent: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            
+            --border: #2a3450;
+            --divider: rgba(255, 255, 255, 0.08);
+            
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 22px;
+            --radius-full: 9999px;
+            
+            --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+            --shadow-gold: 0 4px 20px rgba(212, 175, 55, 0.25);
+            
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="light"] {
+            --bg-app: #f8fafc;
+            --surface: #ffffff;
+            --surface-elevated: #f1f5f9;
+            --surface-glass: rgba(255, 255, 255, 0.9);
+            
+            --primary: #b89728;
+            --primary-light: #d4af37;
+            --primary-dark: #8c711d;
+            --primary-glow: rgba(184, 151, 40, 0.12);
+            
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --text-dim: #94a3b8;
+            
+            --border: #e2e8f0;
+            --divider: rgba(0, 0, 0, 0.06);
+            --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Tajawal', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #06090f;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        #apkfact-screens {
+            width: 100%;
+            background: rgba(12, 15, 23, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 16px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            direction: rtl;
+        }
+
+        #apkfact-screens::-webkit-scrollbar {
+            height: 4px;
+        }
+        #apkfact-screens::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: var(--radius-full);
+        }
+
+        .screen-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+
+        .screen-btn.active {
+            background: var(--primary);
+            color: #0c0f17;
+            border-color: var(--primary);
+            font-weight: 700;
+            box-shadow: var(--shadow-gold);
+        }
+
+        .phone-frame {
+            width: 100%;
+            max-width: 410px;
+            height: 844px;
+            background-color: var(--bg-app);
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-radius: 0;
+            margin: 20px 0;
+            border: 1px solid var(--border);
+        }
+
+        @media(min-width: 450px) {
+            .phone-frame {
+                border-radius: 40px;
+                height: 88vh;
+            }
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: var(--surface-glass);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--divider);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .app-header h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .bottom-nav {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 8px 4px;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 60;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 11px;
+            font-weight: 500;
+            gap: 4px;
+            cursor: pointer;
+            transition: var(--transition);
+            padding: 4px 0;
+        }
+
+        .nav-item svg {
+            width: 22px;
+            height: 22px;
+            stroke-width: 2px;
+            transition: var(--transition);
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .screen-view {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 80px;
+            animation: fadeIn 0.2s ease-out forwards;
+        }
+
+        .screen-view.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .custom-input, .custom-select {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            color: var(--text-main);
+            font-size: 15px;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .custom-input:focus, .custom-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #0c0f17;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: var(--shadow-gold);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .drawer-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 150;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .drawer-overlay.open {
+            display: block;
+            opacity: 1;
+        }
+
+        .side-drawer {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            width: 280px;
+            background: var(--surface);
+            z-index: 160;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--border);
+        }
+        .side-drawer.open {
+            transform: translateX(0);
+        }
+
+        .drawer-header {
+            padding: 24px 20px;
+            background: var(--surface-elevated);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar-box {
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-full);
+            background: var(--primary-glow);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            font-size: 22px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .drawer-links {
+            padding: 12px 0;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .drawer-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 20px;
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: var(--transition);
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: right;
+            cursor: pointer;
+        }
+
+        .drawer-item:hover {
+            background: var(--surface-elevated);
+            color: var(--primary);
+        }
+
+        .post-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            margin: 12px 16px;
+            padding: 18px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            background: var(--primary-glow);
+            color: var(--primary);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .post-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+
+        .post-body {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 14px;
+        }
+
+        .reactions-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid var(--divider);
+            padding-top: 12px;
+            margin-top: 12px;
+        }
+
+        .reaction-stats {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .reaction-chip {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-full);
+            padding: 4px 10px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        .reaction-chip.user-reacted {
+            border-color: var(--primary);
+            background: var(--primary-glow);
+        }
+
+        .react-btn-main {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-full);
+            padding: 6px 14px;
+            font-size: 13px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .emoji-popup {
+            position: absolute;
+            bottom: 110%;
+            left: 0;
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-full);
+            padding: 6px 12px;
+            display: none;
+            gap: 10px;
+            box-shadow: var(--shadow-card);
+            z-index: 20;
+        }
+        .emoji-popup.show {
+            display: flex;
+        }
+
+        .attachments-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .attachment-card {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .download-btn {
+            background: var(--primary-glow);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            color: var(--primary);
+            width: 30px;
+            height: 30px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .download-btn.downloaded {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: var(--success);
+        }
+
+        .toast {
+            position: absolute;
+            bottom: 90px;
+            left: 20px;
+            right: 20px;
+            background: var(--surface-elevated);
+            border: 1px solid var(--primary);
+            color: var(--text-main);
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-card);
+            z-index: 300;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 600;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 400;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.open {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="apkfact-screens">
+        <button class="screen-btn active" onclick="switchScreen('screen-signin')">تسجيل الدخول</button>
+        <button class="screen-btn" onclick="switchScreen('screen-signup')">إنشاء حساب</button>
+        <button class="screen-btn" onclick="switchScreen('screen-home')">الرئيسية</button>
+        <button class="screen-btn" onclick="switchScreen('screen-tables')">الجداول</button>
+        <button class="screen-btn" onclick="switchScreen('screen-lectures')">المحاضرات</button>
+        <button class="screen-btn" onclick="switchScreen('screen-events')">الفعاليات والأخبار</button>
+        <button class="screen-btn" onclick="switchScreen('screen-downloads')">التحميلات</button>
+        <button class="screen-btn" onclick="switchScreen('screen-notifications')">الإشعارات</button>
+        <button class="screen-btn" onclick="switchScreen('screen-profile')">الملف الشخصي</button>
+        <button class="screen-btn" onclick="switchScreen('screen-settings')">الإعدادات</button>
+        <button class="screen-btn" onclick="switchScreen('screen-empty')">حالة فارغة</button>
+        <button class="screen-btn" onclick="switchScreen('screen-skeleton')">تحميل (Skeleton)</button>
+    </div>
+
+    <div class="phone-frame" id="phoneContainer">
+
+        <!-- SIDE DRAWER -->
+        <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()"></div>
+        <div class="side-drawer" id="sideDrawer">
+            <div class="drawer-header">
+                <div class="avatar-box" id="drawerAvatar">أع</div>
+                <div>
+                    <h3 id="drawerName" style="font-size: 16px; font-weight: 700;">أحمد محمد</h3>
+                    <p id="drawerSpec" style="font-size: 12px; color: var(--primary);">تخصص: ميكانيكا</p>
+                </div>
+            </div>
+            <div class="drawer-links">
+                <button class="drawer-item" onclick="toggleDrawer(); switchScreen('screen-profile')">الملف الشخصي</button>
+                <button class="drawer-item" onclick="toggleDrawer(); switchScreen('screen-notifications')">الإشعارات</button>
+                <button class="drawer-item" onclick="toggleDrawer(); switchScreen('screen-downloads')">التحميلات</button>
+                <button class="drawer-item" onclick="toggleDrawer(); switchScreen('screen-settings')">الإعدادات</button>
+                <button class="drawer-item" onclick="toggleDrawer(); showToast('شواغر 22 - الإصدار 1.0.0 (تطوير الطلاب والليدر)')">عن التطبيق</button>
+                <button class="drawer-item" style="color: var(--error);" onclick="toggleDrawer(); switchScreen('screen-signin')">تسجيل الخروج</button>
+            </div>
+        </div>
+
+        <!-- 1. SIGN IN -->
+        <div id="screen-signin" class="screen-view active" style="padding: 24px; justify-content: center;">
+            <div style="text-align: center; margin-bottom: 32px;">
+                <div style="width: 70px; height: 70px; background: var(--primary-glow); border: 2px solid var(--primary); border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: var(--primary); font-size: 28px; font-weight: 900;">ش</div>
+                <h2 style="font-size: 24px; font-weight: 700;">شواغر 22</h2>
+                <p style="font-size: 14px; color: var(--text-muted); margin-top: 6px;">تسجيل الدخول لتطبيق الطلاب</p>
+            </div>
+            <div class="input-group">
+                <label class="input-label">البريد الإلكتروني أو رقم الهاتف</label>
+                <input type="text" class="custom-input" value="0912345678">
+            </div>
+            <div class="input-group">
+                <label class="input-label">كلمة السر</label>
+                <input type="password" class="custom-input" value="password123">
+            </div>
+            <button class="btn-primary" onclick="switchScreen('screen-home')" style="margin-top: 8px;">دخول</button>
+            <p style="text-align: center; font-size: 13px; color: var(--text-muted); margin-top: 24px;">
+                ليس لديك حساب؟ <span style="color: var(--primary); font-weight: 700; cursor: pointer;" onclick="switchScreen('screen-signup')">إنشاء حساب جديد</span>
+            </p>
+        </div>
+
+        <!-- 2. SIGN UP -->
+        <div id="screen-signup" class="screen-view" style="padding: 0;">
+            <header class="app-header">
+                <button class="icon-btn" onclick="switchScreen('screen-signin')">←</button>
+                <h1>حساب جديد</h1>
+                <div style="width: 40px;"></div>
+            </header>
+            <div style="padding: 24px;">
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <h2 style="font-size: 22px; font-weight: 700;">حساب طالب جديد</h2>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">أنشئ حسابك وتصلك منشورات تخصصك فوراً</p>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">الاسم الكامل (إجباري)</label>
+                    <input type="text" id="regName" class="custom-input" placeholder="مثال: أحمد محمد علي">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">رقم الهاتف السوداني (إجباري)</label>
+                    <input type="text" id="regPhone" class="custom-input" placeholder="09xxxxxxxx أو +249xxxxxxxxx">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">البريد الإلكتروني</label>
+                    <input type="email" id="regEmail" class="custom-input" value="student@shauger.sd">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">التخصص</label>
+                    <select id="regSpec" class="custom-select">
+                        <option value="ميكانيكا">ميكانيكا</option>
+                        <option value="تصنيع">تصنيع</option>
+                        <option value="مدنية">مدنية</option>
+                        <option value="كهربا">كهربا</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">كلمة السر</label>
+                    <input type="password" class="custom-input" value="12345678">
+                </div>
+                <button class="btn-primary" onclick="handleSignUp()">إتمام التسجيل والدخول</button>
+            </div>
+        </div>
+
+        <!-- 3. HOME -->
+        <div id="screen-home" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="toggleDrawer()">☰</button>
+                <h1>شواغر 22</h1>
+                <button class="icon-btn" onclick="switchScreen('screen-notifications')">🔔</button>
+            </header>
+
+            <div style="padding: 12px 16px 0;">
+                <div style="background: linear-gradient(135deg, var(--surface) 0%, var(--surface-elevated) 100%); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <span class="badge" id="badgeMajor" style="margin-bottom: 6px; display: inline-block;">تخصص: ميكانيكا</span>
+                        <h2 style="font-size: 15px; font-weight: 700;" id="welcomeName">أهلاً بك، أحمد محمد</h2>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">آخر تحديثات الدفعة متوفرة الآن</p>
+                    </div>
+                    <div style="font-size: 32px;">🎓</div>
+                </div>
+            </div>
+
+            <!-- Card 1 -->
+            <div class="post-card">
+                <div class="post-header">
+                    <span class="badge">جدول</span>
+                    <span style="font-size: 12px; color: var(--text-dim);">اليوم، 10:30 صباحاً</span>
+                </div>
+                <div class="post-title">جدول محاضرات الأسبوع الحالي - ميكانيكا</div>
+                <div class="post-body">تم اعتماد جدول المحاضرات والسكاشن العملية للأسبوع الحالي، يرجى الالتزام بالمواعيد المحددة في القاعات الرئيسية.</div>
+                
+                <div class="attachments-grid">
+                    <div class="attachment-card" onclick="openImageViewer()">
+                        <span>🖼️ جدول_الميكانيكا.png</span>
+                        <div class="download-btn downloaded" title="تم التحميل">✓</div>
+                    </div>
+                    <div class="attachment-card" onclick="showToast('تم فتح ملف PDF داخل التطبيق')">
+                        <span>📄 التفاصيل_الكاملة.pdf</span>
+                        <div class="download-btn" onclick="event.stopPropagation(); triggerDownload(this, 'التفاصيل_الكاملة.pdf')">⬇</div>
+                    </div>
+                </div>
+
+                <div class="reactions-container">
+                    <div class="reaction-stats">
+                        <span class="reaction-chip">👍 38</span>
+                        <span class="reaction-chip">❤️ 14</span>
+                    </div>
+                    <div style="position: relative;">
+                        <button class="react-btn-main" onclick="toggleEmojiPopup(this)"><span>👍</span> تفاعل</button>
+                        <div class="emoji-popup">
+                            <span onclick="reactToPost(this, '👍')">👍</span>
+                            <span onclick="reactToPost(this, '❤️')">❤️</span>
+                            <span onclick="reactToPost(this, '😂')">😂</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="post-card">
+                <div class="post-header">
+                    <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: var(--accent);">محاضرة</span>
+                    <span style="font-size: 12px; color: var(--text-dim);">أمس، 02:00 م</span>
+                </div>
+                <div class="post-title">ملخص محاضرة الديناميكا الحرارية (د. خالد)</div>
+                <div class="post-body">مرفق أدناه تسجيل الفيديو وملخص المحاضرة الخاصة بالدورات الحرارية وتحليل الأنظمة المفتوحة.</div>
+                <div class="attachments-grid">
+                    <div class="attachment-card" onclick="showToast('جاري تشغيل الفيديو...')">
+                        <span>🎬 محاضرة_3_ديناميكا.mp4</span>
+                        <div class="download-btn" onclick="event.stopPropagation(); triggerDownload(this, 'محاضرة_3_ديناميكا.mp4')">⬇</div>
+                    </div>
+                </div>
+                <div class="reactions-container">
+                    <div class="reaction-stats">
+                        <span class="reaction-chip user-reacted">❤️ 19</span>
+                    </div>
+                    <button class="react-btn-main"><span>❤️</span> تفاعل</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. TABLES -->
+        <div id="screen-tables" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="toggleDrawer()">☰</button>
+                <h1>الجداول الدراسية</h1>
+                <div style="width: 40px;"></div>
+            </header>
+            <div class="post-card">
+                <div class="post-header">
+                    <span class="badge">جدول الامتحانات</span>
+                    <span style="font-size: 12px; color: var(--text-dim);">منذ يومين</span>
+                </div>
+                <div class="post-title">جدول الامتحانات النصفي لفصل الخريف</div>
+                <div class="post-body">الجدول النهائي لامتحانات الميدترم لجميع تخصصات الدفعة. الرجاء الحضور قبل القاعة بـ 15 دقيقة.</div>
+                <div class="attachments-grid">
+                    <div class="attachment-card">
+                        <span>📄 Midterm_Schedule.pdf</span>
+                        <div class="download-btn downloaded">✓</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. LECTURES -->
+        <div id="screen-lectures" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="toggleDrawer()">☰</button>
+                <h1>المحاضرات</h1>
+                <div style="width: 40px;"></div>
+            </header>
+            <div class="post-card">
+                <div class="post-header">
+                    <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: var(--accent);">محاضرة</span>
+                    <span style="font-size: 12px; color: var(--text-dim);">قبل 3 أيام</span>
+                </div>
+                <div class="post-title">مقاومة المواد - المحاضرة الخامسة</div>
+                <div class="post-body">شرح تفصيلي لإجهادات الانحناء والقص مع الأمثلة التطبيقية.</div>
+                <div class="attachments-grid">
+                    <div class="attachment-card">
+                        <span>🎬 Strength_Lecture5.mp4</span>
+                        <div class="download-btn" onclick="triggerDownload(this, 'Strength_Lecture5.mp4')">⬇</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. EVENTS -->
+        <div id="screen-events" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="toggleDrawer()">☰</button>
+                <h1>الفعاليات والأخبار</h1>
+                <div style="width: 40px;"></div>
+            </header>
+            <div class="post-card">
+                <div class="post-header">
+                    <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--success);">فعالية</span>
+                    <span style="font-size: 12px; color: var(--text-dim);">اليوم</span>
+                </div>
+                <div class="post-title">زيارة ميدانية لمصنع التجميع والإنتاج</div>
+                <div class="post-body">تنظم إدارة الدفعة زيارة ميدانية هندسية لطلاب ميكانيكا وتصنيع يوم الخميس القادم. التسجيل عبر ليدر الدفعة.</div>
+            </div>
+        </div>
+
+        <!-- 7. DOWNLOADS -->
+        <div id="screen-downloads" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="toggleDrawer()">☰</button>
+                <h1>التحميلات المحلية</h1>
+                <div style="width: 40px;"></div>
+            </header>
+            <div style="padding: 16px;">
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">المرفقات المحفوظة في جهازك ويمكن تصفحها بدون إنترنت:</p>
+                <div class="attachment-card" style="margin-bottom: 10px; padding: 14px;">
+                    <div>
+                        <div style="font-size: 14px; font-weight: 700;">جدول_الميكانيكا.png</div>
+                        <span style="font-size: 11px; color: var(--text-dim);">معرض الجهاز / شواغر 22 • 2.4 MB</span>
+                    </div>
+                    <button class="btn-primary" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="openImageViewer()">عرض</button>
+                </div>
+                <div class="attachment-card" style="margin-bottom: 10px; padding: 14px;">
+                    <div>
+                        <div style="font-size: 14px; font-weight: 700;">Midterm_Schedule.pdf</div>
+                        <span style="font-size: 11px; color: var(--text-dim);">التنزيلات / Downloads • 1.1 MB</span>
+                    </div>
+                    <button class="btn-primary" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="showToast('تم فتح الملف بنجاح')">فتح</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. NOTIFICATIONS -->
+        <div id="screen-notifications" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="switchScreen('screen-home')">←</button>
+                <h1>الإشعارات</h1>
+                <div style="width: 40px;"></div>
+            </header>
+            <div style="padding: 12px 16px;">
+                <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; margin-bottom: 10px; display: flex; gap: 12px;">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--primary-glow); color: var(--primary); display: flex; align-items: center; justify-content: center;">📢</div>
+                    <div>
+                        <h4 style="font-size: 14px; font-weight: 700;">منشور جديد في تخصص ميكانيكا</h4>
+                        <p style="font-size: 13px; color: var(--text-muted);">نشر ليدر الدفعة: جدول محاضرات الأسبوع الحالي - ميكانيكا.</p>
+                        <span style="font-size: 11px; color: var(--text-dim);">قبل ساعتين</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 9. PROFILE -->
+        <div id="screen-profile" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="switchScreen('screen-home')">←</button>
+                <h1>الملف الشخصي</h1>
+                <div style="width: 40px;"></div>
+            </header>
+            <div style="padding: 24px 16px;">
+                <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 24px;">
+                    <div class="avatar-box" style="width: 80px; height: 80px; font-size: 32px; margin-bottom: 12px;" id="profAvatar">أح</div>
+                    <h2 style="font-size: 18px; font-weight: 700;" id="profTitleName">أحمد محمد علي</h2>
+                    <p style="font-size: 13px; color: var(--primary);" id="profPhone">0912345678</p>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">الاسم الكامل</label>
+                    <input type="text" id="inputProfName" class="custom-input" value="أحمد محمد علي">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">رقم الهاتف (غير قابل للتعديل)</label>
+                    <input type="text" id="inputProfPhone" class="custom-input" value="0912345678" disabled style="opacity: 0.7;">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">البريد الإلكتروني</label>
+                    <input type="email" id="inputProfEmail" class="custom-input" value="ahmed@shauger.sd">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">التخصص</label>
+                    <select id="inputProfSpec" class="custom-select">
+                        <option value="ميكانيكا" selected>ميكانيكا</option>
+                        <option value="تصنيع">تصنيع</option>
+                        <option value="مدنية">مدنية</option>
+                        <option value="كهربا">كهربا</option>
+                    </select>
+                </div>
+                <button class="btn-primary" onclick="saveProfile()" style="margin-top: 12px;">حفظ التعديلات</button>
+            </div>
+        </div>
+
+        <!-- 10. SETTINGS -->
+        <div id="screen-settings" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="switchScreen('screen-home')">←</button>
+                <h1>الإعدادات</h1>
+                <div style="width: 40px;"></div>
+            </header>
+            <div style="padding: 16px;">
+                <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h3 style="font-size: 15px; font-weight: 700;">الوضع الليلي (Dark Mode)</h3>
+                        <p style="font-size: 12px; color: var(--text-muted);">تفعيل المظهر الداكن الفاخر</p>
+                    </div>
+                    <input type="checkbox" id="darkModeToggle" checked onchange="toggleDarkMode(this)" style="width: 22px; height: 22px; accent-color: var(--primary);">
+                </div>
+                <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h3 style="font-size: 15px; font-weight: 700;">الإشعارات الفورية</h3>
+                        <p style="font-size: 12px; color: var(--text-muted);">تنبيهات فورية عند نشر منشورات تخصصك</p>
+                    </div>
+                    <input type="checkbox" checked style="width: 22px; height: 22px; accent-color: var(--primary);">
+                </div>
+            </div>
+        </div>
+
+        <!-- 11. EMPTY STATE -->
+        <div id="screen-empty" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="switchScreen('screen-home')">←</button>
+                <h1>التحميلات</h1>
+                <div style="width: 40px;"></div>
+            </header>
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center;">
+                <div style="width: 72px; height: 72px; border-radius: 50%; background: var(--primary-glow); display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 16px;">📂</div>
+                <h3 style="font-size: 18px; font-weight: 700;">لا توجد تحميلات حالياً</h3>
+                <p style="font-size: 13px; color: var(--text-muted); margin: 8px 0 20px;">لم تقم بتحميل أي صور أو ملفات حتى الآن. يمكنك استعراض المنشورات والتحميل وقتما تشاء.</p>
+                <button class="btn-primary" style="width: auto; padding: 10px 24px;" onclick="switchScreen('screen-home')">تصفح المنشورات</button>
+            </div>
+        </div>
+
+        <!-- 12. SKELETON -->
+        <div id="screen-skeleton" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="switchScreen('screen-home')">←</button>
+                <h1>جارِ التحميل...</h1>
+                <div style="width: 40px;"></div>
+            </header>
+            <div style="padding: 16px;">
+                <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                        <div style="width: 60px; height: 20px; background: var(--surface-elevated); border-radius: 4px;"></div>
+                        <div style="width: 90px; height: 16px; background: var(--surface-elevated); border-radius: 4px;"></div>
+                    </div>
+                    <div style="width: 80%; height: 20px; background: var(--surface-elevated); border-radius: 4px; margin-bottom: 8px;"></div>
+                    <div style="width: 100%; height: 14px; background: var(--surface-elevated); border-radius: 4px; margin-bottom: 6px;"></div>
+                    <div style="width: 60%; height: 14px; background: var(--surface-elevated); border-radius: 4px; margin-bottom: 16px;"></div>
+                    <div style="width: 100%; height: 50px; background: var(--surface-elevated); border-radius: 8px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM NAVIGATION -->
+        <nav class="bottom-nav" id="bottomNav">
+            <button class="nav-item active" onclick="switchScreen('screen-home'); setActiveNav(this)">
+                <span>🏠</span> الرئيسية
+            </button>
+            <button class="nav-item" onclick="switchScreen('screen-tables'); setActiveNav(this)">
+                <span>📅</span> الجداول
+            </button>
+            <button class="nav-item" onclick="switchScreen('screen-lectures'); setActiveNav(this)">
+                <span>📖</span> المحاضرات
+            </button>
+            <button class="nav-item" onclick="switchScreen('screen-events'); setActiveNav(this)">
+                <span>📢</span> الفعاليات
+            </button>
+            <button class="nav-item" onclick="switchScreen('screen-downloads'); setActiveNav(this)">
+                <span>⬇️</span> التحميلات
+            </button>
+        </nav>
+
+        <!-- TOAST -->
+        <div class="toast" id="appToast"><span id="toastText">تمت العملية بنجاح</span></div>
+
+        <!-- IMAGE MODAL -->
+        <div class="modal-overlay" id="imageModal" onclick="closeImageViewer()">
+            <div style="text-align: center;">
+                <div style="background: var(--primary-glow); border: 2px solid var(--primary); border-radius: var(--radius-lg); padding: 40px; font-size: 60px;">🖼️</div>
+                <p style="color: #fff; margin-top: 16px; font-weight: 700;">جدول_الميكانيكا.png</p>
+                <p style="color: var(--text-muted); font-size: 12px; margin-top: 4px;">اضغط في أي مكان للإغلاق</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen-view').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(screenId);
+            if (target) {
+                target.classList.add('active');
+                target.scrollTop = 0;
+            }
+
+            document.querySelectorAll('.screen-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if(btn.getAttribute('onclick').includes(screenId)) {
+                    btn.classList.add('active');
+                }
+            });
+
+            const bottomNav = document.getElementById('bottomNav');
+            if (screenId === 'screen-signin' || screenId === 'screen-signup') {
+                bottomNav.style.display = 'none';
+            } else {
+                bottomNav.style.display = 'grid';
+            }
+        }
+
+        function setActiveNav(btn) {
+            document.querySelectorAll('.bottom-nav .nav-item').forEach(item => item.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function toggleDrawer() {
+            document.getElementById('sideDrawer').classList.toggle('open');
+            document.getElementById('drawerOverlay').classList.toggle('open');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('appToast');
+            document.getElementById('toastText').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function toggleEmojiPopup(btn) {
+            const popup = btn.nextElementSibling;
+            popup.classList.toggle('show');
+        }
+
+        function reactToPost(emojiSpan, emoji) {
+            emojiSpan.parentElement.classList.remove('show');
+            showToast(`تم تسجيل تفاعلك بـ ${emoji}`);
+        }
+
+        function triggerDownload(btn, filename) {
+            btn.innerHTML = '...';
+            setTimeout(() => {
+                btn.innerHTML = '✓';
+                btn.classList.add('downloaded');
+                showToast(`تم تحميل "${filename}" بنجاح`);
+            }, 800);
+        }
+
+        function openImageViewer() {
+            document.getElementById('imageModal').classList.add('open');
+        }
+        function closeImageViewer() {
+            document.getElementById('imageModal').classList.remove('open');
+        }
+
+        function handleSignUp() {
+            const name = document.getElementById('regName').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const spec = document.getElementById('regSpec').value;
+
+            if (!name) {
+                showToast('يرجى إدخال الاسم الكامل');
+                return;
+            }
+
+            const phoneRegex = /^(09|01)\d{8}$|^(\+249)\d{9}$/;
+            if (!phoneRegex.test(phone)) {
+                showToast('رقم الهاتف غير صحيح (يجب أن يبدأ بـ 09 أو 01 أو +249)');
+                return;
+            }
+
+            document.getElementById('drawerName').textContent = name;
+            document.getElementById('drawerSpec').textContent = `تخصص: ${spec}`;
+            document.getElementById('welcomeName').textContent = `أهلاً بك، ${name}`;
+            document.getElementById('badgeMajor').textContent = `تخصص: ${spec}`;
+            document.getElementById('drawerAvatar').textContent = name.substring(0, 2);
+            document.getElementById('profAvatar').textContent = name.substring(0, 2);
+            document.getElementById('profTitleName').textContent = name;
+            document.getElementById('profPhone').textContent = phone;
+            document.getElementById('inputProfName').value = name;
+            document.getElementById('inputProfPhone').value = phone;
+            document.getElementById('inputProfSpec').value = spec;
+
+            showToast('تم إنشاء الحساب وتسجيل الدخول بنجاح!');
+            switchScreen('screen-home');
+        }
+
+        function saveProfile() {
+            const name = document.getElementById('inputProfName').value;
+            const spec = document.getElementById('inputProfSpec').value;
+            document.getElementById('drawerName').textContent = name;
+            document.getElementById('welcomeName').textContent = `أهلاً بك، ${name}`;
+            document.getElementById('profTitleName').textContent = name;
+            document.getElementById('badgeMajor').textContent = `تخصص: ${spec}`;
+            document.getElementById('drawerSpec').textContent = `تخصص: ${spec}`;
+            showToast('تم تحديث الملف الشخصي بنجاح');
+        }
+
+        function toggleDarkMode(checkbox) {
+            if(checkbox.checked) {
+                document.documentElement.removeAttribute('data-theme');
+                showToast('تم تفعيل الوضع الليلي الفاخر');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+                showToast('تم تفعيل الوضع الفاتح');
+            }
+        }
+    </script>
+</body>
+</html>

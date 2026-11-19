@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ليدر - تطبيق الإدارة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-app: #0c0f17;
+            --surface: #141a29;
+            --surface-elevated: #1e263c;
+            --surface-glass: rgba(20, 26, 41, 0.85);
+            --primary: #d4af37;
+            --primary-light: #f3e5ab;
+            --primary-dark: #aa8c2c;
+            --primary-glow: rgba(212, 175, 55, 0.15);
+            --accent: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --border: #2a3450;
+            --divider: rgba(255, 255, 255, 0.08);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 22px;
+            --radius-full: 9999px;
+            --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            --shadow-gold: 0 4px 20px rgba(212, 175, 55, 0.25);
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="light"] {
+            --bg-app: #f8fafc;
+            --surface: #ffffff;
+            --surface-elevated: #f1f5f9;
+            --surface-glass: rgba(255, 255, 255, 0.9);
+            --primary: #b89728;
+            --primary-light: #d4af37;
+            --primary-dark: #8c711d;
+            --primary-glow: rgba(184, 151, 40, 0.12);
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --text-dim: #94a3b8;
+            --border: #e2e8f0;
+            --divider: rgba(0, 0, 0, 0.06);
+            --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Tajawal', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #06090f;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+        }
+
+        #apkfact-screens {
+            width: 100%;
+            background: rgba(12, 15, 23, 0.95);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 16px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .screen-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+
+        .screen-btn.active {
+            background: var(--primary);
+            color: #0c0f17;
+            border-color: var(--primary);
+            font-weight: 700;
+            box-shadow: var(--shadow-gold);
+        }
+
+        .phone-frame {
+            width: 100%;
+            max-width: 412px;
+            height: 844px;
+            background-color: var(--bg-app);
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin: 20px 0;
+            border: 1px solid var(--border);
+            border-radius: 40px;
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            background: var(--surface-glass);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--divider);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .app-header h1 {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .icon-btn {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            width: 38px;
+            height: 38px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 15px;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .icon-badge {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            background: var(--error);
+            color: #fff;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .bottom-nav {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 6px 2px;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 60;
+            align-items: center;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 11px;
+            gap: 2px;
+            cursor: pointer;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .fab-btn {
+            width: 44px;
+            height: 44px;
+            background: var(--primary);
+            color: #0c0f17;
+            border-radius: var(--radius-full);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: var(--shadow-gold);
+            cursor: pointer;
+            margin-top: -12px;
+        }
+
+        .screen-view {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 74px;
+        }
+
+        .screen-view.active {
+            display: flex;
+        }
+
+        .input-group {
+            margin-bottom: 14px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .custom-input, .custom-select, .custom-textarea {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #0c0f17;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 13px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: var(--shadow-gold);
+        }
+
+        .drawer-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 150;
+            display: none;
+        }
+        .drawer-overlay.open { display: block; }
+
+        .side-drawer {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            width: 270px;
+            background: var(--surface);
+            z-index: 160;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--border);
+        }
+        .side-drawer.open { transform: translateX(0); }
+
+        .drawer-header {
+            padding: 20px 16px;
+            background: var(--surface-elevated);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar-box {
+            width: 50px;
+            height: 50px;
+            border-radius: var(--radius-full);
+            background: var(--primary-glow);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .drawer-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 18px;
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: 500;
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: right;
+            cursor: pointer;
+        }
+        .drawer-item:hover { background: var(--surface-elevated); color: var(--primary); }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            padding: 14px;
+        }
+
+        .kpi-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .kpi-value {
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--primary);
+        }
+
+        .admin-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            margin: 10px 14px;
+            padding: 16px;
+        }
+
+        .badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            background: var(--primary-glow);
+            color: var(--primary);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            display: inline-block;
+        }
+
+        .student-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            margin-bottom: 8px;
+        }
+
+        .action-icon-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: var(--radius-full);
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .toast {
+            position: absolute;
+            bottom: 85px;
+            left: 20px;
+            right: 20px;
+            background: var(--surface-elevated);
+            border: 1px solid var(--primary);
+            color: var(--text-main);
+            padding: 10px 14px;
+            border-radius: var(--radius-md);
+            z-index: 300;
+            display: none;
+            font-size: 13px;
+            text-align: center;
+        }
+        .toast.show { display: block; }
+    </style>
+</head>
+<body>
+
+    <div id="apkfact-screens">
+        <button class="screen-btn active" onclick="switchScreen('screen-admin-stats')">الإحصائيات</button>
+        <button class="screen-btn" onclick="switchScreen('screen-admin-posts')">المنشورات</button>
+        <button class="screen-btn" onclick="switchScreen('screen-admin-newpost')">إنشاء منشور</button>
+        <button class="screen-btn" onclick="switchScreen('screen-admin-students')">الطلاب</button>
+        <button class="screen-btn" onclick="switchScreen('screen-admin-reactions')">التفاعلات</button>
+        <button class="screen-btn" onclick="switchScreen('screen-admin-notifs')">الإشعارات الواردة</button>
+        <button class="screen-btn" onclick="switchScreen('screen-admin-pin')">رمز الإدارة PIN</button>
+        <button class="screen-btn" onclick="switchScreen('screen-admin-settings')">الإعدادات</button>
+    </div>
+
+    <div class="phone-frame" id="phoneContainer">
+        <!-- DRAWER -->
+        <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()"></div>
+        <div class="side-drawer" id="sideDrawer">
+            <div class="drawer-header">
+                <div class="avatar-box">ليد</div>
+                <div>
+                    <h3 style="font-size: 14px; font-weight: 700;">ليدر الدفعة (أبوبكر)</h3>
+                    <p style="font-size: 11px; color: var(--primary);">حساب إدارة معتمد</p>
+                </div>
+            </div>
+            <div style="padding: 10px 0; overflow-y: auto;">
+                <button class="drawer-item" onclick="toggleDrawer(); switchScreen('screen-admin-stats')">📊 الإحصائيات</button>
+                <button class="drawer-item" onclick="toggleDrawer(); switchScreen('screen-admin-posts')">📝 المنشورات حسب النوع</button>
+                <button class="drawer-item" onclick="toggleDrawer(); switchScreen('screen-admin-students')">🎓 الطلاب حسب التخصص</button>
+                <button class="drawer-item" onclick="toggleDrawer(); switchScreen('screen-admin-reactions')">👍 متابعة التفاعلات</button>
+                <button class="drawer-item" onclick="toggleDrawer(); switchScreen('screen-admin-notifs')">🔔 الإشعارات الواردة</button>
+                <button class="drawer-item" onclick="toggleDrawer(); switchScreen('screen-admin-settings')">⚙️ الإعدادات</button>
+                <button class="drawer-item" style="color: var(--error);" onclick="toggleDrawer(); showToast('تم تسجيل الخروج بنجاح')">🚪 تسجيل الخروج</button>
+            </div>
+        </div>
+
+        <!-- 1. SCREEN: STATS -->
+        <div id="screen-admin-stats" class="screen-view active">
+            <header class="app-header">
+                <button class="icon-btn" onclick="toggleDrawer()">☰</button>
+                <h1>لوحة الإحصائيات</h1>
+                <div style="display: flex; gap: 8px;">
+                    <button class="icon-btn" title="تحديث" onclick="showToast('تم تحديث البيانات من قاعدة البيانات')">🔄</button>
+                    <button class="icon-btn" title="الإشعارات" onclick="switchScreen('screen-admin-notifs')">
+                        🔔
+                        <span class="icon-badge">2</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="kpi-grid">
+                <div class="kpi-card" style="grid-column: span 2; background: linear-gradient(135deg, var(--surface) 0%, var(--surface-elevated) 100%);">
+                    <span style="font-size: 13px; color: var(--text-muted);">العدد الكلي للطلاب المسجلين</span>
+                    <div class="kpi-value" style="font-size: 34px;">342 طالب</div>
+                    <span style="font-size: 11px; color: var(--success); font-weight: bold;">↑ تحديث فوري من قاعدة البيانات Supabase</span>
+                </div>
+
+                <div class="kpi-card">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-size: 12px; color: var(--text-muted);">ميكانيكا</span>
+                        <span>⚙️</span>
+                    </div>
+                    <div class="kpi-value">98</div>
+                    <span style="font-size: 11px; color: var(--text-dim);">طالب مسجل</span>
+                </div>
+
+                <div class="kpi-card">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-size: 12px; color: var(--text-muted);">تصنيع</span>
+                        <span>🛠️</span>
+                    </div>
+                    <div class="kpi-value">76</div>
+                    <span style="font-size: 11px; color: var(--text-dim);">طالب مسجل</span>
+                </div>
+
+                <div class="kpi-card">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-size: 12px; color: var(--text-muted);">مدنية</span>
+                        <span>🏢</span>
+                    </div>
+                    <div class="kpi-value">85</div>
+                    <span style="font-size: 11px; color: var(--text-dim);">طالب مسجل</span>
+                </div>
+
+                <div class="kpi-card">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-size: 12px; color: var(--text-muted);">كهربا</span>
+                        <span>⚡</span>
+                    </div>
+                    <div class="kpi-value">83</div>
+                    <span style="font-size: 11px; color: var(--text-dim);">طالب مسجل</span>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 10px;">المسجلون الجدد</h3>
+                <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--divider);">
+                    <span style="font-size: 13px;">اليوم</span>
+                    <span style="font-weight: 700; color: var(--primary);">12 طالب</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 6px 0;">
+                    <span style="font-size: 13px;">هذا الأسبوع</span>
+                    <span style="font-weight: 700; color: var(--primary);">45 طالب</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. SCREEN: POSTS -->
+        <div id="screen-admin-posts" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="toggleDrawer()">☰</button>
+                <h1>إدارة المنشورات</h1>
+                <button class="icon-btn" onclick="switchScreen('screen-admin-newpost')">➕</button>
+            </header>
+
+            <div style="display: flex; gap: 6px; overflow-x: auto; padding: 10px 14px;">
+                <span class="badge" style="background: var(--primary); color: #000; cursor: pointer;">الكل</span>
+                <span class="badge" style="cursor: pointer;">جدول</span>
+                <span class="badge" style="cursor: pointer;">محاضرة</span>
+                <span class="badge" style="cursor: pointer;">فعالية</span>
+                <span class="badge" style="cursor: pointer;">ميكانيكا</span>
+            </div>
+
+            <div class="admin-card" id="post-1">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span class="badge">جدول</span>
+                    <span style="font-size: 11px; color: var(--text-dim);">مُرْسَل إلى: ميكانيكا</span>
+                </div>
+                <h3 style="font-size: 14px; font-weight: 700;">جدول محاضرات الأسبوع الحالي - ميكانيكا</h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin: 6px 0 12px;">تم اعتماد جدول المحاضرات والسكاشن العملية للأسبوع الحالي.</p>
+                <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                    <button class="action-icon-btn" style="width: auto; padding: 4px 12px; border-radius: 8px;" onclick="switchScreen('screen-admin-newpost')">تعديل</button>
+                    <button class="action-icon-btn" style="width: auto; padding: 4px 12px; border-radius: 8px; color: var(--error);" onclick="document.getElementById('post-1').remove(); showToast('تم حذف المنشور فعلياً')">حذف</button>
+                </div>
+            </div>
+
+            <div class="admin-card" id="post-2">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span class="badge" style="color: var(--accent);">محاضرة</span>
+                    <span style="font-size: 11px; color: var(--text-dim);">مُرْسَل إلى: كل التخصصات</span>
+                </div>
+                <h3 style="font-size: 14px; font-weight: 700;">ملخص محاضرة الديناميكا الحرارية</h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin: 6px 0 12px;">مرفق أدناه تسجيل الفيديو وملخص المحاضرة مع التمارين الإضافية.</p>
+                <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                    <button class="action-icon-btn" style="width: auto; padding: 4px 12px; border-radius: 8px;" onclick="switchScreen('screen-admin-newpost')">تعديل</button>
+                    <button class="action-icon-btn" style="width: auto; padding: 4px 12px; border-radius: 8px; color: var(--error);" onclick="document.getElementById('post-2').remove(); showToast('تم حذف المنشور فعلياً')">حذف</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. SCREEN: NEW POST -->
+        <div id="screen-admin-newpost" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="switchScreen('screen-admin-posts')">✕</button>
+                <h1>إنشاء منشور جديد</h1>
+                <div style="width: 38px;"></div>
+            </header>
+
+            <div style="padding: 14px;">
+                <div class="input-group">
+                    <label class="input-label">نوع المنشور</label>
+                    <select class="custom-select">
+                        <option>جدول</option>
+                        <option>محاضرة</option>
+                        <option>فعالية</option>
+                        <option>خبر</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">العنوان</label>
+                    <input type="text" class="custom-input" placeholder="عنوان المنشور الرئيسي...">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">النص أو التفاصيل</label>
+                    <textarea class="custom-textarea" placeholder="اكتب تفاصيل المنشور هنا..."></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">المرفقات والصور (ImagePicker)</label>
+                    <div style="border: 2px dashed var(--border); border-radius: var(--radius-md); padding: 18px; text-align: center; cursor: pointer;" onclick="document.getElementById('uploadProgress').style.display='block'; showToast('تم تحديد 3 صور عبر ImagePicker');">
+                        <span style="font-size: 26px;">📁</span>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">اضغط لاختيار عدة صور وملفات دفعة واحدة</p>
+                    </div>
+                </div>
+
+                <div id="uploadProgress" style="display: none; margin-bottom: 14px;">
+                    <div style="background: var(--surface-elevated); border-radius: 8px; height: 8px; overflow: hidden;">
+                        <div style="background: var(--primary); width: 85%; height: 100%;"></div>
+                    </div>
+                    <span style="font-size: 11px; color: var(--text-dim); display: block; text-align: center; margin-top: 4px;">جارٍ الرفع... 85%</span>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">الجهة المستهدفة (مع عدد الطلاب)</label>
+                    <select class="custom-select">
+                        <option>كل التخصصات (342 طالب)</option>
+                        <option>ميكانيكا (98 طالب)</option>
+                        <option>تصنيع (76 طالب)</option>
+                        <option>مدنية (85 طالب)</option>
+                        <option>كهربا (83 طالب)</option>
+                    </select>
+                </div>
+
+                <button class="btn-primary" onclick="showToast('تم نشر المنشور وإرسال الإشعار الفوري!'); switchScreen('screen-admin-posts');">نشر وإرسال إشعار فوري</button>
+            </div>
+        </div>
+
+        <!-- 4. SCREEN: STUDENTS -->
+        <div id="screen-admin-students" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="toggleDrawer()">☰</button>
+                <h1>قائمة الطلاب المسجلين</h1>
+                <div style="width: 38px;"></div>
+            </header>
+
+            <div style="padding: 12px 14px;">
+                <input type="text" class="custom-input" placeholder="بحث بالاسم أو رقم الهاتف..." style="margin-bottom: 10px;">
+                <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px;">
+                    <span class="badge" style="background: var(--primary); color: #000;">الكل (342)</span>
+                    <span class="badge">ميكانيكا (98)</span>
+                    <span class="badge">تصنيع (76)</span>
+                    <span class="badge">مدنية (85)</span>
+                    <span class="badge">كهربا (83)</span>
+                </div>
+
+                <div class="student-row">
+                    <div>
+                        <h4 style="font-size: 14px; font-weight: 700;">أحمد محمد علي</h4>
+                        <p style="font-size: 11px; color: var(--text-muted);">0912345678 • ميكانيكا</p>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <a href="tel:0912345678" class="action-icon-btn">📞</a>
+                        <a href="https://wa.me/249912345678" target="_blank" class="action-icon-btn">💬</a>
+                    </div>
+                </div>
+
+                <div class="student-row">
+                    <div>
+                        <h4 style="font-size: 14px; font-weight: 700;">عمر خالد حسن</h4>
+                        <p style="font-size: 11px; color: var(--text-muted);">0923456789 • كهربا</p>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <a href="tel:0923456789" class="action-icon-btn">📞</a>
+                        <a href="https://wa.me/249923456789" target="_blank" class="action-icon-btn">💬</a>
+                    </div>
+                </div>
+
+                <div class="student-row">
+                    <div>
+                        <h4 style="font-size: 14px; font-weight: 700;">سارة إبراهيم عثمان</h4>
+                        <p style="font-size: 11px; color: var(--text-muted);">0998877665 • مدنية</p>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <a href="tel:0998877665" class="action-icon-btn">📞</a>
+                        <a href="https://wa.me/249998877665" target="_blank" class="action-icon-btn">💬</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. SCREEN: REACTIONS -->
+        <div id="screen-admin-reactions" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="toggleDrawer()">☰</button>
+                <h1>متابعة تفاعلات الطلاب</h1>
+                <div style="width: 38px;"></div>
+            </header>
+
+            <div style="display: flex; gap: 6px; padding: 10px 14px; overflow-x: auto;">
+                <span class="badge" style="background: var(--primary); color: #000; cursor: pointer;">الكل</span>
+                <span class="badge" style="cursor: pointer;">👍 (38)</span>
+                <span class="badge" style="cursor: pointer;">❤️ (14)</span>
+                <span class="badge" style="cursor: pointer;">🙏 (5)</span>
+            </div>
+
+            <div class="admin-card">
+                <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">جدول محاضرات الأسبوع الحالي - ميكانيكا</h3>
+                <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                    <span class="badge">👍 38 تفاعل</span>
+                    <span class="badge" style="color: var(--error);">❤️ 14 تفاعل</span>
+                    <span class="badge" style="color: var(--accent);">🙏 5 تفاعلات</span>
+                </div>
+                <div style="border-top: 1px solid var(--divider); padding-top: 8px;">
+                    <p style="font-size: 12px; font-weight: bold; color: var(--text-muted); margin-bottom: 6px;">أسماء الطلاب المتفاعلين:</p>
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0;">
+                        <span>أحمد محمد علي</span>
+                        <span style="color: var(--primary); font-weight: bold;">👍 (ميكانيكا)</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0;">
+                        <span>عمر خالد حسن</span>
+                        <span style="color: var(--primary); font-weight: bold;">❤️ (كهربا)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. SCREEN: NOTIFICATIONS INBOX -->
+        <div id="screen-admin-notifs" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="switchScreen('screen-admin-stats')">←</button>
+                <h1>الإشعارات الواردة</h1>
+                <div style="width: 38px;"></div>
+            </header>
+
+            <div style="padding: 12px 14px;">
+                <div class="admin-card" style="margin: 0 0 10px 0; background: var(--primary-glow);">
+                    <div style="display: flex; justify-content: space-between;">
+                        <h4 style="font-size: 13px; font-weight: 700; color: var(--primary);">تسجيل طالب جديد</h4>
+                        <span style="font-size: 10px; color: var(--text-dim);">منذ 15 دقيقة</span>
+                    </div>
+                    <p style="font-size: 12px; margin-top: 4px;">قام الطالب أحمد محمد علي بالتسجيل في تخصص ميكانيكا بنجاح.</p>
+                </div>
+
+                <div class="admin-card" style="margin: 0 0 10px 0;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <h4 style="font-size: 13px; font-weight: 700;">تفاعل جديد على المنشور</h4>
+                        <span style="font-size: 10px; color: var(--text-dim);">منذ ساعتين</span>
+                    </div>
+                    <p style="font-size: 12px; margin-top: 4px;">تفاعل 15 طالباً مع جدول المحاضرات الجديد خلال الساعة الماضية.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. SCREEN: ADMIN PIN -->
+        <div id="screen-admin-pin" class="screen-view" style="justify-content: center; padding: 24px;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <span style="font-size: 40px;">🛡️</span>
+                <h2 style="font-size: 18px; font-weight: 700; margin-top: 8px;">التحقق برمز الإدارة (Admin PIN)</h2>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">أدخل رمز الإدارة السري للوصول للوحة التحكم (الافتراضي: 2025)</p>
+            </div>
+            <div class="input-group">
+                <input type="password" class="custom-input" placeholder="••••" style="text-align: center; font-size: 22px; letter-spacing: 8px;" value="2025">
+            </div>
+            <button class="btn-primary" onclick="showToast('تم التحقق بنجاح من رمز الإدارة'); switchScreen('screen-admin-stats');">تأكيد الدخول</button>
+        </div>
+
+        <!-- 8. SCREEN: SETTINGS -->
+        <div id="screen-admin-settings" class="screen-view">
+            <header class="app-header">
+                <button class="icon-btn" onclick="toggleDrawer()">☰</button>
+                <h1>الإعدادات والوضع الليلي</h1>
+                <div style="width: 38px;"></div>
+            </header>
+
+            <div style="padding: 14px;">
+                <div class="admin-card" style="margin: 0 0 12px 0; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4 style="font-size: 14px; font-weight: 700;">الوضع الليلي (Dark Theme)</h4>
+                        <p style="font-size: 11px; color: var(--text-muted);">مظهر Lux Luxury المخصص للتطبيق</p>
+                    </div>
+                    <input type="checkbox" checked onchange="toggleTheme()" style="width: 20px; height: 20px; accent-color: var(--primary);">
+                </div>
+
+                <div class="admin-card" style="margin: 0;">
+                    <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px;">تغيير كلمة السر</h4>
+                    <div class="input-group">
+                        <label class="input-label">كلمة السر الحالية</label>
+                        <input type="password" class="custom-input" placeholder="••••••••">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">كلمة السر الجديدة</label>
+                        <input type="password" class="custom-input" placeholder="••••••••">
+                    </div>
+                    <button class="btn-primary" onclick="showToast('تم تحديث كلمة السر بنجاح')">حفظ التغييرات</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM NAV -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="switchScreen('screen-admin-stats')">
+                <span>📊</span>
+                الإحصائيات
+            </button>
+            <button class="nav-item" onclick="switchScreen('screen-admin-posts')">
+                <span>📝</span>
+                المنشورات
+            </button>
+            <div style="display: flex; align-items: center; justify-content: center;">
+                <button class="fab-btn" onclick="switchScreen('screen-admin-newpost')">+</button>
+            </div>
+            <button class="nav-item" onclick="switchScreen('screen-admin-students')">
+                <span>🎓</span>
+                الطلاب
+            </button>
+            <button class="nav-item" onclick="switchScreen('screen-admin-reactions')">
+                <span>👍</span>
+                التفاعلات
+            </button>
+        </nav>
+
+        <div class="toast" id="toastBox">تمت العملية بنجاح</div>
+    </div>
+
+    <script>
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen-view').forEach(el => el.classList.remove('active'));
+            const target = document.getElementById(screenId);
+            if (target) target.classList.add('active');
+
+            document.querySelectorAll('.screen-btn').forEach(btn => btn.classList.remove('active'));
+            const matched = Array.from(document.querySelectorAll('.screen-btn')).find(b => b.getAttribute('onclick')?.includes(screenId));
+            if (matched) matched.classList.add('active');
+
+            document.getElementById('phoneContainer').scrollTop = 0;
+        }
+
+        function toggleDrawer() {
+            document.getElementById('sideDrawer').classList.toggle('open');
+            document.getElementById('drawerOverlay').classList.toggle('open');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toastBox');
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            if (body.getAttribute('data-theme') === 'light') {
+                body.removeAttribute('data-theme');
+                showToast('تم تفعيل الوضع الليلي');
+            } else {
+                body.setAttribute('data-theme', 'light');
+                showToast('تم تفعيل الوضع المضيء');
+            }
+        }
+    </script>
+</body>
+</html>

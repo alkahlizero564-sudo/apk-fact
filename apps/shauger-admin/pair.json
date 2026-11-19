@@ -1,0 +1,118 @@
+{
+ "pair": "shauger",
+ "prefix": "shauger",
+ "lang": "flutter",
+ "push": true,
+ "admins": [
+  "alkahlizero564@gmail.com"
+ ],
+ "description": "فكرة المشروع\nنظام من تطبيقين مربوطين بقاعدة بيانات واحدة، الغرض منه تنظيم التواصل بين ليدر الدفعة والطلاب:\n- تطبيق الليدر: ينشر منه الجداول والمحاضرات والفعاليات والأخبار، ويتابع الطلاب المسجلين.\n- تطبيق الطلاب: الطالب يسجّل فيه ويشوف المنشورات الخاصة بتخصصه ويتفاعل معاها ويحمّل مرفقاتها.\nالتخصصات: ميكانيكا، تصنيع، مدنية، كهربا.\n\n==============================\nأولاً: تطبيق الطلاب\n==============================\n\n1) التسجيل\nالطالب يعمل حساب بالبيانات دي:\n- الاسم الكامل (إجباري).\n- رقم الهاتف السوداني (إجباري). يتأكد التطبيق إنه رقم سوداني صحيح: يبدأ بـ 09 أو 01 ويكون 10 أرقام، أو يبدأ بـ +249 وبعده 9 أرقام.\n- التخصص يختاره من قائمة: ميكانيكا / تصنيع / مدنية / كهربا.\n- كلمة السر.\nبعد التسجيل يدخل برقم الهاتف وكلمة السر، ويفضل الحساب مسجّل في الجهاز.\n\n2) قوائم التنقّل في تطبيق الطلاب\nأ) الشريط السفلي (Bottom Navigation) - 5 أزرار:\n  - الرئيسية: كل المنشورات.\n  - الجداول: منشورات الجداول بس.\n  - المحاضرات: منشورات المحاضرات بس.\n  - الفعاليات والأخبار: منشورات الفعاليات والأخبار.\n  - التحميلات: كل الحاجات الحمّلها الطالب.\nب) القائمة الجانبية (Side Menu) - تفتح من زر ☰ فوق:\n  - صورة رمزية واسم الطالب وتخصصه في أعلى القائمة.\n  - الملف الشخصي.\n  - الإشعارات.\n  - التحميلات.\n  - الإعدادات (الوضع الليلي، تشغيل وإيقاف الإشعارات).\n  - عن التطبيق.\n  - تسجيل الخروج.\n\n3) الشاشة الرئيسية\n- قائمة بالمنشورات الجديدة فوق، وفيها المنشورات المرسلة لتخصص الطالب والمرسلة لكل التخصصات.\n- كل منشور يظهر فيه العنوان والنص وتاريخ النشر ونوع المنشور، ومعاه المرفقات والتفاعلات.\n\n4) التفاعل بالإيموجي (بدون تعليقات)\n- الطالب يتفاعل مع المنشورات بالإيموجي بس، وما في تعليقات ولا كتابة.\n- الإيموجيات المتاحة: 👍 ❤️ 😂 😮 😢 🙏\n- تفاعل واحد لكل طالب في المنشور الواحد:\n  - ضغطة على زر التفاعل تحط 👍 مباشرة.\n  - ضغطة مطوّلة تفتح قائمة الإيموجيات ويختار منها.\n  - لو اختار إيموجي تاني يتغيّر تفاعله، ولو ضغط على نفس الإيموجي يتلغى.\n- تحت كل منشور يظهر عدد كل إيموجي (مثلاً: 👍 45  ❤️ 12  🙏 8).\n- الأرقام تتحدث مباشرة لما أي طالب يتفاعل.\n- الطلاب يشوفوا عدد التفاعلات بس، وأسماء المتفاعلين بتظهر لليدر بس.\n\n5) عرض المرفقات\n- الصور: تفتح بحجم كامل ويقدر يقلّب بينها ويكبّرها.\n- الفيديوهات: تشتغل جوه التطبيق.\n- الملفات (PDF وWord وغيرها): تفتح جوه التطبيق أو بأي تطبيق في الجهاز.\n\n6) تحميل المرفقات (اختياري للطالب)\n- التحميل اختياري، والطالب يقدر يشوف كل حاجة أونلاين من غير ما يحمّل.\n- زر تحميل على كل صورة وفيديو وملف.\n- زر \"تحميل الكل\" في المنشور، يحمّل كل مرفقاته دفعة واحدة.\n- شريط تقدّم يوضّح نسبة التحميل، ويقدر يلغي التحميل في أي وقت.\n- مكان الحفظ:\n  - الصور والفيديوهات تتحفظ في معرض الجهاز، في ألبوم باسم التطبيق.\n  - الملفات تتحفظ في مجلد التنزيلات (Downloads).\n- علامة ✓ على المرفق المحمّل مسبقاً، عشان ما يحمّله مرتين.\n- صفحة \"التحميلات\" فيها كل الحاجات الحمّلها الطالب، ويقدر يفتحها من غير إنترنت.\n- التطبيق يطلب صلاحية التخزين من الطالب أول مرة يحمّل فيها.\n\n7) الإشعارات\n- يصل للطالب إشعار فوري أول ما الليدر ينشر منشور يخص تخصصه أو يخص كل التخصصات.\n- صفحة الإشعارات فيها كل الإشعارات القديمة، والضغط على أي إشعار يفتح المنشور.\n\n8) الملف الشخصي\n- فيه بيانات الطالب، ويقدر يعدّل الاسم أو التخصص.\n\n==============================\nثانياً: تطبيق الليدر\n==============================\n\n1) الدخول\n- يدخل الليدر بحساب خاص (رقم الهاتف وكلمة السر).\n- الحساب ده ما بيتسجّل من التطبيق، بيتعمل مسبقاً في قاعدة البيانات عشان ما يدخل أي شخص كليدر.\n\n2) قوائم التنقّل في تطبيق الليدر\nأ) الشريط السفلي (Bottom Navigation) - 4 أزرار + زر نشر:\n  - الإحصائيات: لوحة الأرقام.\n  - المنشورات: كل المنشورات القديمة وإدارتها.\n  - زر (+) كبير في النص: إنشاء منشور جديد.\n  - الطلاب: قائمة الطلاب المسجلين.\n  - التفاعلات: متابعة تفاعلات الطلاب.\nب) القائمة الجانبية (Side Menu) - تفتح من زر ☰ فوق:\n  - اسم الليدر في أعلى القائمة.\n  - الإحصائيات.\n  - المنشورات حسب النوع: جداول / محاضرات / فعاليات / أخبار.\n  - المنشورات حسب التخصص: ميكانيكا / تصنيع / مدنية / كهربا.\n  - الطلاب حسب التخصص: ميكانيكا / تصنيع / مدنية / كهربا.\n  - الإعدادات (الوضع الليلي، تغيير كلمة السر).\n  - تسجيل الخروج.\n\n3) لوحة الإحصائيات (أول شاشة بعد الدخول)\n- العدد الكلي للطلاب المسجلين في تطبيق الطلاب.\n- عدد الطلاب في كل تخصص: ميكانيكا / تصنيع / مدنية / كهربا.\n- عدد المسجلين الجدد اليوم وفي الأسبوع ده.\n- الأرقام تتحدث تلقائياً أول ما يسجّل أي طالب جديد.\n\n4) قائمة الطلاب\n- قائمة بكل الطلاب المسجلين، وفيها الاسم ورقم الهاتف والتخصص وتاريخ التسجيل.\n- فلتر حسب التخصص.\n- بحث بالاسم أو رقم الهاتف.\n- الضغط على الرقم يفتح الاتصال أو واتساب مع الطالب.\n\n5) إنشاء منشور جديد\n- نوع المنشور: جدول / محاضرة / فعالية / خبر.\n- العنوان.\n- النص أو التفاصيل.\n- المرفقات:\n  - صور وفيديوهات وملفات، ويقدر يرفع عدد كبير يصل لـ 60 مرفق أو أكثر في المنشور الواحد.\n  - الاختيار المتعدد من المعرض أو الملفات دفعة واحدة.\n  - شريط تقدّم يوضّح نسبة الرفع لكل ملف.\n  - يقدر يحذف أي مرفق قبل النشر.\n- الجهة المستهدفة:\n  - كل التخصصات.\n  - أو تخصص واحد: ميكانيكا / تصنيع / مدنية / كهربا.\n  - يظهر جنب كل اختيار عدد الطلاب الحيوصل ليهم المنشور.\n- زر النشر: المنشور يصل للطلاب المعنيين ويرسل ليهم إشعار.\n\n6) إدارة المنشورات\n- قائمة بكل المنشورات القديمة.\n- تعديل أو حذف أي منشور.\n- يوضّح لكل منشور كان مرسل لأي تخصص.\n\n7) متابعة التفاعلات\n- تحت كل منشور يظهر عدد كل إيموجي ومجموع التفاعلات.\n- الضغط على التفاعلات يفتح قائمة بأسماء الطلاب المتفاعلين، مع الإيموجي العمله كل طالب وتخصصه.\n- فلتر حسب الإيموجي، مثلاً يشوف الناس العملوا 👍 بس.\n\n==============================\nثالثاً: الجانب التقني (مقترح)\n==============================\n- قاعدة البيانات والحسابات: Firebase (Authentication وFirestore).\n- تخزين الصور والفيديوهات والملفات: Firebase Storage.\n- الإشعارات: Firebase Cloud Messaging. كل طالب يشترك في موضوع (Topic) باسم تخصصه، وكل الطلاب يشتركوا في موضوع \"الكل\".\n- التفاعلات:\n  - تتخزن في مجموعة فرعية تحت كل منشور، فيها مستند واحد لكل طالب (معرّف الطالب + الإيموجي).\n  - العدادات تتحدث بعمليات ذرية (Atomic increment) عشان الأرقام تفضل دقيقة حتى لو كتار تفاعلوا في نفس الوقت.\n- الأداء:\n  - ضغط الصور قبل رفعها.\n  - رفع وتحميل المرفقات الكتيرة بالتوازي.\n  - تحميل المنشورات على صفحات (Pagination) عشان التطبيق يفضل سريع.\n- الواجهة: باللغة العربية وتصميم من اليمين لليسار (RTL).\n\n==============================\nرابعاً: ملاحظات عامة\n==============================\n- دفعة واحدة وليدر واحد.\n- الطالب يدخل طوالي بعد التسجيل، من غير موافقة الليدر.\n- التسجيل بكلمة سر، من غير رمز تحقق OTP.\n- الطالب يتفاعل بالإيموجي بس، وما بيقدر يعلّق أو يرسل رسائل لليدر. ا\n\n=== المواصفات اللي وافق عليها صاحب التطبيق (نفّذها كلها بند بند، ولا تضيف تطبيق مختلف) ===\nالفكرة: تطبيق shauger هو نظام من تطبيقين (للطلاب ولليدر) لتنظيم التواصل ونشر الجداول والمحاضرات والفعاليات والأخبار والتفاعل عبر الإيموجي وتحميل المرفقات.\nالشاشات:\n- الزبون: شاشة التسجيل (الاسم الكامل، رقم الهاتف السوداني، البريد الإلكتروني، التخصص، كلمة السر)\n- الزبون: شاشة تسجيل الدخول (البريد الإلكتروني أو رقم الهاتف وكلمة السر)\n- الزبون: الشاشة الرئيسية (كل المنشورات حسب التخصص وكل التخصصات)\n- الزبون: شاشة الجداول (منشورات الجداول)\n- الزبون: شاشة المحاضرات (منشورات المحاضرات)\n- الزبون: شاشة الفعاليات والأخبار (منشورات الفعاليات والأخبار)\n- الزبون: شاشة التحميلات (المرفقات المحمّلة)\n- الزبون: القائمة الجانبية (الصورة، الاسم، التخصص، الملف الشخصي، الإشعارات، التحميلات، الإعدادات، عن التطبيق، تسجيل الخروج)\n- الزبون: شاشة الإشعارات\n- الزبون: شاشة الملف الشخصي (تعديل الاسم أو التخصص)\n- الإدارة: شاشة تسجيل الدخول لليدر (البريد الإلكتروني ورقم الهاتف وكلمة السر)\n- الإدارة: لوحة الإحصائيات (أعداد الطلاب والتخصصات والمسجلين الجدد)\n- الإدارة: شاشة المنشورات (إدارة المنشورات القديمة وتعديلها أو حذفها)\n- الإدارة: شاشة إنشاء منشور جديد (النوع، العنوان، النص، المرفقات، الجهة المستهدفة، وزر النشر)\n- الإدارة: شاشة الطلاب (قائمة الطلاب، الفلتر، البحث، والاتصال أو واتساب)\n- الإدارة: شاشة متابعة التفاعلات (أعداد الإيموجي وأسماء الطلاب المتفاعلين)\n- الإدارة: القائمة الجانبية (اسم الليدر، الإحصائيات، المنشورات حسب النوع والتخصص، الطلاب حسب التخصص، الإعدادات، تسجيل الخروج)\nالميزات والوظائف:\n- الزبون: تسجيل حساب جديد بالبيانات المطلوبة مع التحقق من رقم الهاتف السوداني\n- الزبون: حفظ جلسة تسجيل الدخول في الجهاز\n- الزبون: التنقل عبر الشريط السفلي (5 أزرار) والقائمة الجانبية\n- الزبون: التفاعل بالإيموجي (👍 ❤️ 😂 😮 😢 🙏) بتفاعل واحد لكل طالب مع إمكانية التغيير أو الإلغاء\n- الزبون: عرض عدد كل إيموجي تحت كل منشور وتحديثها مباشرة\n- الزبون: فتح الصور والفيديوهات والملفات (PDF وWord) داخل التطبيق\n- الزبون: تحميل المرفقات اختيارياً مع شريط تقدّم وإمكانية الإلغاء وحفظها في المعرض أو التنزيلات\n- الزبون: عرض علامة ✓ على المرفق المحمّل مسبقاً\n- الزبون: استقبال إشعارات فورية عند نشر منشور جديد يخص التخصص أو الكل\n- الزبون: تعديل الاسم أو التخصص في الملف الشخصي\n- الإدارة: تسجيل دخول الليدر بحساب مُعد مسبقاً\n- الإدارة: عرض الإحصائيات والأرقام وتحديثها تلقائياً\n- الإدارة: عرض قائمة الطلاب مع إمكانية الفلترة والبحث والاتصال المباشر أو عبر واتساب\n- الإدارة: إنشاء منشور جديد برفع حتى 60 مرفق واختيار الجهة المستهدفة\n- الإدارة: تعديل أو حذف المنشورات السابقة\n- الإدارة: متابعة تفاعلات الطلاب وأسماء المتفاعلين لكل إيموجي\n- الاثنين: دعم اللغة العربية وتصميم من اليمين لليسار (RTL)\n- الاثنين: الوضع الليلي في الإعدادات\nالبيانات اللي التطبيق بيحفظها:\n- الزبون: بيانات الطالب (الاسم الكامل، رقم الهاتف السوداني، البريد الإلكتروني، التخصص، كلمة السر، تاريخ التسجيل)\n- الإدارة: بيانات الليدر (الاسم، رقم الهاتف، البريد الإلكتروني، كلمة السر)\n- الاثنين: المنشورات (نوع المنشور، العنوان، النص، تاريخ النشر، الجهة المستهدفة، المرفقات)\n- الاثنين: التفاعلات (معرّف الطالب، الإيموجي، عدادات التفاعل لكل منشور)\n- الزبون: التحميلات (المرفقات المحمّلة محلياً)\nالأسماء والنصوص والأرقام والألوان:\n- shauger\n- ميكانيكا\n- تصنيع\n- مدنية\n- كهربا\n- 👍 ❤️ 😂 😮 😢 🙏\n- الرئيسية\n- الجداول\n- المحاضرات\n- الفعاليات والأخبار\n- التحميلات\n- الإحصائيات\n- المنشورات\n- الطلاب\n- التفاعلات\nالصلاحيات: الصور والملفات، الإشعارات، الاتصال المباشر\nANDROID_PERMISSIONS: STORAGE, NOTIFICATIONS, CALL_PHONE\nLOGIN: customer=phone_email_code admin=phone_email_code",
+ "login": {
+  "customer": "phone_email_code",
+  "admin": "phone_email_code"
+ },
+ "supabase": {
+  "url": "https://jvjtgzewumfecjdpekna.supabase.co",
+  "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE",
+  "ref": "jvjtgzewumfecjdpekna"
+ },
+ "schemaSql": "-- Extend existing shauger_profiles table with student attributes if not present\nALTER TABLE public.shauger_profiles \n  ADD COLUMN IF NOT EXISTS major text DEFAULT 'ميكانيكا',\n  ADD COLUMN IF NOT EXISTS dark_mode boolean DEFAULT false,\n  ADD COLUMN IF NOT EXISTS notifications_enabled boolean DEFAULT true;\n\n-- 1. Posts Table\nCREATE TABLE IF NOT EXISTS public.shauger_posts (\n  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),\n  post_type text NOT NULL CHECK (post_type IN ('جدول', 'محاضرة', 'فعالية', 'خبر')),\n  title text NOT NULL,\n  content text NOT NULL,\n  target_major text NOT NULL DEFAULT 'الكل' CHECK (target_major IN ('الكل', 'ميكانيكا', 'تصنيع', 'مدنية', 'كهربا')),\n  author_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,\n  created_at timestamptz DEFAULT now(),\n  updated_at timestamptz DEFAULT now()\n);\n\n-- 2. Post Attachments Table\nCREATE TABLE IF NOT EXISTS public.shauger_post_attachments (\n  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),\n  post_id uuid NOT NULL REFERENCES public.shauger_posts(id) ON DELETE CASCADE,\n  file_name text NOT NULL,\n  file_type text NOT NULL CHECK (file_type IN ('image', 'video', 'document')),\n  file_url text NOT NULL,\n  file_size_bytes bigint DEFAULT 0,\n  created_at timestamptz DEFAULT now()\n);\n\n-- 3. Post Emoji Reactions Table\nCREATE TABLE IF NOT EXISTS public.shauger_post_reactions (\n  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),\n  post_id uuid NOT NULL REFERENCES public.shauger_posts(id) ON DELETE CASCADE,\n  customer_id uuid NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE CASCADE,\n  emoji text NOT NULL CHECK (emoji IN ('👍', '❤️', '😂', '😮', '😢', '🙏')),\n  created_at timestamptz DEFAULT now(),\n  UNIQUE (post_id, customer_id)\n);\n\n-- 4. Local Downloads Track Table\nCREATE TABLE IF NOT EXISTS public.shauger_local_downloads (\n  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),\n  customer_id uuid NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE CASCADE,\n  attachment_id uuid NOT NULL REFERENCES public.shauger_post_attachments(id) ON DELETE CASCADE,\n  local_path text,\n  downloaded_at timestamptz DEFAULT now(),\n  UNIQUE (customer_id, attachment_id)\n);\n\n-- 5. User Settings Table\nCREATE TABLE IF NOT EXISTS public.shauger_user_settings (\n  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),\n  customer_id uuid NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,\n  dark_mode boolean NOT NULL DEFAULT false,\n  push_notifications boolean NOT NULL DEFAULT true,\n  updated_at timestamptz DEFAULT now()\n);\n\n-- Row Level Security Setup\nALTER TABLE public.shauger_posts ENABLE ROW LEVEL SECURITY;\nALTER TABLE public.shauger_post_attachments ENABLE ROW LEVEL SECURITY;\nALTER TABLE public.shauger_post_reactions ENABLE ROW LEVEL SECURITY;\nALTER TABLE public.shauger_local_downloads ENABLE ROW LEVEL SECURITY;\nALTER TABLE public.shauger_user_settings ENABLE ROW LEVEL SECURITY;\n\n-- RLS Policies for shauger_posts\nDROP POLICY IF EXISTS \"Authenticated users can view posts\" ON public.shauger_posts;\nCREATE POLICY \"Authenticated users can view posts\" ON public.shauger_posts \n  FOR SELECT TO authenticated USING (true);\n\nDROP POLICY IF EXISTS \"Admins can manage posts\" ON public.shauger_posts;\nCREATE POLICY \"Admins can manage posts\" ON public.shauger_posts \n  FOR ALL TO authenticated \n  USING (public.shauger_is_admin()) \n  WITH CHECK (public.shauger_is_admin());\n\n-- RLS Policies for shauger_post_attachments\nDROP POLICY IF EXISTS \"Authenticated users can view attachments\" ON public.shauger_post_attachments;\nCREATE POLICY \"Authenticated users can view attachments\" ON public.shauger_post_attachments \n  FOR SELECT TO authenticated USING (true);\n\nDROP POLICY IF EXISTS \"Admins can manage attachments\" ON public.shauger_post_attachments;\nCREATE POLICY \"Admins can manage attachments\" ON public.shauger_post_attachments \n  FOR ALL TO authenticated \n  USING (public.shauger_is_admin()) \n  WITH CHECK (public.shauger_is_admin());\n\n-- RLS Policies for shauger_post_reactions\nDROP POLICY IF EXISTS \"Authenticated users can view reactions\" ON public.shauger_post_reactions;\nCREATE POLICY \"Authenticated users can view reactions\" ON public.shauger_post_reactions \n  FOR SELECT TO authenticated USING (true);\n\nDROP POLICY IF EXISTS \"Customers can insert their own reaction\" ON public.shauger_post_reactions;\nCREATE POLICY \"Customers can insert their own reaction\" ON public.shauger_post_reactions \n  FOR INSERT TO authenticated WITH CHECK (customer_id = auth.uid());\n\nDROP POLICY IF EXISTS \"Customers can update their own reaction\" ON public.shauger_post_reactions;\nCREATE POLICY \"Customers can update their own reaction\" ON public.shauger_post_reactions \n  FOR UPDATE TO authenticated USING (customer_id = auth.uid()) WITH CHECK (customer_id = auth.uid());\n\nDROP POLICY IF EXISTS \"Customers can delete their own reaction\" ON public.shauger_post_reactions;\nCREATE POLICY \"Customers can delete their own reaction\" ON public.shauger_post_reactions \n  FOR DELETE TO authenticated USING (customer_id = auth.uid());\n\nDROP POLICY IF EXISTS \"Admins can manage reactions\" ON public.shauger_post_reactions;\nCREATE POLICY \"Admins can manage reactions\" ON public.shauger_post_reactions \n  FOR ALL TO authenticated \n  USING (public.shauger_is_admin()) \n  WITH CHECK (public.shauger_is_admin());\n\n-- RLS Policies for shauger_local_downloads\nDROP POLICY IF EXISTS \"Customers can view their downloads\" ON public.shauger_local_downloads;\nCREATE POLICY \"Customers can view their downloads\" ON public.shauger_local_downloads \n  FOR SELECT TO authenticated USING (customer_id = auth.uid());\n\nDROP POLICY IF EXISTS \"Customers can insert downloads\" ON public.shauger_local_downloads;\nCREATE POLICY \"Customers can insert downloads\" ON public.shauger_local_downloads \n  FOR INSERT TO authenticated WITH CHECK (customer_id = auth.uid());\n\nDROP POLICY IF EXISTS \"Customers can delete downloads\" ON public.shauger_local_downloads;\nCREATE POLICY \"Customers can delete downloads\" ON public.shauger_local_downloads \n  FOR DELETE TO authenticated USING (customer_id = auth.uid());\n\nDROP POLICY IF EXISTS \"Admins can manage downloads\" ON public.shauger_local_downloads;\nCREATE POLICY \"Admins can manage downloads\" ON public.shauger_local_downloads \n  FOR ALL TO authenticated \n  USING (public.shauger_is_admin()) \n  WITH CHECK (public.shauger_is_admin());\n\n-- RLS Policies for shauger_user_settings\nDROP POLICY IF EXISTS \"Customers can manage settings\" ON public.shauger_user_settings;\nCREATE POLICY \"Customers can manage settings\" ON public.shauger_user_settings \n  FOR ALL TO authenticated \n  USING (customer_id = auth.uid()) \n  WITH CHECK (customer_id = auth.uid());\n\nDROP POLICY IF EXISTS \"Admins can manage user settings\" ON public.shauger_user_settings;\nCREATE POLICY \"Admins can manage user settings\" ON public.shauger_user_settings \n  FOR ALL TO authenticated \n  USING (public.shauger_is_admin()) \n  WITH CHECK (public.shauger_is_admin());\n\n-- Insert Realistic Sample Data\nINSERT INTO public.shauger_posts (id, post_type, title, content, target_major) VALUES\n  ('11111111-1111-1111-1111-111111111111', 'جدول', 'جدول محاضرات الأسبوع الحالي - ميكانيكا', 'تم اعتماد جدول المحاضرات والسكاشن العملية للأسبوع الحالي، يرجى الالتزام بالمواعيد المحددة في القاعات الرئيسية.', 'ميكانيكا'),\n  ('22222222-2222-2222-2222-222222222222', 'محاضرة', 'ملخص محاضرة الديناميكا الحرارية (د. خالد)', 'مرفق أدناه تسجيل الفيديو وملخص المحاضرة الخاصة بالدورات الحرارية وتحليل الأنظمة المفتوحة.', 'الكل'),\n  ('33333333-3333-3333-3333-333333333333', 'جدول', 'جدول الامتحانات النصفي لفصل الخريف', 'الجدول النهائي لامتحانات الميدترم لجميع تخصصات الدفعة. الرجاء الحضور قبل القاعة بـ 15 دقيقة.', 'الكل')\nON CONFLICT (id) DO NOTHING;\n\nINSERT INTO public.shauger_post_attachments (id, post_id, file_name, file_type, file_url, file_size_bytes) VALUES\n  ('a1111111-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111', 'جدول_الميكانيكا.png', 'image', 'https://storage.shauger.sd/attachments/schedule_mech.png', 2516582),\n  ('a2222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'التفاصيل_الكاملة.pdf', 'document', 'https://storage.shauger.sd/attachments/details_mech.pdf', 1153433),\n  ('a3333333-3333-3333-3333-333333333333', '22222222-2222-2222-2222-222222222222', 'محاضرة_3_ديناميكا.mp4', 'video', 'https://storage.shauger.sd/attachments/lecture3_thermo.mp4', 45097152)\nON CONFLICT (id) DO NOTHING;",
+ "contract": {
+  "tables": [
+   {
+    "name": "shauger_posts",
+    "purpose": "Stores posts (tables, lectures, events, news) published by the leader, targeted to all or specific engineering majors.",
+    "columns": [
+     "id uuid",
+     "post_type text",
+     "title text",
+     "content text",
+     "target_major text",
+     "author_id uuid",
+     "created_at timestamptz",
+     "updated_at timestamptz"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "shauger_post_attachments",
+    "purpose": "Stores media and file attachments linked to posts (images, videos, PDF, Word files).",
+    "columns": [
+     "id uuid",
+     "post_id uuid",
+     "file_name text",
+     "file_type text",
+     "file_url text",
+     "file_size_bytes bigint",
+     "created_at timestamptz"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "shauger_post_reactions",
+    "purpose": "Tracks emoji reactions made by students on posts (one reaction per student per post).",
+    "columns": [
+     "id uuid",
+     "post_id uuid",
+     "customer_id uuid",
+     "emoji text",
+     "created_at timestamptz"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "shauger_local_downloads",
+    "purpose": "Tracks attachments saved locally on the student's device for offline access and showing downloaded checkmarks.",
+    "columns": [
+     "id uuid",
+     "customer_id uuid",
+     "attachment_id uuid",
+     "local_path text",
+     "downloaded_at timestamptz"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "shauger_user_settings",
+    "purpose": "Stores individual student preferences like Dark Mode toggle and push notification preferences.",
+    "columns": [
+     "id uuid",
+     "customer_id uuid",
+     "dark_mode boolean",
+     "push_notifications boolean",
+     "updated_at timestamptz"
+    ],
+    "owner": "customer"
+   }
+  ],
+  "events": [
+   {
+    "when": "Leader creates and publishes a new post targeting all or a specific major",
+    "notify": "customer",
+    "title": "منشور جديد في تخصصك"
+   },
+   {
+    "when": "A new student completes registration in the app",
+    "notify": "admin",
+    "title": "طالب جديد قام بالتسجيل"
+   },
+   {
+    "when": "A student reacts to a post with an emoji",
+    "notify": "admin",
+    "title": "تفاعل جديد على المنشور"
+   }
+  ]
+ },
+ "apps": {
+  "customer": {
+   "name": "shauger-customer",
+   "packageId": "com.generated.app_shauger_customer"
+  },
+  "admin": {
+   "name": "shauger-admin",
+   "packageId": "com.generated.app_shauger_admin"
+  }
+ },
+ "role": "admin",
+ "pushFunction": "shauger-push"
+}

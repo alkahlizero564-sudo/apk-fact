@@ -11,7 +11,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 // ==========================================
 const String supabaseUrl = "https://jvjtgzewumfecjdpekna.supabase.co";
 const String supabaseAnonKey =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE";
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFVNej_mptBE";
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -1118,9 +1118,9 @@ class InventoryScreen extends StatelessWidget {
                     Container(
                       width: 50,
                       height: 50,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0x1AD4AF37),
+                        color: Color(0x1AD4AF37),
                       ),
                       child: const Icon(Icons.image, color: Color(0xFFD4AF37)),
                     ),
@@ -1159,7 +1159,7 @@ class InventoryScreen extends StatelessWidget {
                   child: TextField(
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: 'السعر الأساسي ($)',
+                      labelText: 'السعر الأساسي (\$)',
                       filled: true,
                       fillColor: Color(0xFF1C2541),
                     ),
@@ -1264,7 +1264,7 @@ class InventoryScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             const Text(
-                              'السعر الأساسي: $160.00 | السعر بالجنيه: 450,000 ج.س',
+                              'السعر الأساسي: \$160.00 | السعر بالجنيه: 450,000 ج.س',
                               style: TextStyle(fontSize: 12, color: Color(0xFF8D99AE)),
                             ),
                           ],

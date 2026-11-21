@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Diala - DMC Admin</title>
+    <style>
+        /* === CSS RESET & DESIGN TOKENS (Material 3 - Premium Dark Luxe & Medical Clean) === */
+        :root {
+            --primary: #0F2C59;
+            --primary-light: #1E3E62;
+            --accent: #D4AF37; /* Metallic Gold */
+            --accent-glow: rgba(212, 175, 55, 0.15);
+            --bg-dark: #0B132B;
+            --surface-dark: #1C2541;
+            --surface-card: #22304A;
+            --text-main: #F0F4F8;
+            --text-muted: #8D99AE;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --success: #2A9D8F;
+            --warning: #E9C46A;
+            --error: #E76F51;
+            --info: #3A86FF;
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 22px;
+            --radius-pill: 50px;
+            --shadow-subtle: 0 8px 24px rgba(0, 0, 0, 0.3);
+            --font-family: "Segoe UI", Tahoma, "Noto Sans Arabic", sans-serif;
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #050B14;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* === TOP SCREENS SWITCHER (Reviewer Bar) === */
+        #apkfact-screens {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            background: rgba(11, 19, 43, 0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 8px 16px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none;
+        }
+        #apkfact-screens::-webkit-scrollbar { display: none; }
+        .screen-pill {
+            background: var(--surface-card);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            border-radius: var(--radius-pill);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .screen-pill.active {
+            background: var(--accent);
+            color: #050B14;
+            border-color: var(--accent);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        /* === PHONE CONTAINER (Material 3 Surface) === */
+        .phone-frame {
+            margin-top: 56px;
+            width: 100%;
+            max-width: 412px;
+            height: 844px;
+            background: var(--bg-dark);
+            border-radius: 40px;
+            border: 6px solid #1E293B;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Phone Status Bar */
+        .status-bar {
+            height: 36px;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: var(--bg-dark);
+            z-index: 100;
+        }
+
+        /* App Content Viewport */
+        .app-viewport {
+            flex: 1;
+            position: relative;
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: var(--bg-dark);
+            padding-bottom: 80px;
+            scrollbar-width: none;
+        }
+        .app-viewport::-webkit-scrollbar { display: none; }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            min-height: 100%;
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* === APP BAR / HEADERS === */
+        .app-bar {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-dark);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .app-bar h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--surface-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .icon-btn:active { transform: scale(0.95); }
+
+        /* === BOTTOM NAVIGATION BAR === */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 72px;
+            background: rgba(11, 19, 43, 0.95);
+            backdrop-filter: blur(16px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 8px;
+            z-index: 100;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 500;
+            background: none;
+            border: none;
+            cursor: pointer;
+            width: 64px;
+            height: 100%;
+            transition: var(--transition);
+        }
+        .nav-item svg { width: 20px; height: 20px; margin-bottom: 4px; transition: var(--transition); }
+        .nav-item.active {
+            color: var(--accent);
+        }
+        .nav-item.active svg { transform: translateY(-2px); }
+
+        /* === COMMON COMPONENTS === */
+        .card {
+            background: var(--surface-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-subtle);
+        }
+        .btn-primary {
+            width: 100%;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent) 0%, #B89728 100%);
+            color: #050B14;
+            font-size: 15px;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(212, 175, 55, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-secondary {
+            width: 100%;
+            height: 46px;
+            background: var(--surface-card);
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+        .input-group {
+            margin-bottom: 14px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        .input-field {
+            width: 100%;
+            height: 46px;
+            background: var(--surface-dark);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0 16px;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+            transition: var(--transition);
+        }
+        .input-field:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: var(--radius-pill);
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-gold { background: rgba(212, 175, 55, 0.15); color: var(--accent); border: 1px solid rgba(212, 175, 55, 0.3); }
+        .badge-success { background: rgba(42, 157, 143, 0.15); color: var(--success); border: 1px solid rgba(42, 157, 143, 0.3); }
+        .badge-warning { background: rgba(233, 196, 106, 0.15); color: var(--warning); border: 1px solid rgba(233, 196, 106, 0.3); }
+        .badge-error { background: rgba(231, 111, 81, 0.15); color: var(--error); border: 1px solid rgba(231, 111, 81, 0.3); }
+
+        /* === SPECIFIC SCREENS STYLING === */
+
+        /* Auth Screen */
+        .auth-container {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 100%;
+        }
+        .brand-logo-area {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .logo-circle {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        /* Dashboard KPI Grid */
+        .kpi-grid {
+            padding: 16px 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .kpi-card {
+            background: var(--surface-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 14px;
+        }
+        .kpi-title { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+        .kpi-value { font-size: 18px; font-weight: 700; color: var(--text-main); }
+        .kpi-trend { font-size: 11px; color: var(--success); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+
+        /* List Items */
+        .list-container { padding: 0 20px; }
+        .admin-item-card {
+            background: var(--surface-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .item-row { display: flex; justify-content: space-between; align-items: center; }
+
+        /* Modal Overlay & Bottom Sheets */
+        .modal-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(5, 11, 20, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            align-items: flex-end;
+            animation: fadeIn 0.2s ease-out;
+        }
+        .modal-overlay.active { display: flex; }
+        .bottom-sheet {
+            width: 100%;
+            background: var(--bg-dark);
+            border-top: 1px solid var(--border-color);
+            border-radius: 28px 28px 0 0;
+            padding: 24px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        /* Skeletons */
+        .skeleton {
+            background: linear-gradient(90deg, var(--surface-dark) 25%, var(--surface-card) 50%, var(--surface-dark) 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: var(--radius-sm);
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .mt-12 { margin-top: 12px; }
+        .mt-16 { margin-top: 16px; }
+        .text-accent { color: var(--accent); }
+    </style>
+</head>
+<body>
+
+    <!-- TOP SCREENS SWITCHER (Reviewer Bar) -->
+    <div id="apkfact-screens">
+        <button class="screen-pill active" onclick="switchScreen('screen-auth')">1. تسجيل الدخول والإنشاء</button>
+        <button class="screen-pill" onclick="switchScreen('screen-dashboard')">2. لوحة القيادة (Dashboard)</button>
+        <button class="screen-pill" onclick="switchScreen('screen-orders')">3. إدارة الطلبات</button>
+        <button class="screen-pill" onclick="switchScreen('screen-inventory')">4. المنتجات والمخزون</button>
+        <button class="screen-pill" onclick="switchScreen('screen-pricing')">5. التسعير بسعر الدولار</button>
+        <button class="screen-pill" onclick="switchScreen('screen-delivery')">6. مناطق التوصيل</button>
+        <button class="screen-pill" onclick="switchScreen('screen-payments')">7. حسابات بنكك وإشعارات الدفع</button>
+        <button class="screen-pill" onclick="switchScreen('screen-invoices')">8. مسح الفواتير بالذكاء الاصطناعي</button>
+        <button class="screen-pill" onclick="switchScreen('screen-reports')">9. العملاء والتقارير</button>
+        <button class="screen-pill" onclick="switchScreen('screen-permissions')">10. الحسابات والصلاحيات</button>
+        <button class="screen-pill" onclick="switchScreen('screen-empty')">11. حالة فارغة</button>
+        <button class="screen-pill" onclick="switchScreen('screen-skeleton')">12. هيكل التحميل</button>
+    </div>
+
+    <!-- PHONE FRAME -->
+    <div class="phone-frame">
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <span>11:20</span>
+            <div style="display: flex; gap: 6px;">
+                <span>5G</span>
+                <span>🔋</span>
+            </div>
+        </div>
+
+        <!-- APP VIEWPORT -->
+        <div class="app-viewport">
+
+            <!------------------------------------------------ 
+               SCREEN 1: AUTHENTICATION & ROLES
+            ------------------------------------------------->
+            <div id="screen-auth" class="screen active">
+                <div class="auth-container">
+                    <div class="brand-logo-area">
+                        <div class="logo-circle">
+                            <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                        </div>
+                        <h2>Diala Admin</h2>
+                        <p>مشروع DMC للمعدات والمستهلكات الطبية</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="input-group">
+                            <label>البريد الإلكتروني للإدارة</label>
+                            <input type="email" class="input-field" value="admin@dmc.medical.sd">
+                        </div>
+                        <div class="input-group">
+                            <label>كلمة المرور الآمنة</label>
+                            <input type="password" class="input-field" value="••••••••••••">
+                        </div>
+                        <div class="input-group">
+                            <label>الصلاحية / الدور</label>
+                            <select class="input-field">
+                                <option>مدير (Administrator)</option>
+                                <option>مبيعات (Sales)</option>
+                                <option>مخزن (Inventory)</option>
+                                <option>محاسب (Accountant)</option>
+                            </select>
+                        </div>
+                        <button class="btn-primary mt-16" onclick="switchScreen('screen-dashboard')">تسجيل الدخول الآمن</button>
+                    </div>
+                </div>
+            </div>
+
+
+            <!------------------------------------------------ 
+               SCREEN 2: DASHBOARD (KPIs & Charts)
+            ------------------------------------------------->
+            <div id="screen-dashboard" class="screen">
+                <div class="app-bar">
+                    <div class="user-greeting">
+                        <span style="font-size: 12px; color: var(--text-muted);">مرحباً، د. طارق</span>
+                        <h1 style="font-size: 16px;">لوحة القيادة (Dashboard)</h1>
+                    </div>
+                    <div class="icon-btn" onclick="openModal('notification-modal')">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-title">مبيعات اليوم</div>
+                        <div class="kpi-value">4,850,000 ج.س</div>
+                        <div class="kpi-trend">↑ 12% عن الأمس</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-title">الطلبات الجديدة</div>
+                        <div class="kpi-value">14 طلب</div>
+                        <div class="kpi-trend text-accent">بانتظار المعالجة</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-title">سعر الدولار اليوم</div>
+                        <div class="kpi-value">2,850 ج.س</div>
+                        <div class="kpi-trend" style="color: var(--warning);">محدث منذ ساعتين</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-title">تنبيهات المخزون</div>
+                        <div class="kpi-value" style="color: var(--error);">3 منتجات</div>
+                        <div class="kpi-trend" style="color: var(--error);">قرب النفاد</div>
+                    </div>
+                </div>
+
+                <!-- Chart Preview Card -->
+                <div class="list-container">
+                    <div class="card">
+                        <div class="item-row" style="margin-bottom: 12px;">
+                            <span style="font-size: 14px; font-weight: 700;">إحصائيات المبيعات الأسبوعية</span>
+                            <span class="badge badge-gold">أبريل 2025</span>
+                        </div>
+                        <!-- Simulated SVG Bar Chart -->
+                        <div style="height: 120px; display: flex; align-items: flex-end; justify-content: space-between; padding-top: 20px; border-bottom: 1px solid var(--border-color);">
+                            <div style="width: 32px; height: 40%; background: var(--surface-dark); border-radius: 4px; display: flex; flex-direction: column; align-items: center; position: relative;">
+                                <span style="position: absolute; top: -16px; font-size: 9px; color: var(--text-muted);">السبت</span>
+                            </div>
+                            <div style="width: 32px; height: 65%; background: var(--surface-dark); border-radius: 4px; display: flex; flex-direction: column; align-items: center; position: relative;">
+                                <span style="position: absolute; top: -16px; font-size: 9px; color: var(--text-muted);">الأحد</span>
+                            </div>
+                            <div style="width: 32px; height: 50%; background: var(--surface-dark); border-radius: 4px; display: flex; flex-direction: column; align-items: center; position: relative;">
+                                <span style="position: absolute; top: -16px; font-size: 9px; color: var(--text-muted);">الإثنين</span>
+                            </div>
+                            <div style="width: 32px; height: 85%; background: var(--surface-dark); border-radius: 4px; display: flex; flex-direction: column; align-items: center; position: relative;">
+                                <span style="position: absolute; top: -16px; font-size: 9px; color: var(--text-muted);">الثلاثاء</span>
+                            </div>
+                            <div style="width: 32px; height: 95%; background: var(--accent); border-radius: 4px; display: flex; flex-direction: column; align-items: center; position: relative; box-shadow: 0 0 10px var(--accent-glow);">
+                                <span style="position: absolute; top: -16px; font-size: 9px; color: var(--accent);">الأربعاء</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 11px; color: var(--text-muted);">
+                            <span>إجمالي الأسبوع: 24.5 مليون ج.س</span>
+                            <span class="text-accent" style="cursor: pointer;" onclick="switchScreen('screen-reports')">التقرير الكامل ←</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Navigation -->
+                <div class="bottom-nav">
+                    <button class="nav-item active" onclick="switchScreen('screen-dashboard')">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                        الرئيسية
+                    </button>
+                    <button class="nav-item" onclick="switchScreen('screen-orders')">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line></svg>
+                        الطلبات
+                    </button>
+                    <button class="nav-item" onclick="switchScreen('screen-inventory')">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                        المخزن
+                    </button>
+                    <button class="nav-item" onclick="switchScreen('screen-pricing')">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                        التسعير
+                    </button>
+                    <button class="nav-item" onclick="switchScreen('screen-permissions')">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
+                        الإدارة
+                    </button>
+                </div>
+            </div>
+
+
+            <!------------------------------------------------ 
+               SCREEN 3: ORDERS MANAGEMENT
+            ------------------------------------------------->
+            <div id="screen-orders" class="screen">
+                <div class="app-bar">
+                    <div class="icon-btn" onclick="switchScreen('screen-dashboard')"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+                    <h1>إدارة الطلبات والردود</h1>
+                    <div class="icon-btn"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
+                </div>
+
+                <div class="list-container mt-16">
+                    <!-- Order Item 1 -->
+                    <div class="admin-item-card">
+                        <div class="item-row">
+                            <span style="font-weight: 700;">طلب #DMC-8492</span>
+                            <span class="badge badge-warning">بانتظار تأكيد الدفع (بنكك)</span>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted);">
+                            الزبون: مستشفى الأمل التخصصي (عطبرة)<br>
+                            الأصناف: جهاز تخطيط قلب (1) + قفازات (5)
+                        </div>
+                        <div class="item-row" style="margin-top: 4px;">
+                            <span style="font-weight: 700; color: var(--accent);">الإجمالي: 535,000 ج.س</span>
+                            <button class="btn-primary" style="width: auto; height: 36px; padding: 0 16px; font-size: 13px;" onclick="openModal('bank-review-modal')">مراجعة إشعار بنكك</button>
+                        </div>
+                    </div>
+
+                    <!-- Order Item 2 -->
+                    <div class="admin-item-card">
+                        <div class="item-row">
+                            <span style="font-weight: 700;">طلب عرض سعر #Q-1042</span>
+                            <span class="badge badge-gold">طلب كميات كبيرة</span>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted);">
+                            الزبون: مركز النيل الطبي (الدامر)<br>
+                            الأصناف: محاقن طبية 10 مل (50 كرتونة)
+                        </div>
+                        <div class="item-row" style="margin-top: 4px;">
+                            <span style="font-weight: 700; color: var(--accent);">مطلوب عرض سعر خاص</span>
+                            <button class="btn-secondary" style="width: auto; height: 36px; padding: 0 16px; font-size: 13px;" onclick="openModal('quotation-modal')">الرد على عرض السعر</button>
+                        </div>
+                    </div>
+
+                    <!-- Order Item 3 -->
+                    <div class="admin-item-card">
+                        <div class="item-row">
+                            <span style="font-weight: 700;">طلب #DMC-8488</span>
+                            <span class="badge badge-success">في الطريق (استلام)</span>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted);">
+                            الزبون: صيدلية الشفا (بربر)<br>
+                            الدفع: الدفع عند الاستلام
+                        </div>
+                        <div class="item-row" style="margin-top: 4px;">
+                            <span style="font-weight: 700; color: var(--accent);">الإجمالي: 18,500 ج.س</span>
+                            <button class="btn-primary" style="width: auto; height: 36px; padding: 0 16px; font-size: 13px; background: var(--success); color: #fff;">تسجيل "تم استلام المبلغ"</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!------------------------------------------------ 
+               SCREEN 4: PRODUCTS & INVENTORY MANAGEMENT
+            ------------------------------------------------->
+            <div id="screen-inventory" class="screen">
+                <div class="app-bar">
+                    <div class="icon-btn" onclick="switchScreen('screen-dashboard')"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+                    <h1>إدارة المنتجات والمخزون</h1>
+                    <div class="icon-btn" onclick="openModal('add-product-modal')"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></div>
+                </div>
+
+                <div class="list-container mt-16">
+                    <div class="admin-item-card" style="border-left: 4px solid var(--error);">
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <div style="width: 50px; height: 50px; background: var(--surface-dark); border-radius: var(--radius-sm); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
+                                <svg width="24" height="24" fill="none" stroke="var(--accent)" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                            </div>
+                            <div style="flex: 1;">
+                                <div class="item-row">
+                                    <span style="font-weight: 700;">جهاز تخطيط القلب ECG 12 قناة</span>
+                                    <span class="badge badge-error">المخزون منخفض: 2 فقط</span>
+                                </div>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                                    السعر الأساسي: $160.00 | السعر بالجنيه: 450,000 ج.س
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-row" style="margin-top: 6px; border-top: 1px solid var(--border-color); padding-top: 6px;">
+                            <span class="text-accent" style="font-size: 12px; font-weight: 600;">صورة مرئية للزبون مفعلة ✓</span>
+                            <button class="btn-secondary" style="width: auto; height: 32px; font-size: 12px; padding: 0 12px;" onclick="openModal('add-product-modal')">تعديل الصورة والبيانات</button>
+                        </div>
+                    </div>
+
+                    <div class="admin-item-card" style="border-left: 4px solid var(--warning);">
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <div style="width: 50px; height: 50px; background: var(--surface-dark); border-radius: var(--radius-sm); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
+                                <svg width="24" height="24" fill="none" stroke="var(--accent)" stroke-width="2" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                            </div>
+                            <div style="flex: 1;">
+                                <div class="item-row">
+                                    <span style="font-weight: 700;">قفازات لاتكس طبية (علبة 100)</span>
+                                    <span class="badge badge-warning">قرب انتهاء الصلاحية</span>
+                                </div>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                                    المخزون: 140 علبة | الصلاحية: 12/05/2025
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-row" style="margin-top: 6px; border-top: 1px solid var(--border-color); padding-top: 6px;">
+                            <span style="font-size: 12px; color: var(--warning);">صورة مرئية للزبون مفعلة ✓</span>
+                            <button class="btn-secondary" style="width: auto; height: 32px; font-size: 12px; padding: 0 12px;" onclick="openModal('add-product-modal')">تعديل الصورة والبيانات</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!------------------------------------------------ 
+               SCREEN 5: AUTOMATIC PRICING (USD Rate)
+            ------------------------------------------------->
+            <div id="screen-pricing" class="screen">
+                <div class="app-bar">
+                    <div class="icon-btn" onclick="switchScreen('screen-dashboard')"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+                    <h1>التسعير التلقائي (سعر الدولار)</h1>
+                    <div style="width: 40px;"></div>
+                </div>
+
+                <div class="list-container mt-16">
+                    <div class="card" style="border: 1px solid var(--accent);">
+                        <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--accent);">تحديث سعر الدولار اليوم</h3>
+                        <div class="input-group">
+                            <label>سعر الدولار الحالي (جنيه سوداني)</label>
+                            <input type="number" class="input-field" value="2850" style="font-weight: 700; color: var(--accent); font-size: 18px;">
+                        </div>
+                        <div class="input-group">
+                            <label>هامش الربح الإضافي (%)</label>
+                            <input type="number" class="input-field" value="15">
+                        </div>
+                        <div class="input-group">
+                            <label>تقريب الأسعار لأقرب</label>
+                            <select class="input-field">
+                                <option>أقرب 100 ج.س</option>
+                                <option selected>أقرب 500 ج.س</option>
+                                <option>بدون تقريب</option>
+                            </select>
+                        </div>
+                        <button class="btn-primary" onclick="openModal('pricing-preview-modal')">معاينة وتطبيق الأسعار فوراً</button>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 10px;">سجل تغييرات سعر الدولار</h3>
+                        <div style="font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 8px;">
+                            <div class="item-row" style="border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+                                <span>2,800 ج.س ← 2,850 ج.س</span>
+                                <span>أمس، 14:30 (د. طارق)</span>
+                            </div>
+                            <div class="item-row">
+                                <span>2,750 ج.س ← 2,800 ج.س</span>
+                                <span>02 أبريل (د. طارق)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!------------------------------------------------ 
+               SCREEN 6: DELIVERY LOCATIONS & PRICES
+            ------------------------------------------------->
+            <div id="screen-delivery" class="screen">
+                <div class="app-bar">
+                    <div class="icon-btn" onclick="switchScreen('screen-dashboard')"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+                    <h1>مناطق التوصيل وأسعارها</h1>
+                    <div class="icon-btn" onclick="openModal('add-location-modal')"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></div>
+                </div>
+
+                <div class="list-container mt-16">
+                    <div class="admin-item-card">
+                        <div class="item-row">
+                            <span style="font-weight: 700; font-size: 15px;">عطبرة</span>
+                            <span class="badge badge-success">مفعل</span>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted);">سعر التوصيل الثابت: 10,000 ج.س</div>
+                        <div class="item-row" style="margin-top: 6px;">
+                            <span style="font-size: 11px; color: var(--text-muted);">سعر ثابت لا يتأثر بالدولار</span>
+                            <button class="btn-secondary" style="width: auto; height: 32px; font-size: 12px; padding: 0 12px;">تعديل السعر</button>
+                        </div>
+                    </div>
+
+                    <div class="admin-item-card">
+                        <div class="item-row">
+                            <span style="font-weight: 700; font-size: 15px;">بربر</span>
+                            <span class="badge badge-success">مفعل</span>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted);">سعر التوصيل الثابت: 15,000 ج.س</div>
+                        <div class="item-row" style="margin-top: 6px;">
+                            <span style="font-size: 11px; color: var(--text-muted);">سعر ثابت لا يتأثر بالدولار</span>
+                            <button class="btn-secondary" style="width: auto; height: 32px; font-size: 12px; padding: 0 12px;">تعديل السعر</button>
+                        </div>
+                    </div>
+
+                    <div class="admin-item-card">
+                        <div class="item-row">
+                            <span style="font-weight: 700; font-size: 15px;">الدامر</span>
+                            <span class="badge badge-success">مفعل</span>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted);">سعر التوصيل الثابت: 12,000 ج.س</div>
+                        <div class="item-row" style="margin-top: 6px;">
+                            <span style="font-size: 11px; color: var(--text-muted);">سعر ثابت لا يتأثر بالدولار</span>
+                            <button class="btn-secondary" style="width: auto; height: 32px; font-size: 12px; padding: 0 12px;">تعديل السعر</button>
+                        </div>
+                    </div>
+
+                    <div class="admin-item-card">
+                        <div class="item-row">
+                            <span style="font-weight: 700; font-size: 15px;">أبوحمد</span>
+                            <span class="badge badge-warning">متوقف مؤقتاً</span>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted);">سعر التوصيل الثابت: 25,000 ج.س</div>
+                        <div class="item-row" style="margin-top: 6px;">
+                            <span style="font-size: 11px; color: var(--text-muted);">سعر ثابت لا يتأثر بالدولار</span>
+                            <button class="btn-secondary" style="width: auto; height: 32px; font-size: 12px; padding: 0 12px; color: var(--success);">تفعيل المنطقة</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!------------------------------------------------ 
+               SCREEN 7: PAYMENT ACCOUNTS & BANKAK NOTIFICATIONS
+            ------------------------------------------------->
+            <div id="screen-payments" class="screen">
+                <div class="app-bar">
+                    <div class="icon-btn" onclick="switchScreen('screen-dashboard')"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+                    <h1>حسابات بنكك ومراجعة الإشعارات</h1>
+                    <div class="icon-btn" onclick="openModal('add-bank-modal')"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></div>
+                </div>
+
+                <div class="list-container mt-16">
+                    <div class="card" style="border: 1px solid var(--accent);">
+                        <div class="item-row">
+                            <span style="font-size: 14px; font-weight: 700;">حساب بنكك النش حالياً للزبائن</span>
+                            <span class="badge badge-gold">يظهر للزبون</span>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted); margin-top: 8px;">
+                            رقم الحساب: <strong>3829104</strong><br>
+                            اسم صاحب الحساب: <strong>شركة DMC للمعدات الطبية</strong><br>
+                            بنك الخرطوم (بنكك)
+                        </div>
+                    </div>
+
+                    <h3 style="font-size: 14px; font-weight: 700; margin: 16px 0 8px 0;">إشعارات بنكك الجديدة (بانتظار المطابقة)</h3>
+                    
+                    <div class="admin-item-card" style="border-left: 4px solid var(--warning);">
+                        <div class="item-row">
+                            <span style="font-weight: 700;">إشعار تحويل بنكك #TX-9021</span>
+                            <span class="badge badge-warning">بانتظار المطابقة</span>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted);">
+                            المبلغ: 535,000 ج.س | الزبون: مستشفى الأمل<br>
+                            رقم العملية: 849201 | التاريخ: اليوم 10:45 ص
+                        </div>
+                        <div class="item-row" style="margin-top: 8px;">
+                            <button class="btn-secondary" style="height: 36px; font-size: 13px;" onclick="openModal('bank-review-modal')">عرض صورة الإشعار للمطابقة</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!------------------------------------------------ 
+               SCREEN 8: AI INVOICE SCANNER & PURCHASES
+            ------------------------------------------------->
+            <div id="screen-invoices" class="screen">
+                <div class="app-bar">
+                    <div class="icon-btn" onclick="switchScreen('screen-dashboard')"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+                    <h1>مسح الفواتير بالذكاء الاصطناعي (OCR)</h1>
+                    <div style="width: 40px;"></div>
+                </div>
+
+                <div class="list-container mt-16">
+                    <div class="card" style="text-align: center; padding: 30px; border: 2px dashed var(--accent);">
+                        <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(212, 175, 55, 0.1); color: var(--accent); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                            <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                        </div>
+                        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">مسح فاتورة مورّد جديدة</h3>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">استخراج الأصناف والكميات والأسعار تلقائياً بالذكاء الاصطناعي (عربي وإنجليزي)</p>
+                        <button class="btn-primary" onclick="openModal('ocr-result-modal')">فتح الكاميرا أو المعرض</button>
+                    </div>
+
+                    <h3 style="font-size: 14px; font-weight: 700; margin: 16px 0 8px 0;">سجل المشتريات والفواتير الأخيرة</h3>
+                    
+                    <div class="admin-item-card">
+                        <div class="item-row">
+                            <span style="font-weight: 700;">فاتورة #INV-5049</span>
+                            <span class="badge badge-success">تمت المراجعة والإضافة</span>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted);">
+                            المورد: شركة الفجر للمستلزمات الطبية<br>
+                            التاريخ: أمس | الإجمالي: 2,100,000 ج.س
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!------------------------------------------------ 
+               SCREEN 9: CUSTOMERS & ANALYTICS REPORTS
+            ------------------------------------------------->
+            <div id="screen-reports" class="screen">
+                <div class="app-bar">
+                    <div class="icon-btn" onclick="switchScreen('screen-dashboard')"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+                    <h1>العملاء والتقارير البيانية</h1>
+                    <div class="icon-btn" onclick="openModal('notification-broadcast-modal')"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 2L11 13"></path><path d="M22 2l-7 20-4-9-9-4 20-7z"></path></svg></div>
+                </div>
+
+                <div class="list-container mt-16">
+                    <div class="card">
+                        <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">أبرز التقارير البيانية</h3>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <button class="btn-secondary" style="justify-content: space-between;">
+                                <span>تقرير المبيعات والأرباح الشهرية</span>
+                                <span class="text-accent">PDF / Excel</span>
+                            </button>
+                            <button class="btn-secondary" style="justify-content: space-between;">
+                                <span>أكثر المنتجات طلباً هذا الشهر</span>
+                                <span class="text-accent">عرض</span>
+                            </button>
+                            <button class="btn-secondary" style="justify-content: space-between;">
+                                <span>تقرير حركة المخزون والتالف</span>
+                                <span class="text-accent">عرض</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="item-row" style="margin-bottom: 10px;">
+                            <h3 style="font-size: 15px; font-weight: 700;">العملاء الدائمون (أسعار خاصة)</h3>
+                            <span class="badge badge-gold">140 عميل</span>
+                        </div>
+                        <div class="admin-item-card" style="margin-bottom: 8px;">
+                            <div class="item-row">
+                                <span style="font-weight: 700;">مستشفى الأمل التخصصي</span>
+                                <span class="badge badge-success">مؤسسة طبية</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-muted);">خصم خاص 5% على جميع الطلبات الدائمة</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!------------------------------------------------ 
+               SCREEN 10: ACCOUNTS, PERMISSIONS & ACTIVITY LOG
+            ------------------------------------------------->
+            <div id="screen-permissions" class="screen">
+                <div class="app-bar">
+                    <div class="icon-btn" onclick="switchScreen('screen-dashboard')"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+                    <h1>الصلاحيات وسجل النشاط</h1>
+                    <div class="icon-btn" onclick="openModal('add-staff-modal')"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></div>
+                </div>
+
+                <div class="list-container mt-16">
+                    <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">سجل النشاط (من عدّل شنو ومتى)</h3>
+                    <div class="card">
+                        <div style="font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 10px;">
+                            <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                                <strong style="color: var(--text-main);">د. طارق (مدير)</strong><br>
+                                قام بتحديث سعر الدولار من 2,800 إلى 2,850 ج.س<br>
+                                <span style="font-size: 10px; color: var(--accent);">أمس، 14:30</span>
+                            </div>
+                            <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                                <strong style="color: var(--text-main);">أحمد محمد (محاسب)</strong><br>
+                                قام بتأكيد إشعار تحويل بنكك للطلب #DMC-8480<br>
+                                <span style="font-size: 10px; color: var(--accent);">أمس، 11:15</span>
+                            </div>
+                            <div>
+                                <strong style="color: var(--text-main);">خالد عمر (مخزن)</strong><br>
+                                قام بمسح فاتورة مورّد جديدة #INV-5049<br>
+                                <span style="font-size: 10px; color: var(--accent);">قبل يومين</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!------------------------------------------------ 
+               SCREEN 11: EMPTY STATE
+            ------------------------------------------------->
+            <div id="screen-empty" class="screen">
+                <div class="app-bar">
+                    <div class="icon-btn" onclick="switchScreen('screen-dashboard')"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+                    <h1>الطلبات الجديدة</h1>
+                    <div style="width: 40px;"></div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; text-align: center;">
+                    <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(212, 175, 55, 0.1); color: var(--accent); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                        <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    </div>
+                    <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">لا توجد طلبات جديدة حالياً</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">ستظهر طلبات الزبائن وتنبيهات التحويل هنا فور إرسالها من تطبيق الزبون.</p>
+                    <button class="btn-primary" style="width: auto; padding: 0 24px;" onclick="switchScreen('screen-dashboard')">العودة للوحة القيادة</button>
+                </div>
+            </div>
+
+
+            <!------------------------------------------------ 
+               SCREEN 12: LOADING SKELETON
+            ------------------------------------------------->
+            <div id="screen-skeleton" class="screen">
+                <div class="app-bar">
+                    <div class="icon-btn" onclick="switchScreen('screen-dashboard')"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+                    <h1>جاري تحميل البيانات...</h1>
+                    <div style="width: 40px;"></div>
+                </div>
+
+                <div class="list-container mt-16" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="skeleton" style="height: 80px; width: 100%;"></div>
+                    <div class="skeleton" style="height: 120px; width: 100%;"></div>
+                    <div class="skeleton" style="height: 80px; width: 100%;"></div>
+                    <div class="skeleton" style="height: 100px; width: 100%;"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- ================= MODALS & BOTTOM SHEETS ================= -->
+
+    <!-- Add / Edit Product Modal (Includes Product Image Upload for Customer View) -->
+    <div id="add-product-modal" class="modal-overlay" onclick="closeModal('add-product-modal')">
+        <div class="bottom-sheet" onclick="event.stopPropagation()">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 14px;">إضافة أو تعديل منتج وصورته للزبون</h3>
+            
+            <div class="input-group">
+                <label>صورة المنتج المرئية (يراها الزبون في التطبيق)</label>
+                <div style="display: flex; align-items: center; gap: 12px; background: var(--surface-dark); border: 2px dashed var(--border-color); border-radius: var(--radius-md); padding: 16px; text-align: center; cursor: pointer;">
+                    <div style="width: 54px; height: 54px; background: rgba(212, 175, 55, 0.1); border-radius: 50%; color: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-main); display: block;">انقر لرفع صورة واضحة</span>
+                        <span style="font-size: 11px; color: var(--text-muted);">PNG, JPG (تظهر مباشرة في متجر الزبون)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>اسم المنتج الطبي</label>
+                <input type="text" class="input-field" value="جهاز تخطيط القلب ECG 12 قناة">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="input-group">
+                    <label>السعر الأساسي ($)</label>
+                    <input type="number" class="input-field" value="160">
+                </div>
+                <div class="input-group">
+                    <label>الكمية بالمخزن</label>
+                    <input type="number" class="input-field" value="2">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>وصف المنتج للزبائن</label>
+                <textarea class="input-field" style="height: 70px; padding-top: 10px; resize: none;">جهاز تخطيط قلبي عالي الدقة مع شاشة ملونة وطباعة فورية.</textarea>
+            </div>
+
+            <button class="btn-primary mt-16" onclick="closeModal('add-product-modal')">حفظ ونشر المنتج مع صورته للزبائن</button>
+        </div>
+    </div>
+
+    <!-- Bank Review Modal -->
+    <div id="bank-review-modal" class="modal-overlay" onclick="closeModal('bank-review-modal')">
+        <div class="bottom-sheet" onclick="event.stopPropagation()">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px;">مراجعة إشعار تحويل بنكك</h3>
+            <div style="background: var(--surface-dark); height: 200px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: var(--text-muted); margin-bottom: 14px; border: 1px solid var(--border-color);">
+                [صورة إشعار التحويل المرفوعة من الزبون]
+            </div>
+            <div style="font-size: 13px; margin-bottom: 16px; color: var(--text-muted);">
+                المبلغ المطلوب: 535,000 ج.س | المطابق: نعم<br>
+                رقم العملية: 849201 | اسم الحساب: مستشفى الأمل
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-primary" style="background: var(--success); color: #fff;" onclick="closeModal('bank-review-modal')">تأكيد الدفع وتحويل للتجهيز</button>
+                <button class="btn-secondary" style="color: var(--error); border-color: var(--error);" onclick="closeModal('bank-review-modal')">رفض مع كتابة السبب</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Preview Modal -->
+    <div id="pricing-preview-modal" class="modal-overlay" onclick="closeModal('pricing-preview-modal')">
+        <div class="bottom-sheet" onclick="event.stopPropagation()">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px;">معاينة تغييرات الأسعار</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">سعر الدولار الجديد: 2,850 ج.س (تمت إضافة هامش ربح 15% وتطبيق التقريب لأقرب 500)</p>
+            <div class="admin-item-card">
+                <div class="item-row"><span style="font-weight: 600;">جهاز تخطيط القلب ECG</span></div>
+                <div class="item-row" style="font-size: 13px; margin-top: 4px;">
+                    <span style="color: var(--text-muted);">السعر القديم: 430,000 ج.س</span>
+                    <span class="text-accent" style="font-weight: 700;">السعر الجديد: 450,000 ج.س</span>
+                </div>
+            </div>
+            <button class="btn-primary mt-16" onclick="closeModal('pricing-preview-modal')">تأكيد وتحديث الأسعار للزبائن فوراً</button>
+        </div>
+    </div>
+
+    <!-- OCR Result Modal -->
+    <div id="ocr-result-modal" class="modal-overlay" onclick="closeModal('ocr-result-modal')">
+        <div class="bottom-sheet" onclick="event.stopPropagation()">
+            <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px;">نتائج قراءة الفاتورة بالذكاء الاصطناعي</h3>
+            <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+                المورد المستخرج: شركة الفجر للمستلزمات الطبية<br>
+                رقم الفاتورة: #INV-5050 | التاريخ: اليوم
+            </div>
+            <div class="admin-item-card" style="margin-bottom: 12px;">
+                <div class="item-row"><span style="font-weight: 600;">محاقن طبية 10 مل (50 كرتونة)</span></div>
+                <div class="item-row" style="font-size: 13px; color: var(--accent); margin-top: 4px;">الإجمالي: 1,250,000 ج.س (موجود - ستضاف للمخزن)</div>
+            </div>
+            <button class="btn-primary" onclick="closeModal('ocr-result-modal')">حفظ وتحديث المخزون والتكلفة</button>
+        </div>
+    </div>
+
+
+    <!-- SCRIPTS -->
+    <script>
+        function switchScreen(screenId) {
+            // Hide all screens
+            const screens = document.querySelectorAll('.screen');
+            screens.forEach(s => s.classList.remove('active'));
+
+            // Show target screen
+            const target = document.getElementById(screenId);
+            if (target) {
+                target.classList.add('active');
+                document.querySelector('.app-viewport').scrollTop = 0;
+            }
+
+            // Update top pill active state
+            const pills = document.querySelectorAll('.screen-pill');
+            pills.forEach(p => {
+                p.classList.remove('active');
+                if (p.getAttribute('onclick') && p.getAttribute('onclick').includes(screenId)) {
+                    p.classList.add('active');
+                }
+            });
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+provider
+flutter_animate
+firebase_core
+firebase_messaging
+image_picker

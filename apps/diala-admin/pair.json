@@ -1,0 +1,227 @@
+{
+ "pair": "diala",
+ "prefix": "diala",
+ "lang": "flutter",
+ "push": true,
+ "admins": [
+  "awadaljied8@gmail.com"
+ ],
+ "description": "مشروع DMC للمعدات والمستهلكات الطبية: تطبيقان متصلان\n\nالمطلوب: تطبيقان احترافيان (تطبيق الزبون + تطبيق الإدارة) على أندرويد وآيفون، متصلان بقاعدة بيانات واحدة (مثل Supabase). واجهة عربية كاملة من اليمين لليسار مع دعم الإنجليزية، هوية بصرية موحدة (شعار DMC وألوان طبية هادئة)، ووضع فاتح وداكن.\n\n========================\nأولاً: تطبيق الزبون (DMC Client)\n========================\nللمستشفيات والمراكز والصيدليات والأفراد.\n\n1. إنشاء حساب وتسجيل دخول (فرد / مؤسسة طبية).\n2. كتالوج مقسم لفئات: أجهزة طبية، مستهلكات (قفازات، محاقن، شاش...)، مستلزمات معامل وعمليات.\n3. بحث وفلترة بالاسم أو الفئة أو العلامة التجارية، وقائمة مفضلة.\n4. صفحة المنتج: الصور والمواصفات والسعر بالجنيه والتوفر.\n5. سلة الطلبات (تُحفظ محلياً) وإرسال الطلب.\n6. طلب عرض سعر (Quotation) للكميات الكبيرة.\n7. اختيار منطقة التوصيل (بربر، أبوحمد، الدامر، عطبرة، وغيرها) ويظهر سعر التوصيل تلقائياً ويُضاف للفاتورة.\n8. طرق الدفع:\n   - بنكك: يظهر للزبون رقم الحساب واسم صاحبه (مع زر نسخ) والمبلغ المطلوب. يحوّل ثم يرفع صورة إشعار التحويل ويرسلها، وتصبح حالة الطلب \"بانتظار تأكيد الدفع\".\n   - الدفع عند الاستلام.\n9. متابعة حالة الطلب: قيد المراجعة، بانتظار تأكيد الدفع، تم التجهيز، في الطريق، تم التسليم.\n10. سجل الطلبات وإعادة طلب سريعة.\n11. تحميل الفاتورة PDF ومشاركتها بالواتساب.\n12. إشعارات فورية (Push) بتحديثات الطلب والعروض.\n13. التواصل مع الإدارة (واتساب أو محادثة داخلية).\n\n========================\nثانياً: تطبيق الإدارة (DMC Admin)\n========================\nلصاحب الشركة والموظفين.\n\n1. الحسابات والصلاحيات\n- تسجيل دخول آمن بصلاحيات: مدير، مبيعات، مخزن، محاسب.\n- سجل نشاط يوضح من عدّل شنو ومتى.\n\n2. الطلبات\n- استقبال الطلبات الجديدة فوراً مع إشعار.\n- قبول الطلب أو رفضه أو تحديث حالته.\n- الرد على طلبات عروض الأسعار.\n\n3. المنتجات والمخزون\n- إضافة وتعديل وحذف المنتجات (الصور والفئات والمواصفات).\n- إدارة المخزون: الكميات، تنبيه عند قرب النفاد، وتنبيه عند قرب انتهاء الصلاحية.\n\n4. التسعير التلقائي بسعر الدولار\n- كل منتج يُخزَّن له سعره بالدولار كسعر أساسي، والسعر بالجنيه = السعر بالدولار × سعر الدولار اليوم.\n- حقل \"سعر الدولار اليوم\": المدير يكتب السعر ويضغط \"تطبيق\"، فتتحدث كل الأسعار عند الزبائن فوراً.\n- معاينة السعر القديم والجديد قبل التأكيد.\n- سجل تغييرات سعر الدولار (القديم، الجديد، التاريخ، من قام به).\n- هامش ربح اختياري بنسبة مئوية.\n- خيار \"سعر ثابت\" لمنتجات لا تتأثر بالدولار.\n- تقريب الأسعار لأقرب 100 أو 500.\n- تغيير سعر الدولار للمدير والمحاسب فقط.\n- الطلبات المؤكدة تحتفظ بسعرها وقت الطلب.\n\n5. أماكن التوصيل وأسعارها\n- إضافة وتعديل وحذف مناطق التوصيل (بربر، أبوحمد، الدامر، عطبرة...) مع سعر كل منطقة بالجنيه السوداني، سعر ثابت لا يتأثر بالدولار.\n- تفعيل أو إيقاف أي منطقة مؤقتاً، مع تأكيد قبل الحذف.\n- الطلبات القديمة تحتفظ بسعر التوصيل وقت الطلب.\n- التعديل للمدير فقط.\n\n6. الدفع\n- شاشة \"حسابات الدفع\": إضافة وتعديل وحذف حسابات بنكك (رقم الحساب واسم الصاحب) وإيقافها مؤقتاً، واختيار الحساب الذي يظهر للزبون.\n- عند وصول طلب بنكك: تظهر صورة الإشعار للمدير أو المحاسب مع إشعار فوري، فيطابق المبلغ والتاريخ ورقم العملية، ثم يضغط \"تأكيد الدفع\" فيتحول الطلب للتجهيز، أو \"رفض\" مع كتابة السبب فيُشعَر الزبون ليعيد الإرسال.\n- تنبيه عند تكرار نفس صورة الإشعار أو رقم العملية.\n- في الدفع عند الاستلام: تسجيل \"تم استلام المبلغ\" بعد التسليم.\n- سجل يحفظ من أكد الدفع ومتى.\n\n7. المشتريات ومسح الفواتير\n- زر \"مسح فاتورة\" يفتح الكاميرا أو المعرض، والتطبيق يقرأ الفاتورة بالذكاء الاصطناعي (OCR) ويستخرج: المورد، التاريخ، رقم الفاتورة، الأصناف، الكميات، الأسعار، الإجمالي (عربي وإنجليزي، ودعم أكثر من صفحة).\n- شاشة مراجعة وتصحيح قبل الحفظ.\n- ربط الأصناف بالمنتجات: الموجود تتضاف كميته للمخزون، والجديد يسأل \"إضافة كمنتج جديد؟\".\n- تحديث سعر التكلفة تلقائياً.\n- حفظ صورة الفاتورة مع سجل الشراء، وتنبيه عند تكرار نفس رقم الفاتورة من نفس المورد.\n- متاحة للمخزن والمحاسب والمدير.\n\n8. العملاء والتقارير\n- إدارة العملاء (مؤسسات وأفراد) مع أسعار خاصة للعملاء الدائمين.\n- فواتير PDF.\n- تقارير بيانية: المبيعات، الأرباح، أكثر المنتجات طلباً، المشتريات، المخزون.\n- إرسال عروض وإشعارات للعملاء.\n\n========================\nثالثاً: الربط بين التطبيقين\n========================\nقاعدة بيانات واحدة: أي منتج أو سعر أو منطقة توصيل أو حساب دفع تعدله الإدارة يظهر فوراً عند الزبون، وأي طلب أو إشعار تحويل من الزبون يصل فوراً للإدارة.\n\n========================\nرابعاً: متطلبات عامة\n========================\n- تشفير البيانات ونسخ احتياطي يومي تلقائي.\n- عمل التطبيق مع ضعف النت وحفظ السلة محلياً.\n- شاشة افتتاحية وتحميل سلسة وأداء سريع.\n- اختبار قبل الإطلاق ونسخة تجريبية للموظفين.\n- صفحة سياسة الخصوصية والشروط.\n\n=== المواصفات اللي وافق عليها صاحب التطبيق (نفّذها كلها بند بند، ولا تضيف تطبيق مختلف) ===\nالفكرة: تطبيقان متصلان DMC للمعدات والمستهلكات الطبية: تطبيق الزبون لطلب الأجهزة والمستهلكات الطبية، وتطبيق الإدارة لمتابعة الطلبات والمخزون والتسعير التلقائي.\nالشاشات:\n- الاثنين: شاشة تسجيل الدخول والإنشاء (الاسم، رقم الهاتف، البريد، رمز التأكيد، كلمة المرور)\n- الزبون: الشاشة الرئيسية والكتالوج مقسم لفئات (أجهزة طبية، مستهلكات، مستلزمات معامل وعمليات)\n- الزبون: صفحة البحث والفلترة وقائمة المفضلة\n- الزبون: صفحة المنتج (الصور، المواصفات، السعر بالجنيه، التوفر)\n- الزبون: سلة الطلبات وإرسال الطلب أو طلب عرض سعر (Quotation)\n- الزبون: اختيار منطقة التوصيل وطرق الدفع (بنكك أو الدفع عند الاستلام)\n- الزبون: متابعة حالة الطلب وسجل الطلبات وإعادة الطلب\n- الزبون: تحميل الفاتورة PDF ومشاركتها بالواتساب والتواصل مع الإدارة\n- الإدارة: شاشة الحسابات والصلاحيات وسجل النشاط\n- الإدارة: شاشة الطلبات وإدارتها والرد على عروض الأسعار\n- الإدارة: شاشة المنتجات والمخزون والتنبيهات\n- الإدارة: شاشة التسعير التلقائي بسعر الدولار وسجل التغييرات\n- الإدارة: شاشة أماكن التوصيل وأسعارها\n- الإدارة: شاشة حسابات الدفع ومراجعة إشعارات بنكك\n- الإدارة: شاشة المشتريات ومسح الفواتير بالذكاء الاصطناعي\n- الإدارة: شاشة العملاء والتقارير البيانية\nالميزات والوظائف:\n- الاثنين: واجهة عربية كاملة من اليمين لليسار مع دعم الإنجليزية، هوية بصرية موحدة، ووضع فاتح وداكن\n- الزبون: إنشاء حساب وتسجيل دخول بفرد أو مؤسسة طبية مع التحقق برمز البريد\n- الزبون: حفظ سلة الطلبات محلياً والعمل مع ضعف الإنترنت\n- الزبون: إظهار سعر التوصيل تلقائياً حسب المنطقة (بربر، أبوحمد، الدامر، عطبرة، وغيرها)\n- الزبون: دفع عبر بنكك برفع صورة الإشعار أو الدفع عند الاستلام\n- الزبون: إشعارات فورية (Push) بتحديثات الطلب والعروض\n- الإدارة: تسجيل دخول آمن بصلاحيات متعددة (مدير، مبيعات، مخزن، محاسب)\n- الإدارة: استقبال الطلبات الجديدة فوراً مع إشعار\n- الإدارة: تحديث أسعار المنتجات تلقائياً بربطها بسعر الدولار اليوم وهامش الربح والتقريب\n- الإدارة: إدارة أماكن التوصيل وتفعيلها أو إيقافها\n- الإدارة: إدارة حسابات بنكك وتأكيد أو رفض إشعارات الدفع\n- الإدارة: مسح الفواتير بالكاميرا أو المعرض واستخراج البيانات بالذكاء الاصطناعي (OCR)\n- الإدارة: عرض التقارير البيانية للمبيعات والأرباح والمخزون وإرسال الإشعارات للعملاء\n- الاثنين: تشفير البيانات ونسخ احتياطي يومي تلقائي\nالبيانات اللي التطبيق بيحفظها:\n- الاثنين: المستخدمون (الاسم، رقم الهاتف، البريد، كلمة المرور، النوع: فرد أو مؤسسة، الصلاحية للإدارة)\n- الاثنين: المنتجات (الاسم، الفئة، الصور، المواصفات، السعر بالدولار، السعر الثابت، التوفر، المخزون، تاريخ الانتهاء)\n- الاثنين: الطلبات (رقم الطلب، الزبون، الأصناف، الكميات، السعر وقت الطلب، منطقة التوصيل، سعر التوصيل، طريقة الدفع، حالة الطلب، صورة إشعار بنكك)\n- الإدارة: مناطق التوصيل (الاسم، السعر بالجنيه السوداني، الحالة تفعيل/إيقاف)\n- الإدارة: حسابات الدفع (رقم الحساب، اسم الصاحب، الحالة)\n- الإدارة: سجل تغييرات سعر الدولار (السعر القديم، الجديد، التاريخ، المستخدم)\n- الإدارة: المشتريات والفواتير (المورد، التاريخ، رقم الفاتورة، الأصناف، الكميات، الأسعار، الإجمالي، صورة الفاتورة)\nالأسماء والنصوص والأرقام والألوان:\n- اسم التطبيق: diala\n- مشروع DMC للمعدات والمستهلكات الطبية: تطبيقان متصلان\n- تطبيق الزبون (DMC Client)\n- تطبيق الإدارة (DMC Admin)\n- بربر\n- أبوحمد\n- الدامر\n- عطبرة\n- بنكك\n- الدفع عند الاستلام\nالصلاحيات: الكاميرا، الإشعارات، الصور والملفات\nANDROID_PERMISSIONS: CAMERA, NOTIFICATIONS, STORAGE\nLOGIN: customer=phone_email_code admin=phone_email_code",
+ "login": {
+  "customer": "phone_email_code",
+  "admin": "phone_email_code"
+ },
+ "supabase": {
+  "url": "https://jvjtgzewumfecjdpekna.supabase.co",
+  "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE",
+  "ref": "jvjtgzewumfecjdpekna"
+ },
+ "schemaSql": "create table if not exists diala_categories (\n  id bigint generated by default as identity primary key,\n  name text not null,\n  name_en text,\n  created_at timestamptz default now()\n);\n\ncreate table if not exists diala_products (\n  id bigint generated by default as identity primary key,\n  name text not null,\n  category_id bigint references diala_categories(id),\n  image_url text,\n  description text,\n  specifications jsonb default '{}'::jsonb,\n  price_usd numeric(12,2) not null default 0,\n  fixed_price boolean not null default false,\n  stock int not null default 0,\n  expiry_date date,\n  is_active boolean not null default true,\n  created_at timestamptz default now()\n);\n\ncreate table if not exists diala_delivery_zones (\n  id bigint generated by default as identity primary key,\n  name text not null,\n  price_ssp numeric(12,2) not null default 0,\n  is_active boolean not null default true,\n  created_at timestamptz default now()\n);\n\ncreate table if not exists diala_payment_accounts (\n  id bigint generated by default as identity primary key,\n  account_number text not null,\n  account_holder text not null,\n  bank_name text not null default 'بنك الخرطوم (بنكك)',\n  is_active boolean not null default true,\n  is_primary boolean not null default false,\n  created_at timestamptz default now()\n);\n\ncreate table if not exists diala_dollar_rate_logs (\n  id bigint generated by default as identity primary key,\n  old_rate numeric(12,2) not null,\n  new_rate numeric(12,2) not null,\n  profit_margin numeric(5,2) default 0,\n  rounding_rule text default 'none',\n  changed_by uuid references auth.users(id),\n  created_at timestamptz default now()\n);\n\ncreate table if not exists diala_orders (\n  id bigint generated by default as identity primary key,\n  order_number text not null unique,\n  customer_id uuid not null default auth.uid() references auth.users(id) on delete cascade,\n  status text not null default 'قيد المراجعة',\n  payment_method text not null,\n  payment_status text not null default 'معلق',\n  payment_proof_url text,\n  payment_reference text,\n  delivery_zone_id bigint references diala_delivery_zones(id),\n  delivery_fee numeric(12,2) not null default 0,\n  subtotal numeric(12,2) not null default 0,\n  total numeric(12,2) not null default 0,\n  is_quotation boolean not null default false,\n  created_at timestamptz default now()\n);\n\ncreate table if not exists diala_order_items (\n  id bigint generated by default as identity primary key,\n  order_id bigint references diala_orders(id) on delete cascade,\n  product_id bigint references diala_products(id),\n  quantity int not null default 1,\n  unit_price numeric(12,2) not null default 0,\n  created_at timestamptz default now()\n);\n\ncreate table if not exists diala_favorites (\n  id bigint generated by default as identity primary key,\n  customer_id uuid not null default auth.uid() references auth.users(id) on delete cascade,\n  product_id bigint references diala_products(id) on delete cascade,\n  created_at timestamptz default now(),\n  unique(customer_id, product_id)\n);\n\ncreate table if not exists diala_suppliers (\n  id bigint generated by default as identity primary key,\n  name text not null,\n  phone text,\n  created_at timestamptz default now()\n);\n\ncreate table if not exists diala_purchases (\n  id bigint generated by default as identity primary key,\n  invoice_number text not null,\n  supplier_id bigint references diala_suppliers(id),\n  invoice_date date not null default current_date,\n  total_amount numeric(12,2) not null default 0,\n  invoice_image_url text,\n  created_by uuid references auth.users(id),\n  created_at timestamptz default now()\n);\n\ncreate table if not exists diala_purchase_items (\n  id bigint generated by default as identity primary key,\n  purchase_id bigint references diala_purchases(id) on delete cascade,\n  product_id bigint references diala_products(id),\n  product_name text not null,\n  quantity int not null default 1,\n  unit_price numeric(12,2) not null default 0,\n  created_at timestamptz default now()\n);\n\ncreate table if not exists diala_activity_logs (\n  id bigint generated by default as identity primary key,\n  user_id uuid references auth.users(id),\n  action text not null,\n  details text,\n  created_at timestamptz default now()\n);\n\ncreate table if not exists diala_customers_meta (\n  id bigint generated by default as identity primary key,\n  customer_id uuid not null unique references auth.users(id) on delete cascade,\n  account_type text not null default 'فرد',\n  discount_percentage numeric(5,2) default 0,\n  created_at timestamptz default now()\n);\n\nalter table diala_categories enable row level security;\nalter table diala_products enable row level security;\nalter table diala_delivery_zones enable row level security;\nalter table diala_payment_accounts enable row level security;\nalter table diala_dollar_rate_logs enable row level security;\nalter table diala_orders enable row level security;\nalter table diala_order_items enable row level security;\nalter table diala_favorites enable row level security;\nalter table diala_suppliers enable row level security;\nalter table diala_purchases enable row level security;\nalter table diala_purchase_items enable row level security;\nalter table diala_activity_logs enable row level security;\nalter table diala_customers_meta enable row level security;\n\ndrop policy if exists \"categories_select\" on diala_categories;\ncreate policy \"categories_select\" on diala_categories for select to authenticated using (true);\ndrop policy if exists \"categories_admin\" on diala_categories;\ncreate policy \"categories_admin\" on diala_categories for all to authenticated using (public.diala_is_admin());\n\ndrop policy if exists \"products_select\" on diala_products;\ncreate policy \"products_select\" on diala_products for select to authenticated using (true);\ndrop policy if exists \"products_admin\" on diala_products;\ncreate policy \"products_admin\" on diala_products for all to authenticated using (public.diala_is_admin());\n\ndrop policy if exists \"zones_select\" on diala_delivery_zones;\ncreate policy \"zones_select\" on diala_delivery_zones for select to authenticated using (true);\ndrop policy if exists \"zones_admin\" on diala_delivery_zones;\ncreate policy \"zones_admin\" on diala_delivery_zones for all to authenticated using (public.diala_is_admin());\n\ndrop policy if exists \"payments_select\" on diala_payment_accounts;\ncreate policy \"payments_select\" on diala_payment_accounts for select to authenticated using (true);\ndrop policy if exists \"payments_admin\" on diala_payment_accounts;\ncreate policy \"payments_admin\" on diala_payment_accounts for all to authenticated using (public.diala_is_admin());\n\ndrop policy if exists \"rates_admin\" on diala_dollar_rate_logs;\ncreate policy \"rates_admin\" on diala_dollar_rate_logs for all to authenticated using (public.diala_is_admin());\n\ndrop policy if exists \"orders_select\" on diala_orders;\ncreate policy \"orders_select\" on diala_orders for select to authenticated using (customer_id = auth.uid() or public.diala_is_admin());\ndrop policy if exists \"orders_insert\" on diala_orders;\ncreate policy \"orders_insert\" on diala_orders for insert to authenticated with check (customer_id = auth.uid());\ndrop policy if exists \"orders_update\" on diala_orders;\ncreate policy \"orders_update\" on diala_orders for update to authenticated using (customer_id = auth.uid() or public.diala_is_admin());\n\ndrop policy if exists \"order_items_select\" on diala_order_items;\ncreate policy \"order_items_select\" on diala_order_items for select to authenticated using (\n  exists (select 1 from diala_orders where diala_orders.id = order_id and (diala_orders.customer_id = auth.uid() or public.diala_is_admin()))\n);\ndrop policy if exists \"order_items_insert\" on diala_order_items;\ncreate policy \"order_items_insert\" on diala_order_items for insert to authenticated with check (\n  exists (select 1 from diala_orders where diala_orders.id = order_id and diala_orders.customer_id = auth.uid())\n);\n\ndrop policy if exists \"favorites_all\" on diala_favorites;\ncreate policy \"favorites_all\" on diala_favorites for all to authenticated using (customer_id = auth.uid() or public.diala_is_admin()) with check (customer_id = auth.uid());\n\ndrop policy if exists \"suppliers_admin\" on diala_suppliers;\ncreate policy \"suppliers_admin\" on diala_suppliers for all to authenticated using (public.diala_is_admin());\n\ndrop policy if exists \"purchases_admin\" on diala_purchases;\ncreate policy \"purchases_admin\" on diala_purchases for all to authenticated using (public.diala_is_admin());\n\ndrop policy if exists \"purchase_items_admin\" on diala_purchase_items;\ncreate policy \"purchase_items_admin\" on diala_purchase_items for all to authenticated using (public.diala_is_admin());\n\ndrop policy if exists \"activity_admin\" on diala_activity_logs;\ncreate policy \"activity_admin\" on diala_activity_logs for all to authenticated using (public.diala_is_admin());\n\ndrop policy if exists \"meta_all\" on diala_customers_meta;\ncreate policy \"meta_all\" on diala_customers_meta for all to authenticated using (customer_id = auth.uid() or public.diala_is_admin()) with check (customer_id = auth.uid() or public.diala_is_admin());\n\ninsert into diala_categories (name, name_en) values \n('أجهزة طبية', 'Medical Devices'),\n('مستهلكات', 'Consumables'),\n('مستلزمات معامل وعمليات', 'Lab & Operating Supplies')\non conflict do nothing;\n\ninsert into diala_delivery_zones (name, price_ssp, is_active) values \n('عطبرة', 15000, true),\n('الدامر', 18000, true),\n('بربر', 25000, true),\n('أبوحمد', 25000, true)\non conflict do nothing;\n\ninsert into diala_payment_accounts (account_number, account_holder, bank_name, is_active, is_primary) values \n('123456789', 'شركة DMC الطبية', 'بنك الخرطوم (بنكك)', true, true)\non conflict do nothing;\n\ninsert into diala_products (name, category_id, description, specifications, price_usd, stock, expiry_date, is_active) values \n('جهاز تخطيط القلب ECG 12 قناة', 1, 'جهاز تخطيط قلبي متطور عالي الدقة مع شاشة ملونة باللمس وطابعة حرارية مدمجة.', '{\"عدد القنوات\": \"12 قناة\", \"العلامة التجارية\": \"DMC MedTech\", \"الضمان\": \"سنة كاملة\", \"المنشأ\": \"ألماني الصنع\"}'::jsonb, 160.00, 5, '2026-12-31', true),\n('قفازات لاتكس طبية (علبة 100 قطعة)', 2, 'قفازات لاتكس طبية غير معقمة عالية الجودة للاستخدام الطبي والمعملي.', '{\"النوع\": \"لاتكس\", \"الكمية\": \"100 قطعة\"}'::jsonb, 6.50, 140, '2025-05-12', true),\n('محاقن طبية 10 مل مع إبرة (كرتونة)', 3, 'محاقن طبية معقمة للاستعمال الواحد.', '{\"السعة\": \"10 مل\", \"التعبئة\": \"كرتونة\"}'::jsonb, 22.80, 50, '2027-01-01', true)\non conflict do nothing;",
+ "contract": {
+  "tables": [
+   {
+    "name": "diala_categories",
+    "purpose": "Stores product categories (Medical devices, consumables, etc.)",
+    "columns": [
+     "id bigint",
+     "name text",
+     "name_en text",
+     "created_at timestamptz"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "diala_products",
+    "purpose": "Stores medical equipment and consumable items with USD pricing and stock",
+    "columns": [
+     "id bigint",
+     "name text",
+     "category_id bigint",
+     "image_url text",
+     "description text",
+     "specifications jsonb",
+     "price_usd numeric",
+     "fixed_price boolean",
+     "stock int",
+     "expiry_date date",
+     "is_active boolean",
+     "created_at timestamptz"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "diala_delivery_zones",
+    "purpose": "Stores delivery locations and fixed SSP fees",
+    "columns": [
+     "id bigint",
+     "name text",
+     "price_ssp numeric",
+     "is_active boolean",
+     "created_at timestamptz"
+    ],
+    "owner": "admin"
+   },
+   {
+    "name": "diala_payment_accounts",
+    "purpose": "Manages Bankak accounts shown to customers",
+    "columns": [
+     "id bigint",
+     "account_number text",
+     "account_holder text",
+     "bank_name text",
+     "is_active boolean",
+     "is_primary boolean",
+     "created_at timestamptz"
+    ],
+    "owner": "admin"
+   },
+   {
+    "name": "diala_dollar_rate_logs",
+    "purpose": "Audit trail of dollar rate changes",
+    "columns": [
+     "id bigint",
+     "old_rate numeric",
+     "new_rate numeric",
+     "profit_margin numeric",
+     "rounding_rule text",
+     "changed_by uuid",
+     "created_at timestamptz"
+    ],
+    "owner": "admin"
+   },
+   {
+    "name": "diala_orders",
+    "purpose": "Customer orders and quotation requests",
+    "columns": [
+     "id bigint",
+     "order_number text",
+     "customer_id uuid",
+     "status text",
+     "payment_method text",
+     "payment_status text",
+     "payment_proof_url text",
+     "payment_reference text",
+     "delivery_zone_id bigint",
+     "delivery_fee numeric",
+     "subtotal numeric",
+     "total numeric",
+     "is_quotation boolean",
+     "created_at timestamptz"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "diala_order_items",
+    "purpose": "Line items for customer orders",
+    "columns": [
+     "id bigint",
+     "order_id bigint",
+     "product_id bigint",
+     "quantity int",
+     "unit_price numeric",
+     "created_at timestamptz"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "diala_favorites",
+    "purpose": "Customer favorite products list",
+    "columns": [
+     "id bigint",
+     "customer_id uuid",
+     "product_id bigint",
+     "created_at timestamptz"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "diala_suppliers",
+    "purpose": "Medical suppliers registry for OCR purchases",
+    "columns": [
+     "id bigint",
+     "name text",
+     "phone text",
+     "created_at timestamptz"
+    ],
+    "owner": "admin"
+   },
+   {
+    "name": "diala_purchases",
+    "purpose": "Supplier invoices scanned via AI OCR",
+    "columns": [
+     "id bigint",
+     "invoice_number text",
+     "supplier_id bigint",
+     "invoice_date date",
+     "total_amount numeric",
+     "invoice_image_url text",
+     "created_by uuid",
+     "created_at timestamptz"
+    ],
+    "owner": "admin"
+   },
+   {
+    "name": "diala_purchase_items",
+    "purpose": "Line items of scanned purchase invoices",
+    "columns": [
+     "id bigint",
+     "purchase_id bigint",
+     "product_id bigint",
+     "product_name text",
+     "quantity int",
+     "unit_price numeric",
+     "created_at timestamptz"
+    ],
+    "owner": "admin"
+   },
+   {
+    "name": "diala_activity_logs",
+    "purpose": "Admin activity log for tracking who edited what and when",
+    "columns": [
+     "id bigint",
+     "user_id uuid",
+     "action text",
+     "details text",
+     "created_at timestamptz"
+    ],
+    "owner": "admin"
+   },
+   {
+    "name": "diala_customers_meta",
+    "purpose": "Customer extra attributes like account type and custom discounts",
+    "columns": [
+     "id bigint",
+     "customer_id uuid",
+     "account_type text",
+     "discount_percentage numeric",
+     "created_at timestamptz"
+    ],
+    "owner": "customer"
+   }
+  ],
+  "events": [
+   {
+    "when": "Customer submits a new order or uploads a Bankak payment receipt",
+    "notify": "admin",
+    "title": "طلب جديد أو إشعار بنكك بانتظار المطابقة"
+   },
+   {
+    "when": "Admin confirms payment, updates order status, or responds to a quotation",
+    "notify": "customer",
+    "title": "تحديث جديد على حالة طلبك الطبي"
+   }
+  ]
+ },
+ "apps": {
+  "customer": {
+   "name": "diala-customer",
+   "packageId": "com.generated.app_diala_customer"
+  },
+  "admin": {
+   "name": "diala-admin",
+   "packageId": "com.generated.app_diala_admin"
+  }
+ },
+ "role": "admin",
+ "pushFunction": "diala-push"
+}

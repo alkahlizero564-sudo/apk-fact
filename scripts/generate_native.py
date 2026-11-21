@@ -42,6 +42,17 @@ PERMISSIONS_RULE = (
     "a clear message with a retry when the user refuses. Never ask for permissions the app does not use."
 )
 
+# The design prototype is shown to the owner inside a phone frame and with a top bar that switches between screens.
+# Both exist only for the review: the installed app must not copy them (they showed up as a duplicate top bar).
+NO_REVIEW_CHROME = (
+    "IMPORTANT - the real installed app is NOT a preview: do NOT build a phone frame or device mockup around it "
+    "(no rounded outer border, shadow, margin or max-width card), and do NOT build any top bar, tab strip or row of "
+    "chips that switches between screens (the design prototype has them only so the owner can review the screens). "
+    "The app fills the whole screen edge to edge, and its screens are reached only through the app's own navigation "
+    "(ONE bottom navigation bar and/or a drawer), never a second navigation bar at the top. This rule is about the "
+    "native app code only; the html preview may stay inside a phone-sized layout."
+)
+
 
 def parse_request(text):
     lines = text.splitlines()
@@ -143,7 +154,11 @@ def design_gaps(model, keys, cfg, design_html, code):
               "app was then built to match it. List every difference the user WOULD SEE when the app is installed: "
               "screens that are in the design but missing or clearly different in the app; and differences in layout, "
               "structure, colors, typography, spacing, corner radius, icons, components, texts and navigation. Ignore "
-              "the prototype's top reviewer switcher (id apkfact-screens) and tiny pixel differences. Be concrete "
+              "tiny pixel differences, and do NOT report as a difference that the app lacks the prototype's phone frame "
+              "or its top bar that switches between screens: those exist only for the review and the app must not have "
+              "them. Also report, as a difference to remove, any phone frame around the app or any top bar that "
+              "switches between screens that appears in the APP CODE (the app uses one bottom navigation only). "
+              "Be concrete "
               "(name the screen and what differs). Reply with JSON only: {\"diffs\": [\"...\"]} (empty list when the "
               "app already looks like the design).\n\n"
               f"APPROVED DESIGN:\n```html\n{design_html}\n```\n\nAPP CODE:\n```{cfg['fence']}\n{code}\n```\n")
@@ -253,6 +268,8 @@ def main():
 
 {PERMISSIONS_RULE}
 
+{NO_REVIEW_CHROME}
+
 {reply_fmt}
 
 App name: {name}
@@ -273,8 +290,8 @@ App name: {name}
                        f"real {cfg['title']} app so it looks exactly like it: the same screens, navigation, layout, colors, "
                        f"typography, spacing, corner radius, icons, texts and components (map them to the closest "
                        f"{cfg['title']} widgets). Do NOT drop, merge or restyle any screen, and do not substitute a "
-                       f"generic layout — the installed app must match this design screen for screen. Ignore the "
-                       f"prototype's top 'screens' switcher (id apkfact-screens): it is only for reviewing. Make every "
+                       f"generic layout — the installed app must match this design screen for screen. {NO_REVIEW_CHROME} "
+                       f"Make every "
                        f"screen fully functional with real state and stored data.\n"
                        f"```html\n{design_html}\n```\n")
 
@@ -315,7 +332,7 @@ App name: {name}
                      f"design exactly (same screens, layout, colors, typography, spacing, corner radius, icons, texts and "
                      f"components), and keep everything else — all features and stored data — working:\n- "
                      + "\n- ".join(diffs) +
-                     f"\n\n{reply_fmt}\n\n"
+                     f"\n\n{NO_REVIEW_CHROME}\n\n{reply_fmt}\n\n"
                      f"APPROVED DESIGN:\n```html\n{design_html}\n```\n\n"
                      f"CURRENT {cfg['code_file']}:\n```{cfg['fence']}\n{code}\n```\n")
             try:
@@ -374,4 +391,4 @@ App name: {name}
 
 
 if __name__ == "__main__":
-    main()
+    main() 

@@ -74,6 +74,9 @@ def write(app):
     path = d / "lib" / "backend.dart"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(render(st, st["role"]), encoding="utf-8")
+    # The ready sign-in screens (same for every app; colors from the app's Theme).
+    (d / "lib" / "auth_screens.dart").write_text((HERE / "templates" / "auth_screens.dart").read_text(encoding="utf-8"),
+                                                 encoding="utf-8")
     ensure_deps(d)
     return path
 
@@ -125,10 +128,6 @@ def api_doc(st, role):
     import pair
     mode = pair.state_login(st)[role]
     consts = "\n".join(f"  T.{d} = '{t}'" for d, t in table_consts(st))
-    admin = ("\nADMIN app: Backend.init()/sign-in already call claimAdmin(). After sign-in, if Backend.isAdmin is false "
-             "show a 'دخول الإدارة' screen with a hidden field 'رمز الإدارة' -> await Backend.claimAdmin(pin): true opens "
-             "the admin home, false shows 'رمز الإدارة غير صحيح'. Any email may sign in; never check emails yourself."
-             if role == "admin" else "")
     return f"""
 === THE BACKEND IS ALREADY WRITTEN: lib/backend.dart (do NOT write it, do NOT copy it, do NOT change it) ===
 `import 'backend.dart';` at the top of main.dart. It is the ONLY way this app talks to the server:
@@ -138,14 +137,24 @@ main():
   WidgetsFlutterBinding.ensureInitialized();
   await Backend.init();          // restores the session, Firebase/push, 15-second live sync
   runApp(const MyApp());
-MaterialApp(scaffoldMessengerKey: Backend.messengerKey, ...)
-The first screen listens to Backend.session (ValueListenableBuilder<bool>): false -> the sign-in screens, true -> home.
-So signing in or out switches screens by itself.
 
-Sign-in (exactly this, with polished screens, Arabic messages, a loading state on every button):
-{signin_doc(mode, role)}{admin}
-Every Backend call can throw BackendException: catch it and show e.message (already Arabic) under the form or with
-Backend.toast(e.message). NEVER count the user as signed in any other way (no demo / offline / fallback mode).
+THE SIGN-IN SCREENS ARE ALSO READY: lib/auth_screens.dart (sign-in, new account, 6-digit code, forgotten password,
+admin PIN — polished, tested, Arabic, colors from YOUR Theme). Do NOT write any sign-in / sign-up / code / password /
+PIN screen yourself. `import 'auth_screens.dart';` and make AuthGate the home:
+  MaterialApp(
+    scaffoldMessengerKey: Backend.messengerKey,
+    theme: <the design's light theme>, darkTheme: <its dark theme>,
+    home: AuthGate(
+      brand: AuthBrand(name: '<app name from the design>', tagline: '<its short tagline>', icon: Icons.<the design's logo icon>),
+      home: const <the main screen of the app, e.g. the one with the bottom navigation>(),
+    ),
+  )
+AuthGate shows the sign-in screens while signed out and the home once signed in (in the admin app: once an admin),
+and switches back by itself on sign out. Put a sign-out button (Backend.signOut) in the profile / settings screen.
+Make the Theme carry the design's colors (ColorScheme.fromSeed(seedColor: <primary>) or a full ColorScheme) and font:
+the sign-in screens take them from it.{(" " + signin_doc(mode, role)) if (mode == "phone_password" and role == "admin") else ""}
+Every Backend call can throw BackendException: catch it and show e.message (already Arabic) with Backend.toast(e.message)
+or under the form. NEVER count the user as signed in any other way (no demo / offline / fallback mode).
 
 Data — table names ONLY through these constants:
 {consts}

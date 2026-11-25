@@ -67,6 +67,9 @@ class Backend {
   /// true when signed in, false when signed out. Listen to it to switch between the sign-in and the home screens.
   static final ValueNotifier<bool> session = ValueNotifier<bool>(false);
 
+  /// Goes up whenever the profile (name, role) is read again, e.g. after claimAdmin.
+  static final ValueNotifier<int> profileChanged = ValueNotifier<int>(0);
+
   static bool get signedIn => _access != null && _userId != null;
   static String? get userId => _userId;
   static String? get email => _email;
@@ -217,6 +220,7 @@ class Backend {
   static Future<Map<String, dynamic>> loadProfile() async {
     final rows = await list(T.profiles, filters: {'id': 'eq.$_userId'}, order: null);
     _profile = rows.isEmpty ? {'id': _userId, 'role': 'customer'} : rows.first;
+    profileChanged.value++;
     return profile;
   }
 

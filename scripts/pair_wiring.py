@@ -50,8 +50,8 @@ def backend_required(st):
          r"import\s+['\"]backend\.dart['\"]"),
         ("`await Backend.init();` in main() before runApp", r"Backend\.init\b"),
         ("MaterialApp(scaffoldMessengerKey: Backend.messengerKey, ...)", r"scaffoldMessengerKey:\s*Backend\.messengerKey"),
-        ("the first screen follows Backend.session (ValueListenableBuilder<bool>): signed out -> sign-in screens, "
-         "signed in -> home", r"Backend\.session\b"),
+        ("`import 'auth_screens.dart';` and MaterialApp(home: AuthGate(brand: AuthBrand(...), home: <main screen>)) — "
+         "the ready sign-in screens; no sign-in screens of its own", r"AuthGate\s*\("),
         ("a notifications inbox screen: LiveQuery with Backend.inbox(), tap -> Backend.markRead(id)",
          r"Backend\.inbox\b"),
         ("the unread badge on a bell: ValueListenableBuilder<int>(valueListenable: Backend.unread, ...)",
@@ -61,23 +61,11 @@ def backend_required(st):
         ("every list / record on screen through LiveQuery (live: refreshes every 15 s, on a push and after writes)",
          r"LiveQuery<"),
     ]
-    calls = {
-        "none": [],
-        "phone_password": ["signUp", "signIn"],
-        "email_password": ["signUp", "signIn"],
-        "password": ["signUp", "signIn"],
-        "code": ["sendLoginCode", "verifyLoginCode"],
-        "password_code": ["signUp", "verifySignUpCode", "resendSignUpCode", "signIn"],
-        "phone_email_code": ["signUp", "verifySignUpCode", "resendSignUpCode", "signIn"],
-    }[mode]
-    for c in calls:
-        req.append((f"the sign-in screens call Backend.{c}(...) (see the sign-in rules of the contract)",
-                    rf"Backend\.{c}\b"))
     if mode != "none":
         req.append(("a sign-out button: Backend.signOut()", r"Backend\.signOut\b"))
-    if role == "admin":
-        req.append(("the 'دخول الإدارة' PIN screen when Backend.isAdmin is false after sign-in: Backend.claimAdmin(pin)",
-                    r"Backend\.claimAdmin\b"))
+    if mode == "phone_password" and role == "admin":
+        req.append(("'تغيير كلمة مرور زبون' (customer phone + new password): Backend.setCustomerPassword(phone, pw)",
+                    r"Backend\.setCustomerPassword\b"))
     # Every table this app works with must really be read or written on its screens.
     personal = re.compile(r"favou?rite|wishlist|cart|bookmark", re.I)
     by_name = {t.get("name"): t for t in (st.get("contract") or {}).get("tables", [])}
@@ -98,13 +86,13 @@ def backend_required(st):
 # flag, their own REST client with a cut key, buttons that do nothing).
 OWN_SERVER = ("its own connection to the server: main.dart must NOT import package:http or contain a Supabase URL, "
               "key, /rest/v1 or /auth/v1 path; every call goes through Backend.* from backend.dart")
-REDEFINED = ("a second copy of backend.dart: do not define class Backend, T, LiveQuery or BackendException in "
-             "main.dart; import 'backend.dart' and use them")
+REDEFINED = ("a second copy of backend.dart / auth_screens.dart: do not define class Backend, T, LiveQuery, "
+             "BackendException, AuthGate or AuthBrand in main.dart; import the files and use them")
 FLAG_SIGNIN = ("a sign-in flag of its own (isLoggedIn / isAuthenticated / signedIn = true): the signed-in state is "
                "ONLY Backend.session / Backend.signedIn, set by a real Backend sign-in")
 BACKEND_FORBIDDEN = [
     (OWN_SERVER, r"package:http/|/rest/v1|/auth/v1|supabase\.co"),
-    (REDEFINED, r"(?m)^\s*class\s+(Backend|T|LiveQuery|BackendException)\b"),
+    (REDEFINED, r"(?m)^\s*class\s+(Backend|T|LiveQuery|BackendException|AuthGate|AuthBrand)\b"),
     (FLAG_SIGNIN, r"(?i)\b_?(is_?)?(logged_?in|signed_?in|authenticated|loggedin)\w*\s*=\s*true\b"),
 ]
 

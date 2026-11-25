@@ -32,8 +32,10 @@ def prepare(app, proj):
     if not orig.exists():
         shutil.copy(proj / "pubspec.yaml", orig)
     shutil.copy(orig, proj / "pubspec.yaml")
-    for f in (app / "lib").glob("*.dart"):  # main.dart plus helpers such as firebase_config.dart
-        shutil.copy(f, proj / "lib" / f.name)
+    for f in (app / "lib").rglob("*.dart"):  # main.dart, helpers, and lib/screens/* of a multi-file app
+        dest = proj / f.relative_to(app)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(f, dest)
     deps = read_deps("flutter", app)
     if deps:
         print(f"Adding packages: {' '.join(deps)}", flush=True)
@@ -41,8 +43,8 @@ def prepare(app, proj):
     return run(["flutter", "pub", "get"], proj)
 
 
-def analyze(proj):
-    code, out = run(["flutter", "analyze", "--no-fatal-infos", "--no-fatal-warnings", "lib/main.dart"], proj)
+def analyze(proj, target="lib/main.dart"):
+    code, out = run(["flutter", "analyze", "--no-fatal-infos", "--no-fatal-warnings", target], proj)
     errors = [l.strip() for l in out.splitlines() if l.strip().startswith("error")]
     return code == 0, "\n".join(errors) or out[-4000:]
 
@@ -72,20 +74,25 @@ def main():
     rounds = int(args[args.index("--rounds") + 1]) if "--rounds" in args else 2
     app, proj = Path(args[0]), Path(args[1])
     code_file = app / "lib" / "main.dart"
+    import flutter_multi
+    multi = flutter_multi.is_multi(app)  # built screen by screen: check every file, fix the ones with errors
+    target = "lib" if multi else "lib/main.dart"
 
     for r in range(rounds + 1):
         ok, log = prepare(app, proj)
         if ok != 0:
             problems = "Packages could not be added:\n" + log[-3000:]
         else:
-            before = (proj / "lib" / "main.dart").read_text(encoding="utf-8")
+            mine = list(flutter_multi.own_files(app)) if multi else ["lib/main.dart"]
+            before = {rel: (proj / rel).read_text(encoding="utf-8") for rel in mine}
             run(["dart", "fix", "--apply", "lib"], proj)
-            after = (proj / "lib" / "main.dart").read_text(encoding="utf-8")
-            if after != before:
-                code_file.write_text(after, encoding="utf-8")
-                print("Applied `dart fix` to main.dart", flush=True)
-            clean, problems = analyze(proj)
-            if not clean:
+            for rel in mine:
+                after = (proj / rel).read_text(encoding="utf-8")
+                if after != before[rel]:
+                    (app / rel).write_text(after, encoding="utf-8")
+                    print(f"Applied `dart fix` to {Path(rel).name}", flush=True)
+            clean, problems = analyze(proj, target)
+            if not clean and not multi:
                 clean, problems = try_memory(app, proj, code_file, problems)
             if clean:
                 print("Flutter check passed", flush=True)
@@ -94,7 +101,11 @@ def main():
         if r == rounds:
             break
         try:
-            fix("flutter", code_file, problems, use_memory=False)
+            if multi:
+                from fix_native import fix_app
+                fix_app(app, problems)
+            else:
+                fix("flutter", code_file, problems, use_memory=False)
         except SystemExit as e:  # no API key, or every model/key failed: retrying won't help now
             print(f"Warning: AI fix failed ({e})", flush=True)
             break

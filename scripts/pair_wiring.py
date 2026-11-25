@@ -222,7 +222,11 @@ def missing(app):
     st = state(app)
     if not st:
         return []
-    code = code_path(app, st).read_text(encoding="utf-8", errors="ignore")
+    import flutter_multi
+    if flutter_multi.is_multi(ROOT / "apps" / app):  # built screen by screen: the checks read every file
+        code = flutter_multi.all_code(ROOT / "apps" / app)
+    else:
+        code = code_path(app, st).read_text(encoding="utf-8", errors="ignore")
     if uses_backend(app, st):
         gaps = [d for d, rx in backend_required(st) if not re.search(rx, code)]
         for d, rx in BACKEND_FORBIDDEN + FORBIDDEN:
@@ -300,6 +304,27 @@ def ai_complete(app, gaps):
     if not keys:
         print("No Gemini key: cannot add the missing pieces", flush=True)
         return False
+    import flutter_multi as fm
+    app_dir = ROOT / "apps" / app
+    if fm.is_multi(app_dir):  # several files: send them all, take back only the changed ones
+        before = fm.snapshot(app_dir)
+        files, _ = fm.ask_files(
+            lambda p: call_gemini(os.environ.get("GEMINI_MODEL") or "gemini-3.8-flash", p, keys, temperature=0.2,
+                                  json_mode=False),
+            f"This is the {st['role'].upper()} app of a connected pair. FIX these so it is complete and really "
+            f"connected, exactly as the contract below says, wired into the existing screens; keep everything else:\n- "
+            + "\n- ".join(gaps) + f"\n\n{rules_for(st['lang'])}\n\n{pair.contract_text(st, st['role'])}\n\n"
+            f"THE APP'S FILES:\n{fm.bundle(before)}\n{fm.FILES_REPLY}")
+        if not files:
+            print("The AI reply had no file: not used", flush=True)
+            return False
+        fm.write(app_dir, files)
+        errs = problems(app, st)
+        if errs:
+            print(f"The completed code does not check clean, keeping the previous version:\n{errs[-1500:]}", flush=True)
+            fm.restore(app_dir, before)
+            return False
+        return True
     model = os.environ.get("GEMINI_MODEL") or "gemini-3.8-flash"
     fence = FENCE[st["lang"]]
     rules = rules_for(st["lang"]) if st["lang"] in LANGS else ""

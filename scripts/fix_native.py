@@ -2,6 +2,7 @@
 
 Usage: python scripts/fix_native.py flutter|python path/to/code path/to/build.log
 """
+import json
 import os
 import re
 import sys
@@ -66,8 +67,44 @@ CURRENT {cfg['code_file']}:
     print(f"Applied AI fix to {cfg['code_file']}")
 
 
+def fix_app(app_dir, log_text):
+    """A Flutter app built screen by screen (scripts/flutter_multi.py): the AI gets every file and the errors, and
+    answers with only the files it changes."""
+    import flutter_multi as fm
+    app_dir = Path(app_dir)
+    keys = gemini_keys(os.environ)
+    if not keys:
+        raise SystemExit("No Gemini API key in repository secrets")
+    model = os.environ.get("GEMINI_MODEL") or DEFAULT_MODEL
+    contract = ""
+    if (app_dir / "pair.json").exists():
+        import pair
+        st = json.loads((app_dir / "pair.json").read_text(encoding="utf-8"))
+        contract = pair.contract_text(st, st["role"])
+    prompt = fm.FIX_FILES.format(rules=rules_for("flutter"), errors=error_excerpt(log_text),
+                                 deps=", ".join(read_deps("flutter", app_dir)) or "none",
+                                 files=fm.bundle(fm.own_files(app_dir)), contract=contract, files_reply=fm.FILES_REPLY)
+    files, deps = fm.ask_files(lambda p: call_gemini(model, p, keys, temperature=0.2, json_mode=False), prompt)
+    if not files:
+        raise ValueError("Model returned no file")
+    fm.write(app_dir, files)
+    if deps is not None:
+        write_deps("flutter", app_dir, clean_deps("flutter", deps))
+        if (app_dir / "lib" / "backend.dart").exists():
+            import flutter_backend
+            flutter_backend.ensure_deps(app_dir)
+    print(f"Applied AI fix to {', '.join(files)}")
+
+
 def main():
     log_text = Path(sys.argv[3]).read_text(encoding="utf-8", errors="replace")
+    code = Path(sys.argv[2])
+    if sys.argv[1] == "flutter":
+        import flutter_multi
+        app_dir = code.parent.parent if code.name == "main.dart" else code
+        if flutter_multi.is_multi(app_dir):  # several files: fix the ones the errors point at
+            fix_app(app_dir, log_text)
+            return
     fix(sys.argv[1], sys.argv[2], log_text)
 
 

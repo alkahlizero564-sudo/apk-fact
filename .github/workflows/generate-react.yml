@@ -30,6 +30,8 @@ jobs:
           GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
           GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+          # Busy Gemini (503 high demand): keep trying 20 minutes before failing the whole generation.
+          GEMINI_PATIENCE_SECONDS: "1200"
       - name: Commit
         run: |
           git config user.name "bot"

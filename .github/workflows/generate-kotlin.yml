@@ -16,7 +16,7 @@ concurrency: generate-kotlin
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -45,6 +45,8 @@ jobs:
           GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
           GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+          # Busy Gemini (503 high demand): keep trying 20 minutes before failing the whole generation.
+          GEMINI_PATIENCE_SECONDS: "1200"
         run: python scripts/generate_native.py kotlin
       - name: Commit result
         run: |

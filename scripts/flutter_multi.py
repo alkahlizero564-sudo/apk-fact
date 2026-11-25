@@ -115,7 +115,8 @@ APP REQUEST:
 {task}
 {design}
 Reply with JSON only:
-{{"theme": {{"seed": "#RRGGBB primary color from the design", "notes": "fonts, corner radius, card style, spacing"}},
+{{"theme": {{"seed": "#RRGGBB primary color from the design", "style": "luxe | simple | modern — the design's personality",
+   "notes": "corner radius, card style, spacing, which ui_kit sections each main screen uses"}},
  "screens": [{{"file": "lib/screens/<snake_case>_screen.dart", "class": "<PascalCase>Screen",
    "args": "constructor arguments, e.g. `required Map<String, dynamic> product` or empty",
    "title": "Arabic title", "purpose": "what the user does here, in detail",
@@ -131,8 +132,8 @@ SHELL = """{rules}
 Write the SHELL of this Flutter app: lib/main.dart and lib/ui.dart. The screens are written separately, by other
 engineers, from the plan below — import them, use their constructors exactly as planned, never write them here.
 lib/main.dart: imports ('backend.dart', 'auth_screens.dart', 'ui_kit.dart', 'ui.dart', every 'screens/<file>.dart'),
-main() with Backend.init(), MaterialApp (theme: appTheme(seed: <the design's primary color>, fontFamily: ...),
-darkTheme: appTheme(..., brightness: Brightness.dark), scaffoldMessengerKey: Backend.messengerKey),
+main() with Backend.init(), MaterialApp (theme: appTheme(seed: <the plan's seed>, style: KitStyle.<the plan's style>),
+darkTheme: appTheme(seed: ..., style: ..., brightness: Brightness.dark), scaffoldMessengerKey: Backend.messengerKey),
 home: AuthGate(brand: AuthBrand(...), home: const MainShell()), and MainShell = AppNavShell(tabs: [NavTab(...)]) with
 the "nav" screens in order and badge: Backend.unread on the notifications tab.
 lib/ui.dart: ONLY the app-specific pieces of the plan ("shared") that ui_kit.dart does not already have, composed

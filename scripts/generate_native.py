@@ -231,7 +231,11 @@ def main_multi(name, base, task, raw_task, model, keys):
     rules = (rules_for(lang).replace("in a single file lib/main.dart",
                                      "in several files (lib/main.dart, lib/ui.dart and one file per screen in lib/screens/)")
              + f"\n\n{DESIGN_BRIEF}\n\n{PERMISSIONS_RULE}\n\n{NO_REVIEW_CHROME}")
-    contract = pair_edit_rules(name)
+    # The contract is read directly (not through `pair.py contract`, whose failure used to come back as an empty
+    # string): an error in it must stop the generation, never build an app without its contract.
+    import pair
+    st = json.loads((base / "pair.json").read_text(encoding="utf-8"))
+    contract = pair.contract_text(st, st["role"])
     design = base / "design.html"
     design_html = design.read_text(encoding="utf-8")[:90000] if design.exists() else ""
 

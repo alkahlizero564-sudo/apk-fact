@@ -109,6 +109,8 @@ jobs:
             # Copy the (possibly fixed) code and packages in, apply dart fix, analyze, AI-fix errors.
             python scripts/check_flutter.py "$SRC" "$PROJ" --rounds 1 || echo "Check not clean, building anyway"
             python scripts/updater.py inject flutter "$PROJ" "$APP" "$VERSION"
+            # The professional Arabic font of the app's design style (scripts/app_fonts.py; never fails the build).
+            python scripts/app_fonts.py "$SRC" "$PROJ" || true
             set +e
             (cd "$PROJ" && flutter build apk --release --build-number "$VERSION" --build-name "1.0.$VERSION") 2>&1 | tee "$RUNNER_TEMP/build.log"
             STATUS=${PIPESTATUS[0]}

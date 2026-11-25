@@ -54,6 +54,11 @@ def build_web(app, work):
     if code:
         log(f"packages failed, skipped: {out[-300:]}")
         return None
+    try:  # the real font, so the reviewer sees what the phone shows
+        import app_fonts
+        app_fonts.bundle(ROOT / "apps" / app, proj)
+    except Exception as e:
+        log(f"font not bundled ({e})")
     r = subprocess.run(["flutter", "build", "web", "--release", "--no-web-resources-cdn"], cwd=proj,
                        capture_output=True, text=True, timeout=900)
     if r.returncode:

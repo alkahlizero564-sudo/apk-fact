@@ -119,6 +119,22 @@ def _list_literals(code):
         yield code[m.start():i + 1]
 
 
+STYLE = "[design system] "
+RAW_WIDGETS = re.compile(r"\b(ElevatedButton|OutlinedButton|FilledButton|TextFormField|TextField|BottomNavigationBar|"
+                         r"AlertDialog)\s*[.(]|(?<![\w.])Card\s*\(")
+
+
+def style_gaps(app_dir, code):
+    """Raw Material widgets used instead of ui_kit.dart components (only for apps that have ui_kit.dart)."""
+    if not (Path(app_dir) / "lib" / "ui_kit.dart").exists():
+        return []
+    raw = sorted({m.group(1) or "Card" for m in RAW_WIDGETS.finditer(code)})
+    if not raw:
+        return []
+    return [f"{STYLE}raw widgets drawn by hand ({', '.join(raw)}): replace them with the ui_kit.dart components "
+            f"(AppButton, AppField, AppCard, AppNavShell, confirmAction...) so the app matches its design system"]
+
+
 def fake_data(code):
     """Descriptions of typed-in business data / dead buttons found in the code (empty when it is clean)."""
     gaps = []
@@ -232,7 +248,7 @@ def missing(app):
         for d, rx in BACKEND_FORBIDDEN + FORBIDDEN:
             if re.search(rx, code) and d not in gaps:
                 gaps.append(d)
-        return gaps + fake_data(code)
+        return gaps + fake_data(code) + style_gaps(ROOT / "apps" / app, code)
     gaps = [d for d, rx in required(st) if not re.search(rx, code)]
     for d, rx in FORBIDDEN:
         if re.search(rx, code) and d not in gaps:
@@ -377,7 +393,9 @@ def fix(app, strict=False):
         if not gaps:
             print(f"{app}: connected now", flush=True)
             return 0
-    if strict:
+    hard = [g for g in gaps if not g.startswith(STYLE)]  # design-system notes never refuse an app
+    if strict and hard:
+        gaps = hard
         print(f"::error::{app} is not a complete working app yet, so it was not saved. Still missing:\n- "
               + "\n- ".join(gaps), flush=True)
         raise SystemExit(f"التطبيق {app} لسه ناقص، فما اتحفظ عشان ما يوصلك تطبيق شكله جاهز وهو ما شغال. "

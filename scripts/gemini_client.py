@@ -185,7 +185,79 @@ def model_order(model, keys):
     return [model] + sorted(rest - {model}, key=rank_key)
 
 
+# ---- Claude first when the owner gave a key (APK Fact > الإعدادات > Claude, synced as the CLAUDE_API_KEY secret) ----
+# A much stronger designer and coder than the free Gemini models. Any failure (no credit, overloaded, a bad key, a
+# timeout) falls through to the Gemini chain below, so a Claude problem never stops the work; a key that has no
+# credit or is invalid is not tried again for the rest of the job.
+CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL") or "claude-sonnet-5-5"
+_CLAUDE_OFF = os.path.join(os.environ.get("RUNNER_TEMP") or tempfile.gettempdir(), "claude-off")
+
+
+def claude_key():
+    k = (os.environ.get("CLAUDE_API_KEY") or os.environ.get("ANTHROPIC_API_KEY") or "").strip()
+    return k if k and os.environ.get("USE_CLAUDE", "1") != "0" and not os.path.exists(_CLAUDE_OFF) else ""
+
+
+def _claude_request(prompt, key, temperature, json_mode, images):
+    content = [{"type": "image", "source": {"type": "base64", "media_type": mime, "data": data}}
+               for data, mime in (images or [])]
+    text = prompt + ("\n\nReply with the JSON only, no other text." if json_mode else "")
+    body = {"model": CLAUDE_MODEL, "max_tokens": 32000, "temperature": temperature, "stream": True,
+            "messages": [{"role": "user", "content": content + [{"type": "text", "text": text}]}]}
+    req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=json.dumps(body).encode("utf-8"),
+                                 headers={"Content-Type": "application/json", "x-api-key": key,
+                                          "anthropic-version": "2023-06-01"})
+    out = []
+    try:
+        with urllib.request.urlopen(req, timeout=STALL_SECONDS) as r:
+            for raw in r:  # server-sent events: text arrives as content_block_delta
+                line = raw.decode("utf-8", "replace").strip()
+                if not line.startswith("data:"):
+                    continue
+                try:
+                    ev = json.loads(line[5:].strip())
+                except ValueError:
+                    continue
+                if ev.get("type") == "content_block_delta" and ev.get("delta", {}).get("type") == "text_delta":
+                    out.append(ev["delta"]["text"])
+                elif ev.get("type") == "error":
+                    raise GeminiError(-1, json.dumps(ev.get("error")))
+    except urllib.error.HTTPError as e:
+        raise GeminiError(e.code, e.read().decode("utf-8", "replace"))
+    except GeminiError:
+        raise
+    except Exception as e:
+        raise GeminiError(0, str(e))
+    t = "".join(out).strip()
+    if not t:
+        raise GeminiError(-1, "empty Claude response")
+    if json_mode:  # tolerate ```json fences / a sentence around the object
+        m = re.search(r"[\[{].*[\]}]", t, re.S)
+        t = m.group(0) if m else t
+    return t
+
+
+def _try_claude(prompt, temperature, json_mode, images):
+    key = claude_key()
+    if not key:
+        return None
+    try:
+        return _claude_request(prompt, key, temperature, json_mode, images)
+    except GeminiError as e:
+        body = e.body.lower()
+        print(f"Claude [{CLAUDE_MODEL}] failed ({e.status}): {e.body[:200]} — using Gemini", flush=True)
+        if e.status in (401, 403) or "credit" in body or "billing" in body or e.status == 404:
+            try:
+                open(_CLAUDE_OFF, "w").close()  # no credit / bad key / unknown model: not again in this job
+            except OSError:
+                pass
+        return None
+
+
 def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=5, json_mode=True, images=None):
+    first = _try_claude(prompt, temperature, json_mode, images)
+    if first is not None:
+        return first
     models = model_order(model, keys)
     started = time.time()
     # A caller asking for one quick try (max_rounds=1, optional AI steps) is never made patient.

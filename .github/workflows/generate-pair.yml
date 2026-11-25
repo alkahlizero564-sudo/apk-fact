@@ -56,9 +56,9 @@ jobs:
       AI_PROVIDER: gemini
       # A model that sends nothing for 3 minutes is stuck; move to the next one instead of waiting 5.
       GEMINI_STALL_SECONDS: "180"
-      # The pair wiring check after each app: one AI try (the build checks it again), not two long ones. It took 12-21
-      # minutes per app and often still missed the same piece.
-      PAIR_FIX_QUICK: "1"
+      # An app that is still not complete and working after the AI fixes (sign-in, real data from the tables, inbox,
+      # notifications, no typed-in data or dead buttons: scripts/pair_wiring.py) is refused, not saved.
+      PAIR_STRICT: "1"
       BASE: ${{ inputs.base }}
     steps:
       - uses: actions/checkout@v4

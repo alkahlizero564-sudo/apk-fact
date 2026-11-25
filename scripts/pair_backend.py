@@ -160,6 +160,20 @@ create policy "{p} notifications send" on public.{p}_notifications for insert to
 drop policy if exists "{p} notifications mark read" on public.{p}_notifications;
 create policy "{p} notifications mark read" on public.{p}_notifications for update to authenticated
   using (to_user = auth.uid() or (to_role = 'admin' and public.{p}_is_admin()));
+
+-- Files (product pictures, payment receipts, documents): Backend.uploadFile in the apps. Public read so an image URL
+-- works in Image.network; signed-in users upload into their own folder (uploads/<uid>/...), admins anywhere.
+insert into storage.buckets (id, name, public) values ('{p.replace('_', '-')}-files', '{p.replace('_', '-')}-files', true)
+  on conflict (id) do update set public = true;
+drop policy if exists "{p} files read" on storage.objects;
+create policy "{p} files read" on storage.objects for select using (bucket_id = '{p.replace('_', '-')}-files');
+drop policy if exists "{p} files upload" on storage.objects;
+create policy "{p} files upload" on storage.objects for insert to authenticated
+  with check (bucket_id = '{p.replace('_', '-')}-files'
+              and ((storage.foldername(name))[2] = auth.uid()::text or public.{p}_is_admin()));
+drop policy if exists "{p} files delete" on storage.objects;
+create policy "{p} files delete" on storage.objects for delete to authenticated
+  using (bucket_id = '{p.replace('_', '-')}-files' and (owner = auth.uid() or public.{p}_is_admin()));
 """
 
 

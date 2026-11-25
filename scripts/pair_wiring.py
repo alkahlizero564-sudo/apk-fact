@@ -35,6 +35,123 @@ def code_path(app, st):
     return ROOT / "apps" / app / CODE_FILE[st["lang"]]
 
 
+def uses_backend(app, st):
+    """A Flutter pair app on the fixed lib/backend.dart (scripts/flutter_backend.py)."""
+    return st["lang"] == "flutter" and (ROOT / "apps" / app / "lib" / "backend.dart").exists()
+
+
+def backend_required(st):
+    """What main.dart must call when the connection is lib/backend.dart."""
+    import pair
+    import flutter_backend
+    role, mode = st["role"], pair.state_login(st)[st["role"]]
+    req = [
+        ("`import 'backend.dart';` at the top of main.dart — it is the app's only connection to the server",
+         r"import\s+['\"]backend\.dart['\"]"),
+        ("`await Backend.init();` in main() before runApp", r"Backend\.init\b"),
+        ("MaterialApp(scaffoldMessengerKey: Backend.messengerKey, ...)", r"scaffoldMessengerKey:\s*Backend\.messengerKey"),
+        ("the first screen follows Backend.session (ValueListenableBuilder<bool>): signed out -> sign-in screens, "
+         "signed in -> home", r"Backend\.session\b"),
+        ("a notifications inbox screen: LiveQuery with Backend.inbox(), tap -> Backend.markRead(id)",
+         r"Backend\.inbox\b"),
+        ("the unread badge on a bell: ValueListenableBuilder<int>(valueListenable: Backend.unread, ...)",
+         r"Backend\.unread\b"),
+        ("Backend.notify(toRole: ... / toUser: ...) after every write the other app must know about",
+         r"Backend\.notify\b"),
+        ("every list / record on screen through LiveQuery (live: refreshes every 15 s, on a push and after writes)",
+         r"LiveQuery<"),
+    ]
+    calls = {
+        "none": [],
+        "phone_password": ["signUp", "signIn"],
+        "email_password": ["signUp", "signIn"],
+        "password": ["signUp", "signIn"],
+        "code": ["sendLoginCode", "verifyLoginCode"],
+        "password_code": ["signUp", "verifySignUpCode", "resendSignUpCode", "signIn"],
+        "phone_email_code": ["signUp", "verifySignUpCode", "resendSignUpCode", "signIn"],
+    }[mode]
+    for c in calls:
+        req.append((f"the sign-in screens call Backend.{c}(...) (see the sign-in rules of the contract)",
+                    rf"Backend\.{c}\b"))
+    if mode != "none":
+        req.append(("a sign-out button: Backend.signOut()", r"Backend\.signOut\b"))
+    if role == "admin":
+        req.append(("the 'دخول الإدارة' PIN screen when Backend.isAdmin is false after sign-in: Backend.claimAdmin(pin)",
+                    r"Backend\.claimAdmin\b"))
+    # Every table this app works with must really be read or written on its screens.
+    personal = re.compile(r"favou?rite|wishlist|cart|bookmark", re.I)
+    by_name = {t.get("name"): t for t in (st.get("contract") or {}).get("tables", [])}
+    for dart, table in flutter_backend.table_consts(st)[2:]:
+        t = by_name.get(table, {})
+        owner = str(t.get("owner", "")).lower()
+        if role == "customer" and owner == "admin":
+            continue
+        if role == "admin" and owner == "customer" and personal.search(table):
+            continue
+        req.append((f"real screens for {table} ({t.get('purpose', '')}): read it with Backend.list(T.{dart}) in a "
+                    f"LiveQuery and write it with Backend.insert/update/delete(T.{dart}, ...) where this app changes it",
+                    rf"\bT\.{dart}\b"))
+    return req
+
+
+# Things a backend.dart app must not do itself (the diala apps: data typed into the code, a sign-in that only set a
+# flag, their own REST client with a cut key, buttons that do nothing).
+OWN_SERVER = ("its own connection to the server: main.dart must NOT import package:http or contain a Supabase URL, "
+              "key, /rest/v1 or /auth/v1 path; every call goes through Backend.* from backend.dart")
+REDEFINED = ("a second copy of backend.dart: do not define class Backend, T, LiveQuery or BackendException in "
+             "main.dart; import 'backend.dart' and use them")
+FLAG_SIGNIN = ("a sign-in flag of its own (isLoggedIn / isAuthenticated / signedIn = true): the signed-in state is "
+               "ONLY Backend.session / Backend.signedIn, set by a real Backend sign-in")
+BACKEND_FORBIDDEN = [
+    (OWN_SERVER, r"package:http/|/rest/v1|/auth/v1|supabase\.co"),
+    (REDEFINED, r"(?m)^\s*class\s+(Backend|T|LiveQuery|BackendException)\b"),
+    (FLAG_SIGNIN, r"(?i)\b_?(is_?)?(logged_?in|signed_?in|authenticated|loggedin)\w*\s*=\s*true\b"),
+]
+
+# Business data typed into the code instead of read from the tables.
+DATA_KEYS = re.compile(r"""['"](price|total|amount|qty|quantity|status|customer\w*|phone|email|stock|sales|balance|"""
+                       r"""address|sku|rating|order\w*|date|created_at|cost|paid|due)['"]\s*:""", re.I)
+MONEY = re.compile(r"""['"][^'"\n]*?\d[\d,٬.]*\s*(ج\.?\s?س|جنيه|SDG|EGP|ج\.م|ريال|ر\.س|درهم|دينار|USD|\$)[^'"\n]*['"]""")
+EMPTY_ACTION = re.compile(r"(onPressed|onTap|onChanged|onSubmitted|onLongPress)\s*:\s*\([^)]*\)\s*(\{\s*\}|=>\s*(\{\s*\}|null))")
+
+
+def _list_literals(code):
+    """Yields the text of each list literal that starts with a map: [ {...}, ... ]."""
+    for m in re.finditer(r"\[\s*(const\s*)?\{", code):
+        depth, i = 0, m.start()
+        while i < len(code):
+            c = code[i]
+            if c in "[{(":
+                depth += 1
+            elif c in "]})":
+                depth -= 1
+                if depth == 0:
+                    break
+            i += 1
+        yield code[m.start():i + 1]
+
+
+def fake_data(code):
+    """Descriptions of typed-in business data / dead buttons found in the code (empty when it is clean)."""
+    gaps = []
+    # Two or more maps carrying at least two different business fields (a status filter list has only 'status').
+    lists = [l for l in _list_literals(code)
+             if l.count("{") >= 2 and len({k.lower() for k in DATA_KEYS.findall(l)}) >= 2]
+    if lists:
+        first = next((x.strip() for x in lists[0].split("\n") if ":" in x), lists[0])[:80]
+        gaps.append(f"business data typed into the code ({len(lists)} list(s), e.g. `{first}`): remove these lists; "
+                    f"read the rows from the tables with Backend.list(...) in a LiveQuery (empty state when none)")
+    money = sorted(set(m.group(0) for m in MONEY.finditer(code)))
+    if money:
+        gaps.append(f"made-up amounts written in the code ({', '.join(money[:4])}): every amount, price, fee and "
+                    f"total must come from the tables (or be computed from their rows)")
+    empty = EMPTY_ACTION.findall(code)
+    if empty:
+        gaps.append(f"{len(empty)} button(s)/field(s) with an empty action (onPressed: () {{}}): give each its real "
+                    f"action (Backend insert/update/delete, navigation, a file picker) or remove it")
+    return gaps
+
+
 def required(st):
     """(description for the AI, regex that must match the code)."""
     p, lang, role = st["prefix"], st["lang"], st["role"]
@@ -60,10 +177,8 @@ def required(st):
                     f"returns false)", rf"{p}_claim_admin"))
     import pair
     mode, fn = pair.state_login(st)[role], f"{p.replace('_', '-')}-auth"
-    if role == "admin" and mode not in ("none", "phone_password"):
-        req.append((f"the admin login must accept ONLY an admin email: call rpc {p}_is_admin_email with the typed "
-                    f"email BEFORE sending any code or signing in, and refuse other emails with a clear message "
-                    f"(never send them a code)", rf"{p}_is_admin_email"))
+    # (An old rule here required an is_admin_email check while ADMIN_OPEN below forbids it: no AI fix could ever
+    # satisfy both, so shauager-admin and diala-admin always ended "still misses". The admin app is open.)
     if mode in pair.VIA_FUNCTION:
         req.append((f"the sign-up of the contract: POST <SUPABASE_URL>/functions/v1/{fn} with action \"signup\" "
                     f"(name, {'phone' if mode == 'phone_password' else 'email'}, password)", rf"{fn}"))
@@ -120,6 +235,12 @@ def missing(app):
     if not st:
         return []
     code = code_path(app, st).read_text(encoding="utf-8", errors="ignore")
+    if uses_backend(app, st):
+        gaps = [d for d, rx in backend_required(st) if not re.search(rx, code)]
+        for d, rx in BACKEND_FORBIDDEN + FORBIDDEN:
+            if re.search(rx, code) and d not in gaps:
+                gaps.append(d)
+        return gaps + fake_data(code)
     gaps = [d for d, rx in required(st) if not re.search(rx, code)]
     for d, rx in FORBIDDEN:
         if re.search(rx, code) and d not in gaps:
@@ -221,7 +342,9 @@ def ai_complete(app, gaps):
     return True
 
 
-def fix(app):
+def fix(app, strict=False):
+    """strict (generation): an app that still misses pieces after the AI tries is refused (exit 1), so it is never
+    saved and handed over as if it worked."""
     st = state(app)
     if not st:
         print(f"{app} is not part of a connected pair")
@@ -241,8 +364,13 @@ def fix(app):
         if not gaps:
             print(f"{app}: connected now", flush=True)
             return 0
+    if strict:
+        print(f"::error::{app} is not a complete working app yet, so it was not saved. Still missing:\n- "
+              + "\n- ".join(gaps), flush=True)
+        raise SystemExit(f"التطبيق {app} لسه ناقص، فما اتحفظ عشان ما يوصلك تطبيق شكله جاهز وهو ما شغال. "
+                         f"الناقص: " + "؛ ".join(g.split(":")[0] for g in gaps[:6]))
     print(f"::warning::{app} still misses: " + "; ".join(gaps), flush=True)
-    return 0  # never fails a build or a generation
+    return 0  # a build never fails here
 
 
 def main():

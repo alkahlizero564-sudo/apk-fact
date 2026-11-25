@@ -694,6 +694,17 @@ def contract_text(st, role):
     lang, push = st["lang"], st["push"]
     other = "admin" if role == "customer" else "customer"
     tables = json.dumps(st.get("contract", {}), ensure_ascii=False, indent=1)
+    if lang == "flutter" and (ROOT / "apps" / app_name(st["pair"], role) / "lib" / "backend.dart").exists():
+        # Flutter pairs: the whole connection is the fixed lib/backend.dart (scripts/flutter_backend.py); the AI
+        # writes only the screens and calls it.
+        import flutter_backend
+        return (f"\n=== CONNECTED PAIR CONTRACT (follow exactly) ===\nThis is the {role.upper()} app of a pair; the "
+                f"{other} app is built separately against the SAME backend (Supabase).\n"
+                + flutter_backend.api_doc(st, role)
+                + f"\nThe tables (columns, who owns them) and the events that send notifications:\n{tables}\n"
+                f"Build the complete {role} experience for this business with real screens backed by these tables "
+                f"(the admin app manages everything and changes statuses; the customer app browses, creates and "
+                f"follows its own records).\n")
     push_rules = {
         "html": (
             "Push notifications (Capacitor, Android): when `window.Capacitor` exists use `const { PushNotifications } = "
@@ -796,6 +807,9 @@ def cmd_generate(a):
         f.write(f"{name}\n{related}{request}\n\n(request id: {int(time.time())})\n")
         req = f.name
     env = {**os.environ, "REQUEST_FILE": req}
+    if lang == "flutter":
+        import flutter_backend
+        flutter_backend.write(name)  # lib/backend.dart and its packages, before the AI writes main.dart
     if lang in ("html", "react"):
         # React, like HTML, is one self-contained index.html built by generate.js (React via CDN).
         if lang == "react":
@@ -803,10 +817,13 @@ def cmd_generate(a):
         subprocess.run(["node", str(ROOT / "generate.js")], cwd=ROOT, env=env, check=True)
     else:
         subprocess.run([sys.executable, str(ROOT / "scripts" / "generate_native.py"), lang], cwd=ROOT, env=env, check=True)
+    if lang == "flutter":
+        flutter_backend.write(name)  # again: the newest template, and its packages after the AI's own list
     print(f"Generated {name}", flush=True)
-    # The two apps must really be connected: every piece of the contract in the code (scripts/pair_wiring.py).
+    # The two apps must really be connected and really work: every piece of the contract in the code, real data,
+    # real sign-in (scripts/pair_wiring.py). At generation an app that still fails this is NOT saved.
     import pair_wiring
-    pair_wiring.fix(name)
+    pair_wiring.fix(name, strict=os.environ.get("PAIR_STRICT") == "1")
 
 
 def edit_rules(app):

@@ -293,6 +293,11 @@ App name: {name}
                        f"generic layout — the installed app must match this design screen for screen. {NO_REVIEW_CHROME} "
                        f"Make every "
                        f"screen fully functional with real state and stored data.\n"
+                       + ("The names, people, products, prices, numbers, totals and records shown in the design are "
+                          "SAMPLE data that only show the layout: never copy them into the code; show the real rows "
+                          "from the backend (lib/backend.dart) in exactly that layout, and an empty state when there "
+                          "are none yet.\n" if (base / "lib" / "backend.dart").exists() else "")
+                       + 
                        f"```html\n{design_html}\n```\n")
 
     blocks, deps = parse_reply(call_gemini(model, prompt, keys, temperature=0.4, json_mode=False))
@@ -354,6 +359,9 @@ App name: {name}
     qa_preview_html(base, model, keys)
     deps = clean_deps(lang, deps) or (read_deps(lang, base) if existing else [])
     write_deps(lang, base, deps)
+    if (base / "lib" / "backend.dart").exists():  # a pair app: the packages backend.dart needs stay listed
+        import flutter_backend
+        flutter_backend.ensure_deps(base)
     try:  # Android permissions the description asks for (apps/<name>/perms.txt)
         import perms
         perms.save(name, raw_task)

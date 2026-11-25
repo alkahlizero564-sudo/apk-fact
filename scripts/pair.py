@@ -824,6 +824,13 @@ def cmd_generate(a):
     # real sign-in (scripts/pair_wiring.py). At generation an app that still fails this is NOT saved.
     import pair_wiring
     pair_wiring.fix(name, strict=os.environ.get("PAIR_STRICT") == "1")
+    # Then run it, look at every screen, fix what a user would notice, look again (scripts/qa_flutter_web.py).
+    if lang == "flutter" and os.environ.get("PAIR_VISUAL_QA") == "1":
+        import qa_flutter_web
+        try:
+            qa_flutter_web.run(name, rounds=int(os.environ.get("PAIR_VISUAL_QA_ROUNDS") or 1))
+        except Exception as e:  # never fails the generation
+            print(f"Visual QA: stopped ({e})", flush=True)
 
 
 def edit_rules(app):

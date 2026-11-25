@@ -365,6 +365,22 @@ def api_keys(ref, token):
     )
 
 
+def service_key(ref, token):
+    """The project's server key (legacy service_role JWT, or a secret sb_secret_... key), for admin-only calls such
+    as creating the temporary QA account. Never put it in an app. None when it cannot be read."""
+    try:
+        keys = _key_list(_request("GET", f"/projects/{ref}/api-keys?reveal=true", token))
+    except RuntimeError:
+        return None
+    keys = [k for k in keys if isinstance(k, dict) and k.get("api_key")]
+    for test in (lambda k: k.get("name") == "service_role",
+                 lambda k: k.get("type") == "secret" or str(k.get("api_key", "")).startswith("sb_secret_")):
+        found = next((k["api_key"] for k in keys if test(k)), None)
+        if found:
+            return found
+    return None
+
+
 def configure_email_otp(ref, token, smtp=None, autoconfirm=False):
     """Email sign-in: the 6-digit code is in both the sign-up and the sign-in email. autoconfirm: sign-ups with
     a password need no code (only when no app of the pair confirms emails with a code)."""

@@ -26,10 +26,12 @@ class GeminiError(Exception):
 STALL_SECONDS = int(os.environ.get("GEMINI_STALL_SECONDS") or 300)
 
 
-def _request(model, prompt, key, temperature, json_mode=True):
+def _request(model, prompt, key, temperature, json_mode=True, images=None):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse"
+    # images: [(base64, mime)] shown to the model before the text (screenshots for the visual review).
+    parts = [{"inline_data": {"mime_type": mime, "data": data}} for data, mime in (images or [])]
     payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
+        "contents": [{"parts": parts + [{"text": prompt}]}],
         "generationConfig": {"responseMimeType": "application/json" if json_mode else "text/plain",
                              "temperature": temperature},
     }
@@ -183,7 +185,7 @@ def model_order(model, keys):
     return [model] + sorted(rest - {model}, key=rank_key)
 
 
-def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=5, json_mode=True):
+def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=5, json_mode=True, images=None):
     models = model_order(model, keys)
     started = time.time()
     # A caller asking for one quick try (max_rounds=1, optional AI steps) is never made patient.
@@ -204,7 +206,7 @@ def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=5, json_mode=Tr
                     skipped += 1
                     continue
                 try:
-                    return _request(m, prompt, key, temperature, json_mode)
+                    return _request(m, prompt, key, temperature, json_mode, images)
                 except GeminiError as e:
                     last = str(e)
                     kind = _classify(e)

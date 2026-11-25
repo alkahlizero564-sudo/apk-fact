@@ -59,6 +59,9 @@ jobs:
       # An app that is still not complete and working after the AI fixes (sign-in, real data from the tables, inbox,
       # notifications, no typed-in data or dead buttons: scripts/pair_wiring.py) is refused, not saved.
       PAIR_STRICT: "1"
+      # Run each Flutter app (web build, signed in with a temporary QA account), photograph every screen, let the AI
+      # review and fix what a user would notice, and look again (scripts/qa_flutter_web.py).
+      PAIR_VISUAL_QA: "1"
       BASE: ${{ inputs.base }}
     steps:
       - uses: actions/checkout@v4
@@ -74,7 +77,7 @@ jobs:
           echo "NODE_PATH=$RUNNER_TEMP/pw/node_modules" >> "$GITHUB_ENV"
       - name: Tools
         run: |
-          pip install google-auth requests
+          pip install google-auth requests pillow
           if [ "${{ inputs.lang }}" = "python" ]; then
             pip install "flet==$(cd scripts && python -c 'from native_langs import FLET_VERSION; print(FLET_VERSION)')"
           fi

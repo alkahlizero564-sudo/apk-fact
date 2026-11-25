@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -83,10 +84,13 @@ class Backend {
     if (_started) return;
     _started = true;
     // @push-begin
-    try {
-      await Firebase.initializeApp(options: firebaseOptions);
-      FirebaseMessaging.onBackgroundMessage(_backgroundPush);
-    } catch (_) {}
+    // Push is for the phone; the web build (used only for the visual check) skips it so start-up never waits on it.
+    if (!kIsWeb) {
+      try {
+        await Firebase.initializeApp(options: firebaseOptions).timeout(const Duration(seconds: 10));
+        FirebaseMessaging.onBackgroundMessage(_backgroundPush);
+      } catch (_) {}
+    }
     // @push-end
     WidgetsBinding.instance.addObserver(_Lifecycle());
     final prefs = await SharedPreferences.getInstance();
@@ -391,7 +395,7 @@ class Backend {
     _startSync();
     unawaited(inbox().catchError((_) => <Map<String, dynamic>>[]));
     // @push-begin
-    unawaited(_setupPush());
+    if (!kIsWeb) unawaited(_setupPush());
     // @push-end
   }
 

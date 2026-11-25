@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import { modelOrder, isExhausted, noteFailure } from "./geminiModels";
 
 export type GeneratedFile = { path: string; content: string };
 export type GenerationResult = {
@@ -52,7 +53,8 @@ function parseResult(text: string): GenerationResult {
 async function runGemini(systemPrompt: string, prompt: string, apiKey: string): Promise<string> {
   const errors: string[] = [];
 
-  for (const model of GEMINI_MODELS) {
+  for (const model of await modelOrder(GEMINI_MODELS, [apiKey])) { // then every other model the key can use
+    if (await isExhausted(apiKey, model)) continue;
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       let res: Response;
       try {
@@ -95,6 +97,13 @@ async function runGemini(systemPrompt: string, prompt: string, apiKey: string): 
         /no longer available|not found|is not supported/i.test(errText)
       ) {
         errors.push(`${model}: unavailable`);
+        break;
+      }
+
+      // الحصة اليومية للنموذج انتهت: انتقل للنموذج التالي فوراً
+      await noteFailure(apiKey, model, res.status, errText);
+      if (await isExhausted(apiKey, model)) {
+        errors.push(`${model}: daily quota used up`);
         break;
       }
 

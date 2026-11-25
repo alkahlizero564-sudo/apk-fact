@@ -250,6 +250,53 @@ const primaryModel = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 const FALLBACK_MODELS = ["gemini-3.5-flash", "gemini-3.5-flash-lite"];
 const geminiModels = [primaryModel, ...FALLBACK_MODELS.filter((m) => m !== primaryModel)];
 
+// Every model the keys can use, not only the three above: when the chosen model's daily quota is used up on every
+// key, the next one takes over, and so on (same ranking as scripts/gemini_client.py: pro > flash > flash-lite,
+// newer first, stable before preview). Filled in once at start-up from Google's model list.
+const SKIP_MODELS = /(embedding|tts|image|imagen|live|audio|native|robotics|computer-use|aqa|veo|learnlm|gemma)/i;
+function rankModel(name) {
+  const n = name.toLowerCase();
+  const tier = n.includes("lite") ? 1 : n.includes("flash") ? 2 : n.includes("pro") ? 3 : 0;
+  const v = parseFloat((n.match(/gemini-(\d+(?:\.\d+)?)/) || [])[1] || "0");
+  const stable = /preview|exp/.test(n) ? 0 : 1;
+  return [tier, v, stable];
+}
+function byStrength(a, b) {
+  const x = rankModel(a), y = rankModel(b);
+  for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return y[i] - x[i];
+  return a.localeCompare(b);
+}
+async function addAvailableModels() {
+  const found = new Set();
+  for (const key of geminiKeys) {
+    try {
+      let token = "";
+      for (let page = 0; page < 10; page++) {
+        const res = await fetch(
+          "https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000" + (token ? `&pageToken=${token}` : ""),
+          { headers: { "x-goog-api-key": key } }
+        );
+        if (!res.ok) break;
+        const data = await res.json();
+        for (const m of data.models || []) {
+          const name = String(m.name || "").replace(/^models\//, "");
+          if (name.startsWith("gemini-") && (m.supportedGenerationMethods || []).includes("generateContent") && !SKIP_MODELS.test(name)) {
+            found.add(name);
+          }
+        }
+        token = data.nextPageToken || "";
+        if (!token) break;
+      }
+    } catch (e) {
+      continue;
+    }
+    if (found.size) break;
+  }
+  const rest = [...new Set([...geminiModels.slice(1), ...found])].filter((m) => m !== primaryModel).sort(byStrength);
+  geminiModels.splice(1, geminiModels.length - 1, ...rest);
+  console.log(`Gemini models in order: ${geminiModels.join(", ")}`);
+}
+
 function classifyGemini(e) {
   const msg = String((e && e.message) || "").toLowerCase();
   const status = e && e.status;
@@ -441,6 +488,7 @@ async function matchDesign(code, order) {
 }
 
 (async () => {
+  if (geminiKeys.length) await addAvailableModels();
   const order = process.env.AI_PROVIDER === "gemini" ? ["Gemini", "Claude"] : ["Claude", "Gemini"];
 
   const failures = [];

@@ -113,13 +113,23 @@ def _classify(e):
     return "retry"              # 503, timeout, unknown model: next model now
 
 
+# GEMINI_PATIENCE_SECONDS (set by the generate workflows): on a busy day (503 "high demand", stalls) keep trying for
+# this long before giving up. Five rounds (~10 minutes) were not enough on 19 Nov and the whole pair was lost.
+PATIENCE_SECONDS = int(os.environ.get("GEMINI_PATIENCE_SECONDS") or 0)
+
+
 def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=5, json_mode=True):
     models = [model] + [m for m in FALLBACK_MODELS if m != model]
+    started = time.time()
+    # A caller asking for one quick try (max_rounds=1, optional AI steps) is never made patient.
+    patience = PATIENCE_SECONDS if max_rounds > 1 else 0
     dead_keys, dead_pairs, dead_models = _load_dead()  # by key hash: {kid}, {(kid, model)}, {model}
     cooldown = {}
     last = "no keys"
     skipped = 0
-    for round_no in range(max_rounds):
+    round_no = -1
+    while True:
+        round_no += 1
         for m in models:
             if m in dead_models:
                 continue
@@ -155,10 +165,12 @@ def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=5, json_mode=Tr
             for m in models
             for k in keys
         )
-        if all_dead or round_no == max_rounds - 1:
+        out_of_rounds = round_no >= max_rounds - 1 and time.time() - started >= patience
+        if all_dead or out_of_rounds:
             break
         # 503 "model overloaded" / timeouts can last a few minutes; back off patiently (15,30,60,90,90…) before giving up.
         wait = min(15 * (2 ** round_no), 90)
-        print(f"No model or key available (service busy), waiting {wait}s before the next round", flush=True)
+        print(f"No model or key available (service busy), waiting {wait}s before the next round"
+              + (f" (still trying, {int(time.time() - started)}s of {patience}s)" if patience else ""), flush=True)
         time.sleep(wait)
     raise SystemExit(f"Gemini failed on all keys and models. Last error: {last}")

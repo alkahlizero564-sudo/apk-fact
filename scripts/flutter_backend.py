@@ -77,6 +77,9 @@ def write(app):
     # The ready sign-in screens (same for every app; colors from the app's Theme).
     (d / "lib" / "auth_screens.dart").write_text((HERE / "templates" / "auth_screens.dart").read_text(encoding="utf-8"),
                                                  encoding="utf-8")
+    # The design system: theme + ready components every screen is built from.
+    (d / "lib" / "ui_kit.dart").write_text((HERE / "templates" / "ui_kit.dart").read_text(encoding="utf-8"),
+                                           encoding="utf-8")
     ensure_deps(d)
     return path
 
@@ -177,6 +180,23 @@ NO business data in the code: no lists of products / orders / customers / prices
 totals ('4,850,000 ج.س', 'مرحباً د. طارق'): counts and totals are computed from the rows; names come from the
 profile. Catalog items exist in the database already (the admin adds more from the admin app).
 Every button does its real action (insert / update / delete / navigate / pick a file). No empty onPressed.
+
+THE DESIGN SYSTEM IS READY: lib/ui_kit.dart (`import 'ui_kit.dart';`, from lib/screens: '../ui_kit.dart').
+Build EVERY screen from these components — never draw buttons, fields, cards, badges or the bottom bar yourself
+(no ElevatedButton / OutlinedButton / FilledButton / TextField / TextFormField / Card / BottomNavigationBar /
+AlertDialog in the app's files); that is what makes the app look like a top store app and every screen match:
+  theme: appTheme(seed: <design primary color>, fontFamily: ...), darkTheme: appTheme(seed: ..., brightness: Brightness.dark)
+  AppNavShell(tabs: [NavTab(label:, icon:, page:, badge: Backend.unread), ...])   — the bottom navigation
+  AppPage(title:, subtitle:, actions:, body:, floating:, onRefresh:, back: true for pushed screens) — every screen
+  SectionHeader('title', action: 'عرض الكل', onAction:)     AppSearch(onChanged:)     ChoiceRow(options: {v: label}, selected:, onSelected:)
+  AppButton('label', onPressed:, icon:, kind: ButtonKind.primary|secondary|outline|text|danger, busy:, expand:)
+  AppField(label:, controller:, icon:, validator:, keyboard:, password:, lines:)     QuantityStepper(value:, onChanged:)
+  AppCard(child:, onTap:)   AppTile(title:, subtitle:, icon: / image:, trailing:, onTap:)   InfoRow('label', 'value', strong:)
+  ProductCard(title:, image:, price:, subtitle:, badge:, onTap:, onAdd:, favorite:, onFavorite:)  (grid: crossAxisCount 2, childAspectRatio 0.68)
+  StatCard(label:, value:, icon:, note:)   StatusBadge(status)   AppImage(url, width:, height:)   AppAvatar(name:, url:)
+  EmptyState(title:, message:, icon:, action:, onAction:)   SkeletonList()   confirmAction(context, title:, danger:)
+  showAppSheet(context, title:, child:)   money(value) -> '12,500 ج.س'   dateText(iso) -> 'قبل 5 دقائق'
+  Spacing and radius only from Gap.* / Radii.* (Gap.h16, Gap.lg, Radii.md...).
 
 Notifications: an inbox screen (LiveQuery with Backend.inbox(), tap -> Backend.markRead(n['id']), a 'قراءة الكل'
 button -> Backend.markAllRead()) and a bell with the badge ValueListenableBuilder<int>(valueListenable:

@@ -50,6 +50,8 @@ jobs:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
       GEMINI_API_KEY_3: ${{ secrets.GEMINI_API_KEY_3 }}
+      # The owner's Claude key (APK Fact > الإعدادات): used first, Gemini when it fails or runs out.
+      CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
       GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
       # Busy Gemini (503 high demand): keep trying 20 minutes before failing the whole generation.
       GEMINI_PATIENCE_SECONDS: "1200"
@@ -62,6 +64,8 @@ jobs:
       # Run each Flutter app (web build, signed in with a temporary QA account), photograph every screen, let the AI
       # review and fix what a user would notice, and look again (scripts/qa_flutter_web.py).
       PAIR_VISUAL_QA: "1"
+      # Two rounds of look -> fix -> look again (each kept only when the next look is better).
+      PAIR_VISUAL_QA_ROUNDS: "2"
       BASE: ${{ inputs.base }}
     steps:
       - uses: actions/checkout@v4

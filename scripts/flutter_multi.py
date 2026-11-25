@@ -21,7 +21,7 @@ import re
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-FIXED = {"backend.dart", "auth_screens.dart", "firebase_config.dart", "apkfact_update.dart"}
+FIXED = {"backend.dart", "auth_screens.dart", "ui_kit.dart", "firebase_config.dart", "apkfact_update.dart"}
 FILE_RE = re.compile(r"===\s*FILE:\s*([\w./\-]+?\.dart)\s*===\s*```(?:dart)?\s*\n(.*?)```", re.S)
 
 FILES_REPLY = (
@@ -130,14 +130,14 @@ SHELL = """{rules}
 
 Write the SHELL of this Flutter app: lib/main.dart and lib/ui.dart. The screens are written separately, by other
 engineers, from the plan below — import them, use their constructors exactly as planned, never write them here.
-lib/main.dart: imports ('backend.dart', 'auth_screens.dart', 'ui.dart', every 'screens/<file>.dart'), main() with
-Backend.init(), MaterialApp (Arabic RTL, light AND dark Theme from the design's colors and font, Material 3,
-scaffoldMessengerKey: Backend.messengerKey), home: AuthGate(brand: AuthBrand(...), home: const MainShell()), and
-MainShell: the bottom navigation with the "nav" screens in order (IndexedStack, keeps each tab's state), with the
-unread badge (Backend.unread) on the notifications tab.
-lib/ui.dart: the shared widgets / helpers of the plan ("shared"), polished like a top store app and themed from
-Theme.of(context): cards, list tiles, status badges, section headers, money / date formatting, image with
-placeholder, primary buttons, confirm dialog, etc. Screens will import it, so make it complete and reusable.
+lib/main.dart: imports ('backend.dart', 'auth_screens.dart', 'ui_kit.dart', 'ui.dart', every 'screens/<file>.dart'),
+main() with Backend.init(), MaterialApp (theme: appTheme(seed: <the design's primary color>, fontFamily: ...),
+darkTheme: appTheme(..., brightness: Brightness.dark), scaffoldMessengerKey: Backend.messengerKey),
+home: AuthGate(brand: AuthBrand(...), home: const MainShell()), and MainShell = AppNavShell(tabs: [NavTab(...)]) with
+the "nav" screens in order and badge: Backend.unread on the notifications tab.
+lib/ui.dart: ONLY the app-specific pieces of the plan ("shared") that ui_kit.dart does not already have, composed
+from ui_kit components (e.g. an OrderCard made of AppCard + InfoRow + StatusBadge). Do not re-create anything
+ui_kit.dart has (buttons, fields, cards, badges, money, dateText...).
 {contract}
 PLAN:
 {plan}
@@ -150,7 +150,9 @@ Write ONE screen of this Flutter app: {file} with `class {cls}` ({args_note}). O
 screens from the same plan; main.dart and ui.dart are below — import and reuse them (`import '../backend.dart';`,
 `import '../ui.dart';`, other screens as `import '<file>.dart';`) and open other screens with exactly their planned
 constructors. This screen: {purpose}
-Make it complete and polished like the best apps on the store: real data through Backend / LiveQuery (loading,
+Make it complete and polished like the best apps on the store, BUILT FROM ui_kit.dart ONLY (AppPage, AppButton,
+AppField, AppCard, AppTile, ProductCard, StatCard, StatusBadge, EmptyState, SectionHeader, ChoiceRow, money()...;
+`import '../ui_kit.dart';`), never raw buttons / fields / cards: real data through Backend / LiveQuery (loading,
 empty and error states), every button doing its real action, forms with validation and a busy state, pull to
 refresh, smooth navigation, RTL Arabic texts. No sample data, no TODOs, no empty onPressed.
 {contract}

@@ -223,6 +223,104 @@ def check_kotlin_app(app_dir, name):
             print("Warning: still not clean, the build step will try again")
 
 
+def main_multi(name, base, task, raw_task, model, keys):
+    """A Flutter app of a connected pair built screen by screen, in several files (scripts/flutter_multi.py):
+    new apps are planned, then the shell, then each screen; edits see every file and answer with the changed ones."""
+    import flutter_multi as fm
+    lang, cfg = "flutter", LANGS["flutter"]
+    rules = (rules_for(lang).replace("in a single file lib/main.dart",
+                                     "in several files (lib/main.dart, lib/ui.dart and one file per screen in lib/screens/)")
+             + f"\n\n{DESIGN_BRIEF}\n\n{PERMISSIONS_RULE}\n\n{NO_REVIEW_CHROME}")
+    contract = pair_edit_rules(name)
+    design = base / "design.html"
+    design_html = design.read_text(encoding="utf-8")[:90000] if design.exists() else ""
+
+    def call_text(p):
+        return call_gemini(model, p, keys, temperature=0.35, json_mode=False)
+
+    def call_json(p):
+        return call_gemini(model, p, keys, temperature=0.3, json_mode=True)
+
+    def apply(files, what):
+        if files:
+            fm.write(base, files)
+            print(f"{what}: {', '.join(files)}", flush=True)
+
+    current = fm.own_files(base)
+    if not current:
+        files, deps, _plan = fm.create(task, rules, contract, design_html, call_text, call_json)
+        fm.write(base, files)
+        kind = "create"
+    else:
+        files, deps = fm.ask_files(call_text, (
+            f"{rules}\n\n{contract}\n\nTHE APP'S FILES:\n{fm.bundle(current)}\n\nRequested change:\n{task}\n\n"
+            f"Apply the change across whatever files need it (you may add screens in lib/screens/ and wire them in "
+            f"main.dart / the screens that open them).\n{fm.FILES_REPLY}"))
+        if not files:
+            raise SystemExit("Model returned no file")
+        apply(files, "Changed")
+        kind = "edit"
+
+    # Everything the owner asked for, then fidelity to the approved design — each pass rewrites only what it changes.
+    missing = missing_requirements(model, keys, cfg, task, fm.all_code(base), kind == "edit")
+    if missing:
+        print("Missing from the request:\n- " + "\n- ".join(missing), flush=True)
+        try:
+            more, deps2 = fm.ask_files(call_text, (
+                f"{rules}\n\n{contract}\n\nThe app below does not yet do all the owner asked. Missing or "
+                f"different:\n- " + "\n- ".join(missing) + f"\n\nOWNER'S REQUEST:\n{task}\n\nTHE APP'S FILES:\n"
+                f"{fm.bundle(fm.own_files(base))}\n\nImplement ALL of these exactly as asked, keeping everything else.\n"
+                f"{fm.FILES_REPLY}"))
+            apply(more, "Added what was missing")
+            deps = sorted(set(deps or []) | set(deps2 or []))
+        except Exception as e:
+            print(f"Warning: could not add the missing parts ({e})")
+    else:
+        print("Request check: everything asked for is implemented", flush=True)
+    if design_html and kind == "create":
+        diffs = design_gaps(model, keys, cfg, design_html, fm.all_code(base))
+        if diffs:
+            print("Differs from the approved design:\n- " + "\n- ".join(diffs), flush=True)
+            try:
+                more, deps3 = fm.ask_files(call_text, (
+                    f"{rules}\n\nA reviewer found these VISIBLE differences between the app and its APPROVED design. "
+                    f"Fix every one (layout, colors, typography, spacing, radius, icons, texts, components), keeping "
+                    f"all features and data working:\n- " + "\n- ".join(diffs) + f"\n\nAPPROVED DESIGN:\n```html\n"
+                    f"{design_html}\n```\n\n{contract}\n\nTHE APP'S FILES:\n{fm.bundle(fm.own_files(base))}\n"
+                    f"{fm.FILES_REPLY}"))
+                apply(more, "Brought closer to the approved design")
+                deps = sorted(set(deps or []) | set(deps3 or []))
+            except Exception as e:
+                print(f"Warning: could not apply the design fixes ({e})")
+        else:
+            print("Design check: the app matches the approved design", flush=True)
+
+    record_history(base, name, lang, kind, raw_task)
+    if design_html:  # the preview IS the approved design: what the owner signed off on
+        (base / "preview.html").write_text(design_html + "\n", encoding="utf-8")
+    elif kind == "create" or not (base / "preview.html").exists():
+        try:
+            pv = parse_reply(call_gemini(model, f"Here is a Flutter app (several files). Reply with exactly one ```html "
+                                                f"code block with {PREVIEW_RULES}\n\n{fm.bundle(fm.own_files(base))}",
+                                         keys, temperature=0.3, json_mode=False))[0].get("html", "")
+            if pv:
+                (base / "preview.html").write_text(pv + "\n", encoding="utf-8")
+                qa_preview_html(base, model, keys)
+        except Exception as e:
+            print(f"Warning: no preview ({e})")
+    write_deps(lang, base, clean_deps(lang, deps) or read_deps(lang, base))
+    if (base / "lib" / "backend.dart").exists():
+        import flutter_backend
+        flutter_backend.ensure_deps(base)
+    try:
+        import perms
+        perms.save(name, raw_task)
+    except Exception as e:
+        print(f"Warning: permissions not saved ({e})")
+    check_flutter_app(base)
+    print(f"Wrote apps/{name}: " + ", ".join(fm.own_files(base)), flush=True)
+
+
 def main():
     lang = sys.argv[1]
     cfg = LANGS[lang]
@@ -244,6 +342,15 @@ def main():
     code_path = base / cfg["code_file"]
     existing = code_path.read_text(encoding="utf-8") if code_path.exists() else ""
     design_html = ""  # set in the create branch when an approved design.html exists (used for the fidelity pass)
+
+    # Connected-pair Flutter apps are built screen by screen: new ones (backend.dart is already there) and apps that
+    # were built that way (lib/screens/).
+    import flutter_multi
+    if lang == "flutter" and not preview_only and (
+            flutter_multi.is_multi(base) or (not existing and (base / "lib" / "backend.dart").exists())):
+        return main_multi(name, base, task, raw_task, model, keys)
+    if lang == "flutter" and flutter_multi.is_multi(base):
+        existing = flutter_multi.bundle(flutter_multi.own_files(base))
 
     if preview_only:
         if not existing:

@@ -242,8 +242,12 @@ def fix(app, st, found):
     import pair_wiring
     from gemini_client import call_gemini
     from native_langs import gemini_keys, parse_reply, rules_for
-    f = ROOT / "apps" / app / "lib" / "main.dart"
-    before = f.read_text(encoding="utf-8")
+    import flutter_multi as fm
+    app_dir = ROOT / "apps" / app
+    f = app_dir / "lib" / "main.dart"
+    multi = fm.is_multi(app_dir)
+    snap = fm.snapshot(app_dir)
+    before = fm.bundle(snap) if multi else f.read_text(encoding="utf-8")
     design = ROOT / "apps" / app / "design.html"
     items = "\n".join(f"- [{p.get('screen', '')}] {p['problem']} -> {p.get('fix', '')}" for p in found["problems"][:25])
     errs = "\n".join(f"- {e}" for e in found.get("errors", [])[:10])
@@ -254,27 +258,32 @@ def fix(app, st, found):
         + (f"\nERRORS PRINTED WHILE RUNNING:\n{errs}\n" if errs else "")
         + pair.contract_text(st, st["role"])
         + (f"\nAPPROVED DESIGN:\n```html\n{design.read_text(encoding='utf-8')[:60000]}\n```\n" if design.exists() else "")
-        + f"\nReply with exactly one ```dart code block with the complete updated lib/main.dart and a last line "
-          f"`DEPS: ` with the packages used, comma separated.\n\nCURRENT lib/main.dart:\n```dart\n{before}\n```\n")
+        + (f"\nTHE APP'S FILES:\n{before}\n{fm.FILES_REPLY}\n" if multi else
+           f"\nReply with exactly one ```dart code block with the complete updated lib/main.dart and a last line "
+           f"`DEPS: ` with the packages used, comma separated.\n\nCURRENT lib/main.dart:\n```dart\n{before}\n```\n"))
+    call = lambda p: call_gemini(os.environ.get("GEMINI_MODEL") or "gemini-3.8-flash", p, gemini_keys(os.environ),
+                                 temperature=0.25, json_mode=False)
     try:
-        blocks, _ = parse_reply(call_gemini(os.environ.get("GEMINI_MODEL") or "gemini-3.8-flash", prompt,
-                                            gemini_keys(os.environ), temperature=0.25, json_mode=False))
+        if multi:
+            changed, _ = fm.ask_files(call, prompt)
+        else:
+            new = parse_reply(call(prompt))[0].get("dart", "")
+            changed = {"lib/main.dart": new.rstrip() + "\n"} if len(new) >= len(before) * 0.6 else {}
     except (Exception, SystemExit) as e:
         log(f"no fix ({e})")
         return None
-    new = blocks.get("dart", "")
-    if len(new) < len(before) * 0.6:
+    if not changed:
         log("the fix was empty or much shorter than the app, not used")
         return None
     gaps_before = len(pair_wiring.missing(app))
-    f.write_text(new.rstrip() + "\n", encoding="utf-8")
+    fm.write(app_dir, changed)
     import flutter_backend
-    flutter_backend.ensure_deps(ROOT / "apps" / app)
+    flutter_backend.ensure_deps(app_dir)
     if pair_wiring.problems(app, st) or len(pair_wiring.missing(app)) > gaps_before:
         log("the fix broke the build or the wiring, not used")
-        f.write_text(before, encoding="utf-8")
+        fm.restore(app_dir, snap)
         return None
-    return before
+    return snap
 
 
 def run(app, rounds=1):
@@ -303,7 +312,8 @@ def run(app, rounds=1):
             better = len(again["problems"]) < len(found["problems"]) or (again.get("score") or 0) > (found.get("score") or 0)
             if not better:
                 log(f"the fix did not look better ({len(again['problems'])} problem(s)), going back")
-                (ROOT / "apps" / app / "lib" / "main.dart").write_text(previous, encoding="utf-8")
+                import flutter_multi
+                flutter_multi.restore(ROOT / "apps" / app, previous)
                 break
             log(f"after fix {r + 1}: score {again['score']}/10, {len(again['problems'])} problem(s)")
             for p in again["problems"][:15]:

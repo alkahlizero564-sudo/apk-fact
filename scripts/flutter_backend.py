@@ -185,10 +185,13 @@ THE DESIGN SYSTEM IS READY: lib/ui_kit.dart (`import 'ui_kit.dart';`, from lib/s
 Build EVERY screen from these components — never draw buttons, fields, cards, badges or the bottom bar yourself
 (no ElevatedButton / OutlinedButton / FilledButton / TextField / TextFormField / Card / BottomNavigationBar /
 AlertDialog in the app's files); that is what makes the app look like a top store app and every screen match:
-  theme: appTheme(seed: <design primary color>, fontFamily: ...), darkTheme: appTheme(seed: ..., brightness: Brightness.dark)
+  theme: appTheme(seed: <design primary color>, style: KitStyle.<luxe|simple|modern>),
+  darkTheme: appTheme(seed: ..., style: <the same>, brightness: Brightness.dark)
+    style = the design's personality: luxe (rich, premium, gradients), simple (clear, big, flat), modern (fresh, light).
+    Do NOT pass fontFamily: the professional Arabic font of the style is bundled into the app as 'AppFont'.
   AppNavShell(tabs: [NavTab(label:, icon:, page:, badge: Backend.unread), ...])   — the bottom navigation
   AppPage(title:, subtitle:, actions:, body:, floating:, onRefresh:, back: true for pushed screens) — every screen
-  SectionHeader('title', action: 'عرض الكل', onAction:)     AppSearch(onChanged:)     ChoiceRow(options: {v: label}, selected:, onSelected:)
+  SectionHeader('title', action: 'عرض الكل', onAction:)     AppSearch(onChanged:)     ChoiceRow(options: {{v: label}}, selected:, onSelected:)
   AppButton('label', onPressed:, icon:, kind: ButtonKind.primary|secondary|outline|text|danger, busy:, expand:)
   AppField(label:, controller:, icon:, validator:, keyboard:, password:, lines:)     QuantityStepper(value:, onChanged:)
   AppCard(child:, onTap:)   AppTile(title:, subtitle:, icon: / image:, trailing:, onTap:)   InfoRow('label', 'value', strong:)
@@ -196,6 +199,16 @@ AlertDialog in the app's files); that is what makes the app look like a top stor
   StatCard(label:, value:, icon:, note:)   StatusBadge(status)   AppImage(url, width:, height:)   AppAvatar(name:, url:)
   EmptyState(title:, message:, icon:, action:, onAction:)   SkeletonList()   confirmAction(context, title:, danger:)
   showAppSheet(context, title:, child:)   money(value) -> '12,500 ج.س'   dateText(iso) -> 'قبل 5 دقائق'
+  Premium sections — use them, they are what makes a home / product / profile screen look like a top app:
+  HeroHeader(greeting:, title:, subtitle:, avatarName:, actions:, onSearch: / onSearchTap:)  — top of a home screen, first in its ListView (no AppPage there)
+  PromoCarousel(items: [Promo(title:, subtitle:, action:, image:, icon:, onTap:)])  — offers FROM THE DATA (a table), hide when empty
+  CategoryGrid(items: [CategoryItem(label:, icon:, selected:, onTap:)])   ProductRow(children: [ProductCard(...)])
+  ProductCard(..., oldPrice:, rating:, soldOut:)   PriceTag(price, oldPrice:, large:)   RatingStars(4.5, count:)
+  OrderTimeline(steps: [TrackStep('تم استلام الطلب', time:, icon:)], current: <index of the order's status>, cancelled:)
+  ProfileHeader(name:, subtitle:, avatarUrl:, stats: {{'طلباتي': '12'}}, onEdit:)
+  SettingsGroup(title:, children: [SettingsTile(title:, icon:, value:, onTap:, danger:, switchValue:, onSwitch:)])
+  SegmentedTabs(options: {{v: label}}, selected:, onSelected:)   CheckoutBar(label:, total:, onPressed:, busy:) as AppPage(bottom:)
+  InfoBanner(text, title:, tone: Tone.info|warning|success)   Appear(index: i, child:) — list items fade in
   Spacing and radius only from Gap.* / Radii.* (Gap.h16, Gap.lg, Radii.md...).
 
 Notifications: an inbox screen (LiveQuery with Backend.inbox(), tap -> Backend.markRead(n['id']), a 'قراءة الكل'

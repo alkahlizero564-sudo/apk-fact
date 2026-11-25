@@ -2,6 +2,7 @@
 // the app (HTML) or a faithful interactive imitation of it (Flutter / Python). Results are cached.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
+import { modelOrder, isExhausted, noteFailure } from "./geminiModels";
 import { Lang } from "./langs";
 import { DESIGN_BRIEF } from "./designBrief";
 import { thinkingConfigFor, markThinkingUnsupported } from "./geminiThink";
@@ -84,7 +85,7 @@ async function callGemini(key: string, model: string, system: string, prompt: st
       await markThinkingUnsupported(model);
       res = await send(false);
     }
-    if (!res.ok) throw Object.assign(new Error(`Gemini ${res.status}`), { status: res.status });
+    if (!res.ok) throw Object.assign(new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`), { status: res.status });
     const data = await res.json();
     const parts = data?.candidates?.[0]?.content?.parts ?? [];
     return parts.map((p: any) => p.text || "").join("");
@@ -151,7 +152,7 @@ function callGeminiStream(
     xhr.onload = () => {
       pump();
       if (xhr.status >= 200 && xhr.status < 300) resolve(full);
-      else reject(Object.assign(new Error(`Gemini ${xhr.status}`), { status: xhr.status }));
+      else reject(Object.assign(new Error(`Gemini ${xhr.status}: ${String(xhr.responseText || "").slice(0, 300)}`), { status: xhr.status }));
     };
     xhr.onerror = () => reject(Object.assign(new Error("تعذّر الاتصال"), { status: 0 }));
     xhr.ontimeout = () => reject(Object.assign(new Error("انتهت المهلة"), { status: 0 }));
@@ -235,11 +236,12 @@ export async function askGemini<T = string>(
 ): Promise<T> {
   const keys = await geminiKeys();
   const chosen = (await SecureStore.getItemAsync("GEMINI_MODEL")) || FALLBACK_MODELS[0];
-  const models = [chosen, ...FALLBACK_MODELS.filter((m) => m !== chosen)];
+  const models = await modelOrder([chosen, ...FALLBACK_MODELS], keys); // then every other model the keys can use
   let last = "";
   for (let round = 0; round < 2; round++) {
     for (const model of models) {
       for (let k = 0; k < keys.length; k++) {
+        if (await isExhausted(keys[k], model)) continue; // this model's daily quota is used up on this key
         onStatus(`الذكاء الاصطناعي ${doing}… (${model}${keys.length > 1 ? `، مفتاح ${k + 1}` : ""})`);
         try {
           let text: string;
@@ -260,6 +262,7 @@ export async function askGemini<T = string>(
           return parse(text);
         } catch (e: any) {
           last = e?.message ?? String(e);
+          await noteFailure(keys[k], model, e?.status, last);
           if (e?.status === 404) break; // model not available: next model
           if (e?.status === 401 || e?.status === 403) continue; // bad key: next key
         }

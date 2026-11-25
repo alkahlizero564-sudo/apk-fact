@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import { modelOrder, isExhausted, noteFailure } from "./geminiModels";
 
 const SYSTEM =
   "You are an expert web developer. Output ONE complete, self-contained HTML file " +
@@ -31,7 +32,7 @@ async function postJson(url: string, headers: Record<string, string>, body: any,
     });
     if (!res.ok) {
       const text = await res.text();
-      throw Object.assign(new Error(explain(label, res.status, text)), { status: res.status });
+      throw Object.assign(new Error(explain(label, res.status, text)), { status: res.status, body: text });
     }
     return await res.json();
   } catch (e: any) {
@@ -60,16 +61,31 @@ async function callClaude(key: string, prompt: string, system: string): Promise<
 }
 
 async function callGemini(key: string, prompt: string, system: string): Promise<string> {
-  const d = await postJson(
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
-    { "x-goog-api-key": key },
-    {
-      systemInstruction: { parts: [{ text: system }] },
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: { maxOutputTokens: 16000 },
-    },
-    "Gemini"
-  );
+  // The chosen/default model first, then every other model the key can use (a used-up one is skipped today).
+  const chosen = (await SecureStore.getItemAsync("GEMINI_MODEL")) || "gemini-3.8-flash";
+  let d: any = null;
+  let lastErr: any = null;
+  for (const model of await modelOrder([chosen, "gemini-3.8-flash", "gemini-3.5-flash"], [key])) {
+    if (await isExhausted(key, model)) continue;
+    try {
+      d = await postJson(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        { "x-goog-api-key": key },
+        {
+          systemInstruction: { parts: [{ text: system }] },
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 16000 },
+        },
+        "Gemini"
+      );
+      break;
+    } catch (e: any) {
+      lastErr = e;
+      await noteFailure(key, model, e?.status, e?.body || e?.message || "");
+      if (![404, 429, 500, 503, 529, 0].includes(e?.status)) throw e; // a bad key: no other model helps
+    }
+  }
+  if (!d) throw lastErr || new Error("Gemini: ما في نموذج متاح");
   const parts = d?.candidates?.[0]?.content?.parts;
   if (!parts) throw new Error("Gemini: الرد فارغ");
   return parts.map((p: any) => p.text || "").join("");

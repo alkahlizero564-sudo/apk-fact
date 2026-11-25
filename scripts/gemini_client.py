@@ -2,6 +2,7 @@ import datetime
 import hashlib
 import json
 import os
+import re
 import tempfile
 import time
 import urllib.error
@@ -118,8 +119,72 @@ def _classify(e):
 PATIENCE_SECONDS = int(os.environ.get("GEMINI_PATIENCE_SECONDS") or 0)
 
 
+# Every model the keys can use, not only three: when the chosen model's daily quota is used up on every key, the
+# next one takes over, then the next, until a model answers. Asked from Google once a day (ListModels) and ranked
+# strongest first: pro > flash > flash-lite, newer version first, stable before preview.
+_SKIP = ("embedding", "tts", "image", "imagen", "live", "audio", "native", "robotics", "computer-use", "aqa", "veo",
+         "learnlm", "gemma")
+_MODELS_FILE = os.path.join(os.environ.get("RUNNER_TEMP") or tempfile.gettempdir(), "gemini-models.json")
+
+
+def rank_key(name):
+    """Sort key, strongest first (used with sorted(..., key=rank_key))."""
+    n = name.lower()
+    tier = 1 if "flash-lite" in n or "-lite" in n else 2 if "flash" in n else 3 if "pro" in n else 0
+    m = re.search(r"gemini-(\d+(?:\.\d+)?)", n)
+    version = float(m.group(1)) if m else 0.0
+    stable = 0 if ("preview" in n or "exp" in n) else 1
+    return (-tier, -version, -stable, n)
+
+
+def available_models(keys):
+    """Text models the keys can call, strongest first; [] when Google cannot be asked."""
+    try:
+        with open(_MODELS_FILE, encoding="utf-8") as f:
+            d = json.load(f)
+        if d.get("day") == datetime.date.today().isoformat() and d.get("models"):
+            return d["models"]
+    except (OSError, ValueError):
+        pass
+    found = set()
+    for key in keys:
+        token = ""
+        try:
+            for _ in range(10):
+                url = "https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000" + (f"&pageToken={token}" if token else "")
+                req = urllib.request.Request(url, headers={"x-goog-api-key": key})
+                with urllib.request.urlopen(req, timeout=20) as r:
+                    data = json.loads(r.read().decode("utf-8"))
+                for m in data.get("models", []):
+                    name = str(m.get("name", "")).removeprefix("models/")
+                    if (name.startswith("gemini-") and "generateContent" in (m.get("supportedGenerationMethods") or [])
+                            and not any(s in name.lower() for s in _SKIP)):
+                        found.add(name)
+                token = data.get("nextPageToken") or ""
+                if not token:
+                    break
+        except Exception:
+            continue
+        if found:
+            break
+    models = sorted(found, key=rank_key)
+    if models:
+        try:
+            with open(_MODELS_FILE, "w", encoding="utf-8") as f:
+                json.dump({"day": datetime.date.today().isoformat(), "models": models}, f)
+        except OSError:
+            pass
+    return models
+
+
+def model_order(model, keys):
+    """The chosen model first, then every other model the keys can use, strongest first."""
+    rest = set(FALLBACK_MODELS) | set(available_models(keys))
+    return [model] + sorted(rest - {model}, key=rank_key)
+
+
 def call_gemini(model, prompt, keys, temperature=0.3, max_rounds=5, json_mode=True):
-    models = [model] + [m for m in FALLBACK_MODELS if m != model]
+    models = model_order(model, keys)
     started = time.time()
     # A caller asking for one quick try (max_rounds=1, optional AI steps) is never made patient.
     patience = PATIENCE_SECONDS if max_rounds > 1 else 0

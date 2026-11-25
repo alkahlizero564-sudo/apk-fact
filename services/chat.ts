@@ -2,6 +2,7 @@
 // fills in anything the owner leaves out, and — when it has enough — emits a structured spec the app turns into a
 // real app (one app, or a connected customer+admin pair). Multi-turn Gemini, with the same keys/models as the rest.
 import * as SecureStore from "expo-secure-store";
+import { modelOrder, isExhausted, noteFailure } from "./geminiModels";
 import { Lang, LANGS } from "./langs";
 import { AiImage } from "./instantPreview";
 import { thinkingConfigFor, markThinkingUnsupported } from "./geminiThink";
@@ -62,7 +63,8 @@ async function callOnce(key: string, model: string, contents: any[]): Promise<st
       await markThinkingUnsupported(model);
       res = await send(false);
     }
-    if (!res.ok) throw Object.assign(new Error(`Gemini ${res.status}`), { status: res.status });
+    // The body says WHY (e.g. "limit per day"), so a used-up model is skipped for the rest of the day.
+    if (!res.ok) throw Object.assign(new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`), { status: res.status });
     const data = await res.json();
     const parts = data?.candidates?.[0]?.content?.parts ?? [];
     const text = parts.map((p: any) => p.text || "").join("").trim();
@@ -78,7 +80,7 @@ async function callOnce(key: string, model: string, contents: any[]): Promise<st
 export async function chatReply(history: ChatMsg[], images: AiImage[] = []): Promise<string> {
   const ks = await keys();
   const chosen = (await SecureStore.getItemAsync("GEMINI_MODEL")) || MODELS[0];
-  const models = [chosen, ...MODELS.filter((m) => m !== chosen)];
+  const models = await modelOrder([chosen, ...MODELS], ks); // then every other model the keys can use
   const contents: any[] = history.map((m) => ({ role: m.role, parts: [{ text: m.text }] as any[] }));
   // Attach the picture(s) to the owner's most recent message so the AI sees what they mean.
   if (images.length) {
@@ -93,10 +95,12 @@ export async function chatReply(history: ChatMsg[], images: AiImage[] = []): Pro
   for (let round = 0; round < 2; round++) {
     for (const model of models) {
       for (const key of ks) {
+        if (await isExhausted(key, model)) continue; // this model's daily quota is used up on this key
         try {
           return await callOnce(key, model, contents);
         } catch (e: any) {
           last = e?.message ?? String(e);
+          await noteFailure(key, model, e?.status, last);
           if (e?.status === 404) break;
         }
       }

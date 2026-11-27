@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة DMC - Diala Medical & Chemical Equipment (Admin App)</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* ==========================================
+           DESIGN SYSTEM & TOKENS (Material 3 + Luxe Medical - Admin)
+           Matches Customer App Brand Exactly
+           ========================================== */
+        :root {
+            --primary: #0066FF;
+            --primary-container: #E6F0FF;
+            --on-primary: #FFFFFF;
+            --accent: #00E5FF;
+            --accent-glow: rgba(0, 229, 255, 0.25);
+            
+            --bg-main: #0B132B;
+            --bg-surface: #1C2541;
+            --bg-card: #283155;
+            --border-color: rgba(255, 255, 255, 0.08);
+            
+            --text-main: #FFFFFF;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            
+            --success: #10B981;
+            --warning: #F59E0B;
+            --error: #EF4444;
+            
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --radius-full: 9999px;
+            
+            --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+            --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.5);
+            
+            --font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #050B14;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* ==========================================
+           APKFACT SCREENS SWITCHER (Top Bar)
+           ========================================== */
+        #apkfact-screens {
+            width: 100%;
+            background: rgba(11, 19, 43, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 16px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+            position: fixed;
+            top: 0;
+            z-index: 9999;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        #apkfact-screens::-webkit-scrollbar {
+            height: 4px;
+        }
+        #apkfact-screens::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 4px;
+        }
+
+        .screen-pill {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .screen-pill:hover {
+            background: rgba(0, 102, 255, 0.2);
+            color: var(--text-main);
+        }
+
+        .screen-pill.active {
+            background: var(--primary);
+            color: var(--on-primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 12px rgba(0, 102, 255, 0.5);
+        }
+
+        /* ==========================================
+           PHONE CONTAINER FRAME
+           ========================================== */
+        .phone-container {
+            width: 100%;
+            max-width: 414px;
+            height: 100vh;
+            max-height: 896px;
+            background: var(--bg-main);
+            position: relative;
+            margin-top: 52px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-radius: 0;
+        }
+
+        @media(min-width: 450px) {
+            .phone-container {
+                height: 844px;
+                border-radius: 40px;
+                border: 8px solid #1C2541;
+                margin-top: 64px;
+                margin-bottom: 24px;
+            }
+        }
+
+        /* ==========================================
+           SCREEN VIEWS CONTAINER
+           ========================================== */
+        .app-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 72px); /* Space for bottom nav */
+            display: none;
+            flex-direction: column;
+            background: var(--bg-main);
+            overflow-y: auto;
+            padding: 16px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .app-screen.active {
+            display: flex;
+        }
+
+        .app-screen.full-height {
+            height: 100%;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Scrollbar styling for app */
+        .app-screen::-webkit-scrollbar {
+            width: 4px;
+        }
+        .app-screen::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.15);
+            border-radius: 4px;
+        }
+
+        /* ==========================================
+           COMMON COMPONENTS & UI ELEMENTS
+           ========================================== */
+        .brand-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .brand-logo-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: #fff;
+            box-shadow: 0 8px 20px rgba(0,102,255,0.4);
+            margin-bottom: 12px;
+        }
+        .brand-title {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            background: linear-gradient(90deg, #fff, #94A3B8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .brand-subtitle {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+        .input-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+        .input-field {
+            width: 100%;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            color: var(--text-main);
+            font-size: 15px;
+            outline: none;
+            transition: var(--transition);
+        }
+        .input-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.2);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary), #0043B8);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0, 102, 255, 0.3);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            background: var(--bg-surface);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 12px;
+        }
+
+        /* Bottom Navigation Bar */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 72px;
+            background: rgba(28, 37, 65, 0.95);
+            backdrop-filter: blur(16px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 4px;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+            height: 100%;
+            transition: var(--transition);
+        }
+
+        .nav-item i {
+            font-size: 18px;
+            margin-bottom: 3px;
+            transition: var(--transition);
+        }
+
+        .nav-item.active {
+            color: var(--accent);
+        }
+        .nav-item.active i {
+            transform: translateY(-2px);
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        /* Top Header inside screens */
+        .screen-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .screen-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .badge {
+            background: rgba(0, 102, 255, 0.15);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        /* Toast / Notification Banner */
+        .toast {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #10B981;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: var(--radius-full);
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: var(--shadow-lg);
+            transition: transform 0.3s ease;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ==========================================
+           ADMIN APP SPECIFIC STYLES
+           ========================================== */
+
+        /* Dashboard KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .kpi-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+        .kpi-title {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .kpi-value {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+        .kpi-trend {
+            font-size: 10px;
+            color: var(--success);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Orders Management List */
+        .order-mgmt-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Purchases & Sales List */
+        .trx-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Products Management List */
+        .prod-mgmt-item {
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid var(--border-color);
+        }
+        .prod-mgmt-img {
+            width: 50px;
+            height: 50px;
+            border-radius: var(--radius-sm);
+            background: var(--bg-surface);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 20px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+            flex: 1;
+        }
+        .empty-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        /* Loading Skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.05) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius-sm);
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================
+       APKFACT SCREENS SWITCHER (Top Bar)
+       ========================================== -->
+    <div id="apkfact-screens">
+        <button class="screen-pill active" onclick="switchScreen('screen-login', this)">تسجيل الدخول</button>
+        <button class="screen-pill" onclick="switchScreen('screen-otp', this)">رمز التأكيد OTP</button>
+        <button class="screen-pill" onclick="switchScreen('screen-dashboard', this)">لوحة التحكم والتقارير</button>
+        <button class="screen-pill" onclick="switchScreen('screen-orders', this)">طلبات الزبائن</button>
+        <button class="screen-pill" onclick="switchScreen('screen-trx', this)">المشتريات والمبيعات</button>
+        <button class="screen-pill" onclick="switchScreen('screen-products', this)">إدارة المنتجات</button>
+        <button class="screen-pill" onclick="switchScreen('screen-settings', this)">سعر الدولار وبنك الخرطوم</button>
+        <button class="screen-pill" onclick="switchScreen('screen-empty', this)">حالة فارغة</button>
+        <button class="screen-pill" onclick="switchScreen('screen-skeleton', this)">حالة التحميل</button>
+    </div>
+
+    <!-- ==========================================
+       PHONE CONTAINER (ADMIN APP)
+       ========================================== -->
+    <div class="phone-container">
+
+        <!-- 1. SIGN IN / REGISTER SCREEN -->
+        <div id="screen-login" class="app-screen active full-height">
+            <div class="brand-header">
+                <div class="brand-logo-icon">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <div class="brand-title">إدارة DMC</div>
+                <div class="brand-subtitle">DIALA MEDICAL & CHEMICAL EQUIPMENT</div>
+            </div>
+
+            <div class="card" style="background: rgba(28,37,65,0.7); backdrop-filter: blur(10px);">
+                <div style="font-size: 16px; font-weight: 700; margin-bottom: 16px; text-align: center;">تسجيل دخول الإدارة / إنشاء حساب</div>
+                
+                <div class="input-group">
+                    <label class="input-label">الاسم الكامل للإداري</label>
+                    <input type="text" class="input-field" value="م. عثمان ديالا" placeholder="أدخل اسمك الكامل">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">رقم الهاتف السوداني</label>
+                    <input type="tel" class="input-field" value="0912000000" placeholder="09xxxxxxxx">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">البريد الإلكتروني للإدارة</label>
+                    <input type="email" class="input-field" value="admin@dialamedical.sd" placeholder="admin@domain.com">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">كلمة المرور</label>
+                    <input type="password" class="input-field" value="••••••••" placeholder="••••••••">
+                </div>
+
+                <button class="btn-primary" onclick="switchScreen('screen-otp', document.querySelector('[onclick*=\'screen-otp\']'))">
+                    إرسال رمز التأكيد <i class="fa-solid fa-arrow-left"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. OTP VERIFICATION SCREEN -->
+        <div id="screen-otp" class="app-screen full-height">
+            <div style="margin: auto; width: 100%;">
+                <div class="brand-logo-icon" style="margin: 0 auto 16px auto;">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+                <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">تأكيد البريد الإداري</h2>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 24px;">تم إرسال رمز التحقق إلى admin@dialamedical.sd</p>
+
+                <div style="display: flex; gap: 10px; justify-content: center; margin: 20px 0;">
+                    <input type="text" class="input-field" style="width: 50px; text-align: center; font-size: 22px; font-weight: 700;" value="7" maxlength="1">
+                    <input type="text" class="input-field" style="width: 50px; text-align: center; font-size: 22px; font-weight: 700;" value="3" maxlength="1">
+                    <input type="text" class="input-field" style="width: 50px; text-align: center; font-size: 22px; font-weight: 700;" value="8" maxlength="1">
+                    <input type="text" class="input-field" style="width: 50px; text-align: center; font-size: 22px; font-weight: 700;" value="2" maxlength="1">
+                </div>
+
+                <button class="btn-primary" onclick="switchScreen('screen-dashboard', document.querySelector('[onclick*=\'screen-dashboard\']'))">
+                    تحقق والدخول للوحة التحكم <i class="fa-solid fa-check"></i>
+                </button>
+
+                <div style="margin-top: 20px; font-size: 13px; color: var(--text-muted);">
+                    لم تستلم الرمز؟ <a href="#" style="color: var(--accent); text-decoration: none; font-weight: 700;">إعادة الإرسال (59ث)</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. DASHBOARD & REPORTS SCREEN -->
+        <div id="screen-dashboard" class="app-screen active">
+            <div class="screen-header">
+                <div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">مرحباً، المسؤول العام</div>
+                    <div class="screen-title">لوحة التحكم والتقارير المفصلة</div>
+                </div>
+                <div class="badge">إدارة نشطة</div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-title">إجمالي المبيعات</div>
+                    <div class="kpi-value">24.5M SDG</div>
+                    <div class="kpi-trend"><i class="fa-solid fa-arrow-up"></i> +14% هذا الأسبوع</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">الطلبات المعلقة</div>
+                    <div class="kpi-value" style="color: var(--warning);">8 طلبات</div>
+                    <div class="kpi-trend" style="color: var(--warning);"><i class="fa-solid fa-clock"></i> تتطلب مراجعة الدفع</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">سعر الدولار الحالي</div>
+                    <div class="kpi-value" style="color: var(--accent);">2,750 SDG</div>
+                    <div class="kpi-trend"><i class="fa-solid fa-sync"></i> محدث آلياً</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">إجمالي المشتريات</div>
+                    <div class="kpi-value">11.8M SDG</div>
+                    <div class="kpi-trend"><i class="fa-solid fa-file-invoice"></i> مفوترة بالكامل</div>
+                </div>
+            </div>
+
+            <!-- Detailed Reports Section -->
+            <div class="card" style="background: var(--bg-card);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div style="font-size: 15px; font-weight: 700;">تقرير المبيعات والمشتريات الشامل</div>
+                    <span style="font-size: 12px; color: var(--accent); cursor: pointer;"><i class="fa-solid fa-download"></i> تصدير PDF</span>
+                </div>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">• تفصيل حركة المخزون والمستهلكات الطبية حسب المدن (عطبره، الدامر، ابوحمد، بربر، شندي).</div>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">• مطابقة إيصالات بنك الخرطوم مع التحويلات الواردة من الزبائن.</div>
+                
+                <button class="btn-secondary" style="margin-top: 10px;" onclick="showToast('تم تحديث التقرير المفصل بنجاح')">
+                    <i class="fa-solid fa-chart-line"></i> عرض التقارير التفصيلية الكاملة
+                </button>
+            </div>
+        </div>
+
+        <!-- 4. CUSTOMER ORDERS MANAGEMENT SCREEN -->
+        <div id="screen-orders" class="app-screen">
+            <div class="screen-header">
+                <div class="screen-title">قائمة طلبات الزبائن</div>
+                <div class="badge">8 طلبات جديدة</div>
+            </div>
+
+            <div class="order-mgmt-card">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="font-weight: 700; font-size: 14px;">طلب #DMC-8921</span>
+                    <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: var(--warning);">قيد مطابقة الدفع</span>
+                </div>
+                <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px;">الزبون: د. محمد أحمد</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">الهاتف السوداني: 0912345678</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">الطلب: جهاز تحليل دم رقمي (عدد 1)</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">الاستلام: توصيل | المدينة: <strong>عطبرة</strong></div>
+                
+                <!-- Bank Transfer Verification Box -->
+                <div style="background: var(--bg-surface); border: 1px dashed var(--accent); border-radius: var(--radius-sm); padding: 10px; margin-bottom: 10px;">
+                    <div style="font-size: 11px; color: var(--accent); font-weight: 700; margin-bottom: 4px;"><i class="fa-solid fa-building-columns"></i> إشعار بنك الخرطوم المرفق:</div>
+                    <div style="font-size: 12px; margin-bottom: 4px;">اسم الحساب المحول منه: <strong>محمد أحمد السيد</strong></div>
+                    <div style="font-size: 11px; color: var(--success); font-weight: 700;">✓ الاسم متطابق مع اسم الزبون</div>
+                </div>
+
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-primary" style="flex: 1; padding: 10px; font-size: 13px;" onclick="showToast('تم تأكيد الطلب وإرسال الفاتورة للزبون')">
+                        <i class="fa-solid fa-check"></i> تأكيد الطلب
+                    </button>
+                    <button class="btn-secondary" style="flex: 1; padding: 10px; font-size: 13px; background: rgba(239, 68, 68, 0.15); color: var(--error); border-color: rgba(239, 68, 68, 0.3);" onclick="showToast('تم رفض الطلب')">
+                        رفض
+                    </button>
+                </div>
+            </div>
+
+            <div class="order-mgmt-card">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="font-weight: 700; font-size: 14px;">طلب #DMC-8919</span>
+                    <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--success);">تم التأكيد</span>
+                </div>
+                <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px;">الزبون: د. سارة عبد الله</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">الهاتف السوداني: 0923456789</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">الطلب: مستهلكات حقن طبية (عدد 5)</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">الاستلام: استلام من المحل | المدينة: <strong>الدامر</strong></div>
+            </div>
+        </div>
+
+        <!-- 5. PURCHASES & SALES (WITH INVOICE CAMERA) SCREEN -->
+        <div id="screen-trx" class="app-screen">
+            <div class="screen-header">
+                <div class="screen-title">قائمة المشتريات والمبيعات</div>
+                <div class="badge">بيانات دقيقة</div>
+            </div>
+
+            <!-- Invoice Camera Action Card -->
+            <div class="card" style="border: 2px dashed var(--accent); background: rgba(0, 229, 255, 0.05); text-align: center; cursor: pointer;" onclick="showToast('تم تصوير الفاتورة ونزل محتواها فعلياً إلى القائمة تلقائياً!')">
+                <i class="fa-solid fa-camera" style="font-size: 32px; color: var(--accent); margin-bottom: 8px;"></i>
+                <div style="font-size: 14px; font-weight: 700;">تصوير فاتورة المشتريات أو المبيعات</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">ستنزل محتويات الفاتورة فعلياً وبدقة إلى القائمة تلقائياً عبر الذكاء الاصطناعي</div>
+            </div>
+
+            <div style="font-size: 14px; font-weight: 700; margin: 16px 0 8px 0;">السجلات الحالية المدمجة:</div>
+
+            <div class="trx-card">
+                <div>
+                    <div style="font-size: 13px; font-weight: 700;">مشتريات: أجهزة مخبرية مستوردة</div>
+                    <div style="font-size: 11px; color: var(--text-secondary);">فاتورة رقم #INV-4021 • تم التصوير</div>
+                </div>
+                <div style="text-align: left;">
+                    <div style="font-size: 13px; font-weight: 800; color: var(--error);">-4,500,000 SDG</div>
+                    <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: var(--error);">مشتريات</span>
+                </div>
+            </div>
+
+            <div class="trx-card">
+                <div>
+                    <div style="font-size: 13px; font-weight: 700;">مبيعات: مستهلكات طبية لعطبرة</div>
+                    <div style="font-size: 11px; color: var(--text-secondary);">فاتورة رقم #INV-4020 • بنك الخرطوم</div>
+                </div>
+                <div style="text-align: left;">
+                    <div style="font-size: 13px; font-weight: 800; color: var(--success);">+1,250,000 SDG</div>
+                    <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--success);">مبيعات</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. PRODUCTS MANAGEMENT & ADD SCREEN -->
+        <div id="screen-products" class="app-screen">
+            <div class="screen-header">
+                <div class="screen-title">إدارة وتعديل المنتجات</div>
+                <div class="badge">تحديث تلقائي بسعر الدولار</div>
+            </div>
+
+            <!-- Add Product Form Card -->
+            <div class="card" style="background: var(--bg-surface);">
+                <div style="font-size: 14px; font-weight: 700; margin-bottom: 12px;">إضافة منتج جديد مع الصورة</div>
+                
+                <div class="input-group">
+                    <label class="input-label">اسم المنتج الطبي</label>
+                    <input type="text" class="input-field" placeholder="مثال: جهاز أشعة متنقل">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">السعر بالدولار (يرتبط بسعر الصرف)</label>
+                    <input type="number" class="input-field" placeholder="مثال: 450 $">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">صورة المنتج</label>
+                    <div style="border: 1px dashed var(--border-color); padding: 12px; border-radius: var(--radius-sm); text-align: center; cursor: pointer;">
+                        <i class="fa-solid fa-image" style="color: var(--accent); font-size: 20px; margin-bottom: 4px;"></i>
+                        <div style="font-size: 11px; color: var(--text-secondary);">اختر صورة أو التقطها لرفعها لتظهر فوراً في تطبيق الزبون</div>
+                    </div>
+                </div>
+
+                <button class="btn-primary" onclick="showToast('تم إضافة المنتج بنجاح وتحديث الأسعار للزبائن')">
+                    <i class="fa-solid fa-plus"></i> إضافة المنتج للقائمة
+                </button>
+            </div>
+
+            <div style="font-size: 14px; font-weight: 700; margin: 16px 0 8px 0;">المنتجات الحالية:</div>
+
+            <div class="prod-mgmt-item">
+                <div class="prod-mgmt-img"><i class="fa-solid fa-microscope"></i></div>
+                <div style="flex: 1;">
+                    <div style="font-size: 13px; font-weight: 700;">جهاز تحليل دم رقمي متطور</div>
+                    <div style="font-size: 12px; color: var(--accent);">1,250,000 SDG (تلقائي)</div>
+                </div>
+                <i class="fa-solid fa-pen-to-square" style="color: var(--text-secondary); cursor: pointer;" onclick="showToast('تعديل المنتج')"></i>
+            </div>
+
+            <div class="prod-mgmt-item">
+                <div class="prod-mgmt-img" style="color: var(--success);"><i class="fa-solid fa-syringe"></i></div>
+                <div style="flex: 1;">
+                    <div style="font-size: 13px; font-weight: 700;">مستهلكات حقن طبية معقمة</div>
+                    <div style="font-size: 12px; color: var(--accent);">45,000 SDG (تلقائي)</div>
+                </div>
+                <i class="fa-solid fa-pen-to-square" style="color: var(--text-secondary); cursor: pointer;" onclick="showToast('تعديل المنتج')"></i>
+            </div>
+        </div>
+
+        <!-- 7. SETTINGS: DOLLAR RATE & BANK OF KHARTOUM ACCOUNT -->
+        <div id="screen-settings" class="app-screen">
+            <div class="screen-header">
+                <div class="screen-title">إعدادات الأسعار وبنك الخرطوم</div>
+                <div class="badge">التحكم الفوري</div>
+            </div>
+
+            <div class="card" style="background: linear-gradient(135deg, rgba(0, 102, 255, 0.1), rgba(0, 229, 255, 0.05)); border: 1px solid var(--primary);">
+                <div style="font-size: 15px; font-weight: 700; margin-bottom: 8px; color: var(--accent);">تعديل سعر الدولار (يحدث جميع أسعار المنتجات تلقائياً)</div>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">عند تغيير سعر الدولار هنا، ستتغير جميع أسعار المنتجات فوراً وتظهر في تطبيق الزبون بالأسعار الجديدة تلقائياً.</p>
+                
+                <div class="input-group">
+                    <label class="input-label">سعر الدولار الجديد (SDG)</label>
+                    <input type="number" class="input-field" value="2750">
+                </div>
+
+                <button class="btn-primary" onclick="showToast('تم تحديث سعر الدولار وتطبيق الأسعار الجديدة على جميع منتجات الزبائن فوراً!')">
+                    <i class="fa-solid fa-sync"></i> تحديث سعر الدولار لكل المنتجات
+                </button>
+            </div>
+
+            <div class="card" style="margin-top: 16px;">
+                <div style="font-size: 15px; font-weight: 700; margin-bottom: 8px;"><i class="fa-solid fa-building-columns" style="color: var(--accent);"></i> إدارة طرق الدفع وبنك الخرطوم</div>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">رقم الحساب الذي تدخله هنا سيظهر تلقائياً في تطبيق الزبون ليقوم بالتحويل إليه وإرفاق الإيصال للمطابقة.</p>
+
+                <div class="input-group">
+                    <label class="input-label">رقم حساب بنك الخرطوم للإدارة</label>
+                    <input type="text" class="input-field" value="123456789 (ديالا للمعدات الطبية)">
+                </div>
+
+                <button class="btn-secondary" onclick="showToast('تم حفظ رقم حساب بنك الخرطوم وتحديثه في تطبيق الزبون')">
+                    حفظ رقم الحساب
+                </button>
+            </div>
+        </div>
+
+        <!-- 8. EMPTY STATE SCREEN -->
+        <div id="screen-empty" class="app-screen">
+            <div class="screen-header">
+                <div class="screen-title">قائمة الطلبات والمشتريات</div>
+            </div>
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <div style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">لا توجد سجلات حالية</div>
+                <div style="font-size: 13px; color: var(--text-secondary); max-width: 250px; margin-bottom: 20px;">لم يتم إضافة أي طلبات أو فواتير مشتريات جديدة اليوم في النظام.</div>
+                <button class="btn-primary" style="width: auto; padding: 10px 24px;" onclick="showToast('جاري تحديث القائمة...')">
+                    <i class="fa-solid fa-plus"></i> إضافة سجل جديد
+                </button>
+            </div>
+        </div>
+
+        <!-- 9. LOADING SKELETON SCREEN -->
+        <div id="screen-skeleton" class="app-screen">
+            <div class="screen-header">
+                <div class="screen-title">جاري تحميل لوحة التحكم...</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="skeleton" style="height: 80px; width: 100%;"></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="skeleton" style="height: 90px;"></div>
+                    <div class="skeleton" style="height: 90px;"></div>
+                </div>
+                <div class="skeleton" style="height: 140px; width: 100%;"></div>
+                <div class="skeleton" style="height: 60px; width: 100%;"></div>
+                <div class="skeleton" style="height: 60px; width: 100%;"></div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+           BOTTOM NAVIGATION BAR (ADMIN APP)
+           ========================================== -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="switchScreen('screen-dashboard', this)">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>التقارير</span>
+            </button>
+            <button class="nav-item" onclick="switchScreen('screen-orders', this)">
+                <i class="fa-solid fa-clipboard-list"></i>
+                <span>الطلبات</span>
+            </button>
+            <button class="nav-item" onclick="switchScreen('screen-trx', this)">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+                <span>المبيعات</span>
+            </button>
+            <button class="nav-item" onclick="switchScreen('screen-products', this)">
+                <i class="fa-solid fa-boxes-stacked"></i>
+                <span>المنتجات</span>
+            </button>
+            <button class="nav-item" onclick="switchScreen('screen-settings', this)">
+                <i class="fa-solid fa-gear"></i>
+                <span>الإعدادات</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <!-- Toast Notification Banner -->
+    <div id="toast" class="toast">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toast-msg">تمت العملية بنجاح</span>
+    </div>
+
+    <!-- ==========================================
+       JAVASCRIPT INTERACTIONS & NAVIGATION
+       ========================================== -->
+    <script>
+        function switchScreen(screenId, pillElement) {
+            // Hide all screens
+            document.querySelectorAll('.app-screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+
+            // Show target screen
+            const target = document.getElementById(screenId);
+            if (target) {
+                target.classList.add('active');
+            }
+
+            // Update screen switcher pills in top bar
+            if (pillElement && pillElement.classList.contains('screen-pill')) {
+                document.querySelectorAll('#apkfact-screens .screen-pill').forEach(pill => {
+                    pill.classList.remove('active');
+                });
+                pillElement.classList.add('active');
+            }
+
+            // Update bottom nav active state if corresponding
+            const navMapping = {
+                'screen-dashboard': 0,
+                'screen-orders': 1,
+                'screen-trx': 2,
+                'screen-products': 3,
+                'screen-settings': 4
+            };
+
+            if (navMapping[screenId] !== undefined) {
+                document.querySelectorAll('.bottom-nav .nav-item').forEach((item, idx) => {
+                    if (idx === navMapping[screenId]) {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const msg = document.getElementById('toast-msg');
+            msg.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

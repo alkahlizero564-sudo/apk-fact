@@ -8,14 +8,14 @@ class DmcProductCard extends StatelessWidget {
   final Map<String, dynamic> product;
   final double exchangeRate;
   final VoidCallback onTap;
-  final VoidCallback onAddToCart;
+  final VoidCallback? onAddToCart;
 
   const DmcProductCard({
     super.key,
     required this.product,
     required this.exchangeRate,
     required this.onTap,
-    required this.onAddToCart,
+    this.onAddToCart,
   });
 
   @override
@@ -33,7 +33,7 @@ class DmcProductCard extends StatelessWidget {
       badge: isOut ? 'نفذت الكمية' : (stock < 10 ? 'متبقي $stock' : null),
       soldOut: isOut,
       onTap: onTap,
-      onAdd: isOut ? null : onAddToCart,
+      onAdd: isOut ? null : (onAddToCart ?? onTap),
     );
   }
 }

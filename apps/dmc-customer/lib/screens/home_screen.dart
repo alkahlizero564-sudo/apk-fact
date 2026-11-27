@@ -15,6 +15,18 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
 
+  void _openProductDetail(Map<String, dynamic> product, double exchangeRate) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProductDetailScreen(
+          product: product,
+          exchangeRate: exchangeRate,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return LiveQuery<List<Map<String, dynamic>>>(
@@ -84,18 +96,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: DmcProductCard(
                             product: product,
                             exchangeRate: exchangeRate,
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ProductDetailScreen(
-                                    product: product,
-                                    exchangeRate: exchangeRate,
-                                  ),
-                                ),
-                              );
-                            },
-                            onAddToCart: () => _addToCart(product),
+                            onTap: () => _openProductDetail(product, exchangeRate),
+                            onAddToCart: () => _openProductDetail(product, exchangeRate),
                           ),
                         );
                       },
@@ -108,34 +110,6 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
-  }
-
-  Future<void> _addToCart(Map<String, dynamic> product) async {
-    try {
-      final existing = await Backend.list(
-        T.cartItems,
-        filters: {
-          'customer_id': 'eq.${Backend.userId}',
-          'product_id': 'eq.${product['id']}',
-        },
-      );
-
-      if (existing.isNotEmpty) {
-        final currentQty = (existing.first['quantity'] as num?)?.toInt() ?? 1;
-        await Backend.update(T.cartItems, existing.first['id'], {
-          'quantity': currentQty + 1,
-        });
-      } else {
-        await Backend.insert(T.cartItems, {
-          'customer_id': Backend.userId,
-          'product_id': product['id'],
-          'quantity': 1,
-        });
-      }
-      Backend.toast('تمت إضافة "${product['name']}" إلى السلة');
-    } catch (e) {
-      Backend.toast('تعذر إضافة المنتج');
-    }
   }
 }
 

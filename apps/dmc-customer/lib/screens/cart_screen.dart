@@ -65,8 +65,8 @@ class CartScreen extends StatelessWidget {
                         child: Row(
                           children: [
                             ClipRRect(
-                              borderRadius: Radii.md,
-                              child: AppImage(url: p?['image_url'] ?? '', width: 70, height: 70),
+                              borderRadius: BorderRadius.circular(Radii.md),
+                              child: AppImage(p?['image_url'] ?? '', width: 70, height: 70),
                             ),
                             Gap.w12,
                             Expanded(

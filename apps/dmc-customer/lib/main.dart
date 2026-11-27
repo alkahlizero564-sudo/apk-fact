@@ -74,38 +74,11 @@ class MainShell extends StatefulWidget {
   State<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
-  Timer? _syncTimer;
-
+class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _setupNotifications();
-    _startLiveSync();
-  }
-
-  @override
-  void dispose() {
-    _syncTimer?.cancel();
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      Backend.refresh();
-    }
-  }
-
-  void _startLiveSync() {
-    // 15-second live sync as per contract
-    _syncTimer = Timer.periodic(const Duration(seconds: 15), (_) {
-      if (Backend.userId.isNotEmpty) {
-        Backend.refresh();
-      }
-    });
   }
 
   Future<void> _setupNotifications() async {
@@ -136,7 +109,6 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       if (message.notification != null) {
         Backend.toast(message.notification!.title ?? 'تنبيه جديد');
-        Backend.refresh();
       }
     });
   }

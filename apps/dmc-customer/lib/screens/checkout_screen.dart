@@ -119,7 +119,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         onPressed: _submit,
         busy: _isSubmitting,
       ),
-      body: SingleChildScrollView(
+      body: ListView(
         padding: const EdgeInsets.all(Gap.md),
         children: [
           const SectionHeader('معلومات التواصل'),

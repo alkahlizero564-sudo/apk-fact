@@ -1,5 +1,5 @@
-tarag3-admin
-@model: gemini-3.5-flash
-صلح التطبيق
+dmc-customer
+@model: gemini-3.8-flash-lite-tts
+اجعل امكانيه رؤية تفاصيل المنتج اولا عند الضغط على المنتج
 
-(request id: 1794645830380)
+(request id: 1795812305540)

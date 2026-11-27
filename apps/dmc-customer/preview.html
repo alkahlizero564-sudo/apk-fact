@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMC - Diala Medical & Chemical Equipment (Customer App)</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* ==========================================
+           DESIGN SYSTEM & TOKENS (Material 3 + Luxe Medical)
+           ========================================== */
+        :root {
+            --primary: #0066FF;
+            --primary-container: #E6F0FF;
+            --on-primary: #FFFFFF;
+            --accent: #00E5FF;
+            --accent-glow: rgba(0, 229, 255, 0.25);
+            
+            --bg-main: #0B132B;
+            --bg-surface: #1C2541;
+            --bg-card: #283155;
+            --border-color: rgba(255, 255, 255, 0.08);
+            
+            --text-main: #FFFFFF;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            
+            --success: #10B981;
+            --warning: #F59E0B;
+            --error: #EF4444;
+            
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --radius-full: 9999px;
+            
+            --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+            --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.5);
+            
+            --font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #050B14;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* ==========================================
+           APKFACT SCREENS SWITCHER (Top Bar)
+           ========================================== */
+        #apkfact-screens {
+            width: 100%;
+            background: rgba(11, 19, 43, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 16px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+            position: fixed;
+            top: 0;
+            z-index: 9999;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        #apkfact-screens::-webkit-scrollbar {
+            height: 4px;
+        }
+        #apkfact-screens::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 4px;
+        }
+
+        .screen-pill {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .screen-pill:hover {
+            background: rgba(0, 102, 255, 0.2);
+            color: var(--text-main);
+        }
+
+        .screen-pill.active {
+            background: var(--primary);
+            color: var(--on-primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 12px rgba(0, 102, 255, 0.5);
+        }
+
+        /* ==========================================
+           PHONE CONTAINER FRAME
+           ========================================== */
+        .phone-container {
+            width: 100%;
+            max-width: 414px;
+            height: 100vh;
+            max-height: 896px;
+            background: var(--bg-main);
+            position: relative;
+            margin-top: 52px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-radius: 0;
+        }
+
+        @media(min-width: 450px) {
+            .phone-container {
+                height: 844px;
+                border-radius: 40px;
+                border: 8px solid #1C2541;
+                margin-top: 64px;
+                margin-bottom: 24px;
+            }
+        }
+
+        /* ==========================================
+           SCREEN VIEWS CONTAINER
+           ========================================== */
+        .app-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 72px); /* Space for bottom nav */
+            display: none;
+            flex-direction: column;
+            background: var(--bg-main);
+            overflow-y: auto;
+            padding: 16px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .app-screen.active {
+            display: flex;
+        }
+
+        .app-screen.full-height {
+            height: 100%;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Scrollbar styling for app */
+        .app-screen::-webkit-scrollbar {
+            width: 4px;
+        }
+        .app-screen::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.15);
+            border-radius: 4px;
+        }
+
+        /* ==========================================
+           COMMON COMPONENTS & UI ELEMENTS
+           ========================================== */
+        .brand-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .brand-logo-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: #fff;
+            box-shadow: 0 8px 20px rgba(0,102,255,0.4);
+            margin-bottom: 12px;
+        }
+        .brand-title {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            background: linear-gradient(90deg, #fff, #94A3B8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .brand-subtitle {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+        .input-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+        .input-field {
+            width: 100%;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            color: var(--text-main);
+            font-size: 15px;
+            outline: none;
+            transition: var(--transition);
+        }
+        .input-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.2);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary), #0043B8);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0, 102, 255, 0.3);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            background: var(--bg-surface);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 12px;
+        }
+
+        /* Bottom Navigation Bar */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 72px;
+            background: rgba(28, 37, 65, 0.95);
+            backdrop-filter: blur(16px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 8px;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+            height: 100%;
+            transition: var(--transition);
+        }
+
+        .nav-item i {
+            font-size: 20px;
+            margin-bottom: 4px;
+            transition: var(--transition);
+        }
+
+        .nav-item.active {
+            color: var(--accent);
+        }
+        .nav-item.active i {
+            transform: translateY(-2px);
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        /* Top Header inside screens */
+        .screen-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .screen-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .badge {
+            background: rgba(0, 102, 255, 0.15);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        /* Toast / Notification Banner */
+        .toast {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #10B981;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: var(--radius-full);
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: var(--shadow-lg);
+            transition: transform 0.3s ease;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ==========================================
+           SCREENS SPECIFIC STYLES
+           ========================================== */
+
+        /* 1. Login / Sign In */
+        #screen-login {
+            justify-content: center;
+            padding: 24px;
+        }
+
+        /* 2. OTP Verification */
+        #screen-otp {
+            justify-content: center;
+            padding: 24px;
+            text-align: center;
+        }
+        .otp-inputs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .otp-box {
+            width: 48px;
+            height: 56px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            text-align: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .otp-box:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0,102,255,0.3);
+            outline: none;
+        }
+
+        /* 3. Home / Products Catalog */
+        .dollar-rate-banner {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(0, 102, 255, 0.15));
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+        .dollar-rate-banner span {
+            color: var(--success);
+            font-weight: 700;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding-bottom: 24px;
+        }
+        .product-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+        }
+        .product-img-container {
+            width: 100%;
+            height: 110px;
+            background: #1C2541;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .product-img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .product-content {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            justify-content: space-between;
+        }
+        .product-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .product-price {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+        .btn-add-cart {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        /* 4. Cart & Checkout */
+        .cart-item {
+            display: flex;
+            align-items: center;
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+        }
+        .cart-item img {
+            width: 60px;
+            height: 60px;
+            border-radius: var(--radius-sm);
+            object-fit: cover;
+            margin-left: 12px;
+        }
+        .cart-item-details {
+            flex: 1;
+        }
+        .cart-item-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+        .cart-item-price {
+            font-size: 13px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+        .stepper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-surface);
+            padding: 2px 8px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+        }
+        .stepper button {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .checkout-section {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 14px;
+            margin-top: 16px;
+            border: 1px solid var(--border-color);
+        }
+        .delivery-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .radio-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+        .radio-card.selected {
+            border-color: var(--primary);
+            background: rgba(0, 102, 255, 0.15);
+            color: var(--accent);
+        }
+
+        /* 5. Payment Screen */
+        .payment-method-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: var(--transition);
+        }
+        .payment-method-card.selected {
+            border-color: var(--primary);
+            background: rgba(0, 102, 255, 0.1);
+        }
+        .bank-details-box {
+            background: rgba(0, 229, 255, 0.05);
+            border: 1px dashed var(--accent);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin-top: 12px;
+            display: none;
+        }
+        .bank-details-box.active {
+            display: block;
+        }
+
+        /* 6. My Orders */
+        .order-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 14px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+        }
+        .order-status {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: var(--radius-full);
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .status-pending { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+        .status-confirmed { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+
+        /* 7. Profile & Settings */
+        .profile-header {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: #fff;
+            margin-bottom: 10px;
+            box-shadow: 0 8px 20px rgba(0,102,255,0.4);
+        }
+
+        /* 8. Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+            flex: 1;
+        }
+        .empty-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        /* 9. Loading Skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.05) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius-sm);
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==========================================
+       APKFACT SCREENS SWITCHER (Top Bar)
+       ========================================== -->
+    <div id="apkfact-screens">
+        <button class="screen-pill active" onclick="switchScreen('screen-login', this)">تسجيل الدخول</button>
+        <button class="screen-pill" onclick="switchScreen('screen-otp', this)">رمز التأكيد OTP</button>
+        <button class="screen-pill" onclick="switchScreen('screen-home', this)">الرئيسية والمنتجات</button>
+        <button class="screen-pill" onclick="switchScreen('screen-cart', this)">السلة وإتمام الطلب</button>
+        <button class="screen-pill" onclick="switchScreen('screen-payment', this)">الدفع (بنك الخرطوم)</button>
+        <button class="screen-pill" onclick="switchScreen('screen-orders', this)">طلباتي</button>
+        <button class="screen-pill" onclick="switchScreen('screen-profile', this)">الملف الشخصي</button>
+        <button class="screen-pill" onclick="switchScreen('screen-empty', this)">حالة فارغة</button>
+        <button class="screen-pill" onclick="switchScreen('screen-skeleton', this)">حالة التحميل</button>
+    </div>
+
+    <!-- ==========================================
+       PHONE CONTAINER
+       ========================================== -->
+    <div class="phone-container">
+
+        <!-- 1. SIGN IN / REGISTER SCREEN -->
+        <div id="screen-login" class="app-screen active full-height">
+            <div class="brand-header">
+                <div class="brand-logo-icon">
+                    <i class="fa-solid fa-flask"></i>
+                </div>
+                <div class="brand-title">DMC</div>
+                <div class="brand-subtitle">DIALA MEDICAL & CHEMICAL EQUIPMENT</div>
+            </div>
+
+            <div class="card" style="background: rgba(28,37,65,0.7); backdrop-filter: blur(10px);">
+                <div style="font-size: 16px; font-weight: 700; margin-bottom: 16px; text-align: center;">تسجيل الدخول / إنشاء حساب</div>
+                
+                <div class="input-group">
+                    <label class="input-label">الاسم الكامل</label>
+                    <input type="text" class="input-field" value="د. محمد أحمد" placeholder="أدخل اسمك الكامل">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">رقم الهاتف السوداني</label>
+                    <input type="tel" class="input-field" value="0912345678" placeholder="09xxxxxxxx">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">البريد الإلكتروني</label>
+                    <input type="email" class="input-field" value="mohamed@gmail.com" placeholder="name@domain.com">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">كلمة المرور</label>
+                    <input type="password" class="input-field" value="••••••••" placeholder="••••••••">
+                </div>
+
+                <button class="btn-primary" onclick="switchScreen('screen-otp', document.querySelector('[onclick*=\'screen-otp\']'))">
+                    إرسال رمز التأكيد <i class="fa-solid fa-arrow-left"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. OTP VERIFICATION SCREEN -->
+        <div id="screen-otp" class="app-screen full-height">
+            <div style="margin: auto; width: 100%;">
+                <div class="brand-logo-icon" style="margin: 0 auto 16px auto;">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">تأكيد البريد الإلكتروني</h2>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 24px;">تم إرسال رمز التحقق إلى mohamed@gmail.com</p>
+
+                <div class="otp-inputs">
+                    <input type="text" class="otp-box" value="4" maxlength="1">
+                    <input type="text" class="otp-box" value="8" maxlength="1">
+                    <input type="text" class="otp-box" value="9" maxlength="1">
+                    <input type="text" class="otp-box" value="1" maxlength="1">
+                </div>
+
+                <button class="btn-primary" onclick="switchScreen('screen-home', document.querySelector('[onclick*=\'screen-home\']'))">
+                    تحقق والدخول <i class="fa-solid fa-check"></i>
+                </button>
+
+                <div style="margin-top: 20px; font-size: 13px; color: var(--text-muted);">
+                    لم تستلم الرمز؟ <a href="#" style="color: var(--accent); text-decoration: none; font-weight: 700;">إعادة الإرسال (59ث)</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. HOME & PRODUCTS CATALOG SCREEN -->
+        <div id="screen-home" class="app-screen active">
+            <div class="screen-header">
+                <div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">مرحباً بك، د. محمد</div>
+                    <div class="screen-title">المعدات الطبية والمستهلكات</div>
+                </div>
+                <div class="badge">عميل معتمد</div>
+            </div>
+
+            <!-- Dollar Rate Banner -->
+            <div class="dollar-rate-banner">
+                <div>سعر الدولار الحالي:</div>
+                <span>2,750 SDG</span>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="input-group" style="margin-bottom: 16px;">
+                <div style="position: relative;">
+                    <input type="text" class="input-field" placeholder="ابحث عن جهاز، مستهلكات، محاليل..." style="padding-right: 40px;">
+                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; right: 14px; top: 15px; color: var(--text-muted);"></i>
+                </div>
+            </div>
+
+            <div style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">قائمة المنتجات تلقائياً</div>
+
+            <!-- Products Grid -->
+            <div class="products-grid">
+                <!-- Product 1 -->
+                <div class="product-card">
+                    <div class="product-img-container">
+                        <i class="fa-solid fa-microscope" style="font-size: 36px; color: var(--accent);"></i>
+                    </div>
+                    <div class="product-content">
+                        <div>
+                            <div class="product-name">جهاز تحليل دم رقمي متطور</div>
+                            <div class="product-price">1,250,000 SDG</div>
+                        </div>
+                        <button class="btn-add-cart" onclick="addToCart('جهاز تحليل دم رقمي متطور', 1250000)">
+                            <i class="fa-solid fa-cart-plus"></i> إضافة للسلة
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Product 2 -->
+                <div class="product-card">
+                    <div class="product-img-container">
+                        <i class="fa-solid fa-syringe" style="font-size: 36px; color: var(--success);"></i>
+                    </div>
+                    <div class="product-content">
+                        <div>
+                            <div class="product-name">مستهلكات حقن طبية معقمة (صندوق)</div>
+                            <div class="product-price">45,000 SDG</div>
+                        </div>
+                        <button class="btn-add-cart" onclick="addToCart('مستهلكات حقن طبية معقمة', 45000)">
+                            <i class="fa-solid fa-cart-plus"></i> إضافة للسلة
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Product 3 -->
+                <div class="product-card">
+                    <div class="product-img-container">
+                        <i class="fa-solid fa-heart-pulse" style="font-size: 36px; color: var(--error);"></i>
+                    </div>
+                    <div class="product-content">
+                        <div>
+                            <div class="product-name">جهاز تخطيط قلب محمول ECG</div>
+                            <div class="product-price">890,000 SDG</div>
+                        </div>
+                        <button class="btn-add-cart" onclick="addToCart('جهاز تخطيط قلب محمول ECG', 890000)">
+                            <i class="fa-solid fa-cart-plus"></i> إضافة للسلة
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Product 4 -->
+                <div class="product-card">
+                    <div class="product-img-container">
+                        <i class="fa-solid fa-hospital" style="font-size: 36px; color: var(--warning);"></i>
+                    </div>
+                    <div class="product-content">
+                        <div>
+                            <div class="product-name">محاليل وريدية معقمة 500 مل</div>
+                            <div class="product-price">18,500 SDG</div>
+                        </div>
+                        <button class="btn-add-cart" onclick="addToCart('محاليل وريدية معقمة 500 مل', 18500)">
+                            <i class="fa-solid fa-cart-plus"></i> إضافة للسلة
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. CART & CHECKOUT SCREEN -->
+        <div id="screen-cart" class="app-screen">
+            <div class="screen-header">
+                <div class="screen-title">سلة المشتريات وإتمام الطلب</div>
+                <div class="badge">عنصرين</div>
+            </div>
+
+            <!-- Cart Items -->
+            <div class="cart-item">
+                <div style="width: 50px; height: 50px; background: rgba(0,102,255,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-left: 12px; color: var(--accent);">
+                    <i class="fa-solid fa-microscope" style="font-size: 20px;"></i>
+                </div>
+                <div class="cart-item-details">
+                    <div class="cart-item-title">جهاز تحليل دم رقمي متطور</div>
+                    <div class="cart-item-price">1,250,000 SDG</div>
+                </div>
+                <div class="stepper">
+                    <button>-</button>
+                    <span style="font-weight: 700; font-size: 13px;">1</span>
+                    <button>+</button>
+                </div>
+            </div>
+
+            <div class="cart-item">
+                <div style="width: 50px; height: 50px; background: rgba(16,185,129,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-left: 12px; color: var(--success);">
+                    <i class="fa-solid fa-syringe" style="font-size: 20px;"></i>
+                </div>
+                <div class="cart-item-details">
+                    <div class="cart-item-title">مستهلكات حقن طبية معقمة</div>
+                    <div class="cart-item-price">45,000 SDG</div>
+                </div>
+                <div class="stepper">
+                    <button>-</button>
+                    <span style="font-weight: 700; font-size: 13px;">2</span>
+                    <button>+</button>
+                </div>
+            </div>
+
+            <!-- Checkout Details Form -->
+            <div class="checkout-section">
+                <div style="font-size: 14px; font-weight: 700; margin-bottom: 10px;">طريقة الاستلام</div>
+                <div class="delivery-options">
+                    <div class="radio-card selected" onclick="selectDelivery(this)">استلام من المحل</div>
+                    <div class="radio-card" onclick="selectDelivery(this)">توصيل للمدينة</div>
+                </div>
+
+                <div class="input-group" id="city-group">
+                    <label class="input-label">اختر المدينه (عطبره - الدامر - ابوحمد - بربر - شندي)</label>
+                    <select class="input-field">
+                        <option>عطبرة</option>
+                        <option>الدامر</option>
+                        <option>أبوحمد</option>
+                        <option>بربر</option>
+                        <option>شندي</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">رقم الهاتف السوداني للتواصل</label>
+                    <input type="tel" class="input-field" value="0912345678">
+                </div>
+
+                <div style="display: flex; justify-content: space-between; margin: 16px 0; font-size: 15px; font-weight: 700;">
+                    <span>المجموع الكلي:</span>
+                    <span style="color: var(--accent);">1,340,000 SDG</span>
+                </div>
+
+                <button class="btn-primary" onclick="switchScreen('screen-payment', document.querySelector('[onclick*=\'screen-payment\']'))">
+                    الانتقال للدفع <i class="fa-solid fa-arrow-left"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 5. PAYMENT SCREEN (Bank of Khartoum / Cash on delivery) -->
+        <div id="screen-payment" class="app-screen">
+            <div class="screen-header">
+                <div class="screen-title">اختر طريقة الدفع</div>
+            </div>
+
+            <div class="payment-method-card selected" onclick="togglePayment('bok')">
+                <i class="fa-solid fa-building-columns" style="font-size: 24px; color: var(--accent);"></i>
+                <div>
+                    <div style="font-weight: 700; font-size: 14px;">التحويل عبر بنك الخرطوم</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">تحويل مباشر مع إرفاق إشعار التحويل</div>
+                </div>
+            </div>
+
+            <!-- Bank of Khartoum Details Box -->
+            <div id="bok-details" class="bank-details-box active">
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 6px;">رقم حساب بنك الخرطوم (الإدارة):</div>
+                <div style="font-size: 16px; font-weight: 800; color: var(--accent); margin-bottom: 10px;">123456789 (ديالا للمعدات الطبية)</div>
+                
+                <div class="input-group">
+                    <label class="input-label">اسم الحساب المحول منه (للمطابقة)</label>
+                    <input type="text" class="input-field" value="محمد أحمد السيد" placeholder="أدخل اسم صاحب الحساب بدقة">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">صورة إشعار أو إيصال التحويل</label>
+                    <div style="border: 2px dashed var(--border-color); padding: 16px; border-radius: var(--radius-md); text-align: center; cursor: pointer; background: var(--bg-surface);">
+                        <i class="fa-solid fa-cloud-arrow-up" style="font-size: 24px; color: var(--accent); margin-bottom: 6px;"></i>
+                        <div style="font-size: 12px; color: var(--text-secondary);">اضغط لتصوير الفاتورة أو رفعها من المعرض</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="payment-method-card" onclick="togglePayment('cash')" style="margin-top: 12px;">
+                <i class="fa-solid fa-wallet" style="font-size: 24px; color: var(--success);"></i>
+                <div>
+                    <div style="font-weight: 700; font-size: 14px;">الدفع عند الاستلام</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">الدفع نقداً عند استلام الطلبية</div>
+                </div>
+            </div>
+
+            <button class="btn-primary" style="margin-top: 24px;" onclick="completeOrder()">
+                تأكيد وإرسال الطلب <i class="fa-solid fa-check-double"></i>
+            </button>
+        </div>
+
+        <!-- 6. MY ORDERS SCREEN -->
+        <div id="screen-orders" class="app-screen">
+            <div class="screen-header">
+                <div class="screen-title">قائمة طلباتي</div>
+                <div class="badge">طلبين نشطين</div>
+            </div>
+
+            <div class="order-card">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-weight: 700; font-size: 14px;">طلب #DMC-8921</span>
+                    <span class="order-status status-confirmed">تم التأكيد ومطابقة الدفع</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 6px;">المنتجات: جهاز تحليل دم رقمي (عدد 1)</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 6px;">التوصيل: مدينة عطبرة (توصيل منزلي)</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 8px;">
+                    <span style="font-size: 13px; font-weight: 800; color: var(--accent);">1,250,000 SDG</span>
+                    <span style="font-size: 11px; color: var(--text-muted);">منذ ساعتين</span>
+                </div>
+            </div>
+
+            <div class="order-card">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-weight: 700; font-size: 14px;">طلب #DMC-8915</span>
+                    <span class="order-status status-pending">قيد مراجعة التحويل</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 6px;">المنتجات: مستهلكات حقن طبية (عدد 2)</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 6px;">الاستلام: من المحل الرئيسي</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 8px;">
+                    <span style="font-size: 13px; font-weight: 800; color: var(--accent);">45,000 SDG</span>
+                    <span style="font-size: 11px; color: var(--text-muted);">أمس</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. PROFILE SCREEN -->
+        <div id="screen-profile" class="app-screen">
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    <i class="fa-solid fa-user-doctor"></i>
+                </div>
+                <div style="font-size: 18px; font-weight: 700;">د. محمد أحمد</div>
+                <div style="font-size: 12px; color: var(--text-secondary);">mohamed@gmail.com | 0912345678</div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-location-dot" style="color: var(--accent);"></i>
+                        <span style="font-size: 14px; font-weight: 600;">العنوان (عطبرة، السودان)</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-left" style="color: var(--text-muted); font-size: 12px;"></i>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-bell" style="color: var(--warning);"></i>
+                        <span style="font-size: 14px; font-weight: 600;">الإشعارات والتنبيهات</span>
+                    </div>
+                    <span style="font-size: 11px; background: var(--primary); padding: 2px 8px; border-radius: var(--radius-full);">مفعل</span>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-shield-halved" style="color: var(--success);"></i>
+                        <span style="font-size: 14px; font-weight: 600;">سياسة الخصوصية والأمان</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-left" style="color: var(--text-muted); font-size: 12px;"></i>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0;" onclick="switchScreen('screen-login', document.querySelector('[onclick*=\'screen-login\']'))">
+                    <div style="display: flex; align-items: center; gap: 10px; color: var(--error); cursor: pointer;">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span style="font-size: 14px; font-weight: 600;">تسجيل الخروج</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. EMPTY STATE SCREEN -->
+        <div id="screen-empty" class="app-screen">
+            <div class="screen-header">
+                <div class="screen-title">الطلبات الفارغة</div>
+            </div>
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fa-solid fa-box-open"></i>
+                </div>
+                <div style="font-size: 16px; font-weight: 700; margin-bottom: 6px;">لا توجد طلبات حالياً</div>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">قم بتصفح المنتجات وأضف ما تحتاجه إلى سلة المشتريات بكل سهولة.</div>
+                <button class="btn-primary" style="width: auto; padding: 10px 24px;" onclick="switchScreen('screen-home', document.querySelector('[onclick*=\'screen-home\']'))">
+                    تصفح المنتجات الآن
+                </button>
+            </div>
+        </div>
+
+        <!-- 9. LOADING SKELETON SCREEN -->
+        <div id="screen-skeleton" class="app-screen">
+            <div class="screen-header">
+                <div class="skeleton" style="width: 140px; height: 20px;"></div>
+                <div class="skeleton" style="width: 60px; height: 20px; border-radius: 99px;"></div>
+            </div>
+
+            <div class="skeleton" style="width: 100%; height: 50px; border-radius: 12px; margin-bottom: 16px;"></div>
+
+            <div class="products-grid">
+                <div class="product-card" style="background: rgba(255,255,255,0.02);">
+                    <div class="skeleton" style="width: 100%; height: 110px;"></div>
+                    <div style="padding: 10px;">
+                        <div class="skeleton" style="width: 100%; height: 14px; margin-bottom: 8px;"></div>
+                        <div class="skeleton" style="width: 60%; height: 14px; margin-bottom: 12px;"></div>
+                        <div class="skeleton" style="width: 100%; height: 28px;"></div>
+                    </div>
+                </div>
+                <div class="product-card" style="background: rgba(255,255,255,0.02);">
+                    <div class="skeleton" style="width: 100%; height: 110px;"></div>
+                    <div style="padding: 10px;">
+                        <div class="skeleton" style="width: 100%; height: 14px; margin-bottom: 8px;"></div>
+                        <div class="skeleton" style="width: 60%; height: 14px; margin-bottom: 12px;"></div>
+                        <div class="skeleton" style="width: 100%; height: 28px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+           BOTTOM NAVIGATION BAR
+           ========================================== -->
+        <div class="bottom-nav">
+            <button class="nav-item active" onclick="switchScreen('screen-home', document.querySelector('[onclick*=\'screen-home\']'), this)">
+                <i class="fa-solid fa-house-medical"></i>
+                <span>الرئيسية</span>
+            </button>
+            <button class="nav-item" onclick="switchScreen('screen-cart', document.querySelector('[onclick*=\'screen-cart\']'), this)">
+                <i class="fa-solid fa-cart-shopping"></i>
+                <span>السلة</span>
+            </button>
+            <button class="nav-item" onclick="switchScreen('screen-orders', document.querySelector('[onclick*=\'screen-orders\']'), this)">
+                <i class="fa-solid fa-clipboard-list"></i>
+                <span>طلباتي</span>
+            </button>
+            <button class="nav-item" onclick="switchScreen('screen-profile', document.querySelector('[onclick*=\'screen-profile\']'), this)">
+                <i class="fa-solid fa-user-gear"></i>
+                <span>حسابي</span>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toast-msg">تمت الإضافة إلى السلة بنجاح</span>
+    </div>
+
+    <!-- ==========================================
+       JAVASCRIPT INTERACTION LOGIC
+       ========================================== -->
+    <script>
+        function switchScreen(screenId, pillElement, navElement) {
+            // Hide all screens
+            document.querySelectorAll('.app-screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            // Show selected screen
+            const targetScreen = document.getElementById(screenId);
+            if (targetScreen) {
+                targetScreen.classList.add('active');
+            }
+
+            // Update top screen pills active state
+            if (pillElement) {
+                document.querySelectorAll('.screen-pill').forEach(p => p.classList.remove('active'));
+                pillElement.classList.add('active');
+            }
+
+            // Update bottom navigation active state if triggered from nav
+            if (navElement) {
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                navElement.classList.add('active');
+            }
+        }
+
+        function addToCart(productName, price) {
+            showToast(`تمت إضافة "${productName}" إلى السلة`);
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const msgSpan = document.getElementById('toast-msg');
+            msgSpan.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
+        }
+
+        function selectDelivery(element) {
+            document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+
+        function togglePayment(method) {
+            document.querySelectorAll('.payment-method-card').forEach(c => c.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            
+            const bokDetails = document.getElementById('bok-details');
+            if (method === 'bok') {
+                bokDetails.classList.add('active');
+            } else {
+                bokDetails.classList.remove('active');
+            }
+        }
+
+        function completeOrder() {
+            showToast('تم إرسال الطلب وإيصال التحويل بنجاح!');
+            setTimeout(() => {
+                switchScreen('screen-orders', document.querySelector('[onclick*=\'screen-orders\']'));
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
+

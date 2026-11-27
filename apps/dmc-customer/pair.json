@@ -1,0 +1,162 @@
+{
+ "pair": "dmc",
+ "prefix": "dmc",
+ "lang": "flutter",
+ "push": true,
+ "admins": [
+  "alkahlizero564@gmail.com"
+ ],
+ "description": "DMC للمعدات الطبية والمستهلكات الطبية\nتطبيق الاداره فيه الشخص الاداره بجد قوائم المشتريات والمبيعات في قائمه واحده ولكن بي بيانات دقيقه وقائمه الطلبات التي بها يراء طلبات الزبائن ومعلومات طلبه والكميه التي يريدها من حيث اسمه ورقم هاتفه السوداني وهل يريد أن يستلم من المحل أو توصيل(   عطبره - الدامر-ابوحمد - بربر-شندي) وفي تطبيق الاداره بقدر لمن يضف منتج الي قاذمه المنتجات بقدر يضع صوره لهذا المنتج وفي قايمه المشتريات بقدر يصور الفاتوره وتنزل محتويات الفاتوره فعليا الي القايمه وانا طرق الدفع انا عند الاستلام او عند طريق رقم حسابك بنك الخرطوم الذي وضعه الشخص الاداره في تطبيق الاداره َيظهر في تطبيق الزبون الزبون يحول في رقم الحساب ويطابق الاسم الموجود فيه مع الاسم الذي وضع الإداري ويرسله عبر تصوره أو حلبه من المعرض ويظهر الي تطبيق الاداره مع التأكيد وفي قايمه أخرى وهي قايمه التقارير وهي قايمه تفضل كل شي  وأهم اهم جزا وهو امكانيه تعديل جميع ازهار المنتجات عبر تغير سعر الدولار فتتغير جميع اسعار المنتجات وتظهر في تطبيق الزبون بالأسعار الجديده تلقائيا وانا في تطبيق الزبون يحد قايمه المنتجات مع الصوره التي َضعا الإداري وتظهر للزبون عادي من غير م يضغط عليها تكون ظاهره تلقائي قايمه المنتجات واضفه الي السله واتمام الطلب وارسال الفاتوره من الاداره الي الزبون وقايمه أخرى قايمه طلباتي التي يجد بها ويراقب طلبات حالتها مع تتطابق بين الأشياء التي ضفتها في الاداره لتكون للزبون بهياتها المفروض تكون بها للزبون فهمتني\nمع تسجيل دخول وإنشاء حساب بالبريد الإلكتروني للتطبيقين\n\n=== المواصفات اللي وافق عليها صاحب التطبيق (نفّذها كلها بند بند، ولا تضيف تطبيق مختلف) ===\nالفكرة: تطبيق DMC للمعدات الطبية والمستهلكات الطبية، مقسم إلى تطبيقين للزبون والإدارة لطلب وعرض المعدات الطبية مع إدارة المبيعات والمشتريات وتعديل الأسعار بسعر الدولار.\nالشاشات:\n- الزبون: شاشة تسجيل الدخول وإنشاء حساب بالاسم ورقم الهاتف والبريد ورمز التأكيد وكلمة المرور\n- الزبون: شاشة الرئيسية وعرض قائمة المنتجات تلقائيا مع صورها وأسعارها وإضافتها للسلة\n- الزبون: شاشة السلة وإتمام الطلب واختيار الاستلام من المحل أو التوصيل وإدخال رقم الهاتف السوداني\n- الزبون: شاشة اختيار طريقة الدفع (الدفع عند الاستلام أو التحويل عبر بنك الخرطوم وإرفاق صورة الإشعار واسم الحساب)\n- الزبون: شاشة طلباتي لمتابعة حالة الطلبات وتفاصيلها\n- الإدارة: شاشة تسجيل الدخول وإنشاء حساب بالاسم ورقم الهاتف والبريد ورمز التأكيد وكلمة المرور\n- الإدارة: شاشة قوائم المشتريات والمبيعات في قائمة واحدة ببيانات دقيقة وإمكانية تصوير الفاتورة لتنزل محتوياتها فعلياً\n- الإدارة: شاشة قائمة الطلبات لمشاهدة طلبات الزبائن ومعلوماتهم والكمية ورقم الهاتف وطريقة الاستلام والمدينة\n- الإدارة: شاشة إضافة وتعديل المنتجات مع رفع صورة المنتج\n- الإدارة: شاشة إدارة طرق الدفع وإدخال رقم حساب بنك الخرطوم ليظهر للزبون\n- الإدارة: شاشة التقارير لتفصيل كل شيء\n- الإدارة: شاشة تعديل سعر الدولار لتحديث جميع أسعار المنتجات وتظهر للزبون تلقائياً\nالميزات والوظائف:\n- الزبون: التسجيل وإنشاء حساب بالبريد الإلكتروني مع رمز تأكيد\n- الزبون: تصفح قائمة المنتجات مع الصور والأسعار تلقائياً بدون ضغط\n- الزبون: إضافة المنتجات إلى السلة وإتمام الطلب\n- الزبون: تحديد طريقة الاستلام (من المحل أو توصيل لـ عطبره - الدامر - ابوحمد - بربر - شندي)\n- الزبون: إدخال رقم الهاتف السوداني عند الطلب\n- الزبون: الدفع عند الاستلام أو التحويل على رقم حساب بنك الخرطوم الخاص بالإدارة مع مطابقة الاسم وإرسال صورة التحويل\n- الزبون: متابعة حالة الطلبات في قائمة طلباتي\n- الإدارة: التسجيل وإنشاء حساب بالبريد الإلكتروني مع رمز تأكيد\n- الإدارة: عرض قوائم المشتريات والمبيعات في قائمة واحدة ببيانات دقيقة\n- الإدارة: تصوير الفاتورة في قائمة المشتريات لإدخال محتوياتها تلقائياً\n- الإدارة: عرض طلبات الزبائن ومعلوماتهم والكميات ورقم الهاتف وطريقة ومكان الاستلام\n- الإدارة: إضافة منتج جديد مع وضع صورة له\n- الإدارة: تحديد وعرض رقم حساب بنك الخرطوم ليظهر في تطبيق الزبون\n- الإدارة: مراجعة صورة التحويل ومطابقة الاسم مع الزبون للتأكيد\n- الإدارة: عرض قائمة التقارير المفصلة\n- الإدارة: تعديل جميع أسعار المنتجات فوراً عبر تغير سعر الدولار وتحديثها تلقائياً عند الزبون\nالبيانات اللي التطبيق بيحفظها:\n- الاثنين: المستخدمين (الاسم، رقم الهاتف، البريد الإلكتروني، كلمة المرور، النوع: زبون أو إدارة)\n- الاثنين: المنتجات (اسم المنتج، الصورة، السعر بناءً على سعر الدولار)\n- الاثنين: الطلبات (رقم الطلب، اسم الزبون، رقم الهاتف السوداني، الكمية، طريقة الاستلام: من المحل أو توصيل، المدينة: عطبره - الدامر - ابوحمد - بربر - شندي، حالة الطلب)\n- الاثنين: المبيعات والمشتريات (قائمة البيانات الدقيقة، صور الفواتير والمحتويات)\n- الاثنين: المدفوعات (طريقة الدفع: عند الاستلام أو بنك الخرطوم، رقم حساب بنك الخرطوم، صورة إشعار التحويل، اسم الحساب للمطابقة، حالة التأكيد)\nالأسماء والنصوص والأرقام والألوان:\n- DMC\n- DIALA MEDICAL &CHEMICAL EQUIPMENT\n- عطبره\n- الدامر\n- ابوحمد\n- بربر\n- شندي\n- بنك الخرطوم\nالصلاحيات: الكاميرا، الصور والملفات، الإشعارات\nANDROID_PERMISSIONS: CAMERA, STORAGE, NOTIFICATIONS\nLOGIN: customer=phone_email_code admin=phone_email_code",
+ "login": {
+  "customer": "phone_email_code",
+  "admin": "phone_email_code"
+ },
+ "supabase": {
+  "url": "https://jvjtgzewumfecjdpekna.supabase.co",
+  "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anRnemV3dW1mZWNqZHBla25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2NDYzMzcsImV4cCI6MjEwNzIyMjMzN30.1gck73ek8ErBtcF7xAtFM1TdvNim_1NzFVNej_mptBE",
+  "ref": "jvjtgzewumfecjdpekna"
+ },
+ "schemaSql": "-- DMC (Diala Medical & Chemical Equipment) Schema\n-- PostgreSQL 15 / Supabase\n\n-- 1. Configuration & Global Settings (Dollar Rate, Bank of Khartoum Details)\ncreate table if not exists public.dmc_settings (\n  id bigint primary key generated always as identity,\n  usd_exchange_rate numeric(12, 2) not null default 2750.00,\n  bok_account_number text not null default '123456789',\n  bok_account_name text not null default 'ديالا للمعدات الطبية',\n  contact_phone text default '0912345678',\n  updated_at timestamptz default now()\n);\n\nalter table public.dmc_settings enable row level security;\n\ndrop policy if exists \"dmc_settings_select_all\" on public.dmc_settings;\ncreate policy \"dmc_settings_select_all\"\n  on public.dmc_settings\n  for select\n  to authenticated\n  using (true);\n\ndrop policy if exists \"dmc_settings_admin_all\" on public.dmc_settings;\ncreate policy \"dmc_settings_admin_all\"\n  on public.dmc_settings\n  for all\n  to authenticated\n  using (public.dmc_is_admin())\n  with check (public.dmc_is_admin());\n\n-- Seed initial configuration singleton\ninsert into public.dmc_settings (id, usd_exchange_rate, bok_account_number, bok_account_name)\noverriding system value\nvalues (1, 2750.00, '123456789', 'ديالا للمعدات الطبية')\non conflict (id) do nothing;\n\n-- 2. Medical & Chemical Products Catalog\ncreate table if not exists public.dmc_products (\n  id uuid primary key default gen_random_uuid(),\n  name text not null,\n  description text,\n  price_usd numeric(12, 2) not null default 0.00,\n  image_url text not null default '',\n  is_active boolean not null default true,\n  stock_quantity integer not null default 100,\n  created_at timestamptz default now(),\n  updated_at timestamptz default now()\n);\n\nalter table public.dmc_products enable row level security;\n\ndrop policy if exists \"dmc_products_select_authenticated\" on public.dmc_products;\ncreate policy \"dmc_products_select_authenticated\"\n  on public.dmc_products\n  for select\n  to authenticated\n  using (true);\n\ndrop policy if exists \"dmc_products_admin_manage\" on public.dmc_products;\ncreate policy \"dmc_products_admin_manage\"\n  on public.dmc_products\n  for all\n  to authenticated\n  using (public.dmc_is_admin())\n  with check (public.dmc_is_admin());\n\n-- Realistic sample products for DMC\ninsert into public.dmc_products (id, name, description, price_usd, image_url, stock_quantity)\nvalues\n  ('11111111-1111-1111-1111-111111111111', 'جهاز تحليل دم رقمي متطور', 'جهاز مخبري رقمي متقدم لتحاليل الدم الشاملة CBC', 454.55, 'https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=600&q=80', 12),\n  ('22222222-2222-2222-2222-222222222222', 'مستهلكات حقن طبية معقمة (صندوق)', 'حقن معقمة مقاسات متعددة سعة 3 مل و5 مل - صندوق 100 حقنة', 16.36, 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80', 250),\n  ('33333333-3333-3333-3333-333333333333', 'جهاز تخطيط قلب محمول ECG', 'جهاز تخطيط قلب رقمي 12 قناة محمول مع شاشة ملونة', 323.64, 'https://images.unsplash.com/photo-1530497610245-94d3c16cda28?auto=format&fit=crop&w=600&q=80', 8),\n  ('44444444-4444-4444-4444-444444444444', 'محاليل وريدية معقمة 500 مل', 'محلول ملحي نورمال سلاين معقم للاستخدام السريري 500 مل', 6.73, 'https://images.unsplash.com/photo-1583912267670-6575ad472688?auto=format&fit=crop&w=600&q=80', 500)\non conflict (id) do nothing;\n\n-- 3. Customer Shopping Cart\ncreate table if not exists public.dmc_cart_items (\n  id uuid primary key default gen_random_uuid(),\n  customer_id uuid not null default auth.uid() references auth.users(id) on delete cascade,\n  product_id uuid not null references public.dmc_products(id) on delete cascade,\n  quantity integer not null check (quantity > 0),\n  created_at timestamptz default now(),\n  constraint dmc_cart_customer_product_unique unique (customer_id, product_id)\n);\n\nalter table public.dmc_cart_items enable row level security;\n\ndrop policy if exists \"dmc_cart_customer_manage\" on public.dmc_cart_items;\ncreate policy \"dmc_cart_customer_manage\"\n  on public.dmc_cart_items\n  for all\n  to authenticated\n  using (customer_id = auth.uid() or public.dmc_is_admin())\n  with check (customer_id = auth.uid() or public.dmc_is_admin());\n\n-- 4. Customer Orders\ncreate table if not exists public.dmc_orders (\n  id uuid primary key default gen_random_uuid(),\n  order_number text not null unique,\n  customer_id uuid not null default auth.uid() references auth.users(id) on delete cascade,\n  customer_name text not null,\n  customer_phone text not null,\n  delivery_method text not null check (delivery_method in ('pickup', 'delivery')),\n  city text not null check (city in ('عطبره', 'الدامر', 'ابوحمد', 'بربر', 'شندي')),\n  delivery_address text,\n  payment_method text not null check (payment_method in ('cod', 'bank_of_khartoum')),\n  usd_exchange_rate_applied numeric(12, 2) not null default 2750.00,\n  total_sdg numeric(14, 2) not null default 0.00,\n  \n  -- Bank of Khartoum transfer proof details\n  transfer_sender_name text,\n  transfer_receipt_url text,\n  is_name_matched boolean default false,\n  \n  -- Order lifecycle status\n  status text not null default 'pending_payment_review' \n    check (status in ('pending_payment_review', 'payment_confirmed', 'processing', 'ready_for_pickup', 'out_for_delivery', 'delivered', 'cancelled')),\n  admin_notes text,\n  created_at timestamptz default now(),\n  updated_at timestamptz default now()\n);\n\nalter table public.dmc_orders enable row level security;\n\ndrop policy if exists \"dmc_orders_customer_select\" on public.dmc_orders;\ncreate policy \"dmc_orders_customer_select\"\n  on public.dmc_orders\n  for select\n  to authenticated\n  using (customer_id = auth.uid() or public.dmc_is_admin());\n\ndrop policy if exists \"dmc_orders_customer_insert\" on public.dmc_orders;\ncreate policy \"dmc_orders_customer_insert\"\n  on public.dmc_orders\n  for insert\n  to authenticated\n  with check (customer_id = auth.uid() or public.dmc_is_admin());\n\ndrop policy if exists \"dmc_orders_customer_update_proof\" on public.dmc_orders;\ncreate policy \"dmc_orders_customer_update_proof\"\n  on public.dmc_orders\n  for update\n  to authenticated\n  using (customer_id = auth.uid() or public.dmc_is_admin())\n  with check (customer_id = auth.uid() or public.dmc_is_admin());\n\ndrop policy if exists \"dmc_orders_admin_all\" on public.dmc_orders;\ncreate policy \"dmc_orders_admin_all\"\n  on public.dmc_orders\n  for all\n  to authenticated\n  using (public.dmc_is_admin())\n  with check (public.dmc_is_admin());\n\n-- 5. Order Line Items\ncreate table if not exists public.dmc_order_items (\n  id uuid primary key default gen_random_uuid(),\n  order_id uuid not null references public.dmc_orders(id) on delete cascade,\n  product_id uuid references public.dmc_products(id) on delete set null,\n  product_name text not null,\n  quantity integer not null check (quantity > 0),\n  price_usd numeric(12, 2) not null,\n  price_sdg numeric(14, 2) not null,\n  subtotal_sdg numeric(14, 2) not null,\n  created_at timestamptz default now()\n);\n\nalter table public.dmc_order_items enable row level security;\n\ndrop policy if exists \"dmc_order_items_select\" on public.dmc_order_items;\ncreate policy \"dmc_order_items_select\"\n  on public.dmc_order_items\n  for select\n  to authenticated\n  using (\n    exists (\n      select 1 from public.dmc_orders o\n      where o.id = dmc_order_items.order_id\n        and (o.customer_id = auth.uid() or public.dmc_is_admin())\n    )\n  );\n\ndrop policy if exists \"dmc_order_items_insert\" on public.dmc_order_items;\ncreate policy \"dmc_order_items_insert\"\n  on public.dmc_order_items\n  for insert\n  to authenticated\n  with check (\n    exists (\n      select 1 from public.dmc_orders o\n      where o.id = dmc_order_items.order_id\n        and (o.customer_id = auth.uid() or public.dmc_is_admin())\n    )\n  );\n\ndrop policy if exists \"dmc_order_items_admin_all\" on public.dmc_order_items;\ncreate policy \"dmc_order_items_admin_all\"\n  on public.dmc_order_items\n  for all\n  to authenticated\n  using (public.dmc_is_admin())\n  with check (public.dmc_is_admin());\n\n-- 6. Unified Ledger for Purchases and Sales (قوائم المشتريات والمبيعات في قائمة واحدة)\ncreate table if not exists public.dmc_ledger_records (\n  id uuid primary key default gen_random_uuid(),\n  record_type text not null check (record_type in ('purchase', 'sale')),\n  invoice_number text not null,\n  title text not null,\n  description text,\n  amount_sdg numeric(14, 2) not null,\n  city text check (city in ('عطبره', 'الدامر', 'ابوحمد', 'بربر', 'شندي', 'أخرى')),\n  payment_method text default 'bank_of_khartoum',\n  invoice_image_url text,\n  parsed_content jsonb default '[]'::jsonb,\n  is_ai_parsed boolean default false,\n  related_order_id uuid references public.dmc_orders(id) on delete set null,\n  recorded_by uuid references auth.users(id) on delete set null,\n  record_date date not null default current_date,\n  created_at timestamptz default now()\n);\n\nalter table public.dmc_ledger_records enable row level security;\n\ndrop policy if exists \"dmc_ledger_admin_all\" on public.dmc_ledger_records;\ncreate policy \"dmc_ledger_admin_all\"\n  on public.dmc_ledger_records\n  for all\n  to authenticated\n  using (public.dmc_is_admin())\n  with check (public.dmc_is_admin());\n\n-- Sample data for unified ledger\ninsert into public.dmc_ledger_records (\n  record_type, invoice_number, title, description, amount_sdg, city, invoice_image_url, is_ai_parsed\n) values\n  ('purchase', 'INV-4021', 'مشتريات: أجهزة مخبرية مستوردة', 'شراء كواشف وأجهزة مخبرية متطورة تم استيرادها', 4500000.00, 'عطبره', 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80', true),\n  ('sale', 'INV-4020', 'مبيعات: مستهلكات طبية لعطبرة', 'مبيعات شاش وقطن وحقن وريدية لمستشفى عطبرة', 1250000.00, 'عطبره', 'https://images.unsplash.com/photo-1554224154-26032ffc0d07?auto=format&fit=crop&w=600&q=80', true)\non conflict do nothing;",
+ "contract": {
+  "tables": [
+   {
+    "name": "dmc_settings",
+    "purpose": "Stores global settings including the live USD-to-SDG exchange rate, Bank of Khartoum account details, and support phone number",
+    "columns": [
+     "id bigint identity primary key",
+     "usd_exchange_rate numeric(12,2) not null default 2750.00",
+     "bok_account_number text not null default '123456789'",
+     "bok_account_name text not null default 'ديالا للمعدات الطبية'",
+     "contact_phone text default '0912345678'",
+     "updated_at timestamptz default now()"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "dmc_products",
+    "purpose": "Medical and chemical catalog items priced in USD, automatically converted to SDG using the live exchange rate",
+    "columns": [
+     "id uuid primary key default gen_random_uuid()",
+     "name text not null",
+     "description text",
+     "price_usd numeric(12,2) not null default 0.00",
+     "image_url text not null default ''",
+     "is_active boolean not null default true",
+     "stock_quantity integer not null default 100",
+     "created_at timestamptz default now()",
+     "updated_at timestamptz default now()"
+    ],
+    "owner": "catalog"
+   },
+   {
+    "name": "dmc_cart_items",
+    "purpose": "Active shopping cart items added by customers before checkout",
+    "columns": [
+     "id uuid primary key default gen_random_uuid()",
+     "customer_id uuid not null default auth.uid()",
+     "product_id uuid not null references dmc_products(id)",
+     "quantity integer not null check (quantity > 0)",
+     "created_at timestamptz default now()"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "dmc_orders",
+    "purpose": "Stores customer orders, Sudanese phone number, pickup/delivery choice, destination city, Bank of Khartoum transfer proof, and payment status",
+    "columns": [
+     "id uuid primary key default gen_random_uuid()",
+     "order_number text not null unique",
+     "customer_id uuid not null default auth.uid()",
+     "customer_name text not null",
+     "customer_phone text not null",
+     "delivery_method text check ('pickup', 'delivery')",
+     "city text check ('عطبره', 'الدامر', 'ابوحمد', 'بربر', 'شندي')",
+     "delivery_address text",
+     "payment_method text check ('cod', 'bank_of_khartoum')",
+     "usd_exchange_rate_applied numeric(12,2) not null default 2750.00",
+     "total_sdg numeric(14,2) not null default 0.00",
+     "transfer_sender_name text",
+     "transfer_receipt_url text",
+     "is_name_matched boolean default false",
+     "status text check ('pending_payment_review', 'payment_confirmed', 'processing', 'ready_for_pickup', 'out_for_delivery', 'delivered', 'cancelled')",
+     "admin_notes text",
+     "created_at timestamptz default now()",
+     "updated_at timestamptz default now()"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "dmc_order_items",
+    "purpose": "Detailed product line items, quantities, and frozen SDG & USD prices for each customer order",
+    "columns": [
+     "id uuid primary key default gen_random_uuid()",
+     "order_id uuid not null references dmc_orders(id)",
+     "product_id uuid references dmc_products(id)",
+     "product_name text not null",
+     "quantity integer not null check (quantity > 0)",
+     "price_usd numeric(12,2) not null",
+     "price_sdg numeric(14,2) not null",
+     "subtotal_sdg numeric(14,2) not null",
+     "created_at timestamptz default now()"
+    ],
+    "owner": "customer"
+   },
+   {
+    "name": "dmc_ledger_records",
+    "purpose": "Unified list of purchases and sales with invoice photos, AI-scanned contents, and city attribution for reporting",
+    "columns": [
+     "id uuid primary key default gen_random_uuid()",
+     "record_type text not null check ('purchase', 'sale')",
+     "invoice_number text not null",
+     "title text not null",
+     "description text",
+     "amount_sdg numeric(14,2) not null",
+     "city text check ('عطبره', 'الدامر', 'ابوحمد', 'بربر', 'شندي', 'أخرى')",
+     "payment_method text default 'bank_of_khartoum'",
+     "invoice_image_url text",
+     "parsed_content jsonb default '[]'::jsonb",
+     "is_ai_parsed boolean default false",
+     "related_order_id uuid references dmc_orders(id)",
+     "recorded_by uuid references auth.users(id)",
+     "record_date date not null default current_date",
+     "created_at timestamptz default now()"
+    ],
+    "owner": "admin"
+   }
+  ],
+  "events": [
+   {
+    "when": "Customer places a new order with Bank of Khartoum transfer proof in the Customer app",
+    "notify": "admin",
+    "title": "طلب جديد بانتظار مطابقة التحويل"
+   },
+   {
+    "when": "Admin updates order status to payment_confirmed after verifying Bank of Khartoum transfer",
+    "notify": "customer",
+    "title": "تم تأكيد طلبك ومطابقة الدفع بنجاح"
+   },
+   {
+    "when": "Admin modifies the USD exchange rate in the Admin settings screen",
+    "notify": "customer",
+    "title": "تحديث أسعار المعدات والمستهلكات الطبية"
+   },
+   {
+    "when": "Admin marks an order ready for pickup or out for delivery to the customer's city",
+    "notify": "customer",
+    "title": "طلبك في طريقه إليك / جاهز للاستلام"
+   }
+  ]
+ },
+ "apps": {
+  "customer": {
+   "name": "dmc-customer",
+   "packageId": "com.generated.app_dmc_customer"
+  },
+  "admin": {
+   "name": "dmc-admin",
+   "packageId": "com.generated.app_dmc_admin"
+  }
+ },
+ "role": "customer",
+ "pushFunction": "dmc-push"
+}

@@ -1,0 +1,5 @@
+firebase_core
+firebase_messaging
+image_picker
+http
+shared_preferences

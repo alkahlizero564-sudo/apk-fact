@@ -1,5 +1,4 @@
 dmc-customer
-@model: gemini-3.8-flash-lite-tts
-اجعل امكانيه رؤية تفاصيل المنتج اولا عند الضغط على المنتج
+@preview
 
-(request id: 1795812305540)
+(request id: 1795864311855)
